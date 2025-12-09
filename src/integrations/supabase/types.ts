@@ -19,10 +19,15 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          date_of_birth: string | null
           email: string
           full_name: string | null
+          game_uid: string | null
           id: string
+          in_game_name: string | null
+          location: string | null
           phone: string | null
+          preferred_game: string | null
           updated_at: string
           user_id: string
           username: string | null
@@ -31,10 +36,15 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email: string
           full_name?: string | null
+          game_uid?: string | null
           id?: string
+          in_game_name?: string | null
+          location?: string | null
           phone?: string | null
+          preferred_game?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
@@ -43,10 +53,15 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           email?: string
           full_name?: string | null
+          game_uid?: string | null
           id?: string
+          in_game_name?: string | null
+          location?: string | null
           phone?: string | null
+          preferred_game?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null

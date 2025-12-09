@@ -4,13 +4,13 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  User, 
   Edit2,
   ChevronRight,
   Shield,
@@ -22,18 +22,30 @@ import {
   FileText,
   Bell,
   Loader2,
-  Save,
-  X,
   Camera,
   RefreshCw,
-  Info
+  Info,
+  Phone,
+  Calendar,
+  MapPin,
+  Gamepad2,
+  User,
+  Hash
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Profile {
   id: string;
@@ -44,6 +56,11 @@ interface Profile {
   avatar_url: string | null;
   phone: string | null;
   bio: string | null;
+  date_of_birth: string | null;
+  location: string | null;
+  preferred_game: string | null;
+  in_game_name: string | null;
+  game_uid: string | null;
 }
 
 const ProfilePage = () => {
@@ -53,12 +70,19 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [formData, setFormData] = useState({
-    username: '',
     full_name: '',
+    username: '',
     phone: '',
+    date_of_birth: '',
+    location: '',
+    bio: '',
+    preferred_game: '',
+    in_game_name: '',
+    game_uid: '',
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const { user, isAdmin, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -91,9 +115,15 @@ const ProfilePage = () => {
       if (data) {
         setProfile(data);
         setFormData({
-          username: data.username || '',
           full_name: data.full_name || '',
+          username: data.username || '',
           phone: data.phone || '',
+          date_of_birth: data.date_of_birth || '',
+          location: data.location || '',
+          bio: data.bio || '',
+          preferred_game: data.preferred_game || '',
+          in_game_name: data.in_game_name || '',
+          game_uid: data.game_uid || '',
         });
       }
     } catch (error) {
@@ -175,9 +205,15 @@ const ProfilePage = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          username: formData.username || null,
           full_name: formData.full_name || null,
+          username: formData.username || null,
           phone: formData.phone || null,
+          date_of_birth: formData.date_of_birth || null,
+          location: formData.location || null,
+          bio: formData.bio || null,
+          preferred_game: formData.preferred_game || null,
+          in_game_name: formData.in_game_name || null,
+          game_uid: formData.game_uid || null,
         })
         .eq('user_id', user.id);
 
@@ -230,25 +266,26 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      {/* Profile Header */}
-      <div className="bg-gradient-to-br from-primary/10 to-primary/5 px-4 py-6">
+      {/* Hero Banner */}
+      <div className="relative bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50 px-4 pt-6 pb-16">
         <div className="flex items-center gap-4">
+          {/* Avatar with Camera Badge */}
           <div className="relative">
-            <Avatar className="h-20 w-20 border-4 border-card">
+            <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
               <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-gaming">
+              <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
                 {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
-              className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center border-2 border-card"
+              className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center border-2 border-card shadow-md"
             >
               {uploadingAvatar ? (
-                <Loader2 className="h-4 w-4 text-primary-foreground animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 text-primary-foreground animate-spin" />
               ) : (
-                <Camera className="h-4 w-4 text-primary-foreground" />
+                <Camera className="h-3.5 w-3.5 text-primary-foreground" />
               )}
             </button>
             <input
@@ -259,13 +296,15 @@ const ProfilePage = () => {
               className="hidden"
             />
           </div>
-          <div className="flex-1">
+
+          {/* User Info */}
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="font-gaming text-xl font-bold">
+              <h1 className="font-bold text-lg text-foreground truncate">
                 {profile?.full_name || profile?.username || 'Gamer'}
               </h1>
               {isAdmin && (
-                <Badge className="bg-primary/10 text-primary text-[10px]">
+                <Badge className="bg-primary/10 text-primary text-[10px] shrink-0">
                   <Shield className="h-2.5 w-2.5 mr-0.5" />
                   Admin
                 </Badge>
@@ -274,36 +313,42 @@ const ProfilePage = () => {
             {profile?.username && (
               <p className="text-sm text-muted-foreground">@{profile.username}</p>
             )}
-            <p className="text-xs text-muted-foreground mt-1">{profile?.email}</p>
+            <p className="text-sm text-muted-foreground truncate">{profile?.email}</p>
           </div>
+
+          {/* Edit Button */}
           <button 
             onClick={() => setEditDialogOpen(true)}
-            className="p-2 bg-card rounded-full border border-border"
+            className="p-2.5 bg-card rounded-full border border-border shadow-sm hover:shadow-md transition-shadow"
           >
             <Edit2 className="h-4 w-4 text-primary" />
           </button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-px bg-border">
-        <div className="bg-card p-4 text-center">
-          <p className="font-gaming text-xl font-bold text-primary">0</p>
-          <p className="text-xs text-muted-foreground">Matches</p>
-        </div>
-        <div className="bg-card p-4 text-center">
-          <p className="font-gaming text-xl font-bold text-primary">0</p>
-          <p className="text-xs text-muted-foreground">Wins</p>
-        </div>
-        <div className="bg-card p-4 text-center">
-          <p className="font-gaming text-xl font-bold text-primary">₹0</p>
-          <p className="text-xs text-muted-foreground">Earnings</p>
+      {/* Stats Row - Overlapping Banner */}
+      <div className="px-4 -mt-10 relative z-10">
+        <div className="bg-card rounded-xl shadow-lg border border-border">
+          <div className="grid grid-cols-3 divide-x divide-border">
+            <div className="p-4 text-center">
+              <p className="font-bold text-xl text-primary">0</p>
+              <p className="text-xs text-muted-foreground">Matches</p>
+            </div>
+            <div className="p-4 text-center">
+              <p className="font-bold text-xl text-primary">0</p>
+              <p className="text-xs text-muted-foreground">Wins</p>
+            </div>
+            <div className="p-4 text-center">
+              <p className="font-bold text-xl text-primary">₹0</p>
+              <p className="text-xs text-muted-foreground">Earnings</p>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Admin Panel Access */}
       {isAdmin && (
-        <div className="p-4">
+        <div className="p-4 pt-4">
           <button
             onClick={() => navigate('/admin')}
             className="w-full bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3"
@@ -321,18 +366,16 @@ const ProfilePage = () => {
       )}
 
       {/* Menu Items */}
-      <div className="p-4">
-        <div className="bg-card rounded-xl border border-border divide-y divide-border">
+      <div className="p-4 pt-4">
+        <div className="bg-card rounded-xl border border-border shadow-sm divide-y divide-border">
           {menuItems.map((item) => (
             <button
               key={item.label}
               onClick={item.onClick}
-              className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+              className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors first:rounded-t-xl last:rounded-b-xl"
             >
-              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
-                <item.icon className="h-4 w-4 text-foreground" />
-              </div>
-              <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="flex-1 text-left text-sm font-medium text-foreground">{item.label}</span>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
           ))}
@@ -343,7 +386,7 @@ const ProfilePage = () => {
       <div className="px-4 pb-6">
         <Button
           variant="outline"
-          className="w-full text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+          className="w-full text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
           onClick={handleSignOut}
         >
           <LogOut className="mr-2 h-4 w-4" />
@@ -353,58 +396,194 @@ const ProfilePage = () => {
 
       {/* Edit Profile Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-gaming">Edit Profile</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Edit Profile</DialogTitle>
+            <DialogDescription>
+              Update your profile details and avatar
+            </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
-              <Input
-                id="full_name"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                placeholder="Enter your name"
-              />
-            </div>
+          {/* Warning Message */}
+          <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+            Username, Game Name, and Level can be edited in 3 days
+          </p>
 
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                placeholder="Enter username"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="Enter phone number"
-              />
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setEditDialogOpen(false)}>
-                <X className="mr-2 h-4 w-4" />
-                Cancel
-              </Button>
-              <Button variant="gaming" className="flex-1" onClick={handleSave} disabled={saving}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="space-y-6 pt-2">
+            {/* Profile Photo Section */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16 border-2 border-border">
+                <AvatarImage src={profile?.avatar_url || ''} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                  {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <Button 
+                variant="outline" 
+                className="text-primary border-primary hover:bg-primary/10"
+                onClick={() => editFileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save
-                  </>
+                  <Camera className="h-4 w-4 mr-2" />
                 )}
+                Change Photo
               </Button>
+              <input
+                ref={editFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+              />
             </div>
+
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  Full Name
+                </Label>
+                <Input
+                  id="full_name"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="username" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  placeholder="Enter username"
+                  className="bg-muted/50"
+                />
+                <p className="text-xs text-muted-foreground">Username must be unique</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="date_of_birth" className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  Date of Birth
+                </Label>
+                <Input
+                  id="date_of_birth"
+                  type="date"
+                  value={formData.date_of_birth}
+                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location" className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  Location
+                </Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Enter your location"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">Bio</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Tell us about yourself..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            {/* Gaming Details Section */}
+            <div className="border-2 border-primary/30 rounded-xl overflow-hidden">
+              <div className="bg-primary/10 px-4 py-3 border-b border-primary/30">
+                <h3 className="font-semibold text-primary flex items-center gap-2">
+                  <Gamepad2 className="h-4 w-4" />
+                  Gaming Details
+                </h3>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="preferred_game">Preferred Game</Label>
+                  <Select
+                    value={formData.preferred_game}
+                    onValueChange={(value) => setFormData({ ...formData, preferred_game: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your preferred game" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BGMI">BGMI</SelectItem>
+                      <SelectItem value="Free Fire">Free Fire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="in_game_name" className="flex items-center gap-1">
+                    In-Game Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="in_game_name"
+                    value={formData.in_game_name}
+                    onChange={(e) => setFormData({ ...formData, in_game_name: e.target.value })}
+                    placeholder="Enter your in-game name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="game_uid" className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    UID / ID <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="game_uid"
+                    value={formData.game_uid}
+                    onChange={(e) => setFormData({ ...formData, game_uid: e.target.value })}
+                    placeholder="Enter your game UID"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <Button 
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
+              onClick={handleSave} 
+              disabled={saving}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Update Profile
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
