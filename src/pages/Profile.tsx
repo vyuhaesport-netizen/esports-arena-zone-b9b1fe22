@@ -354,9 +354,9 @@ const ProfilePage = () => {
       {/* Divider */}
       <div className="h-2 bg-muted/50" />
 
-      {/* Account Section - Admin Panel Access */}
+      {/* Account Section - Admin Panel Access (Before Menu Items) */}
       {isAdmin && (
-        <div className="p-4 pt-4">
+        <div className="px-4 pt-4">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Account
           </h3>
@@ -395,7 +395,10 @@ const ProfilePage = () => {
       )}
 
       {/* Menu Items */}
-      <div className="p-4 pt-4">
+      <div className="px-4 pt-4">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Menu
+        </h3>
         <div className="bg-card rounded-xl border border-border shadow-sm divide-y divide-border">
           {menuItems.map((item) => (
             <button
