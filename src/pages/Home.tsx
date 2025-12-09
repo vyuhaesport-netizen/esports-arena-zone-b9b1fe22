@@ -8,20 +8,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import NotificationBell from '@/components/NotificationBell';
+import FollowButton from '@/components/FollowButton';
 import { 
   Trophy, 
   Users, 
   ChevronRight,
   Loader2,
-  Bell,
   Wallet,
   Gamepad2,
   Share2,
-  UserPlus,
   Eye,
   QrCode,
-  Copy,
-  X
+  Copy
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -234,29 +233,6 @@ const HomePage = () => {
     }
   };
 
-  const handleFollow = async (organizerId: string) => {
-    if (!user) return;
-    
-    try {
-      if (followedOrganizers.includes(organizerId)) {
-        await supabase.from('follows').delete()
-          .eq('follower_user_id', user.id)
-          .eq('following_user_id', organizerId);
-        setFollowedOrganizers(prev => prev.filter(id => id !== organizerId));
-        toast({ title: 'Unfollowed', description: 'You will no longer receive updates from this organizer.' });
-      } else {
-        await supabase.from('follows').insert({
-          follower_user_id: user.id,
-          following_user_id: organizerId,
-        });
-        setFollowedOrganizers(prev => [...prev, organizerId]);
-        toast({ title: 'Following!', description: 'You will be notified when they create new tournaments.' });
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-    }
-  };
-
   const handleShare = (tournament: Tournament) => {
     setShareDialog({ open: true, tournament });
   };
@@ -322,10 +298,7 @@ const HomePage = () => {
               <Wallet className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold text-primary">₹{walletBalance}</span>
             </button>
-            <button className="relative p-2">
-              <Bell className="h-5 w-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-            </button>
+            <NotificationBell />
           </div>
         </div>
         
@@ -443,18 +416,20 @@ const HomePage = () => {
                     </div>
                     
                     {/* Organizer Follow */}
-                    {tournament.created_by && tournament.tournament_type === 'creator' && (
-                      <button 
-                        onClick={() => handleFollow(tournament.created_by!)}
-                        className={`text-xs flex items-center gap-1 mt-2 ${
-                          followedOrganizers.includes(tournament.created_by) 
-                            ? 'text-primary' 
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        <UserPlus className="h-3 w-3" />
-                        {followedOrganizers.includes(tournament.created_by) ? 'Following' : 'Follow Organizer'}
-                      </button>
+                    {tournament.created_by && tournament.tournament_type === 'creator' && user?.id !== tournament.created_by && (
+                      <div className="mt-2">
+                        <FollowButton
+                          organizerId={tournament.created_by}
+                          isFollowing={followedOrganizers.includes(tournament.created_by)}
+                          onFollowChange={(isFollowing) => {
+                            if (isFollowing) {
+                              setFollowedOrganizers(prev => [...prev, tournament.created_by!]);
+                            } else {
+                              setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
+                            }
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
 

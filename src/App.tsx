@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
 import Auth from "./pages/Auth";
 import Home from "./pages/Home";
 import Creator from "./pages/Creator";
@@ -17,6 +18,8 @@ import AdminTournaments from "./pages/admin/AdminTournaments";
 import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminWithdrawals from "./pages/admin/AdminWithdrawals";
 import AdminDeposits from "./pages/admin/AdminDeposits";
+import AdminOrganizers from "./pages/admin/AdminOrganizers";
+import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import AboutUs from "./pages/AboutUs";
@@ -79,6 +82,10 @@ const AppRoutes = () => {
       <Route path="/admin/transactions" element={<ProtectedRoute><AdminTransactions /></ProtectedRoute>} />
       <Route path="/admin/withdrawals" element={<ProtectedRoute><AdminWithdrawals /></ProtectedRoute>} />
       <Route path="/admin/deposits" element={<ProtectedRoute><AdminDeposits /></ProtectedRoute>} />
+      <Route path="/admin/organizers" element={<ProtectedRoute><AdminOrganizers /></ProtectedRoute>} />
+      
+      {/* Organizer Routes */}
+      <Route path="/organizer" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
       
       <Route path="/terms" element={<Terms />} />
       <Route path="/refund-policy" element={<RefundPolicy />} />
@@ -91,13 +98,15 @@ const AppRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
+      <NotificationProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </NotificationProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
