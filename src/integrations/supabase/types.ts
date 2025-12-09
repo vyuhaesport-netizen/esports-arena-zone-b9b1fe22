@@ -38,6 +38,78 @@ export type Database = {
         }
         Relationships: []
       }
+      organizer_applications: {
+        Row: {
+          created_at: string
+          experience: string | null
+          govt_id_proof_url: string | null
+          id: string
+          name: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          experience?: string | null
+          govt_id_proof_url?: string | null
+          id?: string
+          name: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          experience?: string | null
+          govt_id_proof_url?: string | null
+          id?: string
+          name?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -179,59 +251,80 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          current_prize_pool: number | null
           description: string | null
           end_date: string | null
           entry_fee: number | null
           game: string
           id: string
           image_url: string | null
+          joined_users: string[] | null
           max_participants: number | null
+          organizer_earnings: number | null
+          platform_earnings: number | null
           prize_pool: string | null
           registration_deadline: string | null
           rules: string | null
           start_date: string
           status: string | null
           title: string
+          total_fees_collected: number | null
           tournament_type: string
           updated_at: string
+          winner_declared_at: string | null
+          winner_user_id: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          current_prize_pool?: number | null
           description?: string | null
           end_date?: string | null
           entry_fee?: number | null
           game: string
           id?: string
           image_url?: string | null
+          joined_users?: string[] | null
           max_participants?: number | null
+          organizer_earnings?: number | null
+          platform_earnings?: number | null
           prize_pool?: string | null
           registration_deadline?: string | null
           rules?: string | null
           start_date: string
           status?: string | null
           title: string
+          total_fees_collected?: number | null
           tournament_type?: string
           updated_at?: string
+          winner_declared_at?: string | null
+          winner_user_id?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          current_prize_pool?: number | null
           description?: string | null
           end_date?: string | null
           entry_fee?: number | null
           game?: string
           id?: string
           image_url?: string | null
+          joined_users?: string[] | null
           max_participants?: number | null
+          organizer_earnings?: number | null
+          platform_earnings?: number | null
           prize_pool?: string | null
           registration_deadline?: string | null
           rules?: string | null
           start_date?: string
           status?: string | null
           title?: string
+          total_fees_collected?: number | null
           tournament_type?: string
           updated_at?: string
+          winner_declared_at?: string | null
+          winner_user_id?: string | null
         }
         Relationships: []
       }
@@ -309,10 +402,11 @@ export type Database = {
         Returns: boolean
       }
       is_admin_email: { Args: { _email: string }; Returns: boolean }
+      is_organizer: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "organizer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -440,7 +534,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "organizer"],
     },
   },
 } as const

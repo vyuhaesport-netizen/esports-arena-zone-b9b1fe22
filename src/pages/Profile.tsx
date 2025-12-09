@@ -30,7 +30,9 @@ import {
   MapPin,
   Gamepad2,
   User,
-  Hash
+  Hash,
+  Crown,
+  UserCheck
 } from 'lucide-react';
 import {
   Dialog,
@@ -63,12 +65,20 @@ interface Profile {
   game_uid: string | null;
 }
 
+interface OrganizerApplication {
+  id: string;
+  status: string;
+}
+
 const ProfilePage = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [organizerApplication, setOrganizerApplication] = useState<OrganizerApplication | null>(null);
+  const [applyForm, setApplyForm] = useState({ name: '', experience: '' });
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
@@ -84,7 +94,7 @@ const ProfilePage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
-  const { user, isAdmin, isSuperAdmin, signOut, loading: authLoading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, isOrganizer, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -97,6 +107,7 @@ const ProfilePage = () => {
   useEffect(() => {
     if (user) {
       fetchProfile();
+      fetchOrganizerApplication();
     }
   }, [user]);
 
@@ -125,6 +136,7 @@ const ProfilePage = () => {
           in_game_name: data.in_game_name || '',
           game_uid: data.game_uid || '',
         });
+        setApplyForm({ name: data.full_name || '', experience: '' });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -133,25 +145,33 @@ const ProfilePage = () => {
     }
   };
 
+  const fetchOrganizerApplication = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await supabase
+        .from('organizer_applications')
+        .select('id, status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      setOrganizerApplication(data);
+    } catch (error) {
+      console.error('Error fetching application:', error);
+    }
+  };
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Please select an image under 2MB',
-        variant: 'destructive',
-      });
+      toast({ title: 'File too large', description: 'Please select an image under 2MB', variant: 'destructive' });
       return;
     }
 
     if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please select an image file',
-        variant: 'destructive',
-      });
+      toast({ title: 'Invalid file type', description: 'Please select an image file', variant: 'destructive' });
       return;
     }
 
@@ -178,19 +198,11 @@ const ProfilePage = () => {
 
       if (updateError) throw updateError;
 
-      toast({
-        title: 'Avatar Updated',
-        description: 'Your profile picture has been updated.',
-      });
-
+      toast({ title: 'Avatar Updated', description: 'Your profile picture has been updated.' });
       fetchProfile();
     } catch (error) {
       console.error('Error uploading avatar:', error);
-      toast({
-        title: 'Upload Failed',
-        description: 'Could not upload avatar. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Upload Failed', description: 'Could not upload avatar. Please try again.', variant: 'destructive' });
     } finally {
       setUploadingAvatar(false);
     }
@@ -219,20 +231,42 @@ const ProfilePage = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been saved.',
-      });
-      
+      toast({ title: 'Profile Updated', description: 'Your profile has been saved.' });
       setEditDialogOpen(false);
       fetchProfile();
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to update profile.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApplyOrganizer = async () => {
+    if (!user || !applyForm.name) {
+      toast({ title: 'Error', description: 'Please fill all required fields.', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('organizer_applications')
+        .insert({
+          user_id: user.id,
+          name: applyForm.name,
+          experience: applyForm.experience || null,
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Application Submitted', description: 'Your organizer application has been submitted for review.' });
+      setApplyDialogOpen(false);
+      fetchOrganizerApplication();
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      toast({ title: 'Error', description: 'Failed to submit application.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -266,11 +300,9 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      {/* Instagram-style Profile Header */}
+      {/* Profile Header */}
       <div className="bg-card px-4 pt-6 pb-4">
-        {/* Top Row - Avatar & Stats */}
         <div className="flex items-center gap-6">
-          {/* Avatar */}
           <div className="relative shrink-0">
             <Avatar className="h-20 w-20 border-2 border-primary/20">
               <AvatarImage src={profile?.avatar_url || ''} />
@@ -289,16 +321,9 @@ const ProfilePage = () => {
                 <Camera className="h-3.5 w-3.5 text-primary-foreground" />
               )}
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
           </div>
 
-          {/* Stats Row */}
           <div className="flex-1 grid grid-cols-3 gap-2">
             <div className="text-center">
               <p className="font-bold text-lg text-foreground">0</p>
@@ -315,34 +340,31 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        {/* User Info */}
         <div className="mt-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="font-bold text-base text-foreground">
               {profile?.full_name || profile?.username || 'Gamer'}
             </h1>
             {isSuperAdmin && (
               <Badge className="bg-gradient-to-r from-primary to-orange-500 text-primary-foreground text-[10px]">
-                <Shield className="h-2.5 w-2.5 mr-0.5" />
-                Owner
+                <Crown className="h-2.5 w-2.5 mr-0.5" /> Owner
               </Badge>
             )}
             {isAdmin && !isSuperAdmin && (
               <Badge className="bg-primary/10 text-primary text-[10px]">
-                <Shield className="h-2.5 w-2.5 mr-0.5" />
-                Team
+                <Shield className="h-2.5 w-2.5 mr-0.5" /> Team
+              </Badge>
+            )}
+            {isOrganizer && (
+              <Badge className="bg-purple-500/10 text-purple-600 text-[10px]">
+                <UserCheck className="h-2.5 w-2.5 mr-0.5" /> Organizer
               </Badge>
             )}
           </div>
-          {profile?.username && (
-            <p className="text-sm text-muted-foreground">@{profile.username}</p>
-          )}
-          {profile?.bio && (
-            <p className="text-sm text-foreground mt-1">{profile.bio}</p>
-          )}
+          {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
+          {profile?.bio && <p className="text-sm text-foreground mt-1">{profile.bio}</p>}
         </div>
 
-        {/* Edit Profile Button */}
         <button 
           onClick={() => setEditDialogOpen(true)}
           className="w-full mt-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground text-sm font-semibold rounded-lg border border-border transition-colors"
@@ -351,16 +373,15 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Divider */}
       <div className="h-2 bg-muted/50" />
 
-      {/* Account Section - Admin Panel Access (Before Menu Items) */}
-      {isAdmin && (
-        <div className="px-4 pt-4">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Account
-          </h3>
-          <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      {/* Account Section */}
+      <div className="px-4 pt-4">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Account</h3>
+        <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden divide-y divide-border">
+          
+          {/* Admin Panel - Only for Admins */}
+          {isAdmin && (
             <button
               onClick={() => navigate('/admin')}
               className="w-full bg-gradient-to-r from-primary/5 to-orange-500/5 hover:from-primary/10 hover:to-orange-500/10 p-4 flex items-center gap-3 transition-colors"
@@ -371,34 +392,75 @@ const ProfilePage = () => {
               <div className="flex-1 text-left">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold text-sm">Admin Panel</p>
-                  {isSuperAdmin && (
-                    <Badge className="bg-gradient-to-r from-primary to-orange-500 text-white text-[9px] px-1.5 py-0">
-                      Super Admin
-                    </Badge>
-                  )}
-                  {!isSuperAdmin && (
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
-                      Team Member
-                    </Badge>
+                  {isSuperAdmin ? (
+                    <Badge className="bg-gradient-to-r from-primary to-orange-500 text-white text-[9px] px-1.5 py-0">Super Admin</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Team Member</Badge>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {isSuperAdmin 
-                    ? 'Full access to all admin features' 
-                    : 'Access your assigned admin sections'}
+                  {isSuperAdmin ? 'Full access to all admin features' : 'Access your assigned admin sections'}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-primary" />
             </button>
-          </div>
+          )}
+
+          {/* Organizer Dashboard - Only for Organizers */}
+          {isOrganizer && (
+            <button
+              onClick={() => navigate('/organizer')}
+              className="w-full bg-gradient-to-r from-purple-500/5 to-pink-500/5 hover:from-purple-500/10 hover:to-pink-500/10 p-4 flex items-center gap-3 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Trophy className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-sm">Organizer Dashboard</p>
+                <p className="text-xs text-muted-foreground">Manage your tournaments & earnings</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-purple-500" />
+            </button>
+          )}
+
+          {/* Apply to Become Organizer - Only for Regular Users */}
+          {!isOrganizer && !isAdmin && (
+            <button
+              onClick={() => {
+                if (organizerApplication?.status === 'pending') {
+                  toast({ title: 'Application Pending', description: 'Your application is under review.' });
+                } else if (organizerApplication?.status === 'rejected') {
+                  toast({ title: 'Application Rejected', description: 'Your previous application was rejected.', variant: 'destructive' });
+                } else {
+                  setApplyDialogOpen(true);
+                }
+              }}
+              className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                <UserCheck className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1 text-left">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-sm">Become an Organizer</p>
+                  {organizerApplication?.status === 'pending' && (
+                    <Badge className="bg-yellow-500/10 text-yellow-600 text-[9px]">Pending</Badge>
+                  )}
+                  {organizerApplication?.status === 'rejected' && (
+                    <Badge variant="destructive" className="text-[9px]">Rejected</Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">Host your own tournaments</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Menu Items */}
       <div className="px-4 pt-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Menu
-        </h3>
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Menu</h3>
         <div className="bg-card rounded-xl border border-border shadow-sm divide-y divide-border">
           {menuItems.map((item) => (
             <button
@@ -415,7 +477,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Logout */}
-      <div className="px-4 pb-6">
+      <div className="px-4 py-6">
         <Button
           variant="outline"
           className="w-full text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -431,18 +493,10 @@ const ProfilePage = () => {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Edit Profile</DialogTitle>
-            <DialogDescription>
-              Update your profile details and avatar
-            </DialogDescription>
+            <DialogDescription>Update your profile details</DialogDescription>
           </DialogHeader>
           
-          {/* Warning Message */}
-          <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-            Username, Game Name, and Level can be edited in 3 days
-          </p>
-
-          <div className="space-y-6 pt-2">
-            {/* Profile Photo Section */}
+          <div className="space-y-4 pt-2">
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16 border-2 border-border">
                 <AvatarImage src={profile?.avatar_url || ''} />
@@ -450,171 +504,83 @@ const ProfilePage = () => {
                   {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <Button 
-                variant="outline" 
-                className="text-primary border-primary hover:bg-primary/10"
-                onClick={() => editFileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-              >
-                {uploadingAvatar ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Camera className="h-4 w-4 mr-2" />
-                )}
+              <Button variant="outline" onClick={() => editFileInputRef.current?.click()} disabled={uploadingAvatar}>
+                {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Camera className="h-4 w-4 mr-2" />}
                 Change Photo
               </Button>
-              <input
-                ref={editFileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarUpload}
-                className="hidden"
-              />
+              <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
 
-            {/* Basic Info */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="full_name" className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  Full Name
-                </Label>
-                <Input
-                  id="full_name"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  placeholder="Enter your full name"
-                />
+                <Label>Full Name</Label>
+                <Input value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} placeholder="Enter your full name" />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="username" className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  Username
-                </Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="Enter username"
-                  className="bg-muted/50"
-                />
-                <p className="text-xs text-muted-foreground">Username must be unique</p>
+                <Label>Username</Label>
+                <Input value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="Enter username" />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  Phone Number
-                </Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="Enter phone number"
-                />
+                <Label>Phone</Label>
+                <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="Enter phone number" />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="date_of_birth" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  Date of Birth
-                </Label>
-                <Input
-                  id="date_of_birth"
-                  type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => setFormData({ ...formData, date_of_birth: e.target.value })}
-                />
+                <Label>Preferred Game</Label>
+                <Select value={formData.preferred_game} onValueChange={(value) => setFormData({ ...formData, preferred_game: value })}>
+                  <SelectTrigger><SelectValue placeholder="Select game" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BGMI">BGMI</SelectItem>
+                    <SelectItem value="Free Fire">Free Fire</SelectItem>
+                    <SelectItem value="COD Mobile">COD Mobile</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="location" className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  Location
-                </Label>
-                <Input
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  placeholder="Enter your location"
-                />
+                <Label>In-Game Name</Label>
+                <Input value={formData.in_game_name} onChange={(e) => setFormData({ ...formData, in_game_name: e.target.value })} placeholder="Your in-game name" />
               </div>
-
               <div className="space-y-2">
-                <Label htmlFor="bio">Bio</Label>
-                <Textarea
-                  id="bio"
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  placeholder="Tell us about yourself..."
-                  rows={3}
-                />
+                <Label>Bio</Label>
+                <Textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Tell us about yourself" rows={3} />
               </div>
             </div>
 
-            {/* Gaming Details Section */}
-            <div className="border-2 border-primary/30 rounded-xl overflow-hidden">
-              <div className="bg-primary/10 px-4 py-3 border-b border-primary/30">
-                <h3 className="font-semibold text-primary flex items-center gap-2">
-                  <Gamepad2 className="h-4 w-4" />
-                  Gaming Details
-                </h3>
-              </div>
-              <div className="p-4 space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="preferred_game">Preferred Game</Label>
-                  <Select
-                    value={formData.preferred_game}
-                    onValueChange={(value) => setFormData({ ...formData, preferred_game: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your preferred game" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BGMI">BGMI</SelectItem>
-                      <SelectItem value="Free Fire">Free Fire</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <Button variant="gaming" className="w-full" onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-                <div className="space-y-2">
-                  <Label htmlFor="in_game_name" className="flex items-center gap-1">
-                    In-Game Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="in_game_name"
-                    value={formData.in_game_name}
-                    onChange={(e) => setFormData({ ...formData, in_game_name: e.target.value })}
-                    placeholder="Enter your in-game name"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="game_uid" className="flex items-center gap-2">
-                    <Hash className="h-4 w-4 text-muted-foreground" />
-                    UID / ID <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="game_uid"
-                    value={formData.game_uid}
-                    onChange={(e) => setFormData({ ...formData, game_uid: e.target.value })}
-                    placeholder="Enter your game UID"
-                  />
-                </div>
-              </div>
+      {/* Apply Organizer Dialog */}
+      <Dialog open={applyDialogOpen} onOpenChange={setApplyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apply to Become Organizer</DialogTitle>
+            <DialogDescription>Host your own tournaments and earn commission</DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Full Name *</Label>
+              <Input value={applyForm.name} onChange={(e) => setApplyForm({ ...applyForm, name: e.target.value })} placeholder="Your full name" />
+            </div>
+            <div className="space-y-2">
+              <Label>Experience</Label>
+              <Textarea value={applyForm.experience} onChange={(e) => setApplyForm({ ...applyForm, experience: e.target.value })} placeholder="Tell us about your experience hosting events or tournaments..." rows={4} />
             </div>
 
-            {/* Submit Button */}
-            <Button 
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" 
-              onClick={handleSave} 
-              disabled={saving}
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : null}
-              Update Profile
+            <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Benefits of being an Organizer:</p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>Create and manage your own tournaments</li>
+                <li>Earn 10% commission on entry fees</li>
+                <li>Build your community of players</li>
+              </ul>
+            </div>
+
+            <Button variant="gaming" className="w-full" onClick={handleApplyOrganizer} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Application'}
             </Button>
           </div>
         </DialogContent>
