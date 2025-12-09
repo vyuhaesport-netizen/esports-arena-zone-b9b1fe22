@@ -8,6 +8,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isOrganizer: boolean;
   permissions: string[];
   hasPermission: (permission: string) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -32,24 +33,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isOrganizer, setIsOrganizer] = useState(false);
   const [permissions, setPermissions] = useState<string[]>([]);
 
-  const checkAdminRole = async (userId: string) => {
+  const checkRoles = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'admin')
-        .maybeSingle();
+        .eq('user_id', userId);
       
       if (!error && data) {
-        setIsAdmin(true);
+        setIsAdmin(data.some(r => r.role === 'admin'));
+        setIsOrganizer(data.some(r => r.role === 'organizer'));
       } else {
         setIsAdmin(false);
+        setIsOrganizer(false);
       }
     } catch {
       setIsAdmin(false);
+      setIsOrganizer(false);
     }
   };
 
@@ -124,12 +127,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           setTimeout(() => {
-            checkAdminRole(session.user.id);
+            checkRoles(session.user.id);
             checkSuperAdmin(session.user.id);
           }, 0);
         } else {
           setIsAdmin(false);
           setIsSuperAdmin(false);
+          setIsOrganizer(false);
           setPermissions([]);
         }
         
@@ -142,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        checkAdminRole(session.user.id);
+        checkRoles(session.user.id);
         checkSuperAdmin(session.user.id);
       }
       
@@ -177,12 +181,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
     setIsAdmin(false);
     setIsSuperAdmin(false);
+    setIsOrganizer(false);
     setPermissions([]);
   };
 
   return (
     <AuthContext.Provider value={{ 
-      user, session, loading, isAdmin, isSuperAdmin, permissions, 
+      user, session, loading, isAdmin, isSuperAdmin, isOrganizer, permissions, 
       hasPermission, signIn, signUp, signOut, refreshPermissions 
     }}>
       {children}
