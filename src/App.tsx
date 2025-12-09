@@ -11,6 +11,7 @@ import Creator from "./pages/Creator";
 import MyMatch from "./pages/MyMatch";
 import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
+import Team from "./pages/Team";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTeam from "./pages/admin/AdminTeam";
@@ -73,6 +74,7 @@ const AppRoutes = () => {
       <Route path="/my-match" element={<ProtectedRoute><MyMatch /></ProtectedRoute>} />
       <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

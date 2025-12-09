@@ -20,7 +20,6 @@ import {
   Settings,
   HelpCircle,
   FileText,
-  Bell,
   Loader2,
   Camera,
   RefreshCw,
@@ -35,7 +34,8 @@ import {
   UserCheck,
   Instagram,
   Youtube,
-  CreditCard
+  CreditCard,
+  Users
 } from 'lucide-react';
 import {
   Dialog,
@@ -308,7 +308,7 @@ const ProfilePage = () => {
   const menuItems = [
     { icon: Trophy, label: 'My Matches', onClick: () => navigate('/my-match') },
     { icon: Wallet, label: 'Wallet', onClick: () => navigate('/wallet') },
-    { icon: Bell, label: 'Notifications', onClick: () => {} },
+    { icon: Users, label: 'Team', onClick: () => navigate('/team') },
     { icon: Settings, label: 'Settings', onClick: () => {} },
     { icon: HelpCircle, label: 'Help & Support', onClick: () => {} },
     { icon: FileText, label: 'Terms & Conditions', onClick: () => navigate('/terms') },
