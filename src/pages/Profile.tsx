@@ -84,7 +84,7 @@ const ProfilePage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
-  const { user, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { user, isAdmin, isSuperAdmin, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -321,10 +321,16 @@ const ProfilePage = () => {
             <h1 className="font-bold text-base text-foreground">
               {profile?.full_name || profile?.username || 'Gamer'}
             </h1>
-            {isAdmin && (
+            {isSuperAdmin && (
+              <Badge className="bg-gradient-to-r from-primary to-orange-500 text-primary-foreground text-[10px]">
+                <Shield className="h-2.5 w-2.5 mr-0.5" />
+                Owner
+              </Badge>
+            )}
+            {isAdmin && !isSuperAdmin && (
               <Badge className="bg-primary/10 text-primary text-[10px]">
                 <Shield className="h-2.5 w-2.5 mr-0.5" />
-                Admin
+                Team
               </Badge>
             )}
           </div>
@@ -348,22 +354,43 @@ const ProfilePage = () => {
       {/* Divider */}
       <div className="h-2 bg-muted/50" />
 
-      {/* Admin Panel Access */}
+      {/* Account Section - Admin Panel Access */}
       {isAdmin && (
         <div className="p-4 pt-4">
-          <button
-            onClick={() => navigate('/admin')}
-            className="w-full bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-center gap-3"
-          >
-            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-semibold text-sm">Admin Panel</p>
-              <p className="text-xs text-muted-foreground">Manage tournaments & users</p>
-            </div>
-            <ChevronRight className="h-5 w-5 text-primary" />
-          </button>
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Account
+          </h3>
+          <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-full bg-gradient-to-r from-primary/5 to-orange-500/5 hover:from-primary/10 hover:to-orange-500/10 p-4 flex items-center gap-3 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center">
+                <Shield className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 text-left">
+                <div className="flex items-center gap-2">
+                  <p className="font-semibold text-sm">Admin Panel</p>
+                  {isSuperAdmin && (
+                    <Badge className="bg-gradient-to-r from-primary to-orange-500 text-white text-[9px] px-1.5 py-0">
+                      Super Admin
+                    </Badge>
+                  )}
+                  {!isSuperAdmin && (
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                      Team Member
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {isSuperAdmin 
+                    ? 'Full access to all admin features' 
+                    : 'Access your assigned admin sections'}
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-primary" />
+            </button>
+          </div>
         </div>
       )}
 
