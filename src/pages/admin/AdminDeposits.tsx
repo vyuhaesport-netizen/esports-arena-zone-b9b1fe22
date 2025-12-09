@@ -21,7 +21,10 @@ import {
   ArrowDownLeft,
   Check,
   X,
-  User
+  User,
+  Image,
+  Hash,
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -32,6 +35,8 @@ interface Deposit {
   status: string;
   description: string | null;
   created_at: string;
+  utr_number: string | null;
+  screenshot_url: string | null;
   user_email?: string;
   user_name?: string;
 }
@@ -42,6 +47,7 @@ const AdminDeposits = () => {
   const [activeTab, setActiveTab] = useState('pending');
   const [processing, setProcessing] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; deposit: Deposit | null; action: 'approve' | 'reject' | null }>({ open: false, deposit: null, action: null });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const { user, loading: authLoading, hasPermission } = useAuth();
   const { toast } = useToast();
@@ -219,7 +225,7 @@ const AdminDeposits = () => {
           {getFilteredDeposits().map((deposit) => (
             <Card key={deposit.id}>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                       <ArrowDownLeft className="h-5 w-5 text-green-500" />
@@ -230,19 +236,34 @@ const AdminDeposits = () => {
                         <User className="h-3 w-3" />
                         {deposit.user_name || deposit.user_email || 'Unknown User'}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(deposit.created_at), 'MMM dd, yyyy hh:mm a')}
-                      </p>
                     </div>
                   </div>
                   {getStatusBadge(deposit.status)}
                 </div>
 
-                {deposit.description && (
-                  <p className="text-xs text-muted-foreground mt-2 bg-muted/50 rounded p-2">
-                    {deposit.description}
-                  </p>
+                {/* UTR Number */}
+                {deposit.utr_number && (
+                  <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg p-2 mb-2">
+                    <Hash className="h-4 w-4 text-primary" />
+                    <span className="font-mono">{deposit.utr_number}</span>
+                  </div>
                 )}
+
+                {/* Screenshot */}
+                {deposit.screenshot_url && (
+                  <button
+                    onClick={() => setImagePreview(deposit.screenshot_url)}
+                    className="flex items-center gap-2 text-sm text-primary hover:underline mb-2"
+                  >
+                    <Image className="h-4 w-4" />
+                    View Screenshot
+                    <ExternalLink className="h-3 w-3" />
+                  </button>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(deposit.created_at), 'MMM dd, yyyy hh:mm a')}
+                </p>
 
                 {deposit.status === 'pending' && hasPermission('deposits:manage') && (
                   <div className="flex gap-2 mt-3 pt-3 border-t">
@@ -292,6 +313,14 @@ const AdminDeposits = () => {
                 : 'This will reject the deposit request. The user will not receive any funds.'}
             </DialogDescription>
           </DialogHeader>
+          {confirmDialog.deposit?.utr_number && (
+            <div className="bg-muted/50 rounded-lg p-3">
+              <p className="text-sm">
+                <span className="text-muted-foreground">UTR:</span>{' '}
+                <span className="font-mono font-medium">{confirmDialog.deposit.utr_number}</span>
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmDialog({ open: false, deposit: null, action: null })}>
               Cancel
@@ -310,6 +339,18 @@ const AdminDeposits = () => {
               {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : (confirmDialog.action === 'approve' ? 'Approve' : 'Reject')}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!imagePreview} onOpenChange={() => setImagePreview(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Payment Screenshot</DialogTitle>
+          </DialogHeader>
+          {imagePreview && (
+            <img src={imagePreview} alt="Payment Screenshot" className="w-full rounded-lg" />
+          )}
         </DialogContent>
       </Dialog>
     </AdminLayout>

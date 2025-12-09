@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +10,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, 
-  Settings,
   Percent,
-  Save
+  Save,
+  CreditCard,
+  QrCode,
+  Upload,
+  Check
 } from 'lucide-react';
 
 interface CommissionSettings {
@@ -21,14 +24,27 @@ interface CommissionSettings {
   prize_pool_percent: string;
 }
 
+interface PaymentSettings {
+  admin_upi_id: string;
+  payment_qr_url: string;
+}
+
 const AdminSettings = () => {
   const [settings, setSettings] = useState<CommissionSettings>({
     organizer_commission_percent: '10',
     platform_commission_percent: '10',
     prize_pool_percent: '80',
   });
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
+    admin_upi_id: '',
+    payment_qr_url: '',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [uploadingQr, setUploadingQr] = useState(false);
+
+  const qrInputRef = useRef<HTMLInputElement>(null);
 
   const { user, isSuperAdmin, loading: authLoading, hasPermission } = useAuth();
   const { toast } = useToast();
@@ -58,19 +74,28 @@ const AdminSettings = () => {
 
       if (error) throw error;
 
-      const settingsMap: CommissionSettings = {
+      const commissionMap: CommissionSettings = {
         organizer_commission_percent: '10',
         platform_commission_percent: '10',
         prize_pool_percent: '80',
       };
 
+      const paymentMap: PaymentSettings = {
+        admin_upi_id: '',
+        payment_qr_url: '',
+      };
+
       data?.forEach((s) => {
-        if (s.setting_key in settingsMap) {
-          settingsMap[s.setting_key as keyof CommissionSettings] = s.setting_value;
+        if (s.setting_key in commissionMap) {
+          commissionMap[s.setting_key as keyof CommissionSettings] = s.setting_value;
+        }
+        if (s.setting_key in paymentMap) {
+          paymentMap[s.setting_key as keyof PaymentSettings] = s.setting_value;
         }
       });
 
-      setSettings(settingsMap);
+      setSettings(commissionMap);
+      setPaymentSettings(paymentMap);
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -86,7 +111,7 @@ const AdminSettings = () => {
     return org + platform + prize === 100;
   };
 
-  const handleSave = async () => {
+  const handleSaveCommission = async () => {
     if (!isSuperAdmin) {
       toast({ title: 'Access Denied', description: 'Only Super Admin can change settings.', variant: 'destructive' });
       return;
@@ -103,11 +128,11 @@ const AdminSettings = () => {
       for (const [key, value] of Object.entries(settings)) {
         const { error } = await supabase
           .from('platform_settings')
-          .update({ 
+          .upsert({ 
+            setting_key: key,
             setting_value: value,
             updated_by: user?.id,
-          })
-          .eq('setting_key', key);
+          }, { onConflict: 'setting_key' });
 
         if (error) throw error;
       }
@@ -118,6 +143,71 @@ const AdminSettings = () => {
       toast({ title: 'Error', description: 'Failed to save settings.', variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSavePayment = async () => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Access Denied', description: 'Only Super Admin can change settings.', variant: 'destructive' });
+      return;
+    }
+
+    setSavingPayment(true);
+
+    try {
+      for (const [key, value] of Object.entries(paymentSettings)) {
+        const { error } = await supabase
+          .from('platform_settings')
+          .upsert({ 
+            setting_key: key,
+            setting_value: value,
+            updated_by: user?.id,
+          }, { onConflict: 'setting_key' });
+
+        if (error) throw error;
+      }
+
+      toast({ title: 'Payment Settings Saved', description: 'Payment configuration has been updated.' });
+    } catch (error) {
+      console.error('Error saving payment settings:', error);
+      toast({ title: 'Error', description: 'Failed to save payment settings.', variant: 'destructive' });
+    } finally {
+      setSavingPayment(false);
+    }
+  };
+
+  const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 2MB', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingQr(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const filePath = `payment-qr/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setPaymentSettings(prev => ({ ...prev, payment_qr_url: urlData.publicUrl }));
+      toast({ title: 'QR Uploaded', description: 'QR code image uploaded successfully.' });
+    } catch (error) {
+      console.error('Error uploading QR:', error);
+      toast({ title: 'Upload Failed', description: 'Failed to upload QR code.', variant: 'destructive' });
+    } finally {
+      setUploadingQr(false);
     }
   };
 
@@ -149,6 +239,91 @@ const AdminSettings = () => {
   return (
     <AdminLayout title="Platform Settings">
       <div className="p-4 space-y-4">
+        {/* Payment Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <CreditCard className="h-5 w-5 text-primary" />
+              Payment Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure the UPI ID and QR code for receiving deposits.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Admin UPI ID</Label>
+                <Input
+                  placeholder="yourname@upi"
+                  value={paymentSettings.admin_upi_id}
+                  onChange={(e) => setPaymentSettings(prev => ({ ...prev, admin_upi_id: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+                <p className="text-xs text-muted-foreground">Users will pay to this UPI ID</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Payment QR Code</Label>
+                <div 
+                  onClick={() => isSuperAdmin && qrInputRef.current?.click()}
+                  className={`border-2 border-dashed border-border rounded-lg p-4 text-center ${isSuperAdmin ? 'cursor-pointer hover:bg-muted/50' : ''} transition-colors`}
+                >
+                  {paymentSettings.payment_qr_url ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={paymentSettings.payment_qr_url} 
+                        alt="Payment QR" 
+                        className="w-32 h-32 mx-auto object-contain rounded-lg"
+                      />
+                      <div className="flex items-center justify-center gap-1 text-sm text-green-600">
+                        <Check className="h-4 w-4" />
+                        QR Code Uploaded
+                      </div>
+                      {isSuperAdmin && (
+                        <p className="text-xs text-muted-foreground">Click to replace</p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {uploadingQr ? (
+                        <Loader2 className="h-8 w-8 mx-auto animate-spin text-muted-foreground" />
+                      ) : (
+                        <>
+                          <QrCode className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground">
+                            {isSuperAdmin ? 'Click to upload QR code image' : 'No QR code uploaded'}
+                          </p>
+                        </>
+                      )}
+                    </>
+                  )}
+                </div>
+                <input
+                  ref={qrInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleQrUpload}
+                  className="hidden"
+                />
+              </div>
+            </div>
+
+            {isSuperAdmin && (
+              <Button 
+                variant="gaming" 
+                className="w-full" 
+                onClick={handleSavePayment}
+                disabled={savingPayment}
+              >
+                {savingPayment ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Payment Settings
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Commission Settings */}
         <Card>
           <CardHeader>
@@ -250,11 +425,11 @@ const AdminSettings = () => {
               <Button 
                 variant="gaming" 
                 className="w-full" 
-                onClick={handleSave}
+                onClick={handleSaveCommission}
                 disabled={saving || getTotalPercentage() !== 100}
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                Save Settings
+                Save Commission Settings
               </Button>
             )}
 

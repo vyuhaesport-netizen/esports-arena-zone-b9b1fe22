@@ -23,7 +23,10 @@ import {
   ArrowUpRight,
   Check,
   X,
-  User
+  User,
+  Phone,
+  CreditCard,
+  Copy
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -35,6 +38,10 @@ interface Withdrawal {
   description: string | null;
   reason: string | null;
   created_at: string;
+  upi_id: string | null;
+  phone: string | null;
+  user_email?: string;
+  user_name?: string;
 }
 
 const AdminWithdrawals = () => {
@@ -75,7 +82,24 @@ const AdminWithdrawals = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setWithdrawals(data || []);
+
+      // Fetch user profiles
+      const userIds = [...new Set(data?.map(d => d.user_id) || [])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, email, full_name')
+        .in('user_id', userIds);
+
+      const withdrawalsWithUsers = (data || []).map(withdrawal => {
+        const profile = profiles?.find(p => p.user_id === withdrawal.user_id);
+        return {
+          ...withdrawal,
+          user_email: profile?.email,
+          user_name: profile?.full_name,
+        };
+      });
+
+      setWithdrawals(withdrawalsWithUsers);
     } catch (error) {
       console.error('Error fetching withdrawals:', error);
     } finally {
@@ -95,6 +119,11 @@ const AdminWithdrawals = () => {
       case 'rejected': return <Badge variant="destructive" className="text-[10px]">Rejected</Badge>;
       default: return <Badge variant="secondary" className="text-[10px]">{status}</Badge>;
     }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied!', description: `${label} copied to clipboard.` });
   };
 
   const handleApprove = async () => {
@@ -117,7 +146,7 @@ const AdminWithdrawals = () => {
 
       if (error) throw error;
 
-      toast({ title: 'Approved', description: 'Withdrawal request approved.' });
+      toast({ title: 'Approved', description: 'Withdrawal marked as completed. Please send the money manually.' });
       setActionDialog(null);
       setSelectedWithdrawal(null);
       fetchWithdrawals();
@@ -169,7 +198,7 @@ const AdminWithdrawals = () => {
 
       if (error) throw error;
 
-      toast({ title: 'Rejected', description: 'Withdrawal request rejected and refunded.' });
+      toast({ title: 'Rejected', description: 'Withdrawal rejected and amount refunded to user.' });
       setActionDialog(null);
       setSelectedWithdrawal(null);
       setRejectReason('');
@@ -198,10 +227,10 @@ const AdminWithdrawals = () => {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
             <TabsTrigger value="pending" className="text-xs">Pending</TabsTrigger>
             <TabsTrigger value="completed" className="text-xs">Approved</TabsTrigger>
             <TabsTrigger value="rejected" className="text-xs">Rejected</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -210,23 +239,51 @@ const AdminWithdrawals = () => {
           {getFilteredWithdrawals().map((withdrawal) => (
             <Card key={withdrawal.id}>
               <CardContent className="p-4">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
                       <ArrowUpRight className="h-5 w-5 text-red-500" />
                     </div>
                     <div>
                       <p className="font-semibold text-red-600">₹{Math.abs(withdrawal.amount)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(withdrawal.created_at), 'MMM dd, yyyy hh:mm a')}
-                      </p>
-                      {withdrawal.description && (
-                        <p className="text-xs text-muted-foreground mt-1">{withdrawal.description}</p>
-                      )}
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        {withdrawal.user_name || withdrawal.user_email || 'Unknown User'}
+                      </div>
                     </div>
                   </div>
                   {getStatusBadge(withdrawal.status)}
                 </div>
+
+                {/* UPI ID */}
+                {withdrawal.upi_id && (
+                  <div className="flex items-center justify-between bg-muted/50 rounded-lg p-2 mb-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      <span className="font-mono">{withdrawal.upi_id}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2"
+                      onClick={() => copyToClipboard(withdrawal.upi_id!, 'UPI ID')}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Phone */}
+                {withdrawal.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <Phone className="h-4 w-4" />
+                    <span>{withdrawal.phone}</span>
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(withdrawal.created_at), 'MMM dd, yyyy hh:mm a')}
+                </p>
 
                 {withdrawal.status === 'pending' && hasPermission('withdrawals:manage') && (
                   <div className="flex gap-2 mt-3 pt-3 border-t">
@@ -281,13 +338,35 @@ const AdminWithdrawals = () => {
           <DialogHeader>
             <DialogTitle>Approve Withdrawal</DialogTitle>
             <DialogDescription>
-              Are you sure you want to approve this withdrawal request for ₹{selectedWithdrawal && Math.abs(selectedWithdrawal.amount)}?
+              Confirm that you have manually sent ₹{selectedWithdrawal && Math.abs(selectedWithdrawal.amount)} to the user.
             </DialogDescription>
           </DialogHeader>
+          {selectedWithdrawal?.upi_id && (
+            <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">UPI ID:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-medium">{selectedWithdrawal.upi_id}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => copyToClipboard(selectedWithdrawal.upi_id!, 'UPI ID')}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Amount:</span>
+                <span className="font-medium">₹{Math.abs(selectedWithdrawal.amount)}</span>
+              </div>
+            </div>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionDialog(null)}>Cancel</Button>
             <Button onClick={handleApprove} disabled={processing}>
-              {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Approve'}
+              {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Payment Sent'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -302,7 +381,7 @@ const AdminWithdrawals = () => {
           <DialogHeader>
             <DialogTitle>Reject Withdrawal</DialogTitle>
             <DialogDescription>
-              Please provide a reason for rejecting this withdrawal request. The amount will be refunded to the user's wallet.
+              Please provide a reason. The amount ₹{selectedWithdrawal && Math.abs(selectedWithdrawal.amount)} will be refunded to the user's wallet.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -318,7 +397,7 @@ const AdminWithdrawals = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setActionDialog(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={processing}>
+            <Button variant="destructive" onClick={handleReject} disabled={processing || !rejectReason}>
               {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Reject & Refund'}
             </Button>
           </DialogFooter>
