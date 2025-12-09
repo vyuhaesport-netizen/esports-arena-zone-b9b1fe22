@@ -266,12 +266,13 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      {/* Hero Banner */}
-      <div className="relative bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50 px-4 pt-6 pb-16">
-        <div className="flex items-center gap-4">
-          {/* Avatar with Camera Badge */}
-          <div className="relative">
-            <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
+      {/* Instagram-style Profile Header */}
+      <div className="bg-card px-4 pt-6 pb-4">
+        {/* Top Row - Avatar & Stats */}
+        <div className="flex items-center gap-6">
+          {/* Avatar */}
+          <div className="relative shrink-0">
+            <Avatar className="h-20 w-20 border-2 border-primary/20">
               <AvatarImage src={profile?.avatar_url || ''} />
               <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
                 {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
@@ -280,7 +281,7 @@ const ProfilePage = () => {
             <button 
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingAvatar}
-              className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center border-2 border-card shadow-md"
+              className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center border-2 border-card"
             >
               {uploadingAvatar ? (
                 <Loader2 className="h-3.5 w-3.5 text-primary-foreground animate-spin" />
@@ -297,54 +298,55 @@ const ProfilePage = () => {
             />
           </div>
 
-          {/* User Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-lg text-foreground truncate">
-                {profile?.full_name || profile?.username || 'Gamer'}
-              </h1>
-              {isAdmin && (
-                <Badge className="bg-primary/10 text-primary text-[10px] shrink-0">
-                  <Shield className="h-2.5 w-2.5 mr-0.5" />
-                  Admin
-                </Badge>
-              )}
-            </div>
-            {profile?.username && (
-              <p className="text-sm text-muted-foreground">@{profile.username}</p>
-            )}
-            <p className="text-sm text-muted-foreground truncate">{profile?.email}</p>
-          </div>
-
-          {/* Edit Button */}
-          <button 
-            onClick={() => setEditDialogOpen(true)}
-            className="p-2.5 bg-card rounded-full border border-border shadow-sm hover:shadow-md transition-shadow"
-          >
-            <Edit2 className="h-4 w-4 text-primary" />
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Row - Overlapping Banner */}
-      <div className="px-4 -mt-10 relative z-10">
-        <div className="bg-card rounded-xl shadow-lg border border-border">
-          <div className="grid grid-cols-3 divide-x divide-border">
-            <div className="p-4 text-center">
-              <p className="font-bold text-xl text-primary">0</p>
+          {/* Stats Row */}
+          <div className="flex-1 grid grid-cols-3 gap-2">
+            <div className="text-center">
+              <p className="font-bold text-lg text-foreground">0</p>
               <p className="text-xs text-muted-foreground">Matches</p>
             </div>
-            <div className="p-4 text-center">
-              <p className="font-bold text-xl text-primary">0</p>
+            <div className="text-center">
+              <p className="font-bold text-lg text-foreground">0</p>
               <p className="text-xs text-muted-foreground">Wins</p>
             </div>
-            <div className="p-4 text-center">
-              <p className="font-bold text-xl text-primary">₹0</p>
+            <div className="text-center">
+              <p className="font-bold text-lg text-foreground">₹0</p>
               <p className="text-xs text-muted-foreground">Earnings</p>
             </div>
           </div>
         </div>
+
+        {/* User Info */}
+        <div className="mt-4">
+          <div className="flex items-center gap-2">
+            <h1 className="font-bold text-base text-foreground">
+              {profile?.full_name || profile?.username || 'Gamer'}
+            </h1>
+            {isAdmin && (
+              <Badge className="bg-primary/10 text-primary text-[10px]">
+                <Shield className="h-2.5 w-2.5 mr-0.5" />
+                Admin
+              </Badge>
+            )}
+          </div>
+          {profile?.username && (
+            <p className="text-sm text-muted-foreground">@{profile.username}</p>
+          )}
+          {profile?.bio && (
+            <p className="text-sm text-foreground mt-1">{profile.bio}</p>
+          )}
+        </div>
+
+        {/* Edit Profile Button */}
+        <button 
+          onClick={() => setEditDialogOpen(true)}
+          className="w-full mt-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground text-sm font-semibold rounded-lg border border-border transition-colors"
+        >
+          Edit Profile
+        </button>
       </div>
+
+      {/* Divider */}
+      <div className="h-2 bg-muted/50" />
 
       {/* Admin Panel Access */}
       {isAdmin && (
