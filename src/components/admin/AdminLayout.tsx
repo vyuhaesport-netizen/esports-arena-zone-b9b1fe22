@@ -34,6 +34,8 @@ interface MenuItem {
   superAdminOnly?: boolean;
 }
 
+import { MessageCircle } from 'lucide-react';
+
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin', permission: 'dashboard:view' },
   { icon: Users, label: 'Users', path: '/admin/users', permission: 'users:view' },
@@ -44,6 +46,7 @@ const menuItems: MenuItem[] = [
   { icon: ArrowUpRight, label: 'Withdrawals', path: '/admin/withdrawals', permission: 'withdrawals:view' },
   { icon: HeadphonesIcon, label: 'Support', path: '/admin/support', permission: 'support:view' },
   { icon: Bell, label: 'Notifications', path: '/admin/notifications', permission: 'notifications:view' },
+  { icon: MessageCircle, label: 'Messages', path: '/admin/messages', permission: 'notifications:view' },
   { icon: Settings, label: 'Settings', path: '/admin/settings', permission: 'settings:view' },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
 ];

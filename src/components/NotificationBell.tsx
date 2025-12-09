@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { Bell, Check, Trophy, UserPlus } from 'lucide-react';
+import { Bell, Check, Trophy, UserPlus, Shield, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Sheet,
@@ -24,8 +24,21 @@ const NotificationBell = () => {
     }
     
     // Navigate based on notification type
-    if (notification.type === 'new_tournament' && notification.related_id) {
-      navigate(`/home`);
+    switch (notification.type) {
+      case 'new_tournament':
+        navigate('/home');
+        break;
+      case 'friend_request':
+        navigate('/message');
+        break;
+      case 'team_invite':
+        navigate('/admin');
+        break;
+      case 'admin_broadcast':
+        // Just mark as read
+        break;
+      default:
+        break;
     }
     setOpen(false);
   };
@@ -36,6 +49,12 @@ const NotificationBell = () => {
         return <Trophy className="h-4 w-4 text-primary" />;
       case 'follow':
         return <UserPlus className="h-4 w-4 text-purple-500" />;
+      case 'friend_request':
+        return <Users className="h-4 w-4 text-green-500" />;
+      case 'team_invite':
+        return <Shield className="h-4 w-4 text-orange-500" />;
+      case 'admin_broadcast':
+        return <Shield className="h-4 w-4 text-primary" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
@@ -72,7 +91,7 @@ const NotificationBell = () => {
               <Bell className="h-12 w-12 text-muted-foreground/30 mb-3" />
               <p className="text-muted-foreground text-sm">No notifications yet</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Follow organizers to get tournament updates
+                You'll receive updates about tournaments, friend requests, and more
               </p>
             </div>
           ) : (

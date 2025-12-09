@@ -12,6 +12,7 @@ import MyMatch from "./pages/MyMatch";
 import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import Team from "./pages/Team";
+import Message from "./pages/Message";
 import HelpSupport from "./pages/HelpSupport";
 import Payment from "./pages/Payment";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -22,6 +23,9 @@ import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminWithdrawals from "./pages/admin/AdminWithdrawals";
 import AdminDeposits from "./pages/admin/AdminDeposits";
 import AdminOrganizers from "./pages/admin/AdminOrganizers";
+import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminMessages from "./pages/admin/AdminMessages";
+import AdminSettings from "./pages/admin/AdminSettings";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
@@ -77,6 +81,7 @@ const AppRoutes = () => {
       <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+      <Route path="/message" element={<ProtectedRoute><Message /></ProtectedRoute>} />
       <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
       <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
       
@@ -89,6 +94,9 @@ const AppRoutes = () => {
       <Route path="/admin/withdrawals" element={<ProtectedRoute><AdminWithdrawals /></ProtectedRoute>} />
       <Route path="/admin/deposits" element={<ProtectedRoute><AdminDeposits /></ProtectedRoute>} />
       <Route path="/admin/organizers" element={<ProtectedRoute><AdminOrganizers /></ProtectedRoute>} />
+      <Route path="/admin/notifications" element={<ProtectedRoute><AdminNotifications /></ProtectedRoute>} />
+      <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
+      <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />

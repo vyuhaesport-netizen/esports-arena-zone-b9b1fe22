@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_broadcasts: {
+        Row: {
+          admin_id: string
+          broadcast_type: string
+          created_at: string
+          id: string
+          message: string
+          target_audience: string
+          title: string
+        }
+        Insert: {
+          admin_id: string
+          broadcast_type?: string
+          created_at?: string
+          id?: string
+          message: string
+          target_audience?: string
+          title: string
+        }
+        Update: {
+          admin_id?: string
+          broadcast_type?: string
+          created_at?: string
+          id?: string
+          message?: string
+          target_audience?: string
+          title?: string
+        }
+        Relationships: []
+      }
       admin_permissions: {
         Row: {
           created_at: string
@@ -56,6 +86,63 @@ export type Database = {
           follower_user_id?: string
           following_user_id?: string
           id?: string
+        }
+        Relationships: []
+      }
+      friends: {
+        Row: {
+          created_at: string
+          id: string
+          recipient_id: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipient_id: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_admin_message: boolean | null
+          is_read: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_admin_message?: boolean | null
+          is_read?: boolean | null
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_admin_message?: boolean | null
+          is_read?: boolean | null
+          recipient_id?: string
+          sender_id?: string
         }
         Relationships: []
       }

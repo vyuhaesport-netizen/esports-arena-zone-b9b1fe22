@@ -309,7 +309,7 @@ const ProfilePage = () => {
   const menuItems = [
     { icon: Trophy, label: 'My Matches', onClick: () => navigate('/my-match') },
     { icon: Wallet, label: 'Wallet', onClick: () => navigate('/wallet') },
-    { icon: Users, label: 'Team', onClick: () => navigate('/team') },
+    { icon: Users, label: 'Message', onClick: () => navigate('/message') },
     { icon: Settings, label: 'Settings', onClick: () => {} },
     { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
   ];
@@ -527,7 +527,7 @@ const ProfilePage = () => {
           <img 
             src={vyuhaLogo} 
             alt="Vyuha Esport" 
-            className="h-12 w-auto mb-4 opacity-80"
+            className="h-12 w-12 rounded-full mb-4 opacity-80"
           />
           
           {/* Legal Links */}
