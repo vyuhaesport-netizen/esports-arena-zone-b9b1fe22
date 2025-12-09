@@ -492,22 +492,22 @@ const HomePage = () => {
                   )}
 
                   {/* Footer Row */}
-                  <div className="p-4 pt-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                  <div className="p-4 pt-3">
+                    <div className="flex items-center justify-between mb-3">
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}
                       </span>
-                      {tournament.prize_distribution && (
-                        <button 
-                          onClick={() => setPrizeDrawer({ open: true, tournament })}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          View Prize Chart
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => setPrizeDrawer({ open: true, tournament })}
+                        className="text-xs text-primary font-medium hover:underline flex items-center gap-1"
+                      >
+                        <Trophy className="h-3 w-3" />
+                        View Prize Chart
+                      </button>
                     </div>
+                    <div className="flex items-center gap-2">
                     {joined ? (
-                      <Badge className="bg-green-500/10 text-green-600">Joined ✓</Badge>
+                      <Badge className="bg-green-500/10 text-green-600 flex-shrink-0">Joined ✓</Badge>
                     ) : (
                       <Button
                         size="sm"
@@ -518,6 +518,7 @@ const HomePage = () => {
                         {spotsLeft <= 0 ? 'Full' : 'Join Now'}
                       </Button>
                     )}
+                    </div>
                   </div>
                 </div>
               );
@@ -628,9 +629,29 @@ const HomePage = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Trophy className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p>Prize distribution not set</p>
+              <div className="space-y-3">
+                <div className="bg-primary/10 rounded-lg p-4 text-center mb-4">
+                  <p className="text-sm text-muted-foreground">Total Prize Pool</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {prizeDrawer.tournament?.prize_pool || `₹${prizeDrawer.tournament?.current_prize_pool || 0}`}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center bg-yellow-500/10 rounded-lg p-3">
+                    <span className="font-medium flex items-center gap-2">🥇 1st Place</span>
+                    <span className="text-yellow-600 font-semibold">50%</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-gray-300/20 rounded-lg p-3">
+                    <span className="font-medium flex items-center gap-2">🥈 2nd Place</span>
+                    <span className="text-muted-foreground font-semibold">30%</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-orange-500/10 rounded-lg p-3">
+                    <span className="font-medium flex items-center gap-2">🥉 3rd Place</span>
+                    <span className="text-orange-600 font-semibold">20%</span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground text-center mt-3">
+                  *Default distribution. Organizer may set custom prizes.</p>
               </div>
             )}
           </div>
