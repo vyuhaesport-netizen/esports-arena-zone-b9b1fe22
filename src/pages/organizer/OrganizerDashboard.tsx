@@ -36,7 +36,9 @@ import {
   Wallet,
   TrendingUp,
   ArrowLeft,
-  Award
+  Award,
+  Key,
+  Lock
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -54,6 +56,10 @@ interface Tournament {
   organizer_earnings: number | null;
   current_prize_pool: number | null;
   winner_user_id: string | null;
+  room_id: string | null;
+  room_password: string | null;
+  tournament_mode: string | null;
+  prize_distribution: any;
 }
 
 const OrganizerDashboard = () => {
@@ -61,10 +67,12 @@ const OrganizerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [winnerDialogOpen, setWinnerDialogOpen] = useState(false);
+  const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [saving, setSaving] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [selectedWinner, setSelectedWinner] = useState('');
+  const [roomData, setRoomData] = useState({ room_id: '', room_password: '' });
   const [formData, setFormData] = useState({
     title: '',
     game: 'BGMI',
@@ -74,6 +82,8 @@ const OrganizerDashboard = () => {
     max_participants: '100',
     start_date: '',
     status: 'upcoming',
+    tournament_mode: 'solo',
+    prize_distribution: '',
   });
 
   const { user, isOrganizer, loading: authLoading } = useAuth();
@@ -110,7 +120,6 @@ const OrganizerDashboard = () => {
       if (error) throw error;
       setTournaments(data || []);
 
-      // Calculate total earnings
       const earnings = (data || []).reduce((sum, t) => sum + (t.organizer_earnings || 0), 0);
       setTotalEarnings(earnings);
     } catch (error) {
@@ -130,6 +139,8 @@ const OrganizerDashboard = () => {
       max_participants: '100',
       start_date: '',
       status: 'upcoming',
+      tournament_mode: 'solo',
+      prize_distribution: '',
     });
     setSelectedTournament(null);
   };
@@ -143,6 +154,18 @@ const OrganizerDashboard = () => {
     setSaving(true);
 
     try {
+      // Parse prize distribution JSON
+      let prizeDistribution = null;
+      if (formData.prize_distribution) {
+        try {
+          prizeDistribution = JSON.parse(formData.prize_distribution);
+        } catch {
+          toast({ title: 'Invalid Prize Distribution', description: 'Please enter valid JSON format.', variant: 'destructive' });
+          setSaving(false);
+          return;
+        }
+      }
+
       const tournamentData = {
         title: formData.title,
         game: formData.game,
@@ -154,6 +177,8 @@ const OrganizerDashboard = () => {
         status: formData.status,
         created_by: user?.id,
         tournament_type: 'creator',
+        tournament_mode: formData.tournament_mode,
+        prize_distribution: prizeDistribution,
       };
 
       if (selectedTournament) {
@@ -170,6 +195,24 @@ const OrganizerDashboard = () => {
           .insert(tournamentData);
 
         if (error) throw error;
+
+        // Notify followers
+        const { data: followers } = await supabase
+          .from('follows')
+          .select('follower_user_id')
+          .eq('following_user_id', user?.id);
+
+        if (followers && followers.length > 0) {
+          const notifications = followers.map(f => ({
+            user_id: f.follower_user_id,
+            type: 'new_tournament',
+            title: 'New Tournament!',
+            message: `New tournament "${formData.title}" has been created.`,
+          }));
+
+          await supabase.from('notifications').insert(notifications);
+        }
+
         toast({ title: 'Created!', description: 'Tournament created successfully.' });
       }
 
@@ -198,6 +241,41 @@ const OrganizerDashboard = () => {
     }
   };
 
+  const openEditRoom = (tournament: Tournament) => {
+    setSelectedTournament(tournament);
+    setRoomData({
+      room_id: tournament.room_id || '',
+      room_password: tournament.room_password || '',
+    });
+    setRoomDialogOpen(true);
+  };
+
+  const handleSaveRoom = async () => {
+    if (!selectedTournament) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('tournaments')
+        .update({
+          room_id: roomData.room_id || null,
+          room_password: roomData.room_password || null,
+        })
+        .eq('id', selectedTournament.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Saved!', description: 'Room details updated.' });
+      setRoomDialogOpen(false);
+      fetchMyTournaments();
+    } catch (error) {
+      console.error('Error saving room:', error);
+      toast({ title: 'Error', description: 'Failed to save room details.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const openDeclareWinner = (tournament: Tournament) => {
     setSelectedTournament(tournament);
     setSelectedWinner(tournament.winner_user_id || '');
@@ -213,7 +291,6 @@ const OrganizerDashboard = () => {
     setSaving(true);
 
     try {
-      // Update tournament with winner
       const { error: tournamentError } = await supabase
         .from('tournaments')
         .update({
@@ -225,23 +302,19 @@ const OrganizerDashboard = () => {
 
       if (tournamentError) throw tournamentError;
 
-      // Award prize to winner
       const prizeAmount = selectedTournament.current_prize_pool || 0;
       if (prizeAmount > 0) {
-        // Get winner's current balance
         const { data: winnerProfile } = await supabase
           .from('profiles')
           .select('wallet_balance')
           .eq('user_id', selectedWinner)
           .single();
 
-        // Update winner's wallet
         await supabase
           .from('profiles')
           .update({ wallet_balance: (winnerProfile?.wallet_balance || 0) + prizeAmount })
           .eq('user_id', selectedWinner);
 
-        // Create transaction record
         await supabase.from('wallet_transactions').insert({
           user_id: selectedWinner,
           type: 'prize',
@@ -368,7 +441,7 @@ const OrganizerDashboard = () => {
                       <div className="flex items-start justify-between">
                         <div>
                           <h3 className="font-semibold line-clamp-1">{tournament.title}</h3>
-                          <p className="text-xs text-muted-foreground">{tournament.game}</p>
+                          <p className="text-xs text-muted-foreground">{tournament.game} • {tournament.tournament_mode || 'Solo'}</p>
                         </div>
                         <Badge className={`text-[10px] ${getStatusColor(tournament.status)}`}>
                           {tournament.status}
@@ -390,6 +463,13 @@ const OrganizerDashboard = () => {
                         </span>
                       </div>
 
+                      {tournament.room_id && (
+                        <div className="flex items-center gap-2 mt-2 text-xs">
+                          <Key className="h-3 w-3 text-green-500" />
+                          <span className="text-green-600">Room: {tournament.room_id}</span>
+                        </div>
+                      )}
+
                       <p className="text-xs text-muted-foreground mt-1">
                         {format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}
                       </p>
@@ -397,11 +477,18 @@ const OrganizerDashboard = () => {
                   </div>
 
                   <div className="flex gap-2 mt-3 pt-3 border-t">
-                    {tournament.status === 'ongoing' && !tournament.winner_user_id && (
-                      <Button variant="gaming" size="sm" className="flex-1" onClick={() => openDeclareWinner(tournament)}>
-                        <Award className="h-3 w-3 mr-1" /> Declare Winner
+                    {(tournament.status === 'upcoming' || tournament.status === 'ongoing') && !tournament.winner_user_id && (
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditRoom(tournament)}>
+                        <Lock className="h-3 w-3 mr-1" /> Room ID
                       </Button>
                     )}
+                    
+                    {tournament.status === 'ongoing' && !tournament.winner_user_id && (
+                      <Button variant="gaming" size="sm" className="flex-1" onClick={() => openDeclareWinner(tournament)}>
+                        <Award className="h-3 w-3 mr-1" /> Winner
+                      </Button>
+                    )}
+                    
                     {tournament.status === 'upcoming' && (
                       <>
                         <Button variant="outline" size="sm" className="flex-1" onClick={() => {
@@ -415,6 +502,8 @@ const OrganizerDashboard = () => {
                             max_participants: tournament.max_participants?.toString() || '100',
                             start_date: new Date(tournament.start_date).toISOString().slice(0, 16),
                             status: tournament.status || 'upcoming',
+                            tournament_mode: tournament.tournament_mode || 'solo',
+                            prize_distribution: tournament.prize_distribution ? JSON.stringify(tournament.prize_distribution, null, 2) : '',
                           });
                           setDialogOpen(true);
                         }}>
@@ -425,6 +514,7 @@ const OrganizerDashboard = () => {
                         </Button>
                       </>
                     )}
+                    
                     {tournament.winner_user_id && (
                       <Badge className="bg-green-500/10 text-green-600">Winner Declared ✓</Badge>
                     )}
@@ -459,86 +549,151 @@ const OrganizerDashboard = () => {
                   <SelectContent>
                     <SelectItem value="BGMI">BGMI</SelectItem>
                     <SelectItem value="Free Fire">Free Fire</SelectItem>
-                    <SelectItem value="COD Mobile">COD Mobile</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Entry Fee (₹)</Label>
-                <Input type="number" value={formData.entry_fee} onChange={(e) => setFormData({ ...formData, entry_fee: e.target.value })} placeholder="0" />
+                <Label>Mode</Label>
+                <Select value={formData.tournament_mode} onValueChange={(value) => setFormData({ ...formData, tournament_mode: value })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="solo">Solo</SelectItem>
+                    <SelectItem value="duo">Duo</SelectItem>
+                    <SelectItem value="squad">Squad</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Match Time *</Label>
-                <Input type="datetime-local" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
+                <Label>Entry Fee (₹)</Label>
+                <Input type="number" value={formData.entry_fee} onChange={(e) => setFormData({ ...formData, entry_fee: e.target.value })} placeholder="0" />
               </div>
               <div className="space-y-2">
-                <Label>Max Players</Label>
+                <Label>Max Participants</Label>
                 <Input type="number" value={formData.max_participants} onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })} placeholder="100" />
               </div>
             </div>
 
             <div className="space-y-2">
+              <Label>Prize Pool Label</Label>
+              <Input value={formData.prize_pool} onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })} placeholder="e.g., ₹5000" />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Prize Distribution (JSON)</Label>
+              <Textarea 
+                value={formData.prize_distribution} 
+                onChange={(e) => setFormData({ ...formData, prize_distribution: e.target.value })} 
+                placeholder='{"1": 500, "2": 200, "3": 100}'
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">Format: {"{ \"rank\": amount }"}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Start Date & Time *</Label>
+              <Input type="datetime-local" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
+            </div>
+
+            <div className="space-y-2">
               <Label>Description</Label>
-              <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Tournament description..." rows={3} />
+              <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Tournament details..." rows={3} />
             </div>
+          </div>
 
-            <div className="bg-muted/50 rounded-lg p-3 text-sm">
-              <p className="font-medium mb-1">Commission Breakdown:</p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Your Commission: 10% of entry fees</li>
-                <li>• Platform Fee: 10% of entry fees</li>
-                <li>• Prize Pool: 80% of entry fees</li>
-              </ul>
-            </div>
-
-            <Button variant="gaming" className="w-full" onClick={handleSave} disabled={saving}>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancel</Button>
+            <Button variant="gaming" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : (selectedTournament ? 'Update' : 'Create')}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Room ID/Password Dialog */}
+      <Dialog open={roomDialogOpen} onOpenChange={(open) => setRoomDialogOpen(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Match Details</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Key className="h-4 w-4" /> Room ID
+              </Label>
+              <Input 
+                value={roomData.room_id} 
+                onChange={(e) => setRoomData({ ...roomData, room_id: e.target.value })} 
+                placeholder="Enter room ID" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Lock className="h-4 w-4" /> Password
+              </Label>
+              <Input 
+                value={roomData.room_password} 
+                onChange={(e) => setRoomData({ ...roomData, room_password: e.target.value })} 
+                placeholder="Enter room password" 
+              />
+            </div>
+
+            <p className="text-xs text-muted-foreground bg-muted/50 rounded p-3">
+              Room details will be visible to joined players 30 minutes before the match starts.
+            </p>
           </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoomDialogOpen(false)}>Cancel</Button>
+            <Button variant="gaming" onClick={handleSaveRoom} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Declare Winner Dialog */}
-      <Dialog open={winnerDialogOpen} onOpenChange={setWinnerDialogOpen}>
+      <Dialog open={winnerDialogOpen} onOpenChange={(open) => setWinnerDialogOpen(open)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Declare Winner</DialogTitle>
           </DialogHeader>
 
-          {selectedTournament && (
-            <div className="space-y-4 pt-4">
-              <p className="text-sm text-muted-foreground">
-                Select the winner for "{selectedTournament.title}"
-              </p>
-              <p className="text-sm">
-                Prize Pool: <span className="font-bold text-primary">₹{selectedTournament.current_prize_pool || 0}</span>
-              </p>
-
-              <div className="space-y-2">
-                <Label>Winner (User ID)</Label>
-                <Select value={selectedWinner} onValueChange={setSelectedWinner}>
-                  <SelectTrigger><SelectValue placeholder="Select winner" /></SelectTrigger>
-                  <SelectContent>
-                    {selectedTournament.joined_users?.map((userId) => (
-                      <SelectItem key={userId} value={userId}>
-                        {userId.slice(0, 8)}...
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setWinnerDialogOpen(false)}>Cancel</Button>
-                <Button variant="gaming" onClick={handleDeclareWinner} disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Winner'}
-                </Button>
-              </DialogFooter>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Select Winner</Label>
+              <Select value={selectedWinner} onValueChange={setSelectedWinner}>
+                <SelectTrigger><SelectValue placeholder="Select participant" /></SelectTrigger>
+                <SelectContent>
+                  {selectedTournament?.joined_users?.map((userId) => (
+                    <SelectItem key={userId} value={userId}>
+                      User: {userId.slice(0, 8)}...
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+
+            {selectedTournament && (
+              <div className="bg-primary/10 rounded-lg p-4 text-center">
+                <p className="text-sm text-muted-foreground">Prize Pool</p>
+                <p className="text-2xl font-gaming font-bold text-primary">
+                  ₹{selectedTournament.current_prize_pool || 0}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWinnerDialogOpen(false)}>Cancel</Button>
+            <Button variant="gaming" onClick={handleDeclareWinner} disabled={saving || !selectedWinner}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Winner'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

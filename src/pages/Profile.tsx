@@ -32,7 +32,10 @@ import {
   User,
   Hash,
   Crown,
-  UserCheck
+  UserCheck,
+  Instagram,
+  Youtube,
+  CreditCard
 } from 'lucide-react';
 import {
   Dialog,
@@ -78,7 +81,15 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [organizerApplication, setOrganizerApplication] = useState<OrganizerApplication | null>(null);
-  const [applyForm, setApplyForm] = useState({ name: '', experience: '' });
+  const [applyForm, setApplyForm] = useState({ 
+    name: '', 
+    age: '',
+    phone: '',
+    aadhaar_number: '',
+    instagram_link: '',
+    youtube_link: '',
+    experience: '' 
+  });
   const [formData, setFormData] = useState({
     full_name: '',
     username: '',
@@ -136,7 +147,7 @@ const ProfilePage = () => {
           in_game_name: data.in_game_name || '',
           game_uid: data.game_uid || '',
         });
-        setApplyForm({ name: data.full_name || '', experience: '' });
+        setApplyForm(prev => ({ ...prev, name: data.full_name || '', phone: data.phone || '' }));
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -211,6 +222,12 @@ const ProfilePage = () => {
   const handleSave = async () => {
     if (!user) return;
 
+    // Validate required gaming fields
+    if (!formData.preferred_game) {
+      toast({ title: 'Required Field', description: 'Please select your primary game.', variant: 'destructive' });
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -243,8 +260,14 @@ const ProfilePage = () => {
   };
 
   const handleApplyOrganizer = async () => {
-    if (!user || !applyForm.name) {
+    if (!user || !applyForm.name || !applyForm.phone || !applyForm.age || !applyForm.aadhaar_number) {
       toast({ title: 'Error', description: 'Please fill all required fields.', variant: 'destructive' });
+      return;
+    }
+
+    // Validate Aadhaar (12 digits)
+    if (!/^\d{12}$/.test(applyForm.aadhaar_number.replace(/\s/g, ''))) {
+      toast({ title: 'Invalid Aadhaar', description: 'Please enter a valid 12-digit Aadhaar number.', variant: 'destructive' });
       return;
     }
 
@@ -256,6 +279,11 @@ const ProfilePage = () => {
         .insert({
           user_id: user.id,
           name: applyForm.name,
+          age: parseInt(applyForm.age),
+          phone: applyForm.phone,
+          aadhaar_number: applyForm.aadhaar_number.replace(/\s/g, ''),
+          instagram_link: applyForm.instagram_link || null,
+          youtube_link: applyForm.youtube_link || null,
           experience: applyForm.experience || null,
         });
 
@@ -362,6 +390,12 @@ const ProfilePage = () => {
             )}
           </div>
           {profile?.username && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
+          {profile?.preferred_game && (
+            <p className="text-xs text-primary mt-1">
+              <Gamepad2 className="h-3 w-3 inline mr-1" />
+              {profile.preferred_game} {profile.in_game_name && `• ${profile.in_game_name}`}
+            </p>
+          )}
           {profile?.bio && <p className="text-sm text-foreground mt-1">{profile.bio}</p>}
         </div>
 
@@ -493,7 +527,7 @@ const ProfilePage = () => {
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">Edit Profile</DialogTitle>
-            <DialogDescription>Update your profile details</DialogDescription>
+            <DialogDescription>Update your profile and gaming details</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 pt-2">
@@ -511,6 +545,35 @@ const ProfilePage = () => {
               <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
             </div>
 
+            {/* Gaming Details Section */}
+            <div className="bg-primary/5 rounded-lg p-4 space-y-3">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <Gamepad2 className="h-4 w-4 text-primary" />
+                Gaming Details *
+              </h4>
+              
+              <div className="space-y-2">
+                <Label>Primary Game *</Label>
+                <Select value={formData.preferred_game} onValueChange={(value) => setFormData({ ...formData, preferred_game: value })}>
+                  <SelectTrigger><SelectValue placeholder="Select your game" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Free Fire">Free Fire</SelectItem>
+                    <SelectItem value="BGMI">BGMI</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>In-Game Name (IGN) *</Label>
+                <Input value={formData.in_game_name} onChange={(e) => setFormData({ ...formData, in_game_name: e.target.value })} placeholder="Your in-game name" />
+              </div>
+
+              <div className="space-y-2">
+                <Label>UID / Character ID *</Label>
+                <Input value={formData.game_uid} onChange={(e) => setFormData({ ...formData, game_uid: e.target.value })} placeholder="Your game UID" />
+              </div>
+            </div>
+
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label>Full Name</Label>
@@ -525,21 +588,6 @@ const ProfilePage = () => {
                 <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="Enter phone number" />
               </div>
               <div className="space-y-2">
-                <Label>Preferred Game</Label>
-                <Select value={formData.preferred_game} onValueChange={(value) => setFormData({ ...formData, preferred_game: value })}>
-                  <SelectTrigger><SelectValue placeholder="Select game" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="BGMI">BGMI</SelectItem>
-                    <SelectItem value="Free Fire">Free Fire</SelectItem>
-                    <SelectItem value="COD Mobile">COD Mobile</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>In-Game Name</Label>
-                <Input value={formData.in_game_name} onChange={(e) => setFormData({ ...formData, in_game_name: e.target.value })} placeholder="Your in-game name" />
-              </div>
-              <div className="space-y-2">
                 <Label>Bio</Label>
                 <Textarea value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Tell us about yourself" rows={3} />
               </div>
@@ -552,22 +600,64 @@ const ProfilePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Apply Organizer Dialog */}
+      {/* Apply Organizer Dialog - Updated with KYC Fields */}
       <Dialog open={applyDialogOpen} onOpenChange={setApplyDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Apply to Become Organizer</DialogTitle>
-            <DialogDescription>Host your own tournaments and earn commission</DialogDescription>
+            <DialogDescription>Complete your verification to host tournaments</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Full Name *</Label>
-              <Input value={applyForm.name} onChange={(e) => setApplyForm({ ...applyForm, name: e.target.value })} placeholder="Your full name" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Full Name *</Label>
+                <Input value={applyForm.name} onChange={(e) => setApplyForm({ ...applyForm, name: e.target.value })} placeholder="Full name" />
+              </div>
+              <div className="space-y-2">
+                <Label>Age *</Label>
+                <Input type="number" value={applyForm.age} onChange={(e) => setApplyForm({ ...applyForm, age: e.target.value })} placeholder="Age" />
+              </div>
             </div>
+
+            <div className="space-y-2">
+              <Label>Phone Number *</Label>
+              <Input value={applyForm.phone} onChange={(e) => setApplyForm({ ...applyForm, phone: e.target.value })} placeholder="+91 XXXXX XXXXX" />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Aadhaar Number *
+              </Label>
+              <Input 
+                value={applyForm.aadhaar_number} 
+                onChange={(e) => setApplyForm({ ...applyForm, aadhaar_number: e.target.value })} 
+                placeholder="XXXX XXXX XXXX" 
+                maxLength={14}
+              />
+              <p className="text-xs text-muted-foreground">Your Aadhaar is kept confidential</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Instagram className="h-4 w-4" />
+                Instagram Profile
+              </Label>
+              <Input value={applyForm.instagram_link} onChange={(e) => setApplyForm({ ...applyForm, instagram_link: e.target.value })} placeholder="https://instagram.com/..." />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Youtube className="h-4 w-4" />
+                YouTube Channel
+              </Label>
+              <Input value={applyForm.youtube_link} onChange={(e) => setApplyForm({ ...applyForm, youtube_link: e.target.value })} placeholder="https://youtube.com/..." />
+            </div>
+
             <div className="space-y-2">
               <Label>Experience</Label>
-              <Textarea value={applyForm.experience} onChange={(e) => setApplyForm({ ...applyForm, experience: e.target.value })} placeholder="Tell us about your experience hosting events or tournaments..." rows={4} />
+              <Textarea value={applyForm.experience} onChange={(e) => setApplyForm({ ...applyForm, experience: e.target.value })} placeholder="Tell us about your experience hosting events..." rows={3} />
             </div>
 
             <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">

@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Trophy, 
   Users, 
@@ -14,7 +15,13 @@ import {
   Loader2,
   Bell,
   Wallet,
-  Gamepad2
+  Gamepad2,
+  Share2,
+  UserPlus,
+  Eye,
+  QrCode,
+  Copy,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -25,6 +32,12 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 
 interface Tournament {
   id: string;
@@ -38,19 +51,32 @@ interface Tournament {
   tournament_type: string;
   joined_users: string[] | null;
   current_prize_pool: number | null;
+  tournament_mode: string | null;
+  room_id: string | null;
+  room_password: string | null;
+  prize_distribution: any;
+  created_by: string | null;
 }
 
 interface Profile {
   wallet_balance: number | null;
+  preferred_game: string | null;
+  username: string | null;
+  avatar_url: string | null;
+  full_name: string | null;
 }
 
 const HomePage = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [joinDialog, setJoinDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [joining, setJoining] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'bgmi' | 'freefire' | 'cod'>('all');
+  const [activeMode, setActiveMode] = useState<'solo' | 'duo' | 'squad'>('solo');
+  const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
+  const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
+  const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -59,22 +85,38 @@ const HomePage = () => {
   useEffect(() => {
     fetchTournaments();
     if (user) {
-      fetchWalletBalance();
+      fetchUserProfile();
+      fetchFollowedOrganizers();
     }
   }, [user]);
 
-  const fetchWalletBalance = async () => {
+  const fetchUserProfile = async () => {
     if (!user) return;
     try {
       const { data } = await supabase
         .from('profiles')
-        .select('wallet_balance')
+        .select('wallet_balance, preferred_game, username, avatar_url, full_name')
         .eq('user_id', user.id)
         .single();
       
+      setUserProfile(data);
       setWalletBalance(data?.wallet_balance || 0);
     } catch (error) {
-      console.error('Error fetching wallet:', error);
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const fetchFollowedOrganizers = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('follows')
+        .select('following_user_id')
+        .eq('follower_user_id', user.id);
+      
+      setFollowedOrganizers(data?.map(f => f.following_user_id) || []);
+    } catch (error) {
+      console.error('Error fetching follows:', error);
     }
   };
 
@@ -82,7 +124,7 @@ const HomePage = () => {
     try {
       const { data, error } = await supabase
         .from('tournaments')
-        .select('id, title, game, prize_pool, entry_fee, start_date, status, max_participants, tournament_type, joined_users, current_prize_pool')
+        .select('id, title, game, prize_pool, entry_fee, start_date, status, max_participants, tournament_type, joined_users, current_prize_pool, tournament_mode, room_id, room_password, prize_distribution, created_by')
         .eq('status', 'upcoming')
         .order('start_date', { ascending: true });
 
@@ -109,21 +151,18 @@ const HomePage = () => {
     const tournament = joinDialog.tournament;
     const entryFee = tournament.entry_fee || 0;
 
-    // Check if already joined
     if (tournament.joined_users?.includes(user.id)) {
       toast({ title: 'Already Joined', description: 'You have already joined this tournament.', variant: 'destructive' });
       setJoinDialog({ open: false, tournament: null });
       return;
     }
 
-    // Check wallet balance
     if (walletBalance < entryFee) {
       toast({ title: 'Insufficient Balance', description: `You need ₹${entryFee} to join. Your balance: ₹${walletBalance}`, variant: 'destructive' });
       setJoinDialog({ open: false, tournament: null });
       return;
     }
 
-    // Check max participants
     const currentJoined = tournament.joined_users?.length || 0;
     if (tournament.max_participants && currentJoined >= tournament.max_participants) {
       toast({ title: 'Tournament Full', description: 'This tournament has reached maximum participants.', variant: 'destructive' });
@@ -134,7 +173,6 @@ const HomePage = () => {
     setJoining(true);
 
     try {
-      // Get commission settings
       const { data: settings } = await supabase
         .from('platform_settings')
         .select('setting_key, setting_value');
@@ -143,12 +181,10 @@ const HomePage = () => {
       const platformPercent = parseFloat(settings?.find(s => s.setting_key === 'platform_commission_percent')?.setting_value || '10');
       const prizePoolPercent = parseFloat(settings?.find(s => s.setting_key === 'prize_pool_percent')?.setting_value || '80');
 
-      // Calculate splits
       const organizerShare = (entryFee * organizerPercent) / 100;
       const platformShare = (entryFee * platformPercent) / 100;
       const prizePoolShare = (entryFee * prizePoolPercent) / 100;
 
-      // Deduct from user wallet
       const { error: walletError } = await supabase
         .from('profiles')
         .update({ wallet_balance: walletBalance - entryFee })
@@ -156,7 +192,6 @@ const HomePage = () => {
 
       if (walletError) throw walletError;
 
-      // Create transaction record
       await supabase.from('wallet_transactions').insert({
         user_id: user.id,
         type: 'entry_fee',
@@ -165,7 +200,6 @@ const HomePage = () => {
         description: `Entry fee for ${tournament.title}`,
       });
 
-      // Update tournament with new joined user and earnings
       const newJoinedUsers = [...(tournament.joined_users || []), user.id];
       const newPrizePool = (tournament.current_prize_pool || 0) + prizePoolShare;
 
@@ -181,7 +215,6 @@ const HomePage = () => {
 
       if (tournamentError) throw tournamentError;
 
-      // Add to tournament_registrations
       await supabase.from('tournament_registrations').insert({
         user_id: user.id,
         tournament_id: tournament.id,
@@ -192,7 +225,7 @@ const HomePage = () => {
       
       setJoinDialog({ open: false, tournament: null });
       fetchTournaments();
-      fetchWalletBalance();
+      fetchUserProfile();
     } catch (error) {
       console.error('Error joining tournament:', error);
       toast({ title: 'Error', description: 'Failed to join tournament. Please try again.', variant: 'destructive' });
@@ -201,68 +234,137 @@ const HomePage = () => {
     }
   };
 
+  const handleFollow = async (organizerId: string) => {
+    if (!user) return;
+    
+    try {
+      if (followedOrganizers.includes(organizerId)) {
+        await supabase.from('follows').delete()
+          .eq('follower_user_id', user.id)
+          .eq('following_user_id', organizerId);
+        setFollowedOrganizers(prev => prev.filter(id => id !== organizerId));
+        toast({ title: 'Unfollowed', description: 'You will no longer receive updates from this organizer.' });
+      } else {
+        await supabase.from('follows').insert({
+          follower_user_id: user.id,
+          following_user_id: organizerId,
+        });
+        setFollowedOrganizers(prev => [...prev, organizerId]);
+        toast({ title: 'Following!', description: 'You will be notified when they create new tournaments.' });
+      }
+    } catch (error) {
+      console.error('Error toggling follow:', error);
+    }
+  };
+
+  const handleShare = (tournament: Tournament) => {
+    setShareDialog({ open: true, tournament });
+  };
+
+  const copyLink = () => {
+    const url = `${window.location.origin}/tournament/${shareDialog.tournament?.id}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Copied!', description: 'Tournament link copied to clipboard.' });
+  };
+
+  const shareToWhatsApp = () => {
+    const url = `${window.location.origin}/tournament/${shareDialog.tournament?.id}`;
+    const text = encodeURIComponent(`Join ${shareDialog.tournament?.title} tournament on Vyuha Esport! Prize: ${shareDialog.tournament?.prize_pool || `₹${shareDialog.tournament?.current_prize_pool}`}`);
+    window.open(`https://wa.me/?text=${text}%20${encodeURIComponent(url)}`, '_blank');
+  };
+
   const getFilteredTournaments = () => {
-    if (activeFilter === 'all') return tournaments;
-    const gameMap: Record<string, string[]> = {
-      'bgmi': ['BGMI', 'Battlegrounds Mobile India'],
-      'freefire': ['Free Fire', 'FF'],
-      'cod': ['COD Mobile', 'Call of Duty Mobile'],
-    };
-    return tournaments.filter(t => 
-      gameMap[activeFilter]?.some(g => t.game.toLowerCase().includes(g.toLowerCase()))
+    let filtered = tournaments;
+    
+    // Filter by user's preferred game
+    if (userProfile?.preferred_game) {
+      filtered = filtered.filter(t => 
+        t.game.toLowerCase().includes(userProfile.preferred_game!.toLowerCase())
+      );
+    }
+    
+    // Filter by mode
+    filtered = filtered.filter(t => 
+      !t.tournament_mode || t.tournament_mode === activeMode
     );
+    
+    return filtered;
   };
 
   const isUserJoined = (tournament: Tournament) => {
     return user && tournament.joined_users?.includes(user.id);
   };
 
+  const canSeeRoomDetails = (tournament: Tournament) => {
+    if (!user || !tournament.joined_users?.includes(user.id)) return false;
+    const matchTime = new Date(tournament.start_date);
+    const now = new Date();
+    const timeDiff = matchTime.getTime() - now.getTime();
+    return timeDiff < 30 * 60 * 1000; // 30 minutes before match
+  };
+
   return (
     <AppLayout>
       {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <img src={vyuhaLogo} alt="Vyuha" className="h-10 w-10" />
-          <div>
-            <h1 className="font-gaming text-lg font-bold">Vyuha Esport</h1>
-            <p className="text-xs text-muted-foreground">Welcome, {user?.email?.split('@')[0]}</p>
+      <div className="bg-card border-b border-border px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={vyuhaLogo} alt="Vyuha" className="h-10 w-10 rounded-full object-cover" />
+            <div>
+              <h1 className="font-gaming text-lg font-bold">Vyuha Esport</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => navigate('/wallet')}
+              className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-full"
+            >
+              <Wallet className="h-4 w-4 text-primary" />
+              <span className="text-sm font-semibold text-primary">₹{walletBalance}</span>
+            </button>
+            <button className="relative p-2">
+              <Bell className="h-5 w-5 text-muted-foreground" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => navigate('/wallet')}
-            className="flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-full"
-          >
-            <Wallet className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">₹{walletBalance}</span>
-          </button>
-          <button className="relative p-2">
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-          </button>
-        </div>
+        
+        {/* User Info Row */}
+        {user && userProfile && (
+          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={userProfile.avatar_url || ''} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                {userProfile.username?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="text-sm font-medium">{userProfile.full_name || userProfile.username || user.email?.split('@')[0]}</p>
+              {userProfile.preferred_game && (
+                <p className="text-xs text-muted-foreground">Playing: {userProfile.preferred_game}</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Game Filter */}
-      <div className="px-4 py-3 flex gap-2 overflow-x-auto">
-        {[
-          { key: 'all', label: 'All Games' },
-          { key: 'bgmi', label: 'BGMI' },
-          { key: 'freefire', label: 'Free Fire' },
-          { key: 'cod', label: 'COD Mobile' },
-        ].map((filter) => (
-          <button
-            key={filter.key}
-            onClick={() => setActiveFilter(filter.key as typeof activeFilter)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              activeFilter === filter.key 
-                ? 'bg-primary text-primary-foreground' 
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            {filter.label}
-          </button>
-        ))}
+      {/* Mode Filter - Solo/Duo/Squad */}
+      <div className="px-4 py-3">
+        <div className="bg-muted rounded-lg p-1 flex">
+          {(['solo', 'duo', 'squad'] as const).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setActiveMode(mode)}
+              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
+                activeMode === mode 
+                  ? 'bg-primary text-primary-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Creator Section Banner */}
@@ -297,13 +399,18 @@ const HomePage = () => {
           <div className="bg-card rounded-xl border border-border p-6 text-center">
             <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
             <p className="text-muted-foreground text-sm">No tournaments available</p>
-            <p className="text-xs text-muted-foreground mt-1">Check back soon for exciting matches!</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {userProfile?.preferred_game 
+                ? `No ${userProfile.preferred_game} ${activeMode} matches found`
+                : 'Check back soon for exciting matches!'}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
             {getFilteredTournaments().map((tournament) => {
               const joined = isUserJoined(tournament);
               const spotsLeft = (tournament.max_participants || 100) - (tournament.joined_users?.length || 0);
+              const showRoomDetails = canSeeRoomDetails(tournament);
               
               return (
                 <div
@@ -319,13 +426,36 @@ const HomePage = () => {
                         </div>
                         <div>
                           <h3 className="font-semibold text-sm line-clamp-1">{tournament.title}</h3>
-                          <p className="text-xs text-muted-foreground">{tournament.game}</p>
+                          <p className="text-xs text-muted-foreground">{tournament.game} • {tournament.tournament_mode || 'Solo'}</p>
                         </div>
                       </div>
-                      <Badge className={`text-[10px] ${tournament.tournament_type === 'organizer' ? 'bg-primary/10 text-primary' : 'bg-purple-500/10 text-purple-600'}`}>
-                        {tournament.tournament_type === 'organizer' ? 'Official' : 'Creator'}
-                      </Badge>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => handleShare(tournament)}
+                          className="p-1.5 rounded-full hover:bg-muted"
+                        >
+                          <Share2 className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                        <Badge className={`text-[10px] ${tournament.tournament_type === 'organizer' ? 'bg-primary/10 text-primary' : 'bg-purple-500/10 text-purple-600'}`}>
+                          {tournament.tournament_type === 'organizer' ? 'Official' : 'Creator'}
+                        </Badge>
+                      </div>
                     </div>
+                    
+                    {/* Organizer Follow */}
+                    {tournament.created_by && tournament.tournament_type === 'creator' && (
+                      <button 
+                        onClick={() => handleFollow(tournament.created_by!)}
+                        className={`text-xs flex items-center gap-1 mt-2 ${
+                          followedOrganizers.includes(tournament.created_by) 
+                            ? 'text-primary' 
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <UserPlus className="h-3 w-3" />
+                        {followedOrganizers.includes(tournament.created_by) ? 'Following' : 'Follow Organizer'}
+                      </button>
+                    )}
                   </div>
 
                   {/* Stats Row */}
@@ -348,10 +478,33 @@ const HomePage = () => {
                     </div>
                   </div>
 
+                  {/* Room Details - Only for joined users near match time */}
+                  {joined && showRoomDetails && tournament.room_id && (
+                    <div className="px-4 py-2 bg-green-500/10 border-t border-green-500/20">
+                      <div className="flex items-center gap-2 text-green-600">
+                        <Eye className="h-4 w-4" />
+                        <span className="text-xs font-medium">Room ID: {tournament.room_id}</span>
+                        {tournament.room_password && (
+                          <span className="text-xs">| Pass: {tournament.room_password}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Footer Row */}
                   <div className="p-4 pt-3 flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      {format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}
+                      </span>
+                      {tournament.prize_distribution && (
+                        <button 
+                          onClick={() => setPrizeDrawer({ open: true, tournament })}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          View Prize Chart
+                        </button>
+                      )}
                     </div>
                     {joined ? (
                       <Badge className="bg-green-500/10 text-green-600">Joined ✓</Badge>
@@ -424,6 +577,65 @@ const HomePage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Share Dialog */}
+      <Dialog open={shareDialog.open} onOpenChange={(open) => setShareDialog({ open, tournament: shareDialog.tournament })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Tournament</DialogTitle>
+            <DialogDescription>
+              Share {shareDialog.tournament?.title} with friends
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            {/* QR Code Placeholder */}
+            <div className="bg-muted rounded-lg p-8 flex flex-col items-center justify-center">
+              <QrCode className="h-24 w-24 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground mt-2">Scan to join</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" onClick={shareToWhatsApp} className="gap-2">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                WhatsApp
+              </Button>
+              <Button variant="outline" onClick={copyLink} className="gap-2">
+                <Copy className="h-4 w-4" />
+                Copy Link
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Prize Distribution Drawer */}
+      <Drawer open={prizeDrawer.open} onOpenChange={(open) => setPrizeDrawer({ open, tournament: prizeDrawer.tournament })}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Prize Distribution</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 pb-8">
+            {prizeDrawer.tournament?.prize_distribution ? (
+              <div className="space-y-2">
+                {Object.entries(prizeDrawer.tournament.prize_distribution).map(([rank, amount]) => (
+                  <div key={rank} className="flex justify-between items-center bg-muted/50 rounded-lg p-3">
+                    <span className="font-medium">Rank {rank}</span>
+                    <span className="text-primary font-semibold">₹{String(amount)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Trophy className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p>Prize distribution not set</p>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </AppLayout>
   );
 };

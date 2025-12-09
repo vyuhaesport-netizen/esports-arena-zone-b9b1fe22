@@ -34,7 +34,11 @@ import {
   Eye,
   Trophy,
   Wallet,
-  Users
+  Users,
+  Phone,
+  Instagram,
+  Youtube,
+  CreditCard
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -42,6 +46,11 @@ interface OrganizerApplication {
   id: string;
   user_id: string;
   name: string;
+  age: number | null;
+  phone: string | null;
+  aadhaar_number: string | null;
+  instagram_link: string | null;
+  youtube_link: string | null;
   experience: string | null;
   status: string;
   created_at: string;
@@ -105,7 +114,6 @@ const AdminOrganizers = () => {
 
   const fetchOrganizers = async () => {
     try {
-      // Get all users with organizer role
       const { data: organizerRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('user_id')
@@ -120,13 +128,11 @@ const AdminOrganizers = () => {
         return;
       }
 
-      // Get organizer profiles
       const { data: profiles } = await supabase
         .from('profiles')
         .select('user_id, full_name, email')
         .in('user_id', organizerIds);
 
-      // Get tournament stats for each organizer
       const { data: tournaments } = await supabase
         .from('tournaments')
         .select('created_by, organizer_earnings, platform_earnings')
@@ -168,7 +174,6 @@ const AdminOrganizers = () => {
 
     setProcessing(true);
     try {
-      // Update application status
       const { error: appError } = await supabase
         .from('organizer_applications')
         .update({ 
@@ -180,7 +185,6 @@ const AdminOrganizers = () => {
 
       if (appError) throw appError;
 
-      // Add organizer role
       const { error: roleError } = await supabase
         .from('user_roles')
         .insert({
@@ -247,6 +251,11 @@ const AdminOrganizers = () => {
     }
   };
 
+  const maskAadhaar = (aadhaar: string | null) => {
+    if (!aadhaar) return 'N/A';
+    return `XXXX XXXX ${aadhaar.slice(-4)}`;
+  };
+
   if (authLoading || loading) {
     return (
       <AdminLayout title="Organizers">
@@ -286,18 +295,30 @@ const AdminOrganizers = () => {
                       <div>
                         <p className="font-medium">{app.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          Applied {format(new Date(app.created_at), 'MMM dd, yyyy')}
+                          Age: {app.age || 'N/A'} • Applied {format(new Date(app.created_at), 'MMM dd, yyyy')}
                         </p>
                       </div>
                     </div>
                     {getStatusBadge(app.status)}
                   </div>
 
-                  {app.experience && (
-                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                      {app.experience}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                    {app.phone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3 w-3" /> {app.phone}
+                      </span>
+                    )}
+                    {app.instagram_link && (
+                      <a href={app.instagram_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-pink-500 hover:underline">
+                        <Instagram className="h-3 w-3" />
+                      </a>
+                    )}
+                    {app.youtube_link && (
+                      <a href={app.youtube_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-red-500 hover:underline">
+                        <Youtube className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
 
                   {app.status === 'pending' && hasPermission('organizers:manage') && (
                     <div className="flex gap-2 mt-3 pt-3 border-t">
@@ -401,22 +422,71 @@ const AdminOrganizers = () => {
         )}
       </div>
 
-      {/* View Application Dialog */}
+      {/* View Application Dialog - Updated with all KYC details */}
       <Dialog open={actionDialog === 'view'} onOpenChange={() => setActionDialog(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Application Details</DialogTitle>
           </DialogHeader>
           {selectedApplication && (
             <div className="space-y-4 pt-4">
-              <div>
-                <Label className="text-muted-foreground">Name</Label>
-                <p className="font-medium">{selectedApplication.name}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Full Name</Label>
+                  <p className="font-medium">{selectedApplication.name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Age</Label>
+                  <p className="font-medium">{selectedApplication.age || 'N/A'}</p>
+                </div>
               </div>
+              
+              <div>
+                <Label className="text-muted-foreground flex items-center gap-1">
+                  <Phone className="h-3 w-3" /> Phone
+                </Label>
+                <p className="font-medium">{selectedApplication.phone || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground flex items-center gap-1">
+                  <CreditCard className="h-3 w-3" /> Aadhaar (Masked)
+                </Label>
+                <p className="font-medium">{maskAadhaar(selectedApplication.aadhaar_number)}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground flex items-center gap-1">
+                    <Instagram className="h-3 w-3" /> Instagram
+                  </Label>
+                  {selectedApplication.instagram_link ? (
+                    <a href={selectedApplication.instagram_link} target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:underline text-sm break-all">
+                      View Profile
+                    </a>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Not provided</p>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-muted-foreground flex items-center gap-1">
+                    <Youtube className="h-3 w-3" /> YouTube
+                  </Label>
+                  {selectedApplication.youtube_link ? (
+                    <a href={selectedApplication.youtube_link} target="_blank" rel="noopener noreferrer" className="text-red-500 hover:underline text-sm break-all">
+                      View Channel
+                    </a>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Not provided</p>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <Label className="text-muted-foreground">Experience</Label>
                 <p className="text-sm">{selectedApplication.experience || 'Not provided'}</p>
               </div>
+
               <div>
                 <Label className="text-muted-foreground">Applied On</Label>
                 <p className="text-sm">{format(new Date(selectedApplication.created_at), 'MMM dd, yyyy hh:mm a')}</p>
