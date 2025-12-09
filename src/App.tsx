@@ -13,6 +13,7 @@ import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import Team from "./pages/Team";
 import HelpSupport from "./pages/HelpSupport";
+import Payment from "./pages/Payment";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTeam from "./pages/admin/AdminTeam";
@@ -77,6 +78,7 @@ const AppRoutes = () => {
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
       <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
+      <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

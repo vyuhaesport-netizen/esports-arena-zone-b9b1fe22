@@ -433,36 +433,48 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          phone: string | null
           processed_by: string | null
           reason: string | null
+          screenshot_url: string | null
           status: string
           type: string
           updated_at: string
+          upi_id: string | null
           user_id: string
+          utr_number: string | null
         }
         Insert: {
           amount: number
           created_at?: string
           description?: string | null
           id?: string
+          phone?: string | null
           processed_by?: string | null
           reason?: string | null
+          screenshot_url?: string | null
           status?: string
           type: string
           updated_at?: string
+          upi_id?: string | null
           user_id: string
+          utr_number?: string | null
         }
         Update: {
           amount?: number
           created_at?: string
           description?: string | null
           id?: string
+          phone?: string | null
           processed_by?: string | null
           reason?: string | null
+          screenshot_url?: string | null
           status?: string
           type?: string
           updated_at?: string
+          upi_id?: string | null
           user_id?: string
+          utr_number?: string | null
         }
         Relationships: []
       }
