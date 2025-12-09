@@ -310,7 +310,7 @@ const ProfilePage = () => {
     { icon: Wallet, label: 'Wallet', onClick: () => navigate('/wallet') },
     { icon: Users, label: 'Team', onClick: () => navigate('/team') },
     { icon: Settings, label: 'Settings', onClick: () => {} },
-    { icon: HelpCircle, label: 'Help & Support', onClick: () => {} },
+    { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
     { icon: FileText, label: 'Terms & Conditions', onClick: () => navigate('/terms') },
     { icon: RefreshCw, label: 'Refund Policy', onClick: () => navigate('/refund-policy') },
     { icon: Info, label: 'About Us', onClick: () => navigate('/about') },

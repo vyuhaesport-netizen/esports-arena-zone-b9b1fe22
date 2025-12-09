@@ -12,6 +12,7 @@ import MyMatch from "./pages/MyMatch";
 import Wallet from "./pages/Wallet";
 import Profile from "./pages/Profile";
 import Team from "./pages/Team";
+import HelpSupport from "./pages/HelpSupport";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminTeam from "./pages/admin/AdminTeam";
@@ -75,6 +76,7 @@ const AppRoutes = () => {
       <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
+      <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
