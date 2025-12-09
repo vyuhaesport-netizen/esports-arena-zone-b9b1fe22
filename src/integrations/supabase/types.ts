@@ -38,45 +38,114 @@ export type Database = {
         }
         Relationships: []
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_user_id: string
+          following_user_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_user_id: string
+          following_user_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_user_id?: string
+          following_user_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string | null
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          related_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string | null
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       organizer_applications: {
         Row: {
+          aadhaar_number: string | null
+          age: number | null
           created_at: string
           experience: string | null
           govt_id_proof_url: string | null
           id: string
+          instagram_link: string | null
           name: string
+          phone: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
           updated_at: string
           user_id: string
+          youtube_link: string | null
         }
         Insert: {
+          aadhaar_number?: string | null
+          age?: number | null
           created_at?: string
           experience?: string | null
           govt_id_proof_url?: string | null
           id?: string
+          instagram_link?: string | null
           name: string
+          phone?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           updated_at?: string
           user_id: string
+          youtube_link?: string | null
         }
         Update: {
+          aadhaar_number?: string | null
+          age?: number | null
           created_at?: string
           experience?: string | null
           govt_id_proof_url?: string | null
           id?: string
+          instagram_link?: string | null
           name?: string
+          phone?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           updated_at?: string
           user_id?: string
+          youtube_link?: string | null
         }
         Relationships: []
       }
@@ -262,13 +331,17 @@ export type Database = {
           max_participants: number | null
           organizer_earnings: number | null
           platform_earnings: number | null
+          prize_distribution: Json | null
           prize_pool: string | null
           registration_deadline: string | null
+          room_id: string | null
+          room_password: string | null
           rules: string | null
           start_date: string
           status: string | null
           title: string
           total_fees_collected: number | null
+          tournament_mode: string | null
           tournament_type: string
           updated_at: string
           winner_declared_at: string | null
@@ -288,13 +361,17 @@ export type Database = {
           max_participants?: number | null
           organizer_earnings?: number | null
           platform_earnings?: number | null
+          prize_distribution?: Json | null
           prize_pool?: string | null
           registration_deadline?: string | null
+          room_id?: string | null
+          room_password?: string | null
           rules?: string | null
           start_date: string
           status?: string | null
           title: string
           total_fees_collected?: number | null
+          tournament_mode?: string | null
           tournament_type?: string
           updated_at?: string
           winner_declared_at?: string | null
@@ -314,13 +391,17 @@ export type Database = {
           max_participants?: number | null
           organizer_earnings?: number | null
           platform_earnings?: number | null
+          prize_distribution?: Json | null
           prize_pool?: string | null
           registration_deadline?: string | null
+          room_id?: string | null
+          room_password?: string | null
           rules?: string | null
           start_date?: string
           status?: string | null
           title?: string
           total_fees_collected?: number | null
+          tournament_mode?: string | null
           tournament_type?: string
           updated_at?: string
           winner_declared_at?: string | null
