@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import vyuhaLogo from '@/assets/vyuha-logo.png';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -311,9 +312,6 @@ const ProfilePage = () => {
     { icon: Users, label: 'Team', onClick: () => navigate('/team') },
     { icon: Settings, label: 'Settings', onClick: () => {} },
     { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
-    { icon: FileText, label: 'Terms & Conditions', onClick: () => navigate('/terms') },
-    { icon: RefreshCw, label: 'Refund Policy', onClick: () => navigate('/refund-policy') },
-    { icon: Info, label: 'About Us', onClick: () => navigate('/about') },
   ];
 
   if (authLoading || loading) {
@@ -511,7 +509,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Logout */}
-      <div className="px-4 py-6">
+      <div className="px-4 pt-4">
         <Button
           variant="outline"
           className="w-full text-destructive border-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -520,6 +518,46 @@ const ProfilePage = () => {
           <LogOut className="mr-2 h-4 w-4" />
           Logout
         </Button>
+      </div>
+
+      {/* Footer with Logo and Links */}
+      <div className="px-4 pt-6 pb-8">
+        <div className="flex flex-col items-center">
+          {/* Logo */}
+          <img 
+            src={vyuhaLogo} 
+            alt="Vyuha Esport" 
+            className="h-12 w-auto mb-4 opacity-80"
+          />
+          
+          {/* Legal Links */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <button 
+              onClick={() => navigate('/terms')}
+              className="hover:text-primary transition-colors"
+            >
+              Terms & Conditions
+            </button>
+            <span className="text-border">•</span>
+            <button 
+              onClick={() => navigate('/refund-policy')}
+              className="hover:text-primary transition-colors"
+            >
+              Refund Policy
+            </button>
+            <span className="text-border">•</span>
+            <button 
+              onClick={() => navigate('/about')}
+              className="hover:text-primary transition-colors"
+            >
+              About Us
+            </button>
+          </div>
+          
+          <p className="text-[10px] text-muted-foreground/60 mt-3">
+            © 2024 Vyuha Esport. All rights reserved.
+          </p>
+        </div>
       </div>
 
       {/* Edit Profile Dialog */}
