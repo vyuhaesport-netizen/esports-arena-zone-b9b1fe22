@@ -70,7 +70,9 @@ const HomePage = () => {
   const [walletBalance, setWalletBalance] = useState(0);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [joinDialog, setJoinDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
+  const [exitDialog, setExitDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [joining, setJoining] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const [activeMode, setActiveMode] = useState<'solo' | 'duo' | 'squad'>('solo');
   const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
@@ -124,6 +126,7 @@ const HomePage = () => {
         .from('tournaments')
         .select('id, title, game, prize_pool, entry_fee, start_date, status, max_participants, tournament_type, joined_users, current_prize_pool, tournament_mode, room_id, room_password, prize_distribution, created_by')
         .eq('status', 'upcoming')
+        .eq('tournament_type', 'organizer')
         .order('start_date', { ascending: true });
 
       if (error) throw error;
@@ -229,6 +232,58 @@ const HomePage = () => {
       toast({ title: 'Error', description: 'Failed to join tournament. Please try again.', variant: 'destructive' });
     } finally {
       setJoining(false);
+    }
+  };
+
+  const handleExitTournament = async () => {
+    if (!exitDialog.tournament || !user) return;
+
+    const tournament = exitDialog.tournament;
+    const entryFee = tournament.entry_fee || 0;
+
+    setExiting(true);
+    try {
+      // Refund entry fee to wallet
+      const { error: walletError } = await supabase
+        .from('profiles')
+        .update({ wallet_balance: walletBalance + entryFee })
+        .eq('user_id', user.id);
+
+      if (walletError) throw walletError;
+
+      // Record refund transaction
+      await supabase.from('wallet_transactions').insert({
+        user_id: user.id,
+        type: 'refund',
+        amount: entryFee,
+        status: 'completed',
+        description: `Refund for exiting ${tournament.title}`,
+      });
+
+      // Remove user from tournament
+      const newJoinedUsers = (tournament.joined_users || []).filter(id => id !== user.id);
+      
+      await supabase
+        .from('tournaments')
+        .update({ joined_users: newJoinedUsers })
+        .eq('id', tournament.id);
+
+      // Remove registration
+      await supabase
+        .from('tournament_registrations')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('tournament_id', tournament.id);
+
+      toast({ title: 'Exited!', description: `You left ${tournament.title}. ₹${entryFee} refunded.` });
+      setExitDialog({ open: false, tournament: null });
+      fetchTournaments();
+      fetchUserProfile();
+    } catch (error) {
+      console.error('Error exiting tournament:', error);
+      toast({ title: 'Error', description: 'Failed to exit tournament.', variant: 'destructive' });
+    } finally {
+      setExiting(false);
     }
   };
 
@@ -458,8 +513,13 @@ const HomePage = () => {
 
                     <div className="flex items-center gap-2">
                       {joined ? (
-                        <Button variant="secondary" className="flex-1" size="sm" disabled>
-                          Joined ✓
+                        <Button 
+                          variant="outline" 
+                          className="flex-1 text-destructive border-destructive" 
+                          size="sm"
+                          onClick={() => setExitDialog({ open: true, tournament })}
+                        >
+                          Exit
                         </Button>
                       ) : (
                         <Button

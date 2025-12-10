@@ -24,6 +24,7 @@ import AdminTransactions from "./pages/admin/AdminTransactions";
 import AdminWithdrawals from "./pages/admin/AdminWithdrawals";
 import AdminDeposits from "./pages/admin/AdminDeposits";
 import AdminOrganizers from "./pages/admin/AdminOrganizers";
+import AdminCreators from "./pages/admin/AdminCreators";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -97,6 +98,7 @@ const AppRoutes = () => {
       <Route path="/admin/withdrawals" element={<ProtectedRoute><AdminWithdrawals /></ProtectedRoute>} />
       <Route path="/admin/deposits" element={<ProtectedRoute><AdminDeposits /></ProtectedRoute>} />
       <Route path="/admin/organizers" element={<ProtectedRoute><AdminOrganizers /></ProtectedRoute>} />
+      <Route path="/admin/creators" element={<ProtectedRoute><AdminCreators /></ProtectedRoute>} />
       <Route path="/admin/notifications" element={<ProtectedRoute><AdminNotifications /></ProtectedRoute>} />
       <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
