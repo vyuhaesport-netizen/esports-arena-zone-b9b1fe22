@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
+import ProfileView from '@/components/ProfileView';
 import {
   ArrowLeft,
   Users,
@@ -156,6 +157,8 @@ const MessagePage = () => {
   const [showReactions, setShowReactions] = useState<string | null>(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ messageId: string; x: number; y: number } | null>(null);
+  const [profileViewOpen, setProfileViewOpen] = useState(false);
+  const [profileViewUserId, setProfileViewUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -988,18 +991,44 @@ const MessagePage = () => {
             <button onClick={() => setSelectedChat(null)} className="p-2 -ml-2">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={selectedChat.avatar || ''} />
-              <AvatarFallback className="bg-primary/10 text-primary">
-                {isGroup ? <Users className="h-5 w-5" /> : selectedChat.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
+            <button 
+              onClick={() => {
+                if (!isGroup && selectedChat.data) {
+                  const friend = selectedChat.data as Friend;
+                  const friendUserId = friend.requester_id === user?.id 
+                    ? friend.recipient_id 
+                    : friend.requester_id;
+                  setProfileViewUserId(friendUserId);
+                  setProfileViewOpen(true);
+                }
+              }}
+              className="focus:outline-none"
+            >
+              <Avatar className="h-10 w-10 hover:ring-2 hover:ring-primary/50 transition-all">
+                <AvatarImage src={selectedChat.avatar || ''} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {isGroup ? <Users className="h-5 w-5" /> : selectedChat.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+            <button 
+              onClick={() => {
+                if (!isGroup && selectedChat.data) {
+                  const friend = selectedChat.data as Friend;
+                  const friendUserId = friend.requester_id === user?.id 
+                    ? friend.recipient_id 
+                    : friend.requester_id;
+                  setProfileViewUserId(friendUserId);
+                  setProfileViewOpen(true);
+                }
+              }}
+              className="flex-1 text-left focus:outline-none"
+            >
               <p className="font-semibold">{selectedChat.name}</p>
               <p className="text-xs text-muted-foreground">
-                {isGroup ? 'Group Chat' : 'Tap for info'}
+                {isGroup ? 'Group Chat' : 'Tap for profile'}
               </p>
-            </div>
+            </button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="p-2">
@@ -1008,19 +1037,34 @@ const MessagePage = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {!isGroup && (
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      const friend = selectedChat.data as Friend;
-                      supabase.from('friends').delete().eq('id', friend.id);
-                      setSelectedChat(null);
-                      fetchFriends();
-                      toast({ title: 'Friend Removed' });
-                    }}
-                    className="text-destructive"
-                  >
-                    <UserMinus className="h-4 w-4 mr-2" />
-                    Remove Friend
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        const friend = selectedChat.data as Friend;
+                        const friendUserId = friend.requester_id === user?.id 
+                          ? friend.recipient_id 
+                          : friend.requester_id;
+                        setProfileViewUserId(friendUserId);
+                        setProfileViewOpen(true);
+                      }}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      View Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => {
+                        const friend = selectedChat.data as Friend;
+                        supabase.from('friends').delete().eq('id', friend.id);
+                        setSelectedChat(null);
+                        fetchFriends();
+                        toast({ title: 'Friend Removed' });
+                      }}
+                      className="text-destructive"
+                    >
+                      <UserMinus className="h-4 w-4 mr-2" />
+                      Remove Friend
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -1314,11 +1358,25 @@ const MessagePage = () => {
               {filteredChats.map((chat) => (
                 <div
                   key={chat.id}
-                  onClick={() => setSelectedChat(chat)}
                   className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
                 >
-                  <div className="relative">
-                    <Avatar className={`h-12 w-12 ${chat.type === 'vyuha' ? 'ring-2 ring-primary/50' : ''}`}>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (chat.type === 'friend' && chat.data) {
+                        const friend = chat.data as Friend;
+                        const friendUserId = friend.requester_id === user?.id 
+                          ? friend.recipient_id 
+                          : friend.requester_id;
+                        setProfileViewUserId(friendUserId);
+                        setProfileViewOpen(true);
+                      } else {
+                        setSelectedChat(chat);
+                      }
+                    }}
+                    className="relative focus:outline-none"
+                  >
+                    <Avatar className={`h-12 w-12 ${chat.type === 'vyuha' ? 'ring-2 ring-primary/50' : ''} hover:ring-2 hover:ring-primary/30 transition-all`}>
                       <AvatarImage src={chat.avatar || ''} />
                       <AvatarFallback className={`${chat.type === 'vyuha' ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
                         {chat.type === 'group' ? <Users className="h-5 w-5" /> : chat.name.charAt(0).toUpperCase()}
@@ -1327,9 +1385,9 @@ const MessagePage = () => {
                     {chat.isOnline && (
                       <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
                     )}
-                  </div>
+                  </button>
 
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0" onClick={() => setSelectedChat(chat)}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-sm truncate">{chat.name}</p>
@@ -1470,6 +1528,15 @@ const MessagePage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Profile View Dialog */}
+      {profileViewUserId && (
+        <ProfileView
+          userId={profileViewUserId}
+          open={profileViewOpen}
+          onOpenChange={setProfileViewOpen}
+        />
+      )}
     </div>
   );
 };
