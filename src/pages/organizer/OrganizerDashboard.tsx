@@ -77,13 +77,17 @@ const OrganizerDashboard = () => {
     title: '',
     game: 'BGMI',
     description: '',
-    prize_pool: '',
     entry_fee: '',
     max_participants: '100',
     start_date: '',
     status: 'upcoming',
     tournament_mode: 'solo',
     prize_distribution: '',
+  });
+  const [commissionSettings, setCommissionSettings] = useState({
+    organizer_percent: 10,
+    platform_percent: 10,
+    prize_pool_percent: 80,
   });
 
   const { user, isOrganizer, loading: authLoading } = useAuth();
@@ -104,8 +108,31 @@ const OrganizerDashboard = () => {
   useEffect(() => {
     if (isOrganizer && user) {
       fetchMyTournaments();
+      fetchCommissionSettings();
     }
   }, [isOrganizer, user]);
+
+  const fetchCommissionSettings = async () => {
+    try {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value');
+      
+      if (data) {
+        const settings: any = {};
+        data.forEach((s) => {
+          if (s.setting_key === 'organizer_commission_percent') settings.organizer_percent = parseFloat(s.setting_value);
+          if (s.setting_key === 'platform_commission_percent') settings.platform_percent = parseFloat(s.setting_value);
+          if (s.setting_key === 'prize_pool_percent') settings.prize_pool_percent = parseFloat(s.setting_value);
+        });
+        if (Object.keys(settings).length > 0) {
+          setCommissionSettings(prev => ({ ...prev, ...settings }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching commission settings:', error);
+    }
+  };
 
   const fetchMyTournaments = async () => {
     if (!user) return;
@@ -134,7 +161,6 @@ const OrganizerDashboard = () => {
       title: '',
       game: 'BGMI',
       description: '',
-      prize_pool: '',
       entry_fee: '',
       max_participants: '100',
       start_date: '',
@@ -143,6 +169,14 @@ const OrganizerDashboard = () => {
       prize_distribution: '',
     });
     setSelectedTournament(null);
+  };
+
+  const calculatePrizePool = () => {
+    const entryFee = parseFloat(formData.entry_fee) || 0;
+    const maxParticipants = parseInt(formData.max_participants) || 0;
+    const totalCollection = entryFee * maxParticipants;
+    const prizePool = (totalCollection * commissionSettings.prize_pool_percent) / 100;
+    return prizePool;
   };
 
   const handleSave = async () => {
@@ -166,13 +200,19 @@ const OrganizerDashboard = () => {
         }
       }
 
+      // Calculate prize pool based on commission settings
+      const entryFee = parseFloat(formData.entry_fee) || 0;
+      const maxParticipants = parseInt(formData.max_participants) || 100;
+      const totalCollection = entryFee * maxParticipants;
+      const calculatedPrizePool = Math.floor((totalCollection * commissionSettings.prize_pool_percent) / 100);
+
       const tournamentData = {
         title: formData.title,
         game: formData.game,
         description: formData.description || null,
-        prize_pool: formData.prize_pool || null,
-        entry_fee: formData.entry_fee ? parseFloat(formData.entry_fee) : 0,
-        max_participants: formData.max_participants ? parseInt(formData.max_participants) : 100,
+        prize_pool: `₹${calculatedPrizePool.toLocaleString()}`,
+        entry_fee: entryFee,
+        max_participants: maxParticipants,
         start_date: new Date(formData.start_date).toISOString(),
         status: formData.status,
         created_by: user?.id,
@@ -497,7 +537,6 @@ const OrganizerDashboard = () => {
                             title: tournament.title,
                             game: tournament.game,
                             description: tournament.description || '',
-                            prize_pool: tournament.prize_pool || '',
                             entry_fee: tournament.entry_fee?.toString() || '',
                             max_participants: tournament.max_participants?.toString() || '100',
                             start_date: new Date(tournament.start_date).toISOString().slice(0, 16),
@@ -576,9 +615,20 @@ const OrganizerDashboard = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Prize Pool Label</Label>
-              <Input value={formData.prize_pool} onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })} placeholder="e.g., ₹5000" />
+            {/* Auto-calculated Prize Pool Info */}
+            <div className="bg-primary/10 rounded-lg p-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Auto Prize Pool ({commissionSettings.prize_pool_percent}%)</span>
+                <span className="font-gaming font-bold text-primary">₹{calculatePrizePool().toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center mt-1">
+                <span className="text-xs text-muted-foreground">Your Commission ({commissionSettings.organizer_percent}%)</span>
+                <span className="text-xs text-green-600">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.organizer_percent) / 100).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-muted-foreground">Platform ({commissionSettings.platform_percent}%)</span>
+                <span className="text-xs">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.platform_percent) / 100).toLocaleString()}</span>
+              </div>
             </div>
 
             <div className="space-y-2">

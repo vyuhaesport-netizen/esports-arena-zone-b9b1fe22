@@ -33,7 +33,8 @@ import {
   Gamepad2,
   Youtube,
   Users,
-  Wallet
+  Wallet,
+  Key
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -76,7 +77,6 @@ const AdminTournaments = () => {
     game: 'BGMI',
     tournament_mode: 'Squad',
     description: '',
-    prize_pool: '',
     entry_fee: '',
     max_participants: '100',
     start_date: '',
@@ -84,9 +84,15 @@ const AdminTournaments = () => {
     registration_deadline: '',
     status: 'upcoming',
     rules: '',
-    commission: '20',
     youtube_link: '',
     youtube_type: 'live',
+    room_id: '',
+    room_password: '',
+  });
+  const [commissionSettings, setCommissionSettings] = useState({
+    organizer_percent: 10,
+    platform_percent: 10,
+    prize_pool_percent: 80,
   });
 
   const { user, isAdmin, loading: authLoading, hasPermission } = useAuth();
@@ -106,8 +112,31 @@ const AdminTournaments = () => {
   useEffect(() => {
     if (hasPermission('tournaments:view')) {
       fetchTournaments();
+      fetchCommissionSettings();
     }
   }, [hasPermission]);
+
+  const fetchCommissionSettings = async () => {
+    try {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value');
+      
+      if (data) {
+        const settings: any = {};
+        data.forEach((s) => {
+          if (s.setting_key === 'organizer_commission_percent') settings.organizer_percent = parseFloat(s.setting_value);
+          if (s.setting_key === 'platform_commission_percent') settings.platform_percent = parseFloat(s.setting_value);
+          if (s.setting_key === 'prize_pool_percent') settings.prize_pool_percent = parseFloat(s.setting_value);
+        });
+        if (Object.keys(settings).length > 0) {
+          setCommissionSettings(prev => ({ ...prev, ...settings }));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching commission settings:', error);
+    }
+  };
 
   const fetchTournaments = async () => {
     try {
@@ -131,7 +160,6 @@ const AdminTournaments = () => {
       game: 'BGMI',
       tournament_mode: 'Squad',
       description: '',
-      prize_pool: '',
       entry_fee: '',
       max_participants: '100',
       start_date: '',
@@ -139,9 +167,10 @@ const AdminTournaments = () => {
       registration_deadline: '',
       status: 'upcoming',
       rules: '',
-      commission: '20',
       youtube_link: '',
       youtube_type: 'live',
+      room_id: '',
+      room_password: '',
     });
     setPrizePositions([
       { rank: 1, amount: '' },
@@ -151,6 +180,14 @@ const AdminTournaments = () => {
     setEditingTournament(null);
   };
 
+  const calculatePrizePool = () => {
+    const entryFee = parseFloat(formData.entry_fee) || 0;
+    const maxParticipants = parseInt(formData.max_participants) || 0;
+    const totalCollection = entryFee * maxParticipants;
+    const prizePool = (totalCollection * commissionSettings.prize_pool_percent) / 100;
+    return prizePool;
+  };
+
   const openEditDialog = (tournament: Tournament) => {
     setEditingTournament(tournament);
     setFormData({
@@ -158,7 +195,6 @@ const AdminTournaments = () => {
       game: tournament.game,
       tournament_mode: 'Squad',
       description: tournament.description || '',
-      prize_pool: tournament.prize_pool || '',
       entry_fee: tournament.entry_fee?.toString() || '',
       max_participants: tournament.max_participants?.toString() || '100',
       start_date: tournament.start_date ? new Date(tournament.start_date).toISOString().slice(0, 16) : '',
@@ -166,9 +202,10 @@ const AdminTournaments = () => {
       registration_deadline: tournament.registration_deadline ? new Date(tournament.registration_deadline).toISOString().slice(0, 16) : '',
       status: tournament.status || 'upcoming',
       rules: tournament.rules || '',
-      commission: '20',
       youtube_link: '',
       youtube_type: 'live',
+      room_id: (tournament as any).room_id || '',
+      room_password: (tournament as any).room_password || '',
     });
     setDialogOpen(true);
   };
@@ -220,19 +257,27 @@ const AdminTournaments = () => {
     setSaving(true);
 
     try {
+      // Calculate prize pool based on commission settings
+      const entryFee = parseFloat(formData.entry_fee) || 0;
+      const maxParticipants = parseInt(formData.max_participants) || 100;
+      const totalCollection = entryFee * maxParticipants;
+      const calculatedPrizePool = Math.floor((totalCollection * commissionSettings.prize_pool_percent) / 100);
+
       const tournamentData = {
         title: formData.title,
         game: formData.game,
         description: formData.description || null,
-        prize_pool: formData.prize_pool || null,
-        entry_fee: formData.entry_fee ? parseFloat(formData.entry_fee) : 0,
-        max_participants: formData.max_participants ? parseInt(formData.max_participants) : 100,
+        prize_pool: `₹${calculatedPrizePool.toLocaleString()}`,
+        entry_fee: entryFee,
+        max_participants: maxParticipants,
         start_date: new Date(formData.start_date).toISOString(),
         end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
         registration_deadline: formData.registration_deadline ? new Date(formData.registration_deadline).toISOString() : null,
         status: formData.status,
         rules: formData.rules || null,
         created_by: user?.id,
+        room_id: formData.room_id || null,
+        room_password: formData.room_password || null,
       };
 
       if (editingTournament) {
@@ -498,12 +543,29 @@ const AdminTournaments = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Prize Pool (₹)</Label>
+                  <Label>Max Players</Label>
                   <Input
-                    value={formData.prize_pool}
-                    onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })}
-                    placeholder="10,000"
+                    type="number"
+                    value={formData.max_participants}
+                    onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
+                    placeholder="100"
                   />
+                </div>
+              </div>
+
+              {/* Auto-calculated Prize Pool Info */}
+              <div className="bg-primary/10 rounded-lg p-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Auto Prize Pool ({commissionSettings.prize_pool_percent}%)</span>
+                  <span className="font-gaming font-bold text-primary">₹{calculatePrizePool().toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-xs text-muted-foreground">Organizer ({commissionSettings.organizer_percent}%)</span>
+                  <span className="text-xs">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.organizer_percent) / 100).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">Platform ({commissionSettings.platform_percent}%)</span>
+                  <span className="text-xs">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.platform_percent) / 100).toLocaleString()}</span>
                 </div>
               </div>
 
@@ -544,7 +606,7 @@ const AdminTournaments = () => {
                 <div className="flex justify-between text-xs pt-2 border-t">
                   <span className="text-muted-foreground">Total Distribution:</span>
                   <span className={`font-medium ${
-                    getTotalDistribution() > parseFloat(formData.prize_pool?.replace(/,/g, '') || '0') 
+                    getTotalDistribution() > calculatePrizePool() 
                       ? 'text-destructive' 
                       : 'text-green-600'
                   }`}>
@@ -552,38 +614,45 @@ const AdminTournaments = () => {
                   </span>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label>Commission %</Label>
-                <Input
-                  type="number"
-                  value={formData.commission}
-                  onChange={(e) => setFormData({ ...formData, commission: e.target.value })}
-                  placeholder="20"
-                />
-              </div>
             </div>
+
+            {/* Room Details - Only show when editing */}
+            {editingTournament && (
+              <div className="space-y-3 p-3 border rounded-lg">
+                <h4 className="font-medium text-sm flex items-center gap-2">
+                  <Key className="h-4 w-4 text-green-500" />
+                  Room Details
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Room ID</Label>
+                    <Input
+                      value={formData.room_id}
+                      onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                      placeholder="Enter room ID"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <Input
+                      value={formData.room_password}
+                      onChange={(e) => setFormData({ ...formData, room_password: e.target.value })}
+                      placeholder="Enter password"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Settings */}
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Match Time *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Max Players</Label>
-                  <Input
-                    type="number"
-                    value={formData.max_participants}
-                    onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
-                    placeholder="100"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label>Match Time *</Label>
+                <Input
+                  type="datetime-local"
+                  value={formData.start_date}
+                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                />
               </div>
 
               <div className="space-y-2">
