@@ -140,36 +140,119 @@ const Creator = () => {
     }
   };
 
-  const handleRegister = async (tournamentId: string) => {
+  const handleRegister = async (tournament: Tournament) => {
     if (!user) return;
 
-    setRegistering(tournamentId);
+    const entryFee = tournament.entry_fee || 0;
+
+    // Check if already joined
+    if (tournament.joined_users?.includes(user.id)) {
+      toast({
+        title: 'Already Joined',
+        description: 'You have already joined this tournament.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check wallet balance
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('wallet_balance')
+      .eq('user_id', user.id)
+      .single();
+
+    const walletBalance = profile?.wallet_balance || 0;
+
+    if (walletBalance < entryFee) {
+      toast({
+        title: 'Insufficient Balance',
+        description: `You need ₹${entryFee} to join. Your balance: ₹${walletBalance}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if tournament is full
+    const currentJoined = tournament.joined_users?.length || 0;
+    if (tournament.max_participants && currentJoined >= tournament.max_participants) {
+      toast({
+        title: 'Tournament Full',
+        description: 'This tournament has reached maximum participants.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setRegistering(tournament.id);
 
     try {
-      const { error } = await supabase
+      // Get commission settings
+      const { data: settings } = await supabase
+        .from('platform_settings')
+        .select('setting_key, setting_value');
+
+      const organizerPercent = parseFloat(settings?.find(s => s.setting_key === 'organizer_commission_percent')?.setting_value || '10');
+      const platformPercent = parseFloat(settings?.find(s => s.setting_key === 'platform_commission_percent')?.setting_value || '10');
+      const prizePoolPercent = parseFloat(settings?.find(s => s.setting_key === 'prize_pool_percent')?.setting_value || '80');
+
+      const organizerShare = (entryFee * organizerPercent) / 100;
+      const platformShare = (entryFee * platformPercent) / 100;
+      const prizePoolShare = (entryFee * prizePoolPercent) / 100;
+
+      // Deduct entry fee from wallet
+      const { error: walletError } = await supabase
+        .from('profiles')
+        .update({ wallet_balance: walletBalance - entryFee })
+        .eq('user_id', user.id);
+
+      if (walletError) throw walletError;
+
+      // Record wallet transaction
+      await supabase.from('wallet_transactions').insert({
+        user_id: user.id,
+        type: 'entry_fee',
+        amount: -entryFee,
+        status: 'completed',
+        description: `Entry fee for ${tournament.title}`,
+      });
+
+      // Update tournament with new user and financials
+      const newJoinedUsers = [...(tournament.joined_users || []), user.id];
+      const newPrizePool = (tournament.current_prize_pool || 0) + prizePoolShare;
+      const newOrganizerEarnings = (tournament as any).organizer_earnings || 0 + organizerShare;
+      const newPlatformEarnings = (tournament as any).platform_earnings || 0 + platformShare;
+
+      const { error: tournamentError } = await supabase
+        .from('tournaments')
+        .update({
+          joined_users: newJoinedUsers,
+          organizer_earnings: newOrganizerEarnings,
+          platform_earnings: newPlatformEarnings,
+          current_prize_pool: newPrizePool,
+        })
+        .eq('id', tournament.id);
+
+      if (tournamentError) throw tournamentError;
+
+      // Insert registration record
+      const { error: regError } = await supabase
         .from('tournament_registrations')
         .insert({
-          tournament_id: tournamentId,
+          tournament_id: tournament.id,
           user_id: user.id,
+          status: 'registered',
         });
 
-      if (error) {
-        if (error.code === '23505') {
-          toast({
-            title: 'Already Registered',
-            description: 'You are already registered for this tournament.',
-            variant: 'destructive',
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        toast({
-          title: 'Registered!',
-          description: 'Successfully registered for the tournament.',
-        });
-        setRegisteredTournaments([...registeredTournaments, tournamentId]);
-      }
+      if (regError && regError.code !== '23505') throw regError;
+
+      toast({
+        title: 'Joined!',
+        description: `Successfully joined ${tournament.title}. ₹${entryFee} deducted.`,
+      });
+      
+      setRegisteredTournaments([...registeredTournaments, tournament.id]);
+      fetchTournaments();
     } catch (error) {
       console.error('Error registering:', error);
       toast({
@@ -388,14 +471,14 @@ const Creator = () => {
                           className="flex-1"
                           size="sm"
                           disabled={registering === tournament.id || isJoined}
-                          onClick={() => handleRegister(tournament.id)}
+                          onClick={() => handleRegister(tournament)}
                         >
                           {registering === tournament.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : isJoined ? (
-                            'Registered ✓'
+                            'Joined ✓'
                           ) : (
-                            'Join Now'
+                            `Join ₹${tournament.entry_fee || 0}`
                           )}
                         </Button>
                       )}

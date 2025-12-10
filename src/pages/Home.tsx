@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import NotificationBell from '@/components/NotificationBell';
 import FollowButton from '@/components/FollowButton';
 import { 
@@ -302,23 +301,6 @@ const HomePage = () => {
           </div>
         </div>
         
-        {/* User Info Row */}
-        {user && userProfile && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={userProfile.avatar_url || ''} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                {userProfile.username?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <p className="text-sm font-medium">{userProfile.full_name || userProfile.username || user.email?.split('@')[0]}</p>
-              {userProfile.preferred_game && (
-                <p className="text-xs text-muted-foreground">Playing: {userProfile.preferred_game}</p>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Mode Filter - Solo/Duo/Squad */}
