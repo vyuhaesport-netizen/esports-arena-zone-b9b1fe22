@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Dialog,
   DialogContent,
@@ -38,9 +39,12 @@ import {
   ArrowLeft,
   Award,
   Key,
-  Lock
+  Lock,
+  Eye,
+  Medal,
+  Clock
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, differenceInMinutes } from 'date-fns';
 
 interface Tournament {
   id: string;
@@ -51,15 +55,25 @@ interface Tournament {
   entry_fee: number | null;
   max_participants: number | null;
   start_date: string;
+  end_date: string | null;
   status: string | null;
   joined_users: string[] | null;
   organizer_earnings: number | null;
   current_prize_pool: number | null;
   winner_user_id: string | null;
+  winner_declared_at: string | null;
   room_id: string | null;
   room_password: string | null;
   tournament_mode: string | null;
   prize_distribution: any;
+}
+
+interface PlayerProfile {
+  user_id: string;
+  username: string | null;
+  in_game_name: string | null;
+  avatar_url: string | null;
+  email: string;
 }
 
 const OrganizerDashboard = () => {
@@ -68,10 +82,13 @@ const OrganizerDashboard = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [winnerDialogOpen, setWinnerDialogOpen] = useState(false);
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
+  const [playersDialogOpen, setPlayersDialogOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [joinedPlayers, setJoinedPlayers] = useState<PlayerProfile[]>([]);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
   const [saving, setSaving] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
-  const [selectedWinner, setSelectedWinner] = useState('');
+  const [winnerPositions, setWinnerPositions] = useState<{[key: string]: number}>({});
   const [roomData, setRoomData] = useState({ room_id: '', room_password: '' });
   const [formData, setFormData] = useState({
     title: '',
@@ -316,25 +333,158 @@ const OrganizerDashboard = () => {
     }
   };
 
-  const openDeclareWinner = (tournament: Tournament) => {
+  const openViewPlayers = async (tournament: Tournament) => {
     setSelectedTournament(tournament);
-    setSelectedWinner(tournament.winner_user_id || '');
-    setWinnerDialogOpen(true);
+    setPlayersDialogOpen(true);
+    setLoadingPlayers(true);
+
+    try {
+      const userIds = tournament.joined_users || [];
+      if (userIds.length > 0) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_id, username, in_game_name, avatar_url, email')
+          .in('user_id', userIds);
+
+        if (!error && data) {
+          setJoinedPlayers(data);
+        }
+      } else {
+        setJoinedPlayers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching players:', error);
+    } finally {
+      setLoadingPlayers(false);
+    }
   };
 
-  const handleDeclareWinner = async () => {
-    if (!selectedTournament || !selectedWinner) {
-      toast({ title: 'Error', description: 'Please select a winner.', variant: 'destructive' });
+  const canDeclareWinner = (tournament: Tournament): { canDeclare: boolean; minutesRemaining: number } => {
+    if (!tournament.end_date) {
+      // If no end_date, use start_date + 2 hours as default end
+      const endTime = new Date(tournament.start_date);
+      endTime.setHours(endTime.getHours() + 2);
+      const now = new Date();
+      const minutesSinceEnd = differenceInMinutes(now, endTime);
+      return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd) };
+    }
+    
+    const endTime = new Date(tournament.end_date);
+    const now = new Date();
+    const minutesSinceEnd = differenceInMinutes(now, endTime);
+    return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd) };
+  };
+
+  const openDeclareWinner = async (tournament: Tournament) => {
+    const { canDeclare, minutesRemaining } = canDeclareWinner(tournament);
+    
+    if (!canDeclare) {
+      toast({ 
+        title: 'Please Wait', 
+        description: `You can declare winner after ${minutesRemaining} minutes.`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    setSelectedTournament(tournament);
+    setWinnerPositions({});
+    setWinnerDialogOpen(true);
+    setLoadingPlayers(true);
+
+    try {
+      const userIds = tournament.joined_users || [];
+      if (userIds.length > 0) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_id, username, in_game_name, avatar_url, email')
+          .in('user_id', userIds);
+
+        if (!error && data) {
+          setJoinedPlayers(data);
+        }
+      } else {
+        setJoinedPlayers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching players:', error);
+    } finally {
+      setLoadingPlayers(false);
+    }
+  };
+
+  const handleDeclareWinners = async () => {
+    if (!selectedTournament) return;
+    
+    const positionsAssigned = Object.keys(winnerPositions).length;
+    if (positionsAssigned === 0) {
+      toast({ title: 'Error', description: 'Please assign at least one winner position.', variant: 'destructive' });
       return;
     }
 
     setSaving(true);
 
     try {
+      // Get prize distribution
+      const prizeDistribution = selectedTournament.prize_distribution || {};
+      const prizePool = selectedTournament.current_prize_pool || 0;
+
+      // Award prizes based on positions
+      for (const [userId, position] of Object.entries(winnerPositions)) {
+        let prizeAmount = 0;
+        
+        // Check if prize_distribution has amount for this position
+        if (prizeDistribution[position.toString()]) {
+          prizeAmount = parseFloat(prizeDistribution[position.toString()]);
+        } else if (position === 1) {
+          // Default: 1st place gets 60% of prize pool
+          prizeAmount = prizePool * 0.6;
+        } else if (position === 2) {
+          // 2nd place gets 25%
+          prizeAmount = prizePool * 0.25;
+        } else if (position === 3) {
+          // 3rd place gets 15%
+          prizeAmount = prizePool * 0.15;
+        }
+
+        if (prizeAmount > 0) {
+          const { data: winnerProfile } = await supabase
+            .from('profiles')
+            .select('wallet_balance')
+            .eq('user_id', userId)
+            .single();
+
+          await supabase
+            .from('profiles')
+            .update({ wallet_balance: (winnerProfile?.wallet_balance || 0) + prizeAmount })
+            .eq('user_id', userId);
+
+          await supabase.from('wallet_transactions').insert({
+            user_id: userId,
+            type: 'prize',
+            amount: prizeAmount,
+            status: 'completed',
+            description: `Position #${position} prize for ${selectedTournament.title}`,
+          });
+
+          // Notify winner
+          await supabase.from('notifications').insert({
+            user_id: userId,
+            type: 'prize_won',
+            title: 'Congratulations! 🎉',
+            message: `You won position #${position} in ${selectedTournament.title}! ₹${prizeAmount} credited to your wallet.`,
+          });
+        }
+      }
+
+      // Get first place winner
+      const firstPlaceWinner = Object.entries(winnerPositions).find(([, pos]) => pos === 1);
+
+      // Update tournament status
       const { error: tournamentError } = await supabase
         .from('tournaments')
         .update({
-          winner_user_id: selectedWinner,
+          winner_user_id: firstPlaceWinner ? firstPlaceWinner[0] : Object.keys(winnerPositions)[0],
           winner_declared_at: new Date().toISOString(),
           status: 'completed',
         })
@@ -342,34 +492,41 @@ const OrganizerDashboard = () => {
 
       if (tournamentError) throw tournamentError;
 
-      const prizeAmount = selectedTournament.current_prize_pool || 0;
-      if (prizeAmount > 0) {
-        const { data: winnerProfile } = await supabase
+      // Credit organizer earnings
+      const organizerEarnings = ((selectedTournament.entry_fee || 0) * (selectedTournament.joined_users?.length || 0) * commissionSettings.organizer_percent) / 100;
+      
+      if (organizerEarnings > 0) {
+        const { data: organizerProfile } = await supabase
           .from('profiles')
           .select('wallet_balance')
-          .eq('user_id', selectedWinner)
+          .eq('user_id', user?.id)
           .single();
 
         await supabase
           .from('profiles')
-          .update({ wallet_balance: (winnerProfile?.wallet_balance || 0) + prizeAmount })
-          .eq('user_id', selectedWinner);
+          .update({ wallet_balance: (organizerProfile?.wallet_balance || 0) + organizerEarnings })
+          .eq('user_id', user?.id);
 
         await supabase.from('wallet_transactions').insert({
-          user_id: selectedWinner,
-          type: 'prize',
-          amount: prizeAmount,
+          user_id: user?.id,
+          type: 'organizer_commission',
+          amount: organizerEarnings,
           status: 'completed',
-          description: `Prize for winning ${selectedTournament.title}`,
+          description: `Organizer commission for ${selectedTournament.title}`,
         });
+
+        await supabase
+          .from('tournaments')
+          .update({ organizer_earnings: organizerEarnings })
+          .eq('id', selectedTournament.id);
       }
 
-      toast({ title: 'Winner Declared!', description: `Prize of ₹${prizeAmount} awarded to winner.` });
+      toast({ title: 'Winners Declared!', description: 'Prizes have been distributed to winners.' });
       setWinnerDialogOpen(false);
       fetchMyTournaments();
     } catch (error) {
-      console.error('Error declaring winner:', error);
-      toast({ title: 'Error', description: 'Failed to declare winner.', variant: 'destructive' });
+      console.error('Error declaring winners:', error);
+      toast({ title: 'Error', description: 'Failed to declare winners.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -516,22 +673,31 @@ const OrganizerDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2 mt-3 pt-3 border-t">
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+                    {/* View Players Button - Always visible */}
+                    <Button variant="outline" size="sm" onClick={() => openViewPlayers(tournament)}>
+                      <Eye className="h-3 w-3 mr-1" /> Players ({tournament.joined_users?.length || 0})
+                    </Button>
+
                     {(tournament.status === 'upcoming' || tournament.status === 'ongoing') && !tournament.winner_user_id && (
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditRoom(tournament)}>
+                      <Button variant="outline" size="sm" onClick={() => openEditRoom(tournament)}>
                         <Lock className="h-3 w-3 mr-1" /> Room ID
                       </Button>
                     )}
                     
-                    {tournament.status === 'ongoing' && !tournament.winner_user_id && (
-                      <Button variant="gaming" size="sm" className="flex-1" onClick={() => openDeclareWinner(tournament)}>
-                        <Award className="h-3 w-3 mr-1" /> Winner
+                    {(tournament.status === 'ongoing' || tournament.status === 'completed') && !tournament.winner_user_id && (
+                      <Button variant="gaming" size="sm" onClick={() => openDeclareWinner(tournament)}>
+                        <Award className="h-3 w-3 mr-1" /> 
+                        {(() => {
+                          const { canDeclare, minutesRemaining } = canDeclareWinner(tournament);
+                          return canDeclare ? 'Winner' : `Wait ${minutesRemaining}m`;
+                        })()}
                       </Button>
                     )}
                     
                     {tournament.status === 'upcoming' && (
                       <>
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => {
+                        <Button variant="outline" size="sm" onClick={() => {
                           setSelectedTournament(tournament);
                           setFormData({
                             title: tournament.title,
@@ -708,26 +874,15 @@ const OrganizerDashboard = () => {
 
       {/* Declare Winner Dialog */}
       <Dialog open={winnerDialogOpen} onOpenChange={(open) => setWinnerDialogOpen(open)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Declare Winner</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Medal className="h-5 w-5 text-primary" />
+              Declare Winners
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label>Select Winner</Label>
-              <Select value={selectedWinner} onValueChange={setSelectedWinner}>
-                <SelectTrigger><SelectValue placeholder="Select participant" /></SelectTrigger>
-                <SelectContent>
-                  {selectedTournament?.joined_users?.map((userId) => (
-                    <SelectItem key={userId} value={userId}>
-                      User: {userId.slice(0, 8)}...
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {selectedTournament && (
               <div className="bg-primary/10 rounded-lg p-4 text-center">
                 <p className="text-sm text-muted-foreground">Prize Pool</p>
@@ -736,13 +891,136 @@ const OrganizerDashboard = () => {
                 </p>
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label>Assign Positions to Players</Label>
+              <p className="text-xs text-muted-foreground mb-3">Select position for each winner (1st, 2nd, 3rd...)</p>
+              
+              {loadingPlayers ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                </div>
+              ) : joinedPlayers.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">No players joined this tournament</p>
+              ) : (
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {joinedPlayers.map((player) => (
+                      <div key={player.user_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage src={player.avatar_url || undefined} />
+                            <AvatarFallback>{(player.username || player.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{player.username || player.email.split('@')[0]}</p>
+                            {player.in_game_name && (
+                              <p className="text-xs text-muted-foreground">IGN: {player.in_game_name}</p>
+                            )}
+                          </div>
+                        </div>
+                        <Select 
+                          value={winnerPositions[player.user_id]?.toString() || ''} 
+                          onValueChange={(value) => {
+                            if (value === 'none') {
+                              const newPositions = { ...winnerPositions };
+                              delete newPositions[player.user_id];
+                              setWinnerPositions(newPositions);
+                            } else {
+                              setWinnerPositions({ ...winnerPositions, [player.user_id]: parseInt(value) });
+                            }
+                          }}
+                        >
+                          <SelectTrigger className="w-24">
+                            <SelectValue placeholder="Rank" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="1">🥇 1st</SelectItem>
+                            <SelectItem value="2">🥈 2nd</SelectItem>
+                            <SelectItem value="3">🥉 3rd</SelectItem>
+                            <SelectItem value="4">4th</SelectItem>
+                            <SelectItem value="5">5th</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+
+            {Object.keys(winnerPositions).length > 0 && (
+              <div className="bg-green-500/10 rounded-lg p-3">
+                <p className="text-sm font-medium text-green-700">Selected Winners:</p>
+                {Object.entries(winnerPositions)
+                  .sort(([, a], [, b]) => a - b)
+                  .map(([userId, position]) => {
+                    const player = joinedPlayers.find(p => p.user_id === userId);
+                    return (
+                      <p key={userId} className="text-xs text-green-600">
+                        #{position} - {player?.username || player?.email?.split('@')[0]}
+                      </p>
+                    );
+                  })}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setWinnerDialogOpen(false)}>Cancel</Button>
-            <Button variant="gaming" onClick={handleDeclareWinner} disabled={saving || !selectedWinner}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Winner'}
+            <Button variant="gaming" onClick={handleDeclareWinners} disabled={saving || Object.keys(winnerPositions).length === 0}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Winners'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Joined Players Dialog */}
+      <Dialog open={playersDialogOpen} onOpenChange={(open) => setPlayersDialogOpen(open)}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Joined Players ({joinedPlayers.length})
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            {loadingPlayers ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : joinedPlayers.length === 0 ? (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground">No players have joined yet</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[400px]">
+                <div className="space-y-2">
+                  {joinedPlayers.map((player, index) => (
+                    <div key={player.user_id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium text-muted-foreground w-6">{index + 1}.</span>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={player.avatar_url || undefined} />
+                        <AvatarFallback>{(player.username || player.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{player.username || player.email.split('@')[0]}</p>
+                        {player.in_game_name && (
+                          <p className="text-xs text-muted-foreground">IGN: {player.in_game_name}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlayersDialogOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

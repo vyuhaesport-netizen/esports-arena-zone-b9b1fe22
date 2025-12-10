@@ -6,13 +6,17 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
+
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,11 +36,13 @@ const Auth = () => {
   const {
     toast
   } = useToast();
+
   useEffect(() => {
     if (user) {
       navigate('/home');
     }
   }, [user, navigate]);
+
   const validateForm = () => {
     const newErrors: {
       email?: string;
@@ -50,19 +56,55 @@ const Auth = () => {
         newErrors.email = e.errors[0].message;
       }
     }
-    try {
-      passwordSchema.parse(password);
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        newErrors.password = e.errors[0].message;
+    if (!isForgotPassword) {
+      try {
+        passwordSchema.parse(password);
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.password = e.errors[0].message;
+        }
       }
     }
-    if (!isLogin && !acceptedTerms) {
+    if (!isLogin && !isForgotPassword && !acceptedTerms) {
       newErrors.terms = 'You must accept the Terms & Conditions';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  const handleForgotPassword = async () => {
+    if (!validateForm()) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      });
+      
+      if (error) {
+        toast({
+          title: 'Error',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Reset Email Sent!',
+          description: 'Check your email for the password reset link.',
+        });
+        setIsForgotPassword(false);
+      }
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to send reset email.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) {
@@ -119,7 +161,65 @@ const Auth = () => {
       setLoading(false);
     }
   };
-  return <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 border-gray-300">
+
+  // Forgot Password View
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 border-gray-300">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-lg p-8 animate-scale-in">
+            <button 
+              onClick={() => setIsForgotPassword(false)} 
+              className="flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" /> Back to Login
+            </button>
+            
+            <div className="flex flex-col items-center mb-6">
+              <img src={vyuhaLogo} alt="Vyuha Esport" className="h-20 w-20 rounded-full object-cover mb-4 border-slate-400" />
+              <h1 className="text-center mb-2 text-slate-950 font-semibold text-xl">Reset Password</h1>
+              <p className="text-center text-sm text-gray-600">Enter your email to receive a reset link</p>
+            </div>
+
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email address</Label>
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="you@example.com" 
+                  value={email} 
+                  onChange={e => {
+                    setEmail(e.target.value);
+                    setErrors(prev => ({ ...prev, email: undefined }));
+                  }} 
+                  className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.email ? 'border-red-500' : ''}`} 
+                />
+                {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+              </div>
+
+              <button 
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading} 
+                className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : 'Send Reset Link'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 border-gray-300">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-lg p-8 animate-scale-in">
           {/* Logo */}
@@ -167,7 +267,11 @@ const Auth = () => {
 
             {/* Forgot Password - Login Only */}
             {isLogin && <div className="text-right">
-                <button type="button" className="text-sm text-orange-600 hover:underline">
+                <button 
+                  type="button" 
+                  onClick={() => setIsForgotPassword(true)}
+                  className="text-sm text-orange-600 hover:underline"
+                >
                   Forgot password?
                 </button>
               </div>}
@@ -225,6 +329,8 @@ const Auth = () => {
           </p>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Auth;
