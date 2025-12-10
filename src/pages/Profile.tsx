@@ -335,6 +335,7 @@ const ProfilePage = () => {
     { icon: Trophy, label: 'My Matches', onClick: () => navigate('/my-match') },
     { icon: Wallet, label: 'Wallet', onClick: () => navigate('/wallet') },
     { icon: Users, label: 'Message', onClick: () => navigate('/message') },
+    { icon: Crown, label: 'Leaderboard', onClick: () => navigate('/leaderboard') },
     { icon: Settings, label: 'Settings', onClick: () => {} },
     { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
   ];
