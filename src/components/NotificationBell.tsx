@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { Bell, Check, Trophy, UserPlus, Shield, Users } from 'lucide-react';
+import { Bell, Check, Trophy, UserPlus, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Sheet,
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import vyuhaLogo from '@/assets/vyuha-logo.png';
 
 const NotificationBell = () => {
   const [open, setOpen] = useState(false);
@@ -23,19 +24,18 @@ const NotificationBell = () => {
       await markAsRead(notification.id);
     }
     
-    // Navigate based on notification type
     switch (notification.type) {
       case 'new_tournament':
-        navigate('/home');
+      case 'tournament_created':
+        navigate('/');
         break;
       case 'friend_request':
+      case 'group_invite':
         navigate('/message');
         break;
       case 'team_invite':
-        navigate('/admin');
-        break;
       case 'admin_broadcast':
-        // Just mark as read
+        navigate('/message');
         break;
       default:
         break;
@@ -46,15 +46,15 @@ const NotificationBell = () => {
   const getIcon = (type: string) => {
     switch (type) {
       case 'new_tournament':
+      case 'tournament_created':
         return <Trophy className="h-4 w-4 text-primary" />;
-      case 'follow':
-        return <UserPlus className="h-4 w-4 text-purple-500" />;
       case 'friend_request':
         return <Users className="h-4 w-4 text-green-500" />;
+      case 'group_invite':
+        return <Users className="h-4 w-4 text-blue-500" />;
       case 'team_invite':
-        return <Shield className="h-4 w-4 text-orange-500" />;
       case 'admin_broadcast':
-        return <Shield className="h-4 w-4 text-primary" />;
+        return <img src={vyuhaLogo} alt="Vyuha" className="h-6 w-6 rounded-full object-cover" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
     }

@@ -17,8 +17,9 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Bell, Send, Loader2, Users, Trophy, Shield } from 'lucide-react';
+import { Bell, Send, Loader2, MessageCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import vyuhaLogo from '@/assets/vyuha-logo.png';
 
 interface Broadcast {
   id: string;
@@ -90,38 +91,53 @@ const AdminNotifications = () => {
 
       if (broadcastError) throw broadcastError;
 
-      // If it's a notification type, send to all users
-      if (form.broadcast_type === 'notification') {
-        // Get target users based on audience
-        let usersQuery = supabase.from('profiles').select('user_id');
+      // Get target users based on audience
+      let targetUsers: string[] = [];
+      
+      if (form.target_audience === 'organizers') {
+        const { data: organizerRoles } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'organizer');
         
-        if (form.target_audience === 'organizers') {
-          const { data: organizerRoles } = await supabase
-            .from('user_roles')
-            .select('user_id')
-            .eq('role', 'organizer');
-          
-          if (organizerRoles) {
-            const organizerIds = organizerRoles.map(r => r.user_id);
-            usersQuery = usersQuery.in('user_id', organizerIds);
-          }
-        }
+        targetUsers = organizerRoles?.map(r => r.user_id) || [];
+      } else if (form.target_audience === 'creators') {
+        // Get users who have created tournaments
+        const { data: creators } = await supabase
+          .from('tournaments')
+          .select('created_by')
+          .not('created_by', 'is', null);
+        
+        targetUsers = [...new Set(creators?.map(c => c.created_by).filter(Boolean) as string[])];
+      } else {
+        // All users
+        const { data: allUsers } = await supabase
+          .from('profiles')
+          .select('user_id');
+        
+        targetUsers = allUsers?.map(u => u.user_id) || [];
+      }
 
-        const { data: users } = await usersQuery;
+      if (targetUsers.length > 0) {
+        // Always create notifications for bell icon
+        const notifications = targetUsers.map(userId => ({
+          user_id: userId,
+          type: 'admin_broadcast',
+          title: form.title,
+          message: form.message
+        }));
 
-        if (users && users.length > 0) {
-          const notifications = users.map(u => ({
-            user_id: u.user_id,
-            type: 'admin_broadcast',
-            title: form.title,
-            message: form.message
-          }));
-
-          await supabase.from('notifications').insert(notifications);
+        const { error: notifError } = await supabase.from('notifications').insert(notifications);
+        
+        if (notifError) {
+          console.error('Error creating notifications:', notifError);
         }
       }
 
-      toast({ title: 'Sent!', description: `${form.broadcast_type === 'notification' ? 'Notification' : 'Message'} sent to ${form.target_audience} users.` });
+      toast({ 
+        title: 'Sent!', 
+        description: `${form.broadcast_type === 'notification' ? 'Notification' : 'Message'} sent to ${targetUsers.length} ${form.target_audience} users.` 
+      });
       setForm({ title: '', message: '', broadcast_type: 'notification', target_audience: 'all' });
       fetchBroadcasts();
     } catch (error) {
@@ -135,6 +151,15 @@ const AdminNotifications = () => {
   return (
     <AdminLayout title="Notifications">
       <div className="p-4 space-y-6">
+        {/* Header with Vyuha branding */}
+        <div className="flex items-center gap-3 mb-4">
+          <img src={vyuhaLogo} alt="Vyuha" className="w-10 h-10 rounded-full" />
+          <div>
+            <h2 className="font-bold">Vyuha Broadcasts</h2>
+            <p className="text-xs text-muted-foreground">Send notifications to all users</p>
+          </div>
+        </div>
+
         {/* Send New Notification/Message */}
         <div className="bg-card border border-border rounded-xl p-4">
           <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -151,8 +176,18 @@ const AdminNotifications = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="notification">Notification (Bell Icon)</SelectItem>
-                    <SelectItem value="message">Message (Message Tab)</SelectItem>
+                    <SelectItem value="notification">
+                      <div className="flex items-center gap-2">
+                        <Bell className="h-4 w-4" />
+                        Notification
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="message">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="h-4 w-4" />
+                        Message (Vyuha Tab)
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -164,8 +199,8 @@ const AdminNotifications = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Users</SelectItem>
-                    <SelectItem value="users">Regular Users Only</SelectItem>
                     <SelectItem value="organizers">Organizers Only</SelectItem>
+                    <SelectItem value="creators">Tournament Creators</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -192,7 +227,7 @@ const AdminNotifications = () => {
 
             <Button onClick={handleSend} disabled={sending} className="w-full">
               {sending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-              Send {form.broadcast_type === 'notification' ? 'Notification' : 'Message'}
+              Send as Vyuha Esport
             </Button>
           </div>
         </div>
@@ -215,28 +250,33 @@ const AdminNotifications = () => {
               <div className="space-y-3">
                 {broadcasts.map((broadcast) => (
                   <div key={broadcast.id} className="bg-card border border-border rounded-xl p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {broadcast.broadcast_type === 'notification' ? (
-                          <Bell className="h-4 w-4 text-primary" />
-                        ) : (
-                          <Shield className="h-4 w-4 text-purple-500" />
-                        )}
-                        <h4 className="font-semibold text-sm">{broadcast.title}</h4>
-                      </div>
-                      <div className="flex gap-1">
-                        <Badge variant="outline" className="text-[10px]">
-                          {broadcast.broadcast_type}
-                        </Badge>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {broadcast.target_audience}
-                        </Badge>
+                    <div className="flex items-start gap-3">
+                      <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-full" />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            {broadcast.broadcast_type === 'notification' ? (
+                              <Bell className="h-4 w-4 text-primary" />
+                            ) : (
+                              <MessageCircle className="h-4 w-4 text-purple-500" />
+                            )}
+                            <h4 className="font-semibold text-sm">{broadcast.title}</h4>
+                          </div>
+                          <div className="flex gap-1">
+                            <Badge variant="outline" className="text-[10px]">
+                              {broadcast.broadcast_type}
+                            </Badge>
+                            <Badge variant="secondary" className="text-[10px]">
+                              {broadcast.target_audience}
+                            </Badge>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{broadcast.message}</p>
+                        <p className="text-[10px] text-muted-foreground mt-2">
+                          {format(new Date(broadcast.created_at), 'MMM dd, yyyy hh:mm a')}
+                        </p>
                       </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">{broadcast.message}</p>
-                    <p className="text-[10px] text-muted-foreground mt-2">
-                      {format(new Date(broadcast.created_at), 'MMM dd, yyyy hh:mm a')}
-                    </p>
                   </div>
                 ))}
               </div>
