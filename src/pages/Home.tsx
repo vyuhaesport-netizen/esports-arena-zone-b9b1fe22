@@ -390,31 +390,43 @@ const HomePage = () => {
                   key={tournament.id}
                   className="bg-card rounded-xl border border-border overflow-hidden"
                 >
-                  {/* Header Row */}
-                  <div className="p-4 pb-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Gamepad2 className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-sm line-clamp-1">{tournament.title}</h3>
-                          <p className="text-xs text-muted-foreground">{tournament.game} • {tournament.tournament_mode || 'Solo'}</p>
-                        </div>
+                  {/* Tournament Header - Matching Creator Style */}
+                  <div className="h-24 bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center relative">
+                    <Gamepad2 className="h-10 w-10 text-primary/40" />
+                    <Badge 
+                      className={`absolute top-2 right-2 text-[10px] ${
+                        tournament.status === 'upcoming' 
+                          ? 'bg-primary/10 text-primary' 
+                          : tournament.status === 'ongoing'
+                          ? 'bg-green-500/10 text-green-600'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {tournament.status}
+                    </Badge>
+                    <Badge className="absolute top-2 left-2 text-[10px] bg-primary/10 text-primary">
+                      {tournament.tournament_mode || 'Solo'}
+                    </Badge>
+                    <button 
+                      onClick={() => handleShare(tournament)}
+                      className="absolute bottom-2 right-2 p-1.5 rounded-full bg-background/80 hover:bg-background"
+                    >
+                      <Share2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+
+                  {/* Tournament Details */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold mb-1">{tournament.title}</h3>
+                        <p className="text-xs text-muted-foreground">{tournament.game}</p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button 
-                          onClick={() => handleShare(tournament)}
-                          className="p-1.5 rounded-full hover:bg-muted"
-                        >
-                          <Share2 className="h-4 w-4 text-muted-foreground" />
-                        </button>
-                        <Badge className={`text-[10px] ${tournament.tournament_type === 'organizer' ? 'bg-primary/10 text-primary' : 'bg-purple-500/10 text-purple-600'}`}>
-                          {tournament.tournament_type === 'organizer' ? 'Official' : 'Creator'}
-                        </Badge>
-                      </div>
+                      <Badge className={`text-[10px] ${tournament.tournament_type === 'organizer' ? 'bg-primary/10 text-primary' : 'bg-purple-500/10 text-purple-600'}`}>
+                        {tournament.tournament_type === 'organizer' ? 'Official' : 'Creator'}
+                      </Badge>
                     </div>
-                    
+
                     {/* Organizer Follow */}
                     {tournament.created_by && tournament.tournament_type === 'creator' && user?.id !== tournament.created_by && (
                       <div className="mt-2">
@@ -431,68 +443,63 @@ const HomePage = () => {
                         />
                       </div>
                     )}
-                  </div>
 
-                  {/* Stats Row */}
-                  <div className="px-4 py-2 bg-muted/30 grid grid-cols-4 gap-2 text-center">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Prize</p>
-                      <p className="text-sm font-semibold text-primary">{tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Entry</p>
-                      <p className="text-sm font-semibold">₹{tournament.entry_fee || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Spots</p>
-                      <p className="text-sm font-semibold">{spotsLeft} left</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Joined</p>
-                      <p className="text-sm font-semibold">{tournament.joined_users?.length || 0}</p>
-                    </div>
-                  </div>
-
-                  {/* Room Details - Only for joined users near match time */}
-                  {joined && showRoomDetails && tournament.room_id && (
-                    <div className="px-4 py-2 bg-green-500/10 border-t border-green-500/20">
-                      <div className="flex items-center gap-2 text-green-600">
-                        <Eye className="h-4 w-4" />
-                        <span className="text-xs font-medium">Room ID: {tournament.room_id}</span>
-                        {tournament.room_password && (
-                          <span className="text-xs">| Pass: {tournament.room_password}</span>
-                        )}
+                    <div className="grid grid-cols-2 gap-2 text-xs mb-4 mt-3">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Trophy className="h-3.5 w-3.5 text-primary" />
+                        {tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Wallet className="h-3.5 w-3.5 text-primary" />
+                        {tournament.entry_fee ? `₹${tournament.entry_fee}` : 'Free'}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Users className="h-3.5 w-3.5 text-primary" />
+                        {spotsLeft} spots left
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <span className="text-xs">{format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}</span>
                       </div>
                     </div>
-                  )}
-
-                  {/* Footer Row */}
-                  <div className="p-4 pt-3">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}
-                      </span>
-                      <button 
-                        onClick={() => setPrizeDrawer({ open: true, tournament })}
-                        className="text-xs text-primary font-medium hover:underline flex items-center gap-1"
-                      >
-                        <Trophy className="h-3 w-3" />
-                        View Prize Chart
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                    {joined ? (
-                      <Badge className="bg-green-500/10 text-green-600 flex-shrink-0">Joined ✓</Badge>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="gaming"
-                        onClick={() => handleJoinClick(tournament)}
-                        disabled={spotsLeft <= 0}
-                      >
-                        {spotsLeft <= 0 ? 'Full' : 'Join Now'}
-                      </Button>
+                    {/* Room Details - Only for joined users near match time */}
+                    {joined && showRoomDetails && tournament.room_id && (
+                      <div className="mb-3 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                        <div className="flex items-center gap-2 text-green-600 text-xs">
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>Room: {tournament.room_id}</span>
+                          {tournament.room_password && (
+                            <span>| Pass: {tournament.room_password}</span>
+                          )}
+                        </div>
+                      </div>
                     )}
+
+                    <div className="flex items-center gap-2">
+                      {joined ? (
+                        <Button variant="secondary" className="flex-1" size="sm" disabled>
+                          Joined ✓
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="gaming"
+                          className="flex-1"
+                          size="sm"
+                          onClick={() => handleJoinClick(tournament)}
+                          disabled={spotsLeft <= 0}
+                        >
+                          {spotsLeft <= 0 ? 'Full' : 'Join Now'}
+                        </Button>
+                      )}
+
+                      {tournament.prize_distribution && (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setPrizeDrawer({ open: true, tournament })}
+                        >
+                          Prizes
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
