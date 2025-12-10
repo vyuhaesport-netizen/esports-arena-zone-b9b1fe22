@@ -24,23 +24,19 @@ const NotificationBell = () => {
       await markAsRead(notification.id);
     }
     
+    // Only navigate for tournament notifications, NOT for messages
     switch (notification.type) {
       case 'new_tournament':
       case 'tournament_created':
         navigate('/');
+        setOpen(false);
         break;
-      case 'friend_request':
-      case 'group_invite':
-        navigate('/message');
-        break;
-      case 'team_invite':
-      case 'admin_broadcast':
-        navigate('/message');
-        break;
+      // For other notification types, just mark as read and stay in notifications panel
+      // Do NOT redirect to messages - notifications and messages are separate
       default:
+        // Keep panel open to show notification was read
         break;
     }
-    setOpen(false);
   };
 
   const getIcon = (type: string) => {
