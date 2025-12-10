@@ -236,13 +236,15 @@ const AdminTeam = () => {
 
         if (memberError) throw memberError;
 
-        // Add admin role
-        await supabase
+        // Add admin role using upsert
+        const { error: roleError } = await supabase
           .from('user_roles')
           .upsert({
             user_id: profile.user_id,
             role: 'admin',
-          });
+          }, { onConflict: 'user_id,role' });
+
+        if (roleError) throw roleError;
 
         // Add permissions
         if (selectedPermissions.length > 0) {

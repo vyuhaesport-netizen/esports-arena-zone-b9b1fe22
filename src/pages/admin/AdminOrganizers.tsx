@@ -187,12 +187,12 @@ const AdminOrganizers = () => {
 
       const { error: roleError } = await supabase
         .from('user_roles')
-        .insert({
+        .upsert({
           user_id: selectedApplication.user_id,
           role: 'organizer',
-        });
+        }, { onConflict: 'user_id,role' });
 
-      if (roleError && !roleError.message.includes('duplicate')) throw roleError;
+      if (roleError) throw roleError;
 
       toast({ title: 'Approved!', description: `${selectedApplication.name} is now an organizer.` });
       setActionDialog(null);
