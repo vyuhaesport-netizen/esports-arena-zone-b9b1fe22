@@ -275,27 +275,52 @@ const ProfilePage = () => {
     setSaving(true);
 
     try {
-      const { error } = await supabase
-        .from('organizer_applications')
-        .insert({
-          user_id: user.id,
-          name: applyForm.name,
-          age: parseInt(applyForm.age),
-          phone: applyForm.phone,
-          aadhaar_number: applyForm.aadhaar_number.replace(/\s/g, ''),
-          instagram_link: applyForm.instagram_link || null,
-          youtube_link: applyForm.youtube_link || null,
-          experience: applyForm.experience || null,
-        });
+      // Check if user already has an application
+      if (organizerApplication) {
+        // Update existing application (for rejected users reapplying)
+        const { error } = await supabase
+          .from('organizer_applications')
+          .update({
+            name: applyForm.name,
+            age: parseInt(applyForm.age),
+            phone: applyForm.phone,
+            aadhaar_number: applyForm.aadhaar_number.replace(/\s/g, ''),
+            instagram_link: applyForm.instagram_link || null,
+            youtube_link: applyForm.youtube_link || null,
+            experience: applyForm.experience || null,
+            status: 'pending',
+            rejection_reason: null,
+          })
+          .eq('user_id', user.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Insert new application
+        const { error } = await supabase
+          .from('organizer_applications')
+          .insert({
+            user_id: user.id,
+            name: applyForm.name,
+            age: parseInt(applyForm.age),
+            phone: applyForm.phone,
+            aadhaar_number: applyForm.aadhaar_number.replace(/\s/g, ''),
+            instagram_link: applyForm.instagram_link || null,
+            youtube_link: applyForm.youtube_link || null,
+            experience: applyForm.experience || null,
+          });
+
+        if (error) throw error;
+      }
 
       toast({ title: 'Application Submitted', description: 'Your organizer application has been submitted for review.' });
       setApplyDialogOpen(false);
       fetchOrganizerApplication();
-    } catch (error) {
-      console.error('Error submitting application:', error);
-      toast({ title: 'Error', description: 'Failed to submit application.', variant: 'destructive' });
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        toast({ title: 'Already Applied', description: 'You have already submitted an application.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Error', description: 'Failed to submit application.', variant: 'destructive' });
+      }
     } finally {
       setSaving(false);
     }
@@ -461,9 +486,8 @@ const ProfilePage = () => {
               onClick={() => {
                 if (organizerApplication?.status === 'pending') {
                   toast({ title: 'Application Pending', description: 'Your application is under review.' });
-                } else if (organizerApplication?.status === 'rejected') {
-                  toast({ title: 'Application Rejected', description: 'Your previous application was rejected.', variant: 'destructive' });
                 } else {
+                  // Allow reapplication for rejected or new users
                   setApplyDialogOpen(true);
                 }
               }}
@@ -479,10 +503,12 @@ const ProfilePage = () => {
                     <Badge className="bg-yellow-500/10 text-yellow-600 text-[9px]">Pending</Badge>
                   )}
                   {organizerApplication?.status === 'rejected' && (
-                    <Badge variant="destructive" className="text-[9px]">Rejected</Badge>
+                    <Badge variant="destructive" className="text-[9px]">Reapply</Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">Host your own tournaments</p>
+                <p className="text-xs text-muted-foreground">
+                  {organizerApplication?.status === 'rejected' ? 'Submit a new application' : 'Host your own tournaments'}
+                </p>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
