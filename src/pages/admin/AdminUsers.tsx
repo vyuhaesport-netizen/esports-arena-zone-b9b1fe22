@@ -16,6 +16,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -34,7 +41,9 @@ import {
   Smartphone,
   Plus,
   Minus,
-  Eye
+  Eye,
+  UserPlus,
+  Palette
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -57,8 +66,11 @@ const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [detailOpen, setDetailOpen] = useState(false);
   const [walletDialogOpen, setWalletDialogOpen] = useState(false);
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>('');
   const [walletAction, setWalletAction] = useState<'add' | 'deduct'>('add');
   const [walletAmount, setWalletAmount] = useState('');
   const [walletReason, setWalletReason] = useState('');
@@ -157,6 +169,82 @@ const AdminUsers = () => {
     } catch (error) {
       console.error('Error:', error);
       toast({ title: 'Error', description: 'Failed to update account status.', variant: 'destructive' });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const fetchUserRoles = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      setUserRoles(data?.map(r => r.role) || []);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      setUserRoles([]);
+    }
+  };
+
+  const handleAssignRole = async () => {
+    if (!selectedUser || !selectedRole) return;
+
+    setProcessing(true);
+    try {
+      // Check if role already exists
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('id')
+        .eq('user_id', selectedUser.user_id)
+        .eq('role', selectedRole as 'admin' | 'user' | 'organizer' | 'creator')
+        .maybeSingle();
+
+      if (existingRole) {
+        toast({ title: 'Info', description: 'User already has this role.' });
+        setRoleDialogOpen(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: selectedUser.user_id,
+          role: selectedRole as 'admin' | 'user' | 'organizer' | 'creator',
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Success', description: `User is now a ${selectedRole}.` });
+      setRoleDialogOpen(false);
+      setSelectedRole('');
+      fetchUserRoles(selectedUser.user_id);
+    } catch (error) {
+      console.error('Error assigning role:', error);
+      toast({ title: 'Error', description: 'Failed to assign role.', variant: 'destructive' });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleRemoveRole = async (role: string) => {
+    if (!selectedUser) return;
+
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', selectedUser.user_id)
+        .eq('role', role as 'admin' | 'user' | 'organizer' | 'creator');
+
+      if (error) throw error;
+
+      toast({ title: 'Success', description: `${role} role removed.` });
+      fetchUserRoles(selectedUser.user_id);
+    } catch (error) {
+      console.error('Error removing role:', error);
+      toast({ title: 'Error', description: 'Failed to remove role.', variant: 'destructive' });
     } finally {
       setProcessing(false);
     }
@@ -304,6 +392,7 @@ const AdminUsers = () => {
                           className="h-8 w-8"
                           onClick={() => {
                             setSelectedUser(u);
+                            fetchUserRoles(u.user_id);
                             setDetailOpen(true);
                           }}
                         >
@@ -383,6 +472,50 @@ const AdminUsers = () => {
                 )}
               </div>
 
+              {/* User Roles */}
+              <div className="p-4 border rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-muted-foreground">User Roles</span>
+                  {isSuperAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRoleDialogOpen(true)}
+                    >
+                      <UserPlus className="h-3 w-3 mr-1" /> Assign Role
+                    </Button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {userRoles.length === 0 ? (
+                    <Badge variant="secondary" className="text-xs">User</Badge>
+                  ) : (
+                    userRoles.map((role) => (
+                      <Badge 
+                        key={role} 
+                        className={`text-xs ${
+                          role === 'admin' ? 'bg-red-500/10 text-red-600' :
+                          role === 'organizer' ? 'bg-primary/10 text-primary' :
+                          role === 'creator' ? 'bg-pink-500/10 text-pink-600' :
+                          'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {role}
+                        {isSuperAdmin && role !== 'user' && (
+                          <button
+                            className="ml-1 hover:text-destructive"
+                            onClick={() => handleRemoveRole(role)}
+                            disabled={processing}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+
               {/* Account Actions */}
               {isSuperAdmin && hasPermission('users:manage') && (
                 <div className="space-y-2">
@@ -459,6 +592,67 @@ const AdminUsers = () => {
               disabled={processing}
             >
               {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Assignment Dialog */}
+      <Dialog open={roleDialogOpen} onOpenChange={setRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Role</DialogTitle>
+            <DialogDescription>
+              Assign a role to {selectedUser?.full_name || selectedUser?.username || selectedUser?.email}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Select Role</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="organizer">
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-primary" />
+                      <span>Organizer</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="creator">
+                    <div className="flex items-center gap-2">
+                      <Palette className="h-4 w-4 text-pink-500" />
+                      <span>Creator</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-muted/50 p-3 rounded-lg text-xs">
+              {selectedRole === 'organizer' && (
+                <p><strong>Organizer:</strong> Can create official tournaments shown on Home page</p>
+              )}
+              {selectedRole === 'creator' && (
+                <p><strong>Creator:</strong> Can create creator tournaments shown on Creator page</p>
+              )}
+              {!selectedRole && (
+                <p className="text-muted-foreground">Select a role to see its description</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAssignRole}
+              disabled={processing || !selectedRole}
+            >
+              {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Assign Role'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isOrganizer: boolean;
+  isCreator: boolean;
   permissions: string[];
   hasPermission: (permission: string) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -34,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isOrganizer, setIsOrganizer] = useState(false);
+  const [isCreator, setIsCreator] = useState(false);
   const [permissions, setPermissions] = useState<string[]>([]);
 
   const checkRoles = async (userId: string) => {
@@ -46,13 +48,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!error && data) {
         setIsAdmin(data.some(r => r.role === 'admin'));
         setIsOrganizer(data.some(r => r.role === 'organizer'));
+        setIsCreator(data.some(r => r.role === 'creator'));
       } else {
         setIsAdmin(false);
         setIsOrganizer(false);
+        setIsCreator(false);
       }
     } catch {
       setIsAdmin(false);
       setIsOrganizer(false);
+      setIsCreator(false);
     }
   };
 
@@ -79,7 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'settings:view', 'settings:manage',
           'support:view', 'support:manage',
           'notifications:view', 'notifications:manage',
-          'organizers:view', 'organizers:manage'
+          'organizers:view', 'organizers:manage',
+          'creators:view', 'creators:manage'
         ]);
       } else {
         setIsSuperAdmin(false);
@@ -110,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const refreshPermissions = async () => {
     if (user) {
+      await checkRoles(user.id);
       await checkSuperAdmin(user.id);
     }
   };
@@ -134,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdmin(false);
           setIsSuperAdmin(false);
           setIsOrganizer(false);
+          setIsCreator(false);
           setPermissions([]);
         }
         
@@ -182,12 +190,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAdmin(false);
     setIsSuperAdmin(false);
     setIsOrganizer(false);
+    setIsCreator(false);
     setPermissions([]);
   };
 
   return (
     <AuthContext.Provider value={{ 
-      user, session, loading, isAdmin, isSuperAdmin, isOrganizer, permissions, 
+      user, session, loading, isAdmin, isSuperAdmin, isOrganizer, isCreator, permissions, 
       hasPermission, signIn, signUp, signOut, refreshPermissions 
     }}>
       {children}

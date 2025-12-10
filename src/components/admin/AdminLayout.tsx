@@ -19,6 +19,7 @@ import {
   UsersRound,
   LogOut,
   Trophy,
+  Palette,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -40,7 +41,8 @@ const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/admin', permission: 'dashboard:view' },
   { icon: Users, label: 'Users', path: '/admin/users', permission: 'users:view' },
   { icon: Trophy, label: 'Tournaments', path: '/admin/tournaments', permission: 'tournaments:view' },
-  { icon: ShieldCheck, label: 'Organizer Verifications', path: '/admin/organizers', permission: 'organizers:view' },
+  { icon: ShieldCheck, label: 'Organizer Management', path: '/admin/organizers', permission: 'organizers:view' },
+  { icon: Palette, label: 'Creator Management', path: '/admin/creators', permission: 'creators:view' },
   { icon: ArrowDownLeft, label: 'Deposits', path: '/admin/deposits', permission: 'deposits:view' },
   { icon: Receipt, label: 'Transactions', path: '/admin/transactions', permission: 'transactions:view' },
   { icon: ArrowUpRight, label: 'Withdrawals', path: '/admin/withdrawals', permission: 'withdrawals:view' },
