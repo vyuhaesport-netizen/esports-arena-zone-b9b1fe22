@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
@@ -15,6 +14,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import {
@@ -33,9 +38,19 @@ import {
   Mic,
   Smile,
   Heart,
+  ThumbsUp,
+  Laugh,
+  Angry,
   MoreVertical,
   Camera,
-  Paperclip
+  Paperclip,
+  Trash2,
+  Reply,
+  Copy,
+  MicOff,
+  Play,
+  Pause,
+  Volume2
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -50,6 +65,9 @@ interface Friend {
     full_name: string | null;
     avatar_url: string | null;
   };
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
 }
 
 interface Message {
@@ -62,6 +80,7 @@ interface Message {
   message_type?: string;
   media_url?: string;
   created_at: string;
+  reactions?: string[];
 }
 
 interface AdminBroadcast {
@@ -79,6 +98,8 @@ interface ChatGroup {
   created_by: string;
   created_at: string;
   member_count?: number;
+  lastMessage?: string;
+  lastMessageTime?: string;
 }
 
 interface GroupMessage {
@@ -94,17 +115,31 @@ interface GroupMessage {
     full_name: string | null;
     avatar_url: string | null;
   };
+  reactions?: string[];
 }
 
+interface ChatItem {
+  id: string;
+  type: 'friend' | 'group' | 'vyuha';
+  name: string;
+  avatar: string | null;
+  lastMessage?: string;
+  lastMessageTime?: string;
+  unreadCount?: number;
+  isOnline?: boolean;
+  data: Friend | ChatGroup | null;
+}
+
+const REACTIONS = ['❤️', '👍', '😂', '😮', '😢', '😡'];
+
 const MessagePage = () => {
-  const [activeTab, setActiveTab] = useState('chats');
+  const [chatList, setChatList] = useState<ChatItem[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Friend[]>([]);
   const [adminBroadcasts, setAdminBroadcasts] = useState<AdminBroadcast[]>([]);
   const [groups, setGroups] = useState<ChatGroup[]>([]);
   const [addFriendOpen, setAddFriendOpen] = useState(false);
   const [createGroupOpen, setCreateGroupOpen] = useState(false);
-  const [addMembersOpen, setAddMembersOpen] = useState(false);
   const [friendUsername, setFriendUsername] = useState('');
   const [groupName, setGroupName] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
@@ -112,13 +147,20 @@ const MessagePage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<ChatGroup | null>(null);
+  const [selectedChat, setSelectedChat] = useState<ChatItem | null>(null);
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [groupMessages, setGroupMessages] = useState<GroupMessage[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [showReactions, setShowReactions] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ messageId: string; x: number; y: number } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -140,13 +182,59 @@ const MessagePage = () => {
   }, [user]);
 
   useEffect(() => {
+    // Build unified chat list
+    const vyuhaChat: ChatItem = {
+      id: 'vyuha',
+      type: 'vyuha',
+      name: 'Vyuha Esport',
+      avatar: vyuhaLogo,
+      lastMessage: adminBroadcasts[0]?.message || 'Official announcements',
+      lastMessageTime: adminBroadcasts[0]?.created_at,
+      unreadCount: adminBroadcasts.length > 0 ? 1 : 0,
+      isOnline: true,
+      data: null
+    };
+
+    const friendChats: ChatItem[] = friends.map(friend => ({
+      id: friend.id,
+      type: 'friend' as const,
+      name: friend.profile.full_name || friend.profile.username || 'User',
+      avatar: friend.profile.avatar_url,
+      lastMessage: friend.lastMessage,
+      lastMessageTime: friend.lastMessageTime,
+      unreadCount: friend.unreadCount,
+      data: friend
+    }));
+
+    const groupChats: ChatItem[] = groups.map(group => ({
+      id: group.id,
+      type: 'group' as const,
+      name: group.name,
+      avatar: group.avatar_url,
+      lastMessage: group.lastMessage,
+      lastMessageTime: group.lastMessageTime,
+      data: group
+    }));
+
+    // Sort by last message time, Vyuha always at top
+    const allChats = [...friendChats, ...groupChats].sort((a, b) => {
+      if (!a.lastMessageTime) return 1;
+      if (!b.lastMessageTime) return -1;
+      return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+    });
+
+    setChatList([vyuhaChat, ...allChats]);
+  }, [friends, groups, adminBroadcasts]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, groupMessages]);
 
   // Realtime for direct messages
   useEffect(() => {
-    if (selectedFriend && user) {
-      fetchChatMessages(selectedFriend);
+    if (selectedChat?.type === 'friend' && user) {
+      const friend = selectedChat.data as Friend;
+      fetchChatMessages(friend);
       
       const channel = supabase
         .channel('messages-realtime')
@@ -159,14 +247,25 @@ const MessagePage = () => {
           },
           (payload) => {
             const newMsg = payload.new as Message;
-            const friendUserId = selectedFriend.requester_id === user.id 
-              ? selectedFriend.recipient_id 
-              : selectedFriend.requester_id;
+            const friendUserId = friend.requester_id === user.id 
+              ? friend.recipient_id 
+              : friend.requester_id;
             
             if ((newMsg.sender_id === friendUserId && newMsg.recipient_id === user.id) ||
                 (newMsg.sender_id === user.id && newMsg.recipient_id === friendUserId)) {
               setChatMessages(prev => [...prev, newMsg]);
             }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'messages',
+          },
+          (payload) => {
+            setChatMessages(prev => prev.filter(m => m.id !== (payload.old as any).id));
           }
         )
         .subscribe();
@@ -175,12 +274,13 @@ const MessagePage = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [selectedFriend, user]);
+  }, [selectedChat, user]);
 
   // Realtime for group messages
   useEffect(() => {
-    if (selectedGroup && user) {
-      fetchGroupMessages(selectedGroup.id);
+    if (selectedChat?.type === 'group' && user) {
+      const group = selectedChat.data as ChatGroup;
+      fetchGroupMessages(group.id);
       
       const channel = supabase
         .channel('group-messages-realtime')
@@ -190,11 +290,10 @@ const MessagePage = () => {
             event: 'INSERT',
             schema: 'public',
             table: 'group_messages',
-            filter: `group_id=eq.${selectedGroup.id}`,
+            filter: `group_id=eq.${group.id}`,
           },
           async (payload) => {
             const newMsg = payload.new as GroupMessage;
-            // Fetch sender profile
             const { data: profile } = await supabase
               .from('profiles')
               .select('username, full_name, avatar_url')
@@ -210,7 +309,7 @@ const MessagePage = () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [selectedGroup, user]);
+  }, [selectedChat, user]);
 
   const fetchFriends = async () => {
     if (!user) return;
@@ -238,8 +337,31 @@ const MessagePage = () => {
             .select('user_id, username, full_name, avatar_url')
             .eq('user_id', friendUserId)
             .single();
+
+          // Get last message
+          const { data: lastMsg } = await supabase
+            .from('messages')
+            .select('content, created_at')
+            .or(`and(sender_id.eq.${user.id},recipient_id.eq.${friendUserId}),and(sender_id.eq.${friendUserId},recipient_id.eq.${user.id})`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          // Get unread count
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('sender_id', friendUserId)
+            .eq('recipient_id', user.id)
+            .eq('is_read', false);
           
-          return { ...friend, profile: profile || { user_id: friendUserId, username: null, full_name: null, avatar_url: null } };
+          return { 
+            ...friend, 
+            profile: profile || { user_id: friendUserId, username: null, full_name: null, avatar_url: null },
+            lastMessage: lastMsg?.content,
+            lastMessageTime: lastMsg?.created_at,
+            unreadCount: count || 0
+          };
         })
       );
 
@@ -285,7 +407,7 @@ const MessagePage = () => {
         .from('admin_broadcasts')
         .select('id, title, message, created_at')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(50);
 
       setAdminBroadcasts(data || []);
     } catch (error) {
@@ -309,7 +431,26 @@ const MessagePage = () => {
           .select('*')
           .in('id', groupIds);
 
-        setGroups(groupsData || []);
+        // Get last message for each group
+        const groupsWithLastMessage = await Promise.all(
+          (groupsData || []).map(async (group) => {
+            const { data: lastMsg } = await supabase
+              .from('group_messages')
+              .select('content, created_at')
+              .eq('group_id', group.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single();
+
+            return {
+              ...group,
+              lastMessage: lastMsg?.content,
+              lastMessageTime: lastMsg?.created_at
+            };
+          })
+        );
+
+        setGroups(groupsWithLastMessage);
       }
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -446,14 +587,12 @@ const MessagePage = () => {
 
       if (error) throw error;
 
-      // Add creator as admin
       await supabase.from('group_members').insert({
         group_id: group.id,
         user_id: user.id,
         role: 'admin'
       });
 
-      // Add selected members
       if (selectedMembers.length > 0) {
         const members = selectedMembers.map(userId => ({
           group_id: group.id,
@@ -462,7 +601,6 @@ const MessagePage = () => {
         }));
         await supabase.from('group_members').insert(members);
 
-        // Notify members
         const notifications = selectedMembers.map(userId => ({
           user_id: userId,
           type: 'group_invite',
@@ -518,35 +656,16 @@ const MessagePage = () => {
     }
   };
 
-  const handleRemoveFriend = async (friend: Friend) => {
-    try {
-      const { error } = await supabase
-        .from('friends')
-        .delete()
-        .eq('id', friend.id);
-
-      if (error) throw error;
-
-      setFriends(prev => prev.filter(f => f.id !== friend.id));
-      if (selectedFriend?.id === friend.id) {
-        setSelectedFriend(null);
-        setChatMessages([]);
-      }
-      toast({ title: 'Friend Removed' });
-    } catch (error) {
-      console.error('Error removing friend:', error);
-    }
-  };
-
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !user) return;
+    if (!newMessage.trim() || !user || !selectedChat) return;
 
     setSending(true);
 
-    if (selectedFriend) {
-      const friendUserId = selectedFriend.requester_id === user.id 
-        ? selectedFriend.recipient_id 
-        : selectedFriend.requester_id;
+    if (selectedChat.type === 'friend') {
+      const friend = selectedChat.data as Friend;
+      const friendUserId = friend.requester_id === user.id 
+        ? friend.recipient_id 
+        : friend.requester_id;
 
       try {
         const { error } = await supabase
@@ -564,12 +683,13 @@ const MessagePage = () => {
         console.error('Error sending message:', error);
         toast({ title: 'Error', description: 'Failed to send message.', variant: 'destructive' });
       }
-    } else if (selectedGroup) {
+    } else if (selectedChat.type === 'group') {
+      const group = selectedChat.data as ChatGroup;
       try {
         const { error } = await supabase
           .from('group_messages')
           .insert({
-            group_id: selectedGroup.id,
+            group_id: group.id,
             sender_id: user.id,
             content: newMessage.trim(),
             message_type: 'text'
@@ -588,7 +708,7 @@ const MessagePage = () => {
 
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file || !user || !selectedChat) return;
 
     setUploading(true);
 
@@ -608,10 +728,11 @@ const MessagePage = () => {
 
       const messageType = file.type.startsWith('image/') ? 'image' : 'file';
 
-      if (selectedFriend) {
-        const friendUserId = selectedFriend.requester_id === user.id 
-          ? selectedFriend.recipient_id 
-          : selectedFriend.requester_id;
+      if (selectedChat.type === 'friend') {
+        const friend = selectedChat.data as Friend;
+        const friendUserId = friend.requester_id === user.id 
+          ? friend.recipient_id 
+          : friend.requester_id;
 
         await supabase.from('messages').insert({
           sender_id: user.id,
@@ -620,9 +741,10 @@ const MessagePage = () => {
           message_type: messageType,
           media_url: publicUrl
         });
-      } else if (selectedGroup) {
+      } else if (selectedChat.type === 'group') {
+        const group = selectedChat.data as ChatGroup;
         await supabase.from('group_messages').insert({
-          group_id: selectedGroup.id,
+          group_id: group.id,
           sender_id: user.id,
           content: file.name,
           message_type: messageType,
@@ -637,6 +759,126 @@ const MessagePage = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await sendVoiceMessage(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      toast({ title: 'Error', description: 'Could not access microphone.', variant: 'destructive' });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      audioChunksRef.current = [];
+      setIsRecording(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+    }
+  };
+
+  const sendVoiceMessage = async (audioBlob: Blob) => {
+    if (!user || !selectedChat || audioChunksRef.current.length === 0) return;
+
+    try {
+      const fileName = `voice-${user.id}-${Date.now()}.webm`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('chat-media')
+        .upload(fileName, audioBlob);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-media')
+        .getPublicUrl(fileName);
+
+      if (selectedChat.type === 'friend') {
+        const friend = selectedChat.data as Friend;
+        const friendUserId = friend.requester_id === user.id 
+          ? friend.recipient_id 
+          : friend.requester_id;
+
+        await supabase.from('messages').insert({
+          sender_id: user.id,
+          recipient_id: friendUserId,
+          content: `Voice message (${recordingTime}s)`,
+          message_type: 'voice',
+          media_url: publicUrl
+        });
+      } else if (selectedChat.type === 'group') {
+        const group = selectedChat.data as ChatGroup;
+        await supabase.from('group_messages').insert({
+          group_id: group.id,
+          sender_id: user.id,
+          content: `Voice message (${recordingTime}s)`,
+          message_type: 'voice',
+          media_url: publicUrl
+        });
+      }
+
+      toast({ title: 'Sent!', description: 'Voice message sent.' });
+    } catch (error) {
+      console.error('Error sending voice message:', error);
+      toast({ title: 'Error', description: 'Failed to send voice message.', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string, isGroup: boolean) => {
+    try {
+      if (isGroup) {
+        await supabase.from('group_messages').delete().eq('id', messageId);
+        setGroupMessages(prev => prev.filter(m => m.id !== messageId));
+      } else {
+        await supabase.from('messages').delete().eq('id', messageId);
+        setChatMessages(prev => prev.filter(m => m.id !== messageId));
+      }
+      toast({ title: 'Deleted', description: 'Message deleted.' });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+    }
+    setContextMenu(null);
+  };
+
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content);
+    toast({ title: 'Copied!', description: 'Message copied to clipboard.' });
+    setContextMenu(null);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -654,10 +896,15 @@ const MessagePage = () => {
     );
   };
 
-  const filteredFriends = friends.filter(f =>
-    f.profile.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    f.profile.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredChats = chatList.filter(chat =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   if (authLoading) {
     return (
@@ -667,47 +914,119 @@ const MessagePage = () => {
     );
   }
 
-  // Chat view when a friend or group is selected
-  if (selectedFriend || selectedGroup) {
-    const isGroup = !!selectedGroup;
-    const chatName = isGroup 
-      ? selectedGroup?.name 
-      : (selectedFriend?.profile.full_name || selectedFriend?.profile.username || 'User');
-    const chatAvatar = isGroup 
-      ? selectedGroup?.avatar_url 
-      : selectedFriend?.profile.avatar_url;
-    const messages = isGroup ? groupMessages : chatMessages;
-
+  // Vyuha Chat View
+  if (selectedChat?.type === 'vyuha') {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        {/* Chat Header */}
         <header className="sticky top-0 z-40 bg-card border-b border-border">
           <div className="flex items-center gap-3 px-4 h-14">
-            <button onClick={() => { setSelectedFriend(null); setSelectedGroup(null); }} className="p-2 -ml-2">
+            <button onClick={() => setSelectedChat(null)} className="p-2 -ml-2">
               <ArrowLeft className="h-5 w-5" />
             </button>
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={chatAvatar || ''} />
-              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                {isGroup ? <Users className="h-4 w-4" /> : chatName.charAt(0).toUpperCase()}
-              </AvatarFallback>
+            <Avatar className="h-10 w-10 ring-2 ring-primary/50">
+              <AvatarImage src={vyuhaLogo} />
+              <AvatarFallback className="bg-primary text-primary-foreground">V</AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <p className="font-semibold text-sm">{chatName}</p>
-              {!isGroup && selectedFriend?.profile.username && (
-                <p className="text-xs text-muted-foreground">@{selectedFriend.profile.username}</p>
-              )}
-              {isGroup && (
-                <p className="text-xs text-muted-foreground">Group Chat</p>
-              )}
+              <div className="flex items-center gap-2">
+                <p className="font-semibold">Vyuha Esport</p>
+                <Badge variant="secondary" className="text-[10px]">Official</Badge>
+              </div>
+              <p className="text-xs text-green-500">Online</p>
             </div>
-            <button className="p-2">
-              <MoreVertical className="h-5 w-5 text-muted-foreground" />
-            </button>
           </div>
         </header>
 
-        {/* Messages Area */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-3">
+            {adminBroadcasts.length === 0 ? (
+              <div className="text-center py-12">
+                <img src={vyuhaLogo} alt="" className="h-20 w-20 mx-auto rounded-full mb-4 opacity-50" />
+                <p className="text-muted-foreground">No messages from Vyuha yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Official announcements will appear here</p>
+              </div>
+            ) : (
+              adminBroadcasts.map((broadcast) => (
+                <div key={broadcast.id} className="flex items-end gap-2">
+                  <Avatar className="h-8 w-8 flex-shrink-0">
+                    <AvatarImage src={vyuhaLogo} />
+                    <AvatarFallback>V</AvatarFallback>
+                  </Avatar>
+                  <div className="max-w-[80%]">
+                    <div className="bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl rounded-bl-md p-3 border border-primary/20">
+                      <p className="font-semibold text-sm text-primary">{broadcast.title}</p>
+                      <p className="text-sm mt-1">{broadcast.message}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground ml-1 mt-0.5">
+                      {format(new Date(broadcast.created_at), 'MMM dd, hh:mm a')}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
+
+        <div className="p-3 border-t border-border bg-card">
+          <div className="text-center text-xs text-muted-foreground py-2">
+            This is an official broadcast channel. You cannot reply here.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Chat View for Friend or Group
+  if (selectedChat && (selectedChat.type === 'friend' || selectedChat.type === 'group')) {
+    const isGroup = selectedChat.type === 'group';
+    const messages = isGroup ? groupMessages : chatMessages;
+
+    return (
+      <div className="min-h-screen bg-background flex flex-col" onClick={() => setContextMenu(null)}>
+        <header className="sticky top-0 z-40 bg-card border-b border-border">
+          <div className="flex items-center gap-3 px-4 h-14">
+            <button onClick={() => setSelectedChat(null)} className="p-2 -ml-2">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={selectedChat.avatar || ''} />
+              <AvatarFallback className="bg-primary/10 text-primary">
+                {isGroup ? <Users className="h-5 w-5" /> : selectedChat.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1">
+              <p className="font-semibold">{selectedChat.name}</p>
+              <p className="text-xs text-muted-foreground">
+                {isGroup ? 'Group Chat' : 'Tap for info'}
+              </p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="p-2">
+                  <MoreVertical className="h-5 w-5 text-muted-foreground" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {!isGroup && (
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      const friend = selectedChat.data as Friend;
+                      supabase.from('friends').delete().eq('id', friend.id);
+                      setSelectedChat(null);
+                      fetchFriends();
+                      toast({ title: 'Friend Removed' });
+                    }}
+                    className="text-destructive"
+                  >
+                    <UserMinus className="h-4 w-4 mr-2" />
+                    Remove Friend
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-3">
             {messages.map((message: any) => {
@@ -720,8 +1039,14 @@ const MessagePage = () => {
                 <div
                   key={message.id}
                   className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}
+                  onContextMenu={(e) => {
+                    if (isOwn) {
+                      e.preventDefault();
+                      setContextMenu({ messageId: message.id, x: e.clientX, y: e.clientY });
+                    }
+                  }}
                 >
-                  <div className={`max-w-[75%]`}>
+                  <div className={`max-w-[75%] relative group`}>
                     {senderName && (
                       <p className="text-[10px] text-primary ml-1 mb-0.5">{senderName}</p>
                     )}
@@ -738,10 +1063,45 @@ const MessagePage = () => {
                           alt="Shared" 
                           className="max-w-full rounded-lg"
                         />
+                      ) : message.message_type === 'voice' && message.media_url ? (
+                        <div className="flex items-center gap-2 px-3 py-2">
+                          <button className="p-1.5 rounded-full bg-white/20">
+                            <Play className="h-4 w-4" />
+                          </button>
+                          <div className="flex-1 h-1 bg-white/30 rounded-full">
+                            <div className="w-1/3 h-full bg-white rounded-full" />
+                          </div>
+                          <Volume2 className="h-4 w-4 opacity-70" />
+                        </div>
                       ) : (
                         <p className="text-sm px-3 py-2">{message.content}</p>
                       )}
                     </div>
+
+                    {/* Quick reactions on long press for own messages */}
+                    {isOwn && (
+                      <button 
+                        onClick={() => setShowReactions(showReactions === message.id ? null : message.id)}
+                        className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Smile className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    )}
+
+                    {showReactions === message.id && (
+                      <div className="absolute bottom-full mb-2 left-0 bg-card rounded-full shadow-lg border border-border flex gap-1 p-1">
+                        {REACTIONS.map(emoji => (
+                          <button 
+                            key={emoji} 
+                            onClick={() => setShowReactions(null)}
+                            className="hover:scale-125 transition-transform text-lg"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
                     <p className={`text-[10px] text-muted-foreground mt-0.5 ${isOwn ? 'text-right mr-1' : 'ml-1'}`}>
                       {format(new Date(message.created_at), 'hh:mm a')}
                     </p>
@@ -753,62 +1113,111 @@ const MessagePage = () => {
           </div>
         </ScrollArea>
 
+        {/* Context Menu */}
+        {contextMenu && (
+          <div 
+            className="fixed bg-card rounded-lg shadow-lg border border-border py-1 z-50"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button 
+              onClick={() => handleCopyMessage(chatMessages.find(m => m.id === contextMenu.messageId)?.content || '')}
+              className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted w-full text-left"
+            >
+              <Copy className="h-4 w-4" /> Copy
+            </button>
+            <button 
+              onClick={() => handleDeleteMessage(contextMenu.messageId, isGroup)}
+              className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted w-full text-left text-destructive"
+            >
+              <Trash2 className="h-4 w-4" /> Delete
+            </button>
+          </div>
+        )}
+
         {/* Input Area */}
         <div className="p-3 border-t border-border bg-card">
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/*,video/*,audio/*"
-              onChange={handleMediaUpload}
-            />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              disabled={uploading}
-            >
-              {uploading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          {isRecording ? (
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={cancelRecording}
+                className="p-2 rounded-full bg-destructive/10 text-destructive"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex-1 flex items-center gap-2">
+                <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                <span className="text-sm font-medium">{formatTime(recordingTime)}</span>
+                <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-destructive animate-pulse" 
+                    style={{ width: `${Math.min(recordingTime * 3, 100)}%` }}
+                  />
+                </div>
+              </div>
+              <button 
+                onClick={stopRecording}
+                className="p-2 rounded-full bg-primary text-primary-foreground"
+              >
+                <Send className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*,video/*"
+                onChange={handleMediaUpload}
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 rounded-full hover:bg-muted transition-colors"
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <Camera className="h-5 w-5 text-muted-foreground" />
+                )}
+              </button>
+              <Input
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="flex-1 rounded-full bg-muted border-0"
+              />
+              {newMessage.trim() ? (
+                <Button
+                  variant="default"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={handleSendMessage}
+                  disabled={sending}
+                >
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
               ) : (
-                <Camera className="h-5 w-5 text-muted-foreground" />
+                <button 
+                  onClick={startRecording}
+                  className="p-2.5 rounded-full bg-primary text-primary-foreground"
+                >
+                  <Mic className="h-5 w-5" />
+                </button>
               )}
-            </button>
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-            >
-              <Paperclip className="h-5 w-5 text-muted-foreground" />
-            </button>
-            <Input
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="flex-1 rounded-full bg-muted border-0"
-            />
-            <button className="p-2 rounded-full hover:bg-muted transition-colors">
-              <Mic className="h-5 w-5 text-muted-foreground" />
-            </button>
-            <Button
-              variant="default"
-              size="icon"
-              className="rounded-full"
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim() || sending}
-            >
-              {sending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
+  // Main Chat List View
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
       {/* Header */}
@@ -817,10 +1226,8 @@ const MessagePage = () => {
           <button onClick={() => navigate('/profile')} className="p-2 -ml-2">
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-full object-cover" />
           <div className="flex-1">
-            <h1 className="font-gaming font-bold">Messages</h1>
-            <p className="text-xs text-muted-foreground">{friends.length} friends • {groups.length} groups</p>
+            <h1 className="font-gaming font-bold text-lg">Chats</h1>
           </div>
           <Button
             variant="ghost"
@@ -828,27 +1235,38 @@ const MessagePage = () => {
             onClick={() => setCreateGroupOpen(true)}
             title="Create Group"
           >
-            <Plus className="h-5 w-5" />
+            <Users className="h-5 w-5" />
           </Button>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
             onClick={() => setAddFriendOpen(true)}
-            className="gap-1"
           >
-            <UserPlus className="h-4 w-4" />
+            <UserPlus className="h-5 w-5" />
           </Button>
         </div>
       </header>
 
+      {/* Search */}
+      <div className="px-4 py-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 rounded-full bg-muted border-0"
+          />
+        </div>
+      </div>
+
       {/* Pending Requests */}
       {pendingRequests.length > 0 && (
-        <div className="px-4 pt-4">
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <UserPlus className="h-4 w-4 text-primary" />
-            Friend Requests
-            <Badge variant="secondary">{pendingRequests.length}</Badge>
-          </h3>
+        <div className="px-4 pb-2">
+          <p className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+            FRIEND REQUESTS
+            <Badge variant="destructive" className="text-[10px]">{pendingRequests.length}</Badge>
+          </p>
           <div className="space-y-2">
             {pendingRequests.map((request) => (
               <div key={request.id} className="bg-card border border-border rounded-xl p-3 flex items-center gap-3">
@@ -858,8 +1276,8 @@ const MessagePage = () => {
                     {(request.profile.full_name || request.profile.username || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm">{request.profile.full_name || request.profile.username || 'User'}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{request.profile.full_name || request.profile.username || 'User'}</p>
                   {request.profile.username && (
                     <p className="text-xs text-muted-foreground">@{request.profile.username}</p>
                   )}
@@ -878,164 +1296,73 @@ const MessagePage = () => {
         </div>
       )}
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <div className="px-4 pt-3">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="chats" className="gap-2">
-              <MessageCircle className="h-4 w-4" />
-              Chats
-            </TabsTrigger>
-            <TabsTrigger value="groups" className="gap-2">
-              <Users className="h-4 w-4" />
-              Groups
-            </TabsTrigger>
-            <TabsTrigger value="vyuha" className="gap-2">
-              <img src={vyuhaLogo} alt="" className="h-4 w-4 rounded-full" />
-              Vyuha
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* Chats Tab */}
-        <TabsContent value="chats" className="flex-1 mt-0 p-4">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search chats..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 rounded-full"
-            />
-          </div>
-
-          <ScrollArea className="h-[calc(100vh-320px)]">
-            <div className="space-y-2">
-              {loading ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : filteredFriends.length === 0 ? (
-                <div className="text-center py-12">
-                  <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm">No chats yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Add friends to start chatting</p>
-                </div>
-              ) : (
-                filteredFriends.map((friend) => (
-                  <div
-                    key={friend.id}
-                    onClick={() => setSelectedFriend(friend)}
-                    className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  >
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={friend.profile.avatar_url || ''} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {(friend.profile.full_name || friend.profile.username || 'U').charAt(0).toUpperCase()}
+      {/* Chat List */}
+      <ScrollArea className="flex-1">
+        <div className="px-4">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : filteredChats.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+              <p className="text-muted-foreground text-sm">No chats yet</p>
+              <p className="text-xs text-muted-foreground mt-1">Add friends to start chatting</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filteredChats.map((chat) => (
+                <div
+                  key={chat.id}
+                  onClick={() => setSelectedChat(chat)}
+                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  <div className="relative">
+                    <Avatar className={`h-12 w-12 ${chat.type === 'vyuha' ? 'ring-2 ring-primary/50' : ''}`}>
+                      <AvatarImage src={chat.avatar || ''} />
+                      <AvatarFallback className={`${chat.type === 'vyuha' ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
+                        {chat.type === 'group' ? <Users className="h-5 w-5" /> : chat.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
+                    {chat.isOnline && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
+                    )}
+                  </div>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{friend.profile.full_name || friend.profile.username || 'User'}</p>
-                      {friend.profile.username && (
-                        <p className="text-xs text-muted-foreground">@{friend.profile.username}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-sm truncate">{chat.name}</p>
+                        {chat.type === 'vyuha' && (
+                          <Badge variant="secondary" className="text-[10px]">Official</Badge>
+                        )}
+                        {chat.type === 'group' && (
+                          <Badge variant="outline" className="text-[10px]">Group</Badge>
+                        )}
+                      </div>
+                      {chat.lastMessageTime && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {format(new Date(chat.lastMessageTime), 'hh:mm a')}
+                        </span>
                       )}
                     </div>
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleRemoveFriend(friend); }}
-                      className="p-2 rounded-full hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Remove Friend"
-                    >
-                      <UserMinus className="h-4 w-4 text-destructive" />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        {/* Groups Tab */}
-        <TabsContent value="groups" className="flex-1 mt-0 p-4">
-          <ScrollArea className="h-[calc(100vh-280px)]">
-            <div className="space-y-2">
-              {groups.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm">No groups yet</p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-3"
-                    onClick={() => setCreateGroupOpen(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Group
-                  </Button>
-                </div>
-              ) : (
-                groups.map((group) => (
-                  <div
-                    key={group.id}
-                    onClick={() => setSelectedGroup(group)}
-                    className="bg-card border border-border rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  >
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={group.avatar_url || ''} />
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        <Users className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate">{group.name}</p>
-                      <p className="text-xs text-muted-foreground">Group Chat</p>
+                    <div className="flex items-center justify-between mt-0.5">
+                      <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                        {chat.lastMessage || 'Start a conversation'}
+                      </p>
+                      {chat.unreadCount && chat.unreadCount > 0 && (
+                        <span className="min-w-[18px] h-[18px] bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                          {chat.unreadCount}
+                        </span>
+                      )}
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-
-        {/* Vyuha Tab (Admin Broadcasts) */}
-        <TabsContent value="vyuha" className="flex-1 mt-0 p-4">
-          <ScrollArea className="h-[calc(100vh-280px)]">
-            <div className="space-y-3">
-              {adminBroadcasts.length === 0 ? (
-                <div className="text-center py-12">
-                  <img src={vyuhaLogo} alt="" className="h-16 w-16 mx-auto rounded-full mb-3 opacity-30" />
-                  <p className="text-muted-foreground text-sm">No messages from Vyuha yet</p>
                 </div>
-              ) : (
-                adminBroadcasts.map((broadcast) => (
-                  <div key={broadcast.id} className="bg-card border border-primary/20 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <img 
-                        src={vyuhaLogo} 
-                        alt="Vyuha" 
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-sm">Vyuha Esport</p>
-                          <Badge variant="secondary" className="text-[10px]">Official</Badge>
-                        </div>
-                        <p className="font-medium text-sm">{broadcast.title}</p>
-                        <p className="text-sm text-muted-foreground mt-1">{broadcast.message}</p>
-                        <p className="text-[10px] text-muted-foreground mt-2">
-                          {format(new Date(broadcast.created_at), 'MMM dd, hh:mm a')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+              ))}
             </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+          )}
+        </div>
+      </ScrollArea>
 
       {/* Add Friend Dialog */}
       <Dialog open={addFriendOpen} onOpenChange={setAddFriendOpen}>
