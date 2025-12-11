@@ -1,31 +1,16 @@
 import { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import TournamentCard from '@/components/TournamentCard';
 import { 
   Trophy, 
-  Users, 
   Search,
-  Loader2,
-  Calendar,
-  IndianRupee,
-  Gamepad2,
-  Share2,
-  UserPlus,
-  Eye
+  Loader2
 } from 'lucide-react';
-import { format } from 'date-fns';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
 import {
   Drawer,
   DrawerContent,
@@ -381,132 +366,22 @@ const Creator = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {getFilteredTournaments().map((tournament) => {
               const isJoined = tournament.joined_users?.includes(user?.id || '');
               const showRoomDetails = canSeeRoomDetails(tournament);
               
               return (
-                <div
+                <TournamentCard
                   key={tournament.id}
-                  className="bg-card rounded-xl border border-border overflow-hidden"
-                >
-                  {/* Tournament Header */}
-                  <div className="h-24 bg-gradient-to-br from-purple-500/20 to-pink-500/10 flex items-center justify-center relative">
-                    <Gamepad2 className="h-10 w-10 text-purple-500/40" />
-                    <Badge 
-                      className={`absolute top-2 right-2 text-[10px] ${
-                        tournament.status === 'upcoming' 
-                          ? 'bg-purple-500/10 text-purple-600' 
-                          : tournament.status === 'ongoing'
-                          ? 'bg-green-500/10 text-green-600'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {tournament.status}
-                    </Badge>
-                    <Badge className="absolute top-2 left-2 text-[10px] bg-purple-500/10 text-purple-600">
-                      {tournament.tournament_mode || 'Solo'}
-                    </Badge>
-                  </div>
-
-                  {/* Tournament Details */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold mb-1">{tournament.title}</h3>
-                        <p className="text-xs text-muted-foreground">{tournament.game}</p>
-                      </div>
-                      {tournament.created_by && (
-                        <button 
-                          onClick={() => handleFollow(tournament.created_by!)}
-                          className={`text-xs flex items-center gap-1 px-2 py-1 rounded-full ${
-                            followedOrganizers.includes(tournament.created_by) 
-                              ? 'bg-purple-500/10 text-purple-600' 
-                              : 'bg-muted text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          <UserPlus className="h-3 w-3" />
-                          {followedOrganizers.includes(tournament.created_by) ? 'Following' : 'Follow'}
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-4 mt-3">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5 text-purple-500" />
-                        {format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Trophy className="h-3.5 w-3.5 text-purple-500" />
-                        {tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <IndianRupee className="h-3.5 w-3.5 text-purple-500" />
-                        {tournament.entry_fee ? `₹${tournament.entry_fee}` : 'Free'}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users className="h-3.5 w-3.5 text-purple-500" />
-                        {tournament.joined_users?.length || 0}/{tournament.max_participants} slots
-                      </div>
-                    </div>
-
-                    {/* Room Details - Only for joined users near match time */}
-                    {isJoined && showRoomDetails && tournament.room_id && (
-                      <div className="mb-3 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
-                        <div className="flex items-center gap-2 text-green-600 text-xs">
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>Room: {tournament.room_id}</span>
-                          {tournament.room_password && (
-                            <span>| Pass: {tournament.room_password}</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      {tournament.status === 'upcoming' && (
-                        <Button
-                          variant={isJoined ? 'secondary' : 'gaming'}
-                          className="flex-1"
-                          size="sm"
-                          disabled={registering === tournament.id || isJoined}
-                          onClick={() => handleRegister(tournament)}
-                        >
-                          {registering === tournament.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : isJoined ? (
-                            'Joined ✓'
-                          ) : (
-                            `Join ₹${tournament.entry_fee || 0}`
-                          )}
-                        </Button>
-                      )}
-
-                      {tournament.status === 'ongoing' && (
-                        <Button variant="secondary" className="flex-1" size="sm" disabled>
-                          In Progress
-                        </Button>
-                      )}
-
-                      {tournament.status === 'completed' && (
-                        <Button variant="secondary" className="flex-1" size="sm" disabled>
-                          Completed
-                        </Button>
-                      )}
-
-                      {tournament.prize_distribution && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setPrizeDrawer({ open: true, tournament })}
-                        >
-                          Prizes
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  tournament={tournament}
+                  isJoined={isJoined}
+                  showRoomDetails={showRoomDetails}
+                  onJoinClick={() => handleRegister(tournament)}
+                  onPrizeClick={tournament.prize_distribution ? () => setPrizeDrawer({ open: true, tournament }) : undefined}
+                  isLoading={registering === tournament.id}
+                  variant="creator"
+                />
               );
             })}
           </div>

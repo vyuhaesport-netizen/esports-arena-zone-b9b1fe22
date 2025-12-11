@@ -1,27 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import NotificationBell from '@/components/NotificationBell';
-import FollowButton from '@/components/FollowButton';
+import TournamentCard from '@/components/TournamentCard';
 import { 
   Trophy, 
   Users, 
   ChevronRight,
   Loader2,
   Wallet,
-  Gamepad2,
-  Share2,
-  Eye,
   QrCode,
   Copy
 } from 'lucide-react';
-import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -416,135 +411,23 @@ const HomePage = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {getFilteredTournaments().map((tournament) => {
               const joined = isUserJoined(tournament);
-              const spotsLeft = (tournament.max_participants || 100) - (tournament.joined_users?.length || 0);
               const showRoomDetails = canSeeRoomDetails(tournament);
               
               return (
-                <div
+                <TournamentCard
                   key={tournament.id}
-                  className="bg-card rounded-xl border border-border overflow-hidden"
-                >
-                  {/* Tournament Header - Matching Creator Style */}
-                  <div className="h-24 bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center relative">
-                    <Gamepad2 className="h-10 w-10 text-primary/40" />
-                    <Badge 
-                      className={`absolute top-2 right-2 text-[10px] ${
-                        tournament.status === 'upcoming' 
-                          ? 'bg-primary/10 text-primary' 
-                          : tournament.status === 'ongoing'
-                          ? 'bg-green-500/10 text-green-600'
-                          : 'bg-muted text-muted-foreground'
-                      }`}
-                    >
-                      {tournament.status}
-                    </Badge>
-                    <Badge className="absolute top-2 left-2 text-[10px] bg-primary/10 text-primary">
-                      {tournament.tournament_mode || 'Solo'}
-                    </Badge>
-                    <button 
-                      onClick={() => handleShare(tournament)}
-                      className="absolute bottom-2 right-2 p-1.5 rounded-full bg-background/80 hover:bg-background"
-                    >
-                      <Share2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                  </div>
-
-                  {/* Tournament Details */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold mb-1">{tournament.title}</h3>
-                        <p className="text-xs text-muted-foreground">{tournament.game}</p>
-                      </div>
-                      <Badge className={`text-[10px] ${tournament.tournament_type === 'organizer' ? 'bg-primary/10 text-primary' : 'bg-purple-500/10 text-purple-600'}`}>
-                        {tournament.tournament_type === 'organizer' ? 'Official' : 'Creator'}
-                      </Badge>
-                    </div>
-
-                    {/* Organizer Follow */}
-                    {tournament.created_by && tournament.tournament_type === 'creator' && user?.id !== tournament.created_by && (
-                      <div className="mt-2">
-                        <FollowButton
-                          organizerId={tournament.created_by}
-                          isFollowing={followedOrganizers.includes(tournament.created_by)}
-                          onFollowChange={(isFollowing) => {
-                            if (isFollowing) {
-                              setFollowedOrganizers(prev => [...prev, tournament.created_by!]);
-                            } else {
-                              setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-4 mt-3">
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Trophy className="h-3.5 w-3.5 text-primary" />
-                        {tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Wallet className="h-3.5 w-3.5 text-primary" />
-                        {tournament.entry_fee ? `₹${tournament.entry_fee}` : 'Free'}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users className="h-3.5 w-3.5 text-primary" />
-                        {spotsLeft} spots left
-                      </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <span className="text-xs">{format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}</span>
-                      </div>
-                    </div>
-                    {/* Room Details - Only for joined users near match time */}
-                    {joined && showRoomDetails && tournament.room_id && (
-                      <div className="mb-3 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
-                        <div className="flex items-center gap-2 text-green-600 text-xs">
-                          <Eye className="h-3.5 w-3.5" />
-                          <span>Room: {tournament.room_id}</span>
-                          {tournament.room_password && (
-                            <span>| Pass: {tournament.room_password}</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      {joined ? (
-                        <Button 
-                          variant="outline" 
-                          className="flex-1 text-destructive border-destructive" 
-                          size="sm"
-                          onClick={() => setExitDialog({ open: true, tournament })}
-                        >
-                          Exit
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="gaming"
-                          className="flex-1"
-                          size="sm"
-                          onClick={() => handleJoinClick(tournament)}
-                          disabled={spotsLeft <= 0}
-                        >
-                          {spotsLeft <= 0 ? 'Full' : 'Join Now'}
-                        </Button>
-                      )}
-
-                      {tournament.prize_distribution && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setPrizeDrawer({ open: true, tournament })}
-                        >
-                          Prizes
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  tournament={tournament}
+                  isJoined={joined}
+                  showRoomDetails={showRoomDetails}
+                  onJoinClick={() => handleJoinClick(tournament)}
+                  onExitClick={() => setExitDialog({ open: true, tournament })}
+                  onShareClick={() => handleShare(tournament)}
+                  onPrizeClick={tournament.prize_distribution ? () => setPrizeDrawer({ open: true, tournament }) : undefined}
+                  variant="organizer"
+                />
               );
             })}
           </div>
