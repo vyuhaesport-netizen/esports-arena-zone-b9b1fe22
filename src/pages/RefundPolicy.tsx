@@ -1,99 +1,130 @@
 import AppLayout from '@/components/layout/AppLayout';
+import { IndianRupee, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
 
 const RefundPolicy = () => {
   return (
     <AppLayout title="Refund Policy">
-      <div className="p-4 pb-8">
-        <div className="bg-card rounded-xl border border-border p-6 space-y-6">
-          <section>
-            <h2 className="font-gaming text-lg font-bold mb-3">Refund Eligibility</h2>
+      <div className="p-4 pb-8 space-y-4">
+        {/* Main Policy Card */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="bg-primary/5 p-4 border-b border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <IndianRupee className="h-5 w-5 text-primary" />
+              <h2 className="font-semibold">Tournament Cancellation & Refund Policy</h2>
+            </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              At Vyuha Esport, we strive to provide fair policies for all our users. Refunds are available under specific circumstances outlined below.
+              At Vyuha Esport, we strive to ensure all tournaments run smoothly. However, in cases where tournaments are cancelled, the following refund policy applies.
             </p>
-          </section>
+          </div>
+        </div>
 
-          <section>
-            <h2 className="font-gaming text-lg font-bold mb-3">Tournament Entry Fees</h2>
-            <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">•</span>
-                <span><strong>Before Tournament Start:</strong> Full refund available if requested at least 24 hours before the tournament begins.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">•</span>
-                <span><strong>Within 24 Hours of Start:</strong> 50% refund may be granted at our discretion.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">•</span>
-                <span><strong>After Tournament Start:</strong> No refunds will be issued once the tournament has begun.</span>
-              </li>
-            </ul>
-          </section>
+        {/* When You Are Eligible */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b border-border">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <h2 className="font-semibold">When You Are Eligible for a Refund</h2>
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Tournament Cancelled by Admin:</strong> If a tournament is cancelled by our team before it starts, you will receive a full refund of your entry fee.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Insufficient Participants:</strong> If a tournament fails to meet the minimum participant requirement and is cancelled, all entry fees will be refunded.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Technical Issues:</strong> If a tournament cannot proceed due to technical difficulties on our end, full refunds will be issued.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Voluntary Exit Before Start:</strong> If you exit a tournament before it begins (while status is "Upcoming"), your entry fee will be refunded automatically.
+              </p>
+            </div>
+          </div>
+        </div>
 
-          <section>
-            <h2 className="font-gaming text-lg font-bold mb-3">Cancelled Tournaments</h2>
+        {/* When Refunds Are Not Available */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b border-border">
+            <XCircle className="h-5 w-5 text-red-600" />
+            <h2 className="font-semibold">When Refunds Are Not Available</h2>
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">After Tournament Starts:</strong> Once a tournament has started (status changed to "Live" or "Completed"), no refunds will be issued.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Player Disqualification:</strong> If you are disqualified for violating tournament rules or cheating, no refund will be provided.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">No-Show:</strong> If you fail to join the tournament room at the scheduled time without prior notice, your entry fee is forfeited.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Wrong Information:</strong> If you provide incorrect game UID or player details, and cannot participate as a result, no refund will be issued.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Refund Process */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b border-border">
+            <Clock className="h-5 w-5 text-primary" />
+            <h2 className="font-semibold">Refund Process</h2>
+          </div>
+          <div className="p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0">1</span>
+              <p className="text-sm text-muted-foreground">
+                Refunds are automatically credited to your Vyuha Esport wallet within 24 hours of cancellation.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0">2</span>
+              <p className="text-sm text-muted-foreground">
+                You can use the refunded amount to join other tournaments or withdraw to your bank account.
+              </p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center flex-shrink-0">3</span>
+              <p className="text-sm text-muted-foreground">
+                All refund transactions are recorded in your wallet history for transparency.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Refund Disputes */}
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b border-border">
+            <AlertCircle className="h-5 w-5 text-primary" />
+            <h2 className="font-semibold">Refund Disputes</h2>
+          </div>
+          <div className="p-4">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              If a tournament is cancelled by Vyuha Esport or the organizer, all participants will receive a full refund of their entry fee within 3-5 business days. You will be notified via email and in-app notification.
+              If you believe you are entitled to a refund that was not processed, please contact our support team within 7 days of the tournament date. Include your tournament ID, transaction details, and reason for the dispute. Our team will review your case and respond within 48 hours.
             </p>
-          </section>
-
-          <section>
-            <h2 className="font-gaming text-lg font-bold mb-3">Technical Issues</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              If you experience technical issues on our platform that prevent you from participating, please contact support immediately. Refunds for technical issues are evaluated on a case-by-case basis with appropriate evidence.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-gaming text-lg font-bold mb-3">Wallet Balance</h2>
-            <ul className="text-sm text-muted-foreground leading-relaxed space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">•</span>
-                <span>Wallet deposits are non-refundable but can be used for future tournaments.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">•</span>
-                <span>Winnings can be withdrawn to your registered payment method.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-1">•</span>
-                <span>Minimum withdrawal amount is ₹100.</span>
-              </li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="font-gaming text-lg font-bold mb-3">How to Request a Refund</h2>
-            <ol className="text-sm text-muted-foreground leading-relaxed space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">1.</span>
-                <span>Go to Help & Support in your profile</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">2.</span>
-                <span>Select "Request Refund" option</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">3.</span>
-                <span>Provide tournament details and reason for refund</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary font-bold">4.</span>
-                <span>Our team will review and respond within 48 hours</span>
-              </li>
-            </ol>
-          </section>
-
-          <section>
-            <h2 className="font-gaming text-lg font-bold mb-3">Processing Time</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Approved refunds are processed within 5-7 business days. The refund will be credited to your original payment method or wallet, depending on your preference.
-            </p>
-          </section>
-
-          <p className="text-xs text-muted-foreground pt-4 border-t border-border">
-            For any questions regarding refunds, contact us at support@vyuhaesport.com
-          </p>
+          </div>
         </div>
       </div>
     </AppLayout>
