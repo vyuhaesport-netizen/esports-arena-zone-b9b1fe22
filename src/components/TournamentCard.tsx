@@ -5,7 +5,6 @@ import {
   Trophy, 
   Users, 
   Wallet,
-  Gamepad2,
   Share2,
   Calendar,
   BadgeCheck,
@@ -25,7 +24,6 @@ interface Tournament {
   joined_users: string[] | null;
   current_prize_pool: number | null;
   tournament_mode: string | null;
-  image_url?: string | null;
   room_id?: string | null;
   room_password?: string | null;
   prize_distribution?: any;
@@ -59,181 +57,119 @@ const TournamentCard = ({
   const entryFee = tournament.entry_fee ? `₹${tournament.entry_fee}` : 'Free';
   const isOfficial = tournament.tournament_type === 'organizer';
   
-  const getStatusColor = () => {
-    switch (tournament.status) {
-      case 'upcoming':
-        return 'bg-emerald-500/90 text-white';
-      case 'ongoing':
-        return 'bg-amber-500/90 text-white';
-      case 'completed':
-        return 'bg-muted text-muted-foreground';
-      default:
-        return 'bg-emerald-500/90 text-white';
-    }
-  };
-
-  const getModeColor = () => {
-    return variant === 'creator' 
-      ? 'bg-purple-500/90 text-white' 
-      : 'bg-gaming-orange/90 text-white';
-  };
+  const accentColor = variant === 'creator' ? 'purple' : 'gaming-orange';
 
   return (
-    <div className="bg-card rounded-xl shadow-md overflow-hidden border border-border/50 hover:shadow-lg transition-shadow duration-300">
-      {/* Banner Image Area */}
-      <div className="relative aspect-video bg-gradient-to-br from-secondary via-muted to-accent rounded-t-xl overflow-hidden">
-        {tournament.image_url ? (
-          <img 
-            src={tournament.image_url} 
-            alt={tournament.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className={`w-full h-full flex items-center justify-center ${
-            variant === 'creator' 
-              ? 'bg-gradient-to-br from-purple-600/20 via-pink-500/10 to-purple-400/20' 
-              : 'bg-gradient-to-br from-gaming-orange/20 via-amber-500/10 to-yellow-400/20'
-          }`}>
-            <Gamepad2 className={`h-16 w-16 ${
-              variant === 'creator' ? 'text-purple-500/40' : 'text-gaming-orange/40'
-            }`} />
-          </div>
-        )}
-        
-        {/* Overlay Badges */}
-        <div className="absolute inset-0 p-3 flex flex-col justify-between pointer-events-none">
-          <div className="flex items-start justify-between">
-            {/* Format Badge - Top Left */}
-            <Badge className={`${getModeColor()} text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 shadow-sm`}>
-              {tournament.tournament_mode || 'Solo'}
-            </Badge>
-            
-            {/* Status Badge - Top Right */}
-            <Badge className={`${getStatusColor()} text-[10px] font-semibold capitalize px-2.5 py-1 shadow-sm`}>
-              {tournament.status || 'Upcoming'}
-            </Badge>
-          </div>
-          
-          {/* Share Button - Floating Right */}
-          <div className="flex justify-end">
-            <button 
-              onClick={onShareClick}
-              className="pointer-events-auto p-2 rounded-full bg-card/90 backdrop-blur-sm hover:bg-card shadow-md transition-colors"
-            >
-              <Share2 className="h-4 w-4 text-foreground" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Card Body */}
-      <div className="p-4 space-y-4">
-        {/* Header */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-gaming font-bold text-base text-foreground truncate flex-1">
+    <div className="group bg-card rounded-xl border border-border/50 p-4 hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 ease-out">
+      {/* Header Row */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-gaming font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
               {tournament.title}
             </h3>
             {isOfficial && (
-              <Badge className="bg-gaming-orange/10 text-gaming-orange border-gaming-orange/20 text-[10px] font-medium px-2 py-0.5 flex items-center gap-1 shrink-0">
-                <BadgeCheck className="h-3 w-3" />
+              <Badge className="bg-gaming-orange/10 text-gaming-orange text-[9px] px-1.5 py-0 flex items-center gap-0.5 shrink-0">
+                <BadgeCheck className="h-2.5 w-2.5" />
                 Official
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground">{tournament.game}</p>
+          <p className="text-[11px] text-muted-foreground">{tournament.game}</p>
         </div>
+        
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Badge className={`text-[9px] px-2 py-0.5 capitalize ${
+            variant === 'creator' 
+              ? 'bg-purple-500/10 text-purple-600' 
+              : 'bg-gaming-orange/10 text-gaming-orange'
+          }`}>
+            {tournament.tournament_mode || 'Solo'}
+          </Badge>
+          <Badge className={`text-[9px] px-2 py-0.5 capitalize ${
+            tournament.status === 'upcoming' 
+              ? 'bg-emerald-500/10 text-emerald-600' 
+              : tournament.status === 'ongoing'
+              ? 'bg-amber-500/10 text-amber-600'
+              : 'bg-muted text-muted-foreground'
+          }`}>
+            {tournament.status}
+          </Badge>
+        </div>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg">
-            <div className="p-1.5 bg-amber-500/10 rounded-md">
-              <Trophy className="h-4 w-4 text-amber-500" />
-            </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Prize</p>
-              <p className="text-sm font-semibold text-foreground">{prizeAmount}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg">
-            <div className="p-1.5 bg-emerald-500/10 rounded-md">
-              <Wallet className="h-4 w-4 text-emerald-500" />
-            </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Entry</p>
-              <p className="text-sm font-semibold text-foreground">{entryFee}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg">
-            <div className="p-1.5 bg-blue-500/10 rounded-md">
-              <Users className="h-4 w-4 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Spots</p>
-              <p className="text-sm font-semibold text-foreground">{spotsLeft} left</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 p-2.5 bg-secondary/50 rounded-lg">
-            <div className="p-1.5 bg-purple-500/10 rounded-md">
-              <Calendar className="h-4 w-4 text-purple-500" />
-            </div>
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Date</p>
-              <p className="text-sm font-semibold text-foreground">
-                {format(new Date(tournament.start_date), 'MMM dd')}
-              </p>
-            </div>
+      {/* Stats Row */}
+      <div className="flex items-center gap-4 text-[11px] text-muted-foreground mb-3">
+        <div className="flex items-center gap-1 group-hover:text-amber-500 transition-colors">
+          <Trophy className="h-3.5 w-3.5 text-amber-500" />
+          <span className="font-medium">{prizeAmount}</span>
+        </div>
+        <div className="flex items-center gap-1 group-hover:text-emerald-500 transition-colors">
+          <Wallet className="h-3.5 w-3.5 text-emerald-500" />
+          <span className="font-medium">{entryFee}</span>
+        </div>
+        <div className="flex items-center gap-1 group-hover:text-blue-500 transition-colors">
+          <Users className="h-3.5 w-3.5 text-blue-500" />
+          <span className="font-medium">{spotsLeft} left</span>
+        </div>
+        <div className="flex items-center gap-1 group-hover:text-purple-500 transition-colors">
+          <Calendar className="h-3.5 w-3.5 text-purple-500" />
+          <span className="font-medium">{format(new Date(tournament.start_date), 'MMM dd, h:mm a')}</span>
+        </div>
+      </div>
+
+      {/* Room Details */}
+      {isJoined && showRoomDetails && tournament.room_id && (
+        <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20 mb-3 animate-fade-in">
+          <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-medium">
+            <Eye className="h-3.5 w-3.5" />
+            <span>Room: {tournament.room_id}</span>
+            {tournament.room_password && (
+              <span className="text-muted-foreground">| Pass: {tournament.room_password}</span>
+            )}
           </div>
         </div>
+      )}
 
-        {/* Room Details - Only for joined users near match time */}
-        {isJoined && showRoomDetails && tournament.room_id && (
-          <div className="p-3 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-            <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
-              <Eye className="h-4 w-4" />
-              <span>Room: {tournament.room_id}</span>
-              {tournament.room_password && (
-                <span className="text-muted-foreground">| Pass: {tournament.room_password}</span>
-              )}
-            </div>
-          </div>
+      {/* Action Row */}
+      <div className="flex items-center gap-2">
+        {isJoined ? (
+          <Button
+            onClick={onExitClick}
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className="flex-1 h-9 text-destructive border-destructive/50 hover:bg-destructive/10 hover:border-destructive transition-all"
+          >
+            {isLoading ? 'Processing...' : 'Exit'}
+          </Button>
+        ) : (
+          <button
+            onClick={onJoinClick}
+            disabled={isLoading || tournament.status !== 'upcoming' || spotsLeft <= 0}
+            className="flex-1 h-9 rounded-lg font-semibold text-xs text-white bg-gradient-to-r from-gray-900 via-gray-800 to-gaming-orange hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            {isLoading ? 'Joining...' : spotsLeft <= 0 ? 'Full' : 'Join Now'}
+          </button>
         )}
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          {isJoined ? (
-            <Button
-              onClick={onExitClick}
-              disabled={isLoading}
-              variant="outline"
-              className="flex-1 text-destructive border-destructive hover:bg-destructive/10"
-            >
-              {isLoading ? 'Processing...' : 'Exit'}
-            </Button>
-          ) : (
-            <button
-              onClick={onJoinClick}
-              disabled={isLoading || tournament.status !== 'upcoming' || spotsLeft <= 0}
-              className="flex-1 py-3 px-4 rounded-xl font-semibold text-sm text-white transition-all duration-200 bg-gradient-to-r from-gray-900 via-gray-800 to-gaming-orange hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-            >
-              {isLoading ? 'Joining...' : spotsLeft <= 0 ? 'Full' : 'Join Now'}
-            </button>
-          )}
-          
-          {tournament.prize_distribution && onPrizeClick && (
-            <Button 
-              variant="outline" 
-              size="default"
-              onClick={onPrizeClick}
-              className="shrink-0"
-            >
-              Prizes
-            </Button>
-          )}
-        </div>
+        
+        {tournament.prize_distribution && onPrizeClick && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onPrizeClick}
+            className="h-9 px-3 hover:bg-accent hover:scale-105 transition-all"
+          >
+            Prizes
+          </Button>
+        )}
+        
+        <button 
+          onClick={onShareClick}
+          className="h-9 w-9 rounded-lg border border-border/50 flex items-center justify-center hover:bg-accent hover:scale-105 hover:border-primary/30 transition-all"
+        >
+          <Share2 className="h-4 w-4 text-muted-foreground" />
+        </button>
       </div>
     </div>
   );
