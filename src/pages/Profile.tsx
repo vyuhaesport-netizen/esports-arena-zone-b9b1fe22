@@ -331,14 +331,35 @@ const ProfilePage = () => {
     navigate('/');
   };
 
+  // Check if user is a creator
+  const [isCreator, setIsCreator] = useState(false);
+
+  useEffect(() => {
+    const checkCreatorRole = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'creator')
+        .maybeSingle();
+      setIsCreator(!!data);
+    };
+    checkCreatorRole();
+  }, [user]);
+
   const menuItems = [
     { icon: Trophy, label: 'My Matches', onClick: () => navigate('/my-match') },
     { icon: Wallet, label: 'Wallet', onClick: () => navigate('/wallet') },
-    { icon: Shield, label: 'Team', onClick: () => navigate('/team') },
-    { icon: Users, label: 'Message', onClick: () => navigate('/message') },
+    { icon: Users, label: 'Team', onClick: () => navigate('/team') },
     { icon: Crown, label: 'Leaderboard', onClick: () => navigate('/leaderboard') },
-    { icon: Settings, label: 'Settings', onClick: () => {} },
+  ];
+
+  const moreItems = [
+    { icon: Users, label: 'Message', onClick: () => navigate('/message') },
     { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
+    { icon: FileText, label: 'Terms & Conditions', onClick: () => navigate('/terms') },
+    { icon: Info, label: 'About Us', onClick: () => navigate('/about') },
   ];
 
   if (authLoading || loading) {
@@ -482,6 +503,23 @@ const ProfilePage = () => {
             </button>
           )}
 
+          {/* Creator Dashboard - Only for Creators */}
+          {isCreator && (
+            <button
+              onClick={() => navigate('/creator-dashboard')}
+              className="w-full bg-gradient-to-r from-blue-500/5 to-cyan-500/5 hover:from-blue-500/10 hover:to-cyan-500/10 p-4 flex items-center gap-3 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                <Gamepad2 className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-sm">Creator Dashboard</p>
+                <p className="text-xs text-muted-foreground">Manage your creator tournaments</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-blue-500" />
+            </button>
+          )}
+
           {/* Apply to Become Organizer - Only for Regular Users */}
           {!isOrganizer && !isAdmin && (
             <button
@@ -489,7 +527,6 @@ const ProfilePage = () => {
                 if (organizerApplication?.status === 'pending') {
                   toast({ title: 'Application Pending', description: 'Your application is under review.' });
                 } else {
-                  // Allow reapplication for rejected or new users
                   setApplyDialogOpen(true);
                 }
               }}
@@ -536,6 +573,24 @@ const ProfilePage = () => {
         </div>
       </div>
 
+      {/* More Section */}
+      <div className="px-4 pt-4">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">More</h3>
+        <div className="bg-card rounded-xl border border-border shadow-sm divide-y divide-border">
+          {moreItems.map((item) => (
+            <button
+              key={item.label}
+              onClick={item.onClick}
+              className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+            >
+              <item.icon className="h-5 w-5 text-muted-foreground" />
+              <span className="flex-1 text-left text-sm font-medium text-foreground">{item.label}</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Logout */}
       <div className="px-4 pt-4">
         <Button
@@ -548,41 +603,15 @@ const ProfilePage = () => {
         </Button>
       </div>
 
-      {/* Footer with Logo and Links */}
+      {/* Footer with Logo */}
       <div className="px-4 pt-6 pb-8">
         <div className="flex flex-col items-center">
-          {/* Logo */}
           <img 
             src={vyuhaLogo} 
             alt="Vyuha Esport" 
             className="h-12 w-12 rounded-full mb-4 opacity-80"
           />
-          
-          {/* Legal Links */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <button 
-              onClick={() => navigate('/terms')}
-              className="hover:text-primary transition-colors"
-            >
-              Terms & Conditions
-            </button>
-            <span className="text-border">•</span>
-            <button 
-              onClick={() => navigate('/refund-policy')}
-              className="hover:text-primary transition-colors"
-            >
-              Refund Policy
-            </button>
-            <span className="text-border">•</span>
-            <button 
-              onClick={() => navigate('/about')}
-              className="hover:text-primary transition-colors"
-            >
-              About Us
-            </button>
-          </div>
-          
-          <p className="text-[10px] text-muted-foreground/60 mt-3">
+          <p className="text-[10px] text-muted-foreground/60">
             © 2024 Vyuha Esport. All rights reserved.
           </p>
         </div>
