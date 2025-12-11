@@ -129,10 +129,10 @@ const Wallet = () => {
       return;
     }
 
-    if (!withdrawForm.upiId.trim()) {
+    if (!withdrawForm.upiId.trim() || withdrawForm.upiId.length < 5) {
       toast({
         title: 'UPI ID Required',
-        description: 'Please enter your UPI ID',
+        description: 'Please enter a valid UPI ID',
         variant: 'destructive',
       });
       return;
@@ -152,30 +152,26 @@ const Wallet = () => {
     setProcessing(true);
 
     try {
-      // Immediately deduct from wallet balance (hold)
-      const newBalance = balance - amount;
-      
-      const { error: balanceError } = await supabase
-        .from('profiles')
-        .update({ wallet_balance: newBalance })
-        .eq('user_id', user.id);
+      // Use atomic database function for withdrawal to prevent race conditions
+      const { data, error } = await supabase.rpc('process_withdrawal', {
+        p_user_id: user.id,
+        p_amount: amount,
+        p_upi_id: withdrawForm.upiId.trim(),
+        p_phone: withdrawForm.phone.trim(),
+      });
 
-      if (balanceError) throw balanceError;
+      if (error) throw error;
 
-      // Create withdrawal transaction
-      const { error: txnError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: user.id,
-          type: 'withdrawal',
-          amount: -amount,
-          status: 'pending',
-          description: 'Withdrawal request',
-          upi_id: withdrawForm.upiId.trim(),
-          phone: withdrawForm.phone.trim(),
+      const result = data as { success: boolean; error?: string; new_balance?: number };
+
+      if (!result.success) {
+        toast({
+          title: 'Withdrawal Failed',
+          description: result.error || 'Failed to process withdrawal',
+          variant: 'destructive',
         });
-
-      if (txnError) throw txnError;
+        return;
+      }
 
       toast({
         title: 'Withdrawal Request Sent',
