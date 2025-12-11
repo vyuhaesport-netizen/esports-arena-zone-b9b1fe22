@@ -466,18 +466,20 @@ const TeamPage = () => {
         </div>
       </header>
 
-      {/* Tabs */}
+      {/* Tabs - Only show Find Team tab if user doesn't have a team */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <div className="px-4 pt-3">
-          <TabsList className="w-full grid grid-cols-2">
+          <TabsList className={`w-full grid ${myTeam ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <TabsTrigger value="my-team" className="gap-2">
               <Shield className="h-4 w-4" />
               My Team
             </TabsTrigger>
-            <TabsTrigger value="find-team" className="gap-2">
-              <Globe className="h-4 w-4" />
-              Find Team
-            </TabsTrigger>
+            {!myTeam && (
+              <TabsTrigger value="find-team" className="gap-2">
+                <Globe className="h-4 w-4" />
+                Find Team
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
