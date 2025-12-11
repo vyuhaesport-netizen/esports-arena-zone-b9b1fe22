@@ -334,6 +334,7 @@ const ProfilePage = () => {
   const menuItems = [
     { icon: Trophy, label: 'My Matches', onClick: () => navigate('/my-match') },
     { icon: Wallet, label: 'Wallet', onClick: () => navigate('/wallet') },
+    { icon: Shield, label: 'Team', onClick: () => navigate('/team') },
     { icon: Users, label: 'Message', onClick: () => navigate('/message') },
     { icon: Crown, label: 'Leaderboard', onClick: () => navigate('/leaderboard') },
     { icon: Settings, label: 'Settings', onClick: () => {} },

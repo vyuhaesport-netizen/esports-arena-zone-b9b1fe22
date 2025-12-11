@@ -372,6 +372,77 @@ export type Database = {
         }
         Relationships: []
       }
+      player_team_members: {
+        Row: {
+          id: string
+          joined_at: string
+          role: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string
+          role?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string
+          role?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "player_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_teams: {
+        Row: {
+          created_at: string
+          game: string | null
+          id: string
+          is_open_for_players: boolean | null
+          leader_id: string
+          logo_url: string | null
+          max_members: number | null
+          name: string
+          slogan: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          game?: string | null
+          id?: string
+          is_open_for_players?: boolean | null
+          leader_id: string
+          logo_url?: string | null
+          max_members?: number | null
+          name: string
+          slogan?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          game?: string | null
+          id?: string
+          is_open_for_players?: boolean | null
+          leader_id?: string
+          logo_url?: string | null
+          max_members?: number | null
+          name?: string
+          slogan?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
