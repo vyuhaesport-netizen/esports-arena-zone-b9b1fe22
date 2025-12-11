@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, X, Send, Search, ChevronDown, ChevronUp, MessageSquare, Phone, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Paperclip, X, Send, Search, MessageSquare, Phone, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -82,12 +82,14 @@ const faqs = [
   },
 ];
 
+type ViewType = 'faq' | 'ticket';
+
 const HelpSupport = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [currentView, setCurrentView] = useState<ViewType>('faq');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showTicketForm, setShowTicketForm] = useState(false);
   const [topic, setTopic] = useState('');
   const [description, setDescription] = useState('');
   const [requestCallback, setRequestCallback] = useState(false);
@@ -210,7 +212,7 @@ const HelpSupport = () => {
           : "We'll get back to you via email within 24 hours.",
       });
 
-      setShowTicketForm(false);
+      setCurrentView('faq');
       setTopic('');
       setDescription('');
       setAttachments([]);
@@ -227,243 +229,261 @@ const HelpSupport = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => navigate('/profile')}
-              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <h1 className="text-lg font-bold text-foreground">Help & Support</h1>
-          </div>
-          <div className="flex items-center gap-2">
+  const openTicketForm = (withCallback: boolean = false) => {
+    setRequestCallback(withCallback);
+    setCurrentView('ticket');
+  };
+
+  // FAQ View
+  if (currentView === 'faq') {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        {/* Header */}
+        <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate('/profile')}
+                className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5 text-foreground" />
+              </button>
+              <h1 className="text-lg font-bold text-foreground">Help & Support</h1>
+            </div>
             <Button
-              variant="ghost"
+              variant="default"
               size="sm"
-              onClick={() => setShowTicketForm(!showTicketForm)}
-              className="text-primary hover:text-primary/80"
+              onClick={() => openTicketForm(false)}
+              className="bg-primary hover:bg-primary/90"
             >
               <MessageSquare className="h-4 w-4 mr-1" />
               Raise Ticket
             </Button>
           </div>
+        </header>
+
+        <div className="p-4 space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search FAQs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-card border-border"
+            />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => openTicketForm(false)}
+              className="flex flex-col items-center gap-2 p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
+            >
+              <div className="p-3 bg-primary/10 rounded-full">
+                <MessageSquare className="h-5 w-5 text-primary" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Raise Ticket</span>
+              <span className="text-xs text-muted-foreground text-center">Submit your issue</span>
+            </button>
+            <button
+              onClick={() => openTicketForm(true)}
+              className="flex flex-col items-center gap-2 p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
+            >
+              <div className="p-3 bg-green-500/10 rounded-full">
+                <Phone className="h-5 w-5 text-green-500" />
+              </div>
+              <span className="text-sm font-medium text-foreground">Contact Team</span>
+              <span className="text-xs text-muted-foreground text-center">Request a callback</span>
+            </button>
+          </div>
+
+          {/* FAQs Section */}
+          <div className="space-y-3">
+            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+              <HelpCircle className="h-4 w-4 text-primary" />
+              Frequently Asked Questions
+            </h2>
+
+            {filteredFaqs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No FAQs found for "{searchQuery}"</p>
+                <Button
+                  variant="link"
+                  onClick={() => openTicketForm(false)}
+                  className="mt-2 text-primary"
+                >
+                  Raise a Ticket Instead
+                </Button>
+              </div>
+            ) : (
+              <Accordion type="single" collapsible className="space-y-2">
+                {filteredFaqs.map((faq, index) => (
+                  <AccordionItem 
+                    key={index} 
+                    value={`faq-${index}`}
+                    className="bg-card border border-border rounded-xl px-4 data-[state=open]:border-primary/50"
+                  >
+                    <AccordionTrigger className="text-sm font-medium text-foreground text-left hover:no-underline py-4">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground pb-4 leading-relaxed">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            )}
+          </div>
+
+          {/* Still Need Help */}
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Still need help?</h3>
+            <p className="text-xs text-muted-foreground">
+              Cannot find your answer? Submit a ticket and our team will assist you.
+            </p>
+            <Button
+              onClick={() => openTicketForm(false)}
+              variant="default"
+              size="sm"
+              className="bg-primary hover:bg-primary/90"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Contact Support
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ticket Form View
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setCurrentView('faq')}
+            className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-foreground" />
+          </button>
+          <h1 className="text-lg font-bold text-foreground">
+            {requestCallback ? 'Contact Team' : 'Raise a Ticket'}
+          </h1>
         </div>
       </header>
 
-      <div className="p-4 space-y-4">
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search FAQs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-card border-border"
+      <div className="p-4 space-y-5">
+        {/* Info Card */}
+        <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+          <p className="text-sm text-foreground">
+            {requestCallback 
+              ? "Fill out the form below and our team will call you back on your registered phone number."
+              : "Describe your issue in detail and attach any relevant screenshots. We'll respond within 24 hours."
+            }
+          </p>
+        </div>
+
+        {/* Topic Dropdown */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">Topic of Issue *</Label>
+          <Select value={topic} onValueChange={setTopic}>
+            <SelectTrigger className="w-full bg-card border-border">
+              <SelectValue placeholder="Select a topic" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              {topics.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">Describe Your Problem *</Label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Please explain your issue in detail..."
+            className="min-h-[120px] bg-card border-border resize-none"
           />
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setShowTicketForm(true)}
-            className="flex flex-col items-center gap-2 p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
-          >
-            <div className="p-3 bg-primary/10 rounded-full">
-              <MessageSquare className="h-5 w-5 text-primary" />
+        {/* Attachments */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">Attachments (Proof)</Label>
+          <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+            <div className="flex flex-col items-center justify-center py-4">
+              <Paperclip className="h-6 w-6 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">Attach Screenshot or Video</p>
+              <p className="text-xs text-muted-foreground mt-1">JPG, PNG or MP4 (max 10MB)</p>
             </div>
-            <span className="text-sm font-medium text-foreground">Raise Ticket</span>
-            <span className="text-xs text-muted-foreground text-center">Submit your issue</span>
-          </button>
-          <button
-            onClick={() => {
-              setShowTicketForm(true);
-              setRequestCallback(true);
-            }}
-            className="flex flex-col items-center gap-2 p-4 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors"
-          >
-            <div className="p-3 bg-green-500/10 rounded-full">
-              <Phone className="h-5 w-5 text-green-500" />
-            </div>
-            <span className="text-sm font-medium text-foreground">Contact Team</span>
-            <span className="text-xs text-muted-foreground text-center">Request a callback</span>
-          </button>
-        </div>
+            <input 
+              type="file" 
+              className="hidden" 
+              accept="image/*,video/*"
+              multiple
+              onChange={handleFileChange}
+            />
+          </label>
 
-        {/* Ticket Form */}
-        {showTicketForm && (
-          <div className="bg-card border border-border rounded-xl p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <HelpCircle className="h-4 w-4 text-primary" />
-                Submit a Ticket
-              </h2>
-              <button
-                onClick={() => setShowTicketForm(false)}
-                className="p-1 hover:bg-muted rounded-full transition-colors"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
-
-            {/* Topic Dropdown */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Topic of Issue</Label>
-              <Select value={topic} onValueChange={setTopic}>
-                <SelectTrigger className="w-full bg-background border-border">
-                  <SelectValue placeholder="Select a topic" />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {topics.map((t) => (
-                    <SelectItem key={t.value} value={t.value}>
-                      {t.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Describe Your Problem</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Please explain your issue in detail..."
-                className="min-h-[100px] bg-background border-border resize-none"
-              />
-            </div>
-
-            {/* Attachments */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">Attachments (Proof)</Label>
-              <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex flex-col items-center justify-center py-3">
-                  <Paperclip className="h-5 w-5 text-muted-foreground mb-1" />
-                  <p className="text-xs text-muted-foreground">Attach Screenshot or Video (max 10MB)</p>
-                </div>
-                <input 
-                  type="file" 
-                  className="hidden" 
-                  accept="image/*,video/*"
-                  multiple
-                  onChange={handleFileChange}
-                />
-              </label>
-
-              {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {attachments.map((file, index) => (
-                    <div 
-                      key={index}
-                      className="relative group bg-muted rounded-lg px-3 py-2 flex items-center gap-2"
-                    >
-                      <span className="text-xs text-foreground truncate max-w-[100px]">
-                        {file.name}
-                      </span>
-                      <button
-                        onClick={() => removeAttachment(index)}
-                        className="p-0.5 hover:bg-destructive/20 rounded-full transition-colors"
-                      >
-                        <X className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Request Callback Toggle */}
-            <div className="flex items-center justify-between p-3 bg-background rounded-lg border border-border">
-              <div className="space-y-0.5">
-                <Label className="text-sm font-medium text-foreground">Request a Call Back?</Label>
-                <p className="text-xs text-muted-foreground">
-                  Our team will call your registered number.
-                </p>
-              </div>
-              <Switch
-                checked={requestCallback}
-                onCheckedChange={setRequestCallback}
-              />
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-            >
-              {submitting ? (
-                'Submitting...'
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Submit Request
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {/* FAQs Section */}
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <HelpCircle className="h-4 w-4 text-primary" />
-            Frequently Asked Questions
-          </h2>
-
-          {filteredFaqs.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p className="text-sm">No FAQs found for "{searchQuery}"</p>
-              <Button
-                variant="link"
-                onClick={() => setShowTicketForm(true)}
-                className="mt-2 text-primary"
-              >
-                Raise a Ticket Instead
-              </Button>
-            </div>
-          ) : (
-            <Accordion type="single" collapsible className="space-y-2">
-              {filteredFaqs.map((faq, index) => (
-                <AccordionItem 
-                  key={index} 
-                  value={`faq-${index}`}
-                  className="bg-card border border-border rounded-xl px-4 data-[state=open]:border-primary/50"
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-3">
+              {attachments.map((file, index) => (
+                <div 
+                  key={index}
+                  className="relative group bg-muted rounded-lg px-3 py-2 flex items-center gap-2"
                 >
-                  <AccordionTrigger className="text-sm font-medium text-foreground text-left hover:no-underline py-4">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground pb-4 leading-relaxed">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
+                  <span className="text-xs text-foreground truncate max-w-[120px]">
+                    {file.name}
+                  </span>
+                  <button
+                    onClick={() => removeAttachment(index)}
+                    className="p-0.5 hover:bg-destructive/20 rounded-full transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
+                </div>
               ))}
-            </Accordion>
+            </div>
           )}
         </div>
 
-        {/* Still Need Help */}
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">Still need help?</h3>
-          <p className="text-xs text-muted-foreground">
-            Cannot find your answer? Submit a ticket and our team will assist you.
-          </p>
-          <Button
-            onClick={() => setShowTicketForm(true)}
-            variant="default"
-            size="sm"
-            className="bg-primary hover:bg-primary/90"
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            Contact Support
-          </Button>
+        {/* Request Callback Toggle */}
+        <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
+          <div className="space-y-0.5">
+            <Label className="text-sm font-medium text-foreground">Request a Call Back?</Label>
+            <p className="text-xs text-muted-foreground">
+              Our team will call your registered number if urgent.
+            </p>
+          </div>
+          <Switch
+            checked={requestCallback}
+            onCheckedChange={setRequestCallback}
+          />
         </div>
+
+        {/* Submit Button */}
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6"
+        >
+          {submitting ? (
+            'Submitting...'
+          ) : (
+            <>
+              <Send className="h-4 w-4 mr-2" />
+              Submit Request
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
