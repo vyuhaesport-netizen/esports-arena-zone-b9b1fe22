@@ -81,8 +81,20 @@ const MyMatch = () => {
     }
   };
 
-  const handleCancel = async (registrationId: string) => {
+  const handleCancel = async (registrationId: string, tournamentId: string) => {
+    if (!user) return;
+    
     try {
+      // First get the tournament entry fee
+      const { data: tournament } = await supabase
+        .from('tournaments')
+        .select('entry_fee, title')
+        .eq('id', tournamentId)
+        .single();
+
+      const entryFee = tournament?.entry_fee || 0;
+
+      // Delete registration
       const { error } = await supabase
         .from('tournament_registrations')
         .delete()
@@ -90,10 +102,43 @@ const MyMatch = () => {
 
       if (error) throw error;
 
-      toast({
-        title: 'Cancelled',
-        description: 'Registration cancelled successfully.',
-      });
+      // If there was an entry fee, refund it
+      if (entryFee > 0) {
+        // Credit wallet
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('wallet_balance')
+          .eq('user_id', user.id)
+          .single();
+
+        const currentBalance = profile?.wallet_balance || 0;
+        
+        await supabase
+          .from('profiles')
+          .update({ wallet_balance: currentBalance + entryFee })
+          .eq('user_id', user.id);
+
+        // Create refund transaction
+        await supabase
+          .from('wallet_transactions')
+          .insert({
+            user_id: user.id,
+            type: 'refund',
+            amount: entryFee,
+            status: 'completed',
+            description: `Refund for exiting tournament: ${tournament?.title || 'Unknown'}`,
+          });
+
+        toast({
+          title: 'Registration Cancelled',
+          description: `₹${entryFee} has been refunded to your wallet.`,
+        });
+      } else {
+        toast({
+          title: 'Cancelled',
+          description: 'Registration cancelled successfully.',
+        });
+      }
       
       fetchRegistrations();
     } catch (error) {
@@ -144,7 +189,7 @@ const MyMatch = () => {
           </Badge>
           {showCancel && (
             <button 
-              onClick={() => handleCancel(registration.id)}
+              onClick={() => handleCancel(registration.id, registration.tournament_id)}
               className="text-destructive text-xs flex items-center gap-1"
             >
               <X className="h-3 w-3" /> Cancel
