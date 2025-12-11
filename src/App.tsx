@@ -31,6 +31,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import CreatorDashboard from "./pages/creator/CreatorDashboard";
+import ChangePassword from "./pages/ChangePassword";
 import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import AboutUs from "./pages/AboutUs";
@@ -111,6 +112,8 @@ const AppRoutes = () => {
       {/* Creator Routes */}
       <Route path="/creator-dashboard" element={<ProtectedRoute><CreatorDashboard /></ProtectedRoute>} />
       
+      {/* Public Routes */}
+      <Route path="/change-password" element={<ChangePassword />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/refund-policy" element={<RefundPolicy />} />
       <Route path="/about" element={<AboutUs />} />

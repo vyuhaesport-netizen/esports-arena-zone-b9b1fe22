@@ -18,6 +18,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
+  const [gameUid, setGameUid] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,6 +27,7 @@ const Auth = () => {
     email?: string;
     password?: string;
     terms?: string;
+    gameUid?: string;
   }>({});
   const {
     signIn,
@@ -48,6 +50,7 @@ const Auth = () => {
       email?: string;
       password?: string;
       terms?: string;
+      gameUid?: string;
     } = {};
     try {
       emailSchema.parse(email);
@@ -65,6 +68,9 @@ const Auth = () => {
         }
       }
     }
+    if (isForgotPassword && !gameUid.trim()) {
+      newErrors.gameUid = 'Game UID is required';
+    }
     if (!isLogin && !isForgotPassword && !acceptedTerms) {
       newErrors.terms = 'You must accept the Terms & Conditions';
     }
@@ -77,27 +83,50 @@ const Auth = () => {
     
     setLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?mode=reset`,
-      });
-      
-      if (error) {
+      // Verify email and game_uid match from profiles
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id, email, game_uid')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (profileError || !profile) {
         toast({
-          title: 'Error',
-          description: error.message,
+          title: 'Account Not Found',
+          description: 'No account found with this email.',
           variant: 'destructive'
         });
-      } else {
-        toast({
-          title: 'Reset Email Sent!',
-          description: 'Check your email for the password reset link.',
-        });
-        setIsForgotPassword(false);
+        setLoading(false);
+        return;
       }
+
+      // Check if game_uid matches
+      if (!profile.game_uid || profile.game_uid.toLowerCase() !== gameUid.toLowerCase().trim()) {
+        toast({
+          title: 'Verification Failed',
+          description: 'The Game UID does not match our records.',
+          variant: 'destructive'
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Sign in the user with a temporary session to allow password change
+      // Store verified user info and redirect to profile settings
+      localStorage.setItem('password_reset_user_id', profile.user_id);
+      localStorage.setItem('password_reset_verified', 'true');
+      
+      toast({
+        title: 'Verification Successful!',
+        description: 'Redirecting to change your password...',
+      });
+      
+      // Redirect to a password change page
+      navigate('/change-password');
     } catch {
       toast({
         title: 'Error',
-        description: 'Failed to send reset email.',
+        description: 'Verification failed. Please try again.',
         variant: 'destructive'
       });
     } finally {
@@ -178,14 +207,14 @@ const Auth = () => {
             <div className="flex flex-col items-center mb-6">
               <img src={vyuhaLogo} alt="Vyuha Esport" className="h-20 w-20 rounded-full object-cover mb-4 border-slate-400" />
               <h1 className="text-center mb-2 text-slate-950 font-semibold text-xl">Reset Password</h1>
-              <p className="text-center text-sm text-gray-600">Enter your email to receive a reset link</p>
+              <p className="text-center text-sm text-gray-600">Verify your identity to reset password</p>
             </div>
 
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email address</Label>
+                <Label htmlFor="reset-email" className="text-sm font-medium text-gray-700">Email address</Label>
                 <Input 
-                  id="email" 
+                  id="reset-email" 
                   type="email" 
                   placeholder="you@example.com" 
                   value={email} 
@@ -198,6 +227,23 @@ const Auth = () => {
                 {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="game-uid" className="text-sm font-medium text-gray-700">Game UID</Label>
+                <Input 
+                  id="game-uid" 
+                  type="text" 
+                  placeholder="Enter your Game UID" 
+                  value={gameUid} 
+                  onChange={e => {
+                    setGameUid(e.target.value);
+                    setErrors(prev => ({ ...prev, gameUid: undefined }));
+                  }} 
+                  className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.gameUid ? 'border-red-500' : ''}`} 
+                />
+                {errors.gameUid && <p className="text-red-500 text-xs">{errors.gameUid}</p>}
+                <p className="text-xs text-gray-500">Enter the Game UID from your profile</p>
+              </div>
+
               <button 
                 type="button"
                 onClick={handleForgotPassword}
@@ -207,9 +253,9 @@ const Auth = () => {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
+                    Verifying...
                   </>
-                ) : 'Send Reset Link'}
+                ) : 'Verify & Continue'}
               </button>
             </div>
           </div>

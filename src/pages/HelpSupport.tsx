@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, X, Send, Search, MessageSquare, Phone, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Paperclip, X, Send, Search, MessageSquare, Phone, HelpCircle, Clock, CheckCircle2, AlertCircle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -22,6 +23,15 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+
+interface Ticket {
+  id: string;
+  topic: string;
+  description: string;
+  status: string;
+  admin_response: string | null;
+  created_at: string;
+}
 
 const faqs = [
   {
@@ -82,7 +92,7 @@ const faqs = [
   },
 ];
 
-type ViewType = 'faq' | 'ticket';
+type ViewType = 'faq' | 'ticket' | 'history';
 
 const HelpSupport = () => {
   const navigate = useNavigate();
@@ -95,6 +105,33 @@ const HelpSupport = () => {
   const [requestCallback, setRequestCallback] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      fetchTickets();
+    }
+  }, [user]);
+
+  const fetchTickets = async () => {
+    if (!user) return;
+    setLoadingTickets(true);
+    try {
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .select('id, topic, description, status, admin_response, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTickets(data || []);
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
 
   const topics = [
     { value: 'payment', label: 'Payment Issue' },
@@ -337,6 +374,44 @@ const HelpSupport = () => {
             )}
           </div>
 
+          {/* Ticket History */}
+          {user && tickets.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  <History className="h-4 w-4 text-primary" />
+                  Your Tickets
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentView('history')}
+                  className="text-primary text-xs"
+                >
+                  View All
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {tickets.slice(0, 2).map((ticket) => (
+                  <div key={ticket.id} className="bg-card border border-border rounded-xl p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground capitalize truncate">{ticket.topic}</p>
+                        <p className="text-xs text-muted-foreground truncate">{ticket.description}</p>
+                      </div>
+                      <Badge variant={ticket.status === 'resolved' ? 'default' : ticket.status === 'in_progress' ? 'secondary' : 'outline'} className="text-[10px] shrink-0">
+                        {ticket.status === 'resolved' && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                        {ticket.status === 'in_progress' && <Clock className="h-3 w-3 mr-1" />}
+                        {ticket.status === 'open' && <AlertCircle className="h-3 w-3 mr-1" />}
+                        {ticket.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Still Need Help */}
           <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 text-center space-y-3">
             <h3 className="text-sm font-semibold text-foreground">Still need help?</h3>
@@ -353,6 +428,79 @@ const HelpSupport = () => {
               Contact Support
             </Button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Ticket History View
+  if (currentView === 'history') {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setCurrentView('faq')}
+              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 text-foreground" />
+            </button>
+            <h1 className="text-lg font-bold text-foreground">Ticket History</h1>
+          </div>
+        </header>
+
+        <div className="p-4 space-y-3">
+          {loadingTickets ? (
+            <div className="text-center py-8 text-muted-foreground">Loading tickets...</div>
+          ) : tickets.length === 0 ? (
+            <div className="text-center py-8">
+              <History className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No tickets submitted yet</p>
+              <Button
+                variant="link"
+                onClick={() => openTicketForm(false)}
+                className="mt-2 text-primary"
+              >
+                Raise Your First Ticket
+              </Button>
+            </div>
+          ) : (
+            <Accordion type="single" collapsible className="space-y-2">
+              {tickets.map((ticket) => (
+                <AccordionItem 
+                  key={ticket.id} 
+                  value={ticket.id}
+                  className="bg-card border border-border rounded-xl px-4 data-[state=open]:border-primary/50"
+                >
+                  <AccordionTrigger className="hover:no-underline py-4">
+                    <div className="flex items-start justify-between gap-2 w-full pr-2">
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-foreground capitalize">{ticket.topic} Issue</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(ticket.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <Badge variant={ticket.status === 'resolved' ? 'default' : ticket.status === 'in_progress' ? 'secondary' : 'outline'} className="text-[10px] shrink-0">
+                        {ticket.status}
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 space-y-3">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Your Issue:</p>
+                      <p className="text-sm text-foreground">{ticket.description}</p>
+                    </div>
+                    {ticket.admin_response && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                        <p className="text-xs font-medium text-primary mb-1">Admin Response:</p>
+                        <p className="text-sm text-foreground">{ticket.admin_response}</p>
+                      </div>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
         </div>
       </div>
     );
