@@ -445,6 +445,7 @@ const HomePage = () => {
             {getFilteredTournaments().map((tournament) => {
               const joined = isUserJoined(tournament);
               const showRoomDetails = canSeeRoomDetails(tournament);
+              const isFollowingOrganizer = tournament.created_by ? followedOrganizers.includes(tournament.created_by) : false;
               
               return (
                 <TournamentCard
@@ -455,9 +456,17 @@ const HomePage = () => {
                   onJoinClick={() => handleJoinClick(tournament)}
                   onExitClick={() => handleExitClick(tournament)}
                   onShareClick={() => handleShare(tournament)}
-                  onPrizeClick={tournament.prize_distribution ? () => setPrizeDrawer({ open: true, tournament }) : undefined}
+                  onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
                   onSwipeJoin={() => handleJoinClick(tournament)}
                   variant="organizer"
+                  isFollowing={isFollowingOrganizer}
+                  onFollowChange={(following) => {
+                    if (following) {
+                      setFollowedOrganizers(prev => [...prev, tournament.created_by!]);
+                    } else {
+                      setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
+                    }
+                  }}
                 />
               );
             })}

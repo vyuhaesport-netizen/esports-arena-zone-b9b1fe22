@@ -2,15 +2,16 @@ import { useState, useRef } from 'react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import FollowButton from '@/components/FollowButton';
 import { 
   Trophy, 
   Users, 
   Wallet,
   Share2,
   Calendar,
-  BadgeCheck,
   Eye,
-  ChevronRight
+  ChevronRight,
+  Award
 } from 'lucide-react';
 
 interface Tournament {
@@ -29,6 +30,7 @@ interface Tournament {
   room_id?: string | null;
   room_password?: string | null;
   prize_distribution?: any;
+  created_by?: string | null;
 }
 
 interface TournamentCardProps {
@@ -42,6 +44,9 @@ interface TournamentCardProps {
   isLoading?: boolean;
   variant?: 'organizer' | 'creator';
   showRoomDetails?: boolean;
+  organizerName?: string;
+  isFollowing?: boolean;
+  onFollowChange?: (isFollowing: boolean) => void;
 }
 
 const TournamentCard = ({
@@ -55,11 +60,13 @@ const TournamentCard = ({
   isLoading = false,
   variant = 'organizer',
   showRoomDetails = false,
+  organizerName,
+  isFollowing = false,
+  onFollowChange,
 }: TournamentCardProps) => {
   const spotsLeft = (tournament.max_participants || 100) - (tournament.joined_users?.length || 0);
   const prizeAmount = tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`;
   const entryFee = tournament.entry_fee ? `₹${tournament.entry_fee}` : 'Free';
-  const isOfficial = tournament.tournament_type === 'organizer';
   
   // Swipe state
   const [swipeX, setSwipeX] = useState(0);
@@ -93,6 +100,17 @@ const TournamentCard = ({
     }
     setSwipeX(0);
     setIsSwiping(false);
+  };
+
+  // Get default prize distribution if none set
+  const getPrizeDistribution = () => {
+    if (tournament.prize_distribution) return tournament.prize_distribution;
+    // Default distribution: 50/30/20
+    return [
+      { position: 1, percentage: 50 },
+      { position: 2, percentage: 30 },
+      { position: 3, percentage: 20 },
+    ];
   };
 
   return (
@@ -129,14 +147,19 @@ const TournamentCard = ({
               <h3 className="font-gaming font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
                 {tournament.title}
               </h3>
-              {isOfficial && (
-                <Badge className="bg-gaming-orange/10 text-gaming-orange text-[9px] px-1.5 py-0 flex items-center gap-0.5 shrink-0">
-                  <BadgeCheck className="h-2.5 w-2.5" />
-                  Official
-                </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] text-muted-foreground">{tournament.game}</p>
+              {/* Follow Button */}
+              {tournament.created_by && onFollowChange && (
+                <FollowButton
+                  organizerId={tournament.created_by}
+                  isFollowing={isFollowing}
+                  onFollowChange={onFollowChange}
+                  organizerName={organizerName}
+                />
               )}
             </div>
-            <p className="text-[11px] text-muted-foreground">{tournament.game}</p>
           </div>
           
           <div className="flex items-center gap-1.5 shrink-0">
@@ -214,16 +237,16 @@ const TournamentCard = ({
             </button>
           )}
           
-          {tournament.prize_distribution && onPrizeClick && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onPrizeClick}
-              className="h-9 px-3 hover:bg-accent hover:scale-105 transition-all"
-            >
-              Prizes
-            </Button>
-          )}
+          {/* Always show Prize Distribution button */}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onPrizeClick}
+            className="h-9 px-3 hover:bg-accent hover:scale-105 transition-all"
+          >
+            <Award className="h-3.5 w-3.5 mr-1" />
+            Prizes
+          </Button>
           
           <button 
             onClick={onShareClick}
