@@ -23,6 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import ProfileView from '@/components/ProfileView';
+import VoiceMessagePlayer from '@/components/VoiceMessagePlayer';
 import {
   ArrowLeft,
   Users,
@@ -1108,15 +1109,7 @@ const MessagePage = () => {
                           className="max-w-full rounded-lg"
                         />
                       ) : message.message_type === 'voice' && message.media_url ? (
-                        <div className="flex items-center gap-2 px-3 py-2">
-                          <button className="p-1.5 rounded-full bg-white/20">
-                            <Play className="h-4 w-4" />
-                          </button>
-                          <div className="flex-1 h-1 bg-white/30 rounded-full">
-                            <div className="w-1/3 h-full bg-white rounded-full" />
-                          </div>
-                          <Volume2 className="h-4 w-4 opacity-70" />
-                        </div>
+                        <VoiceMessagePlayer audioUrl={message.media_url} isOwn={isOwn} />
                       ) : (
                         <p className="text-sm px-3 py-2">{message.content}</p>
                       )}
