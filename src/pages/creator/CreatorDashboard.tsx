@@ -75,6 +75,8 @@ interface PlayerProfile {
   in_game_name: string | null;
   avatar_url: string | null;
   email: string;
+  game_uid: string | null;
+  team_name?: string | null;
 }
 
 const CreatorDashboard = () => {
@@ -341,13 +343,28 @@ const CreatorDashboard = () => {
     try {
       const userIds = tournament.joined_users || [];
       if (userIds.length > 0) {
-        const { data, error } = await supabase
+        // Fetch profiles with game_uid
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('user_id, username, in_game_name, avatar_url, email')
+          .select('user_id, username, in_game_name, avatar_url, email, game_uid')
           .in('user_id', userIds);
 
-        if (!error && data) {
-          setJoinedPlayers(data);
+        // Fetch team names from tournament_registrations for duo/squad
+        const { data: registrations } = await supabase
+          .from('tournament_registrations')
+          .select('user_id, team_name')
+          .eq('tournament_id', tournament.id);
+
+        if (!profilesError && profilesData) {
+          // Merge team_name into player data
+          const playersWithTeams = profilesData.map(player => {
+            const registration = registrations?.find(r => r.user_id === player.user_id);
+            return {
+              ...player,
+              team_name: registration?.team_name || null
+            };
+          });
+          setJoinedPlayers(playersWithTeams);
         }
       } else {
         setJoinedPlayers([]);
@@ -394,13 +411,25 @@ const CreatorDashboard = () => {
     try {
       const userIds = tournament.joined_users || [];
       if (userIds.length > 0) {
-        const { data, error } = await supabase
+        const { data: profilesData, error } = await supabase
           .from('profiles')
-          .select('user_id, username, in_game_name, avatar_url, email')
+          .select('user_id, username, in_game_name, avatar_url, email, game_uid')
           .in('user_id', userIds);
 
-        if (!error && data) {
-          setJoinedPlayers(data);
+        const { data: registrations } = await supabase
+          .from('tournament_registrations')
+          .select('user_id, team_name')
+          .eq('tournament_id', tournament.id);
+
+        if (!error && profilesData) {
+          const playersWithTeams = profilesData.map(player => {
+            const registration = registrations?.find(r => r.user_id === player.user_id);
+            return {
+              ...player,
+              team_name: registration?.team_name || null
+            };
+          });
+          setJoinedPlayers(playersWithTeams);
         }
       } else {
         setJoinedPlayers([]);
@@ -831,7 +860,15 @@ const CreatorDashboard = () => {
       <Dialog open={playersDialogOpen} onOpenChange={setPlayersDialogOpen}>
         <DialogContent className="max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Joined Players ({joinedPlayers.length})</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-pink-500" />
+              Joined Players ({joinedPlayers.length})
+              {selectedTournament && (
+                <Badge variant="outline" className="ml-2 capitalize">
+                  {selectedTournament.tournament_mode || 'solo'}
+                </Badge>
+              )}
+            </DialogTitle>
           </DialogHeader>
 
           {loadingPlayers ? (
@@ -845,19 +882,82 @@ const CreatorDashboard = () => {
             </div>
           ) : (
             <ScrollArea className="max-h-[50vh]">
-              <div className="space-y-2">
-                {joinedPlayers.map((player) => (
-                  <div key={player.user_id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={player.avatar_url || undefined} />
-                      <AvatarFallback>{player.username?.charAt(0) || 'P'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{player.in_game_name || player.username || 'Player'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{player.email}</p>
+              <div className="space-y-3">
+                {/* Group by team for duo/squad modes */}
+                {selectedTournament?.tournament_mode !== 'solo' ? (
+                  (() => {
+                    const teamGroups = joinedPlayers.reduce((acc, player) => {
+                      const teamName = player.team_name || 'No Team';
+                      if (!acc[teamName]) acc[teamName] = [];
+                      acc[teamName].push(player);
+                      return acc;
+                    }, {} as Record<string, PlayerProfile[]>);
+
+                    return Object.entries(teamGroups).map(([teamName, players]) => (
+                      <div key={teamName} className="border border-border rounded-lg overflow-hidden">
+                        <div className="bg-pink-500/10 px-3 py-2 flex items-center justify-between">
+                          <span className="font-semibold text-sm flex items-center gap-2">
+                            <Users className="h-4 w-4 text-pink-500" />
+                            Team: {teamName}
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            {players.length} players
+                          </Badge>
+                        </div>
+                        <div className="divide-y divide-border">
+                          {players.map((player) => (
+                            <div key={player.user_id} className="flex items-center gap-3 p-3 hover:bg-muted/30">
+                              <Avatar className="h-10 w-10">
+                                <AvatarImage src={player.avatar_url || undefined} />
+                                <AvatarFallback>{player.username?.charAt(0) || 'P'}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{player.in_game_name || player.username || 'Player'}</p>
+                                <div className="flex flex-wrap gap-2 mt-0.5">
+                                  {player.in_game_name && (
+                                    <span className="text-xs bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded">
+                                      IGN: {player.in_game_name}
+                                    </span>
+                                  )}
+                                  {player.game_uid && (
+                                    <span className="text-xs bg-purple-500/10 text-purple-600 px-1.5 py-0.5 rounded">
+                                      UID: {player.game_uid}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                  })()
+                ) : (
+                  joinedPlayers.map((player, index) => (
+                    <div key={player.user_id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium text-muted-foreground w-6">{index + 1}.</span>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={player.avatar_url || undefined} />
+                        <AvatarFallback>{player.username?.charAt(0) || 'P'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{player.in_game_name || player.username || 'Player'}</p>
+                        <div className="flex flex-wrap gap-2 mt-0.5">
+                          {player.in_game_name && (
+                            <span className="text-xs bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded">
+                              IGN: {player.in_game_name}
+                            </span>
+                          )}
+                          {player.game_uid && (
+                            <span className="text-xs bg-purple-500/10 text-purple-600 px-1.5 py-0.5 rounded">
+                              UID: {player.game_uid}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </ScrollArea>
           )}
