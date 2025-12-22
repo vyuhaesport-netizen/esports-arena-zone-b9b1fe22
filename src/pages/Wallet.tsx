@@ -90,9 +90,9 @@ const Wallet = () => {
 
       setTransactions(txns || []);
 
-      // Calculate total earned (completed deposits + winnings)
+      // Calculate total earned (ONLY prize winnings - not deposits)
       const earned = (txns || [])
-        .filter(t => (t.type === 'deposit' || t.type === 'winning' || t.type === 'prize') && t.status === 'completed')
+        .filter(t => (t.type === 'winning' || t.type === 'prize' || t.type === 'commission') && t.status === 'completed')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
       setTotalEarned(earned);
 
@@ -315,9 +315,11 @@ const Wallet = () => {
                 <div key={txn.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      txn.type === 'deposit' ? 'bg-green-500/10' : 'bg-red-500/10'
+                      txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund'
+                        ? 'bg-green-500/10' 
+                        : 'bg-red-500/10'
                     }`}>
-                      {txn.type === 'deposit' ? (
+                      {txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund' ? (
                         <ArrowDownLeft className="h-4 w-4 text-green-500" />
                       ) : (
                         <ArrowUpRight className="h-4 w-4 text-red-500" />
@@ -332,9 +334,11 @@ const Wallet = () => {
                   </div>
                   <div className="text-right">
                     <p className={`font-semibold text-sm ${
-                      txn.type === 'deposit' ? 'text-green-600' : 'text-red-600'
+                      txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund'
+                        ? 'text-green-600' 
+                        : 'text-red-600'
                     }`}>
-                      {txn.type === 'deposit' ? '+' : ''}₹{Math.abs(txn.amount)}
+                      {txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund' ? '+' : '-'}₹{Math.abs(txn.amount)}
                     </p>
                     {getStatusBadge(txn.status)}
                   </div>
