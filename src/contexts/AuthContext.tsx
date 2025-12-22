@@ -188,12 +188,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    // Clear local state first regardless of server response
+    setUser(null);
+    setSession(null);
     setIsAdmin(false);
     setIsSuperAdmin(false);
     setIsOrganizer(false);
     setIsCreator(false);
     setPermissions([]);
+    
+    // Then attempt server signout (ignore errors if session already invalidated)
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.log('Signout completed (session may have been already invalidated)');
+    }
   };
 
   return (

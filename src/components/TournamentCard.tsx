@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import FollowButton from '@/components/FollowButton';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Award, Clock, Flame, Zap } from 'lucide-react';
+import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap } from 'lucide-react';
 interface Tournament {
   id: string;
   title: string;
@@ -88,37 +88,11 @@ const TournamentCard = ({
     setIsSwiping(false);
   };
 
-  // Get default prize distribution if none set
-  const getPrizeDistribution = () => {
-    if (tournament.prize_distribution) return tournament.prize_distribution;
-    // Default distribution: 50/30/20
-    return [{
-      position: 1,
-      percentage: 50
-    }, {
-      position: 2,
-      percentage: 30
-    }, {
-      position: 3,
-      percentage: 20
-    }];
-  };
-  // Check if tournament is starting soon (within 2 hours)
-  const isStartingSoon = () => {
-    const matchTime = new Date(tournament.start_date);
-    const now = new Date();
-    const timeDiff = matchTime.getTime() - now.getTime();
-    return timeDiff > 0 && timeDiff < 2 * 60 * 60 * 1000;
-  };
-
-  // Check if almost full (less than 10 spots)
-  const isAlmostFull = spotsLeft <= 10 && spotsLeft > 0;
-
-  return <div className="relative overflow-hidden rounded-xl">
+  return <div className="relative overflow-hidden rounded-lg">
       {/* Swipe indicator background */}
-      {canSwipeJoin && <div className={`absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-emerald-500 to-emerald-500/50 flex items-center justify-end pr-4 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="text-white text-sm font-semibold flex items-center gap-1">
-            <ChevronRight className="h-5 w-5 animate-pulse" />
+      {canSwipeJoin && <div className={`absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-emerald-500 to-emerald-500/50 flex items-center justify-end pr-3 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="text-white text-xs font-semibold flex items-center gap-1">
+            <ChevronRight className="h-4 w-4 animate-pulse" />
             Join
           </div>
         </div>}
@@ -126,41 +100,27 @@ const TournamentCard = ({
       <div ref={cardRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{
       transform: `translateX(${swipeX}px)`,
       transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
-    }} className="group bg-card rounded-xl border border-border/50 p-4 hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 ease-out relative">
+    }} className="bg-card rounded-lg border border-border/50 p-3 hover:border-primary/30 transition-all relative">
         
         {/* Header Row */}
-        <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-gaming font-bold text-foreground truncate group-hover:text-primary transition-colors text-lg">
-                {tournament.title}
-              </h3>
-              {isStartingSoon() && (
-                <span className="flex items-center gap-0.5 bg-amber-500/20 text-amber-600 px-1.5 py-0.5 rounded-full text-[9px] font-semibold animate-pulse">
-                  <Clock className="h-2.5 w-2.5" />
-                  Soon
-                </span>
-              )}
-              {isAlmostFull && (
-                <span className="flex items-center gap-0.5 bg-red-500/20 text-red-600 px-1.5 py-0.5 rounded-full text-[9px] font-semibold">
-                  <Flame className="h-2.5 w-2.5" />
-                  Hot
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] text-muted-foreground">{tournament.game}</span>
-              <Badge className={`text-[9px] px-1.5 py-0 capitalize ${variant === 'creator' ? 'bg-purple-500/10 text-purple-600' : 'bg-gaming-orange/10 text-gaming-orange'}`}>
+            <h3 className="font-semibold text-foreground truncate text-sm">
+              {tournament.title}
+            </h3>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span className="text-[10px] text-muted-foreground">{tournament.game}</span>
+              <Badge className={`text-[8px] px-1 py-0 capitalize ${variant === 'creator' ? 'bg-purple-500/10 text-purple-600' : 'bg-gaming-orange/10 text-gaming-orange'}`}>
                 {tournament.tournament_mode || 'Solo'}
               </Badge>
-              <Badge className={`text-[9px] px-1.5 py-0 capitalize ${tournament.status === 'upcoming' ? 'bg-emerald-500/10 text-emerald-600' : tournament.status === 'ongoing' ? 'bg-amber-500/10 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
+              <Badge className={`text-[8px] px-1 py-0 capitalize ${tournament.status === 'upcoming' ? 'bg-emerald-500/10 text-emerald-600' : tournament.status === 'ongoing' ? 'bg-amber-500/10 text-amber-600' : 'bg-muted text-muted-foreground'}`}>
                 {tournament.status}
               </Badge>
             </div>
             {/* Organizer Info */}
             {(organizerName || tournament.created_by) && (
-              <div className="flex items-center gap-2 mt-1">
-                {organizerName && tournament.created_by && <button onClick={() => setProfilePreviewOpen(true)} className="text-[10px] text-muted-foreground hover:text-primary hover:underline transition-colors">
+              <div className="flex items-center gap-2 mt-0.5">
+                {organizerName && tournament.created_by && <button onClick={() => setProfilePreviewOpen(true)} className="text-[9px] text-muted-foreground hover:text-primary hover:underline transition-colors">
                     by {organizerName}
                   </button>}
                 {tournament.created_by && onFollowChange && <FollowButton organizerId={tournament.created_by} isFollowing={isFollowing} onFollowChange={onFollowChange} organizerName={organizerName} />}
@@ -172,62 +132,64 @@ const TournamentCard = ({
         {/* Organizer Profile Preview Dialog */}
         {tournament.created_by && <OrganizerProfilePreview organizerId={tournament.created_by} open={profilePreviewOpen} onOpenChange={setProfilePreviewOpen} isFollowing={isFollowing} onFollowChange={onFollowChange} />}
 
-        {/* Stats Row - Enhanced but compact */}
-        <div className="flex items-center gap-3 mb-3 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-amber-500/10 px-2 py-1 rounded-lg">
-            <Trophy className="h-3.5 w-3.5 text-amber-500" />
-            <span className="text-xs font-semibold text-amber-600">{prizeAmount}</span>
+        {/* Stats Row */}
+        <div className="flex items-center gap-2 mb-2 text-[10px]">
+          <div className="flex items-center gap-1 text-amber-600">
+            <Trophy className="h-3 w-3" />
+            <span className="font-medium">{prizeAmount}</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-1 rounded-lg">
-            <Wallet className="h-3.5 w-3.5 text-emerald-500" />
-            <span className="text-xs font-semibold text-emerald-600">{entryFee}</span>
+          <span className="text-muted-foreground">•</span>
+          <div className="flex items-center gap-1 text-emerald-600">
+            <Wallet className="h-3 w-3" />
+            <span className="font-medium">{entryFee}</span>
           </div>
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg ${isAlmostFull ? 'bg-red-500/10' : 'bg-blue-500/10'}`}>
-            <Users className={`h-3.5 w-3.5 ${isAlmostFull ? 'text-red-500' : 'text-blue-500'}`} />
-            <span className={`text-xs font-semibold ${isAlmostFull ? 'text-red-600' : 'text-blue-600'}`}>{spotsLeft} left</span>
+          <span className="text-muted-foreground">•</span>
+          <div className="flex items-center gap-1 text-blue-600">
+            <Users className="h-3 w-3" />
+            <span className="font-medium">{spotsLeft} left</span>
           </div>
-          <div className="flex items-center gap-1.5 bg-purple-500/10 px-2 py-1 rounded-lg">
-            <Calendar className="h-3.5 w-3.5 text-purple-500" />
-            <span className="text-xs font-semibold text-purple-600">{format(new Date(tournament.start_date), 'MMM dd, h:mm a')}</span>
+          <span className="text-muted-foreground">•</span>
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>{format(new Date(tournament.start_date), 'MMM dd, h:mm a')}</span>
           </div>
         </div>
 
         {/* Room Details */}
-        {isJoined && showRoomDetails && tournament.room_id && <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20 mb-3 animate-fade-in">
-            <div className="flex items-center gap-2 text-emerald-600 text-[11px] font-medium">
-              <Eye className="h-3.5 w-3.5" />
+        {isJoined && showRoomDetails && tournament.room_id && <div className="p-1.5 bg-emerald-500/10 rounded border border-emerald-500/20 mb-2">
+            <div className="flex items-center gap-2 text-emerald-600 text-[10px] font-medium">
+              <Eye className="h-3 w-3" />
               <span>Room: {tournament.room_id}</span>
               {tournament.room_password && <span className="text-muted-foreground">| Pass: {tournament.room_password}</span>}
             </div>
           </div>}
 
         {/* Action Row */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {isJoined ? (
-            <Button onClick={onExitClick} disabled={isLoading} variant="outline" size="sm" className="flex-1 h-9 text-destructive border-destructive/50 hover:bg-destructive/10 hover:border-destructive transition-all">
-              {isLoading ? 'Processing...' : 'Exit Tournament'}
+            <Button onClick={onExitClick} disabled={isLoading} variant="outline" size="sm" className="flex-1 h-7 text-xs text-destructive border-destructive/50 hover:bg-destructive/10">
+              {isLoading ? 'Processing...' : 'Exit'}
             </Button>
           ) : (
             canSwipeJoin ? (
-              <div className="flex-1 h-9 rounded-lg bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-600">
-                <Zap className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">Swipe left to join</span>
-                <ChevronRight className="h-3.5 w-3.5 animate-pulse" />
+              <div className="flex-1 h-7 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center gap-1 text-emerald-600 text-[10px]">
+                <Zap className="h-3 w-3" />
+                <span>Swipe left to join</span>
+                <ChevronRight className="h-3 w-3 animate-pulse" />
               </div>
             ) : (
-              <div className="flex-1 h-9 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground text-xs">
-                {spotsLeft <= 0 ? 'Tournament Full' : 'Not Available'}
+              <div className="flex-1 h-7 rounded bg-muted/50 flex items-center justify-center text-muted-foreground text-[10px]">
+                {spotsLeft <= 0 ? 'Full' : 'Not Available'}
               </div>
             )
           )}
           
-          <Button variant="outline" size="sm" onClick={onPrizeClick} className="h-9 px-3 hover:bg-accent hover:scale-105 transition-all">
-            <Award className="h-3.5 w-3.5 mr-1" />
+          <Button variant="outline" size="sm" onClick={onPrizeClick} className="h-7 px-2 text-[10px]">
             Prizes
           </Button>
           
-          <button onClick={onShareClick} className="h-9 w-9 rounded-lg border border-border/50 flex items-center justify-center hover:bg-accent hover:scale-105 hover:border-primary/30 transition-all">
-            <Share2 className="h-4 w-4 text-muted-foreground" />
+          <button onClick={onShareClick} className="h-7 w-7 rounded border border-border/50 flex items-center justify-center hover:bg-accent">
+            <Share2 className="h-3 w-3 text-muted-foreground" />
           </button>
         </div>
       </div>

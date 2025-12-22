@@ -93,6 +93,22 @@ const AdminUsers = () => {
   useEffect(() => {
     if (hasPermission('users:view')) {
       fetchUsers();
+      
+      // Subscribe to realtime updates for new users
+      const channel = supabase
+        .channel('admin-users-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profiles' },
+          () => {
+            fetchUsers();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [hasPermission]);
 
