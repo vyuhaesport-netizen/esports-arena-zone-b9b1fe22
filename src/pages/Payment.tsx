@@ -274,45 +274,47 @@ const Payment = () => {
         </div>
       </header>
 
-      {/* Floating Timer - Always Visible */}
+      {/* Floating Timer - Always Visible - RED URGENCY */}
       <div className={`sticky top-16 z-40 mx-4 mt-4 rounded-xl border-2 p-4 transition-all ${
         isVeryLow
-          ? 'bg-destructive text-destructive-foreground border-destructive animate-bounce'
+          ? 'bg-destructive text-destructive-foreground border-destructive animate-bounce shadow-lg shadow-destructive/30'
           : isCritical
-          ? 'bg-destructive/20 border-destructive text-destructive'
+          ? 'bg-destructive/90 border-destructive text-destructive-foreground shadow-lg shadow-destructive/20'
           : isUrgent
-          ? 'bg-orange-500/20 border-orange-500 text-orange-600 dark:text-orange-400'
-          : 'bg-secondary border-border text-foreground'
+          ? 'bg-destructive/80 border-destructive text-destructive-foreground shadow-md shadow-destructive/20'
+          : 'bg-destructive/70 border-destructive text-destructive-foreground shadow-sm'
       }`}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
-          <div className="flex items-center gap-2">
-            {isCritical ? (
-              <AlertTriangle className="h-6 w-6 animate-pulse" />
-            ) : (
-              <Clock className="h-6 w-6" />
-            )}
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-full bg-white/20 ${isVeryLow ? 'animate-ping' : isCritical ? 'animate-pulse' : ''}`}>
+              {isCritical ? (
+                <AlertTriangle className="h-7 w-7" />
+              ) : (
+                <Clock className="h-7 w-7" />
+              )}
+            </div>
             <div>
-              <p className="text-xs font-medium opacity-80">
-                {isVeryLow ? 'HURRY UP!' : isCritical ? 'Almost expired!' : isUrgent ? 'Time running low' : 'Time remaining'}
+              <p className="text-xs font-bold uppercase tracking-wider opacity-90">
+                {isVeryLow ? '⚠️ HURRY UP!' : isCritical ? '⏰ Almost expired!' : isUrgent ? '⏱️ Time running low' : '⏱️ Time remaining'}
               </p>
-              <p className={`font-mono font-black text-3xl tracking-wider ${isVeryLow ? 'animate-pulse' : ''}`}>
+              <p className={`font-mono font-black text-4xl tracking-wider ${isVeryLow ? 'animate-pulse' : ''}`}>
                 {formatTime(timeLeft)}
               </p>
             </div>
           </div>
           
-          {/* Progress indicator */}
-          <div className="text-right">
-            <p className="text-xs opacity-70">Complete payment</p>
-            <p className="text-xs opacity-70">before timer ends</p>
+          {/* Urgency message */}
+          <div className="text-right bg-white/10 px-3 py-2 rounded-lg">
+            <p className="text-xs font-semibold">Pay Now</p>
+            <p className="text-xs opacity-80">Before expiry</p>
           </div>
         </div>
         
         {/* Progress bar */}
-        <div className="mt-3 h-2 bg-background/30 rounded-full overflow-hidden max-w-lg mx-auto">
+        <div className="mt-3 h-3 bg-white/20 rounded-full overflow-hidden max-w-lg mx-auto">
           <div 
             className={`h-full transition-all duration-1000 rounded-full ${
-              isVeryLow ? 'bg-white' : isCritical ? 'bg-destructive' : isUrgent ? 'bg-orange-500' : 'bg-primary'
+              isVeryLow ? 'bg-white animate-pulse' : 'bg-white/80'
             }`}
             style={{ width: `${(timeLeft / (7 * 60)) * 100}%` }}
           />
