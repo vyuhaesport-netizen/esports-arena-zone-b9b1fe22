@@ -1,12 +1,35 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Copy, Check, Upload, Loader2, Clock, QrCode, Shield } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Upload, Loader2, Clock, QrCode, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+
+// Audio context for countdown sounds
+const createBeepSound = (frequency: number, duration: number, volume: number = 0.3) => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = frequency;
+    oscillator.type = 'sine';
+    gainNode.gain.value = volume;
+    
+    oscillator.start();
+    oscillator.stop(audioContext.currentTime + duration / 1000);
+    
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -23,8 +46,39 @@ const Payment = () => {
   const [submitting, setSubmitting] = useState(false);
   const [adminUpiId, setAdminUpiId] = useState('abbishekvyuha@fam');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(true);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastBeepTimeRef = useRef<number>(0);
+
+  // Play urgency sounds based on time remaining
+  const playUrgencySound = useCallback((seconds: number) => {
+    if (!soundEnabled) return;
+    
+    const now = Date.now();
+    if (now - lastBeepTimeRef.current < 900) return; // Prevent overlapping sounds
+    
+    // Critical: Last 10 seconds - rapid beeps
+    if (seconds <= 10 && seconds > 0) {
+      createBeepSound(880, 100, 0.4); // High pitch, short
+      lastBeepTimeRef.current = now;
+    }
+    // Warning: Last 30 seconds - beep every second
+    else if (seconds <= 30 && seconds > 10) {
+      createBeepSound(660, 150, 0.3);
+      lastBeepTimeRef.current = now;
+    }
+    // Caution: Last minute - beep every 10 seconds
+    else if (seconds <= 60 && seconds % 10 === 0) {
+      createBeepSound(440, 200, 0.2);
+      lastBeepTimeRef.current = now;
+    }
+    // Alert at specific intervals
+    else if (seconds === 120 || seconds === 180 || seconds === 300) {
+      createBeepSound(520, 300, 0.25);
+      lastBeepTimeRef.current = now;
+    }
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (!amount || amount <= 0) {
@@ -36,6 +90,8 @@ const Payment = () => {
 
   useEffect(() => {
     if (timeLeft <= 0) {
+      // Play final alarm
+      createBeepSound(220, 500, 0.5);
       toast({
         title: 'Time Expired',
         description: 'Payment session has expired. Please try again.',
@@ -45,12 +101,15 @@ const Payment = () => {
       return;
     }
 
+    // Play urgency sound
+    playUrgencySound(timeLeft);
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, navigate, toast]);
+  }, [timeLeft, navigate, toast, playUrgencySound]);
 
   const fetchPaymentSettings = async () => {
     try {
@@ -174,11 +233,22 @@ const Payment = () => {
   };
 
   const isUrgent = timeLeft < 60;
+  const isCritical = timeLeft <= 30;
+  const isVeryLow = timeLeft <= 10;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`min-h-screen bg-background ${isCritical ? 'animate-pulse' : ''}`}>
+      {/* Urgency Overlay for Critical Time */}
+      {isCritical && (
+        <div className="fixed inset-0 pointer-events-none z-40 bg-destructive/5 animate-pulse" />
+      )}
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b-2 border-border px-4 py-3">
+      <header className={`sticky top-0 z-50 backdrop-blur-sm border-b-2 px-4 py-3 transition-colors ${
+        isCritical 
+          ? 'bg-destructive/10 border-destructive' 
+          : 'bg-card/95 border-border'
+      }`}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div className="flex items-center gap-3">
             <button 
@@ -193,17 +263,61 @@ const Payment = () => {
             </div>
           </div>
           
-          {/* Timer Badge */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 ${
-            isUrgent 
-              ? 'bg-destructive/10 border-destructive text-destructive animate-pulse' 
-              : 'bg-secondary border-border text-foreground'
-          }`}>
-            <Clock className="h-4 w-4" />
-            <span className="font-mono font-bold text-lg">{formatTime(timeLeft)}</span>
-          </div>
+          {/* Sound Toggle */}
+          <button
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className="p-2 rounded-lg hover:bg-muted border border-border text-xs"
+            title={soundEnabled ? 'Mute sounds' : 'Enable sounds'}
+          >
+            {soundEnabled ? '🔊' : '🔇'}
+          </button>
         </div>
       </header>
+
+      {/* Floating Timer - Always Visible */}
+      <div className={`sticky top-16 z-40 mx-4 mt-4 rounded-xl border-2 p-4 transition-all ${
+        isVeryLow
+          ? 'bg-destructive text-destructive-foreground border-destructive animate-bounce'
+          : isCritical
+          ? 'bg-destructive/20 border-destructive text-destructive'
+          : isUrgent
+          ? 'bg-orange-500/20 border-orange-500 text-orange-600 dark:text-orange-400'
+          : 'bg-secondary border-border text-foreground'
+      }`}>
+        <div className="flex items-center justify-between max-w-lg mx-auto">
+          <div className="flex items-center gap-2">
+            {isCritical ? (
+              <AlertTriangle className="h-6 w-6 animate-pulse" />
+            ) : (
+              <Clock className="h-6 w-6" />
+            )}
+            <div>
+              <p className="text-xs font-medium opacity-80">
+                {isVeryLow ? 'HURRY UP!' : isCritical ? 'Almost expired!' : isUrgent ? 'Time running low' : 'Time remaining'}
+              </p>
+              <p className={`font-mono font-black text-3xl tracking-wider ${isVeryLow ? 'animate-pulse' : ''}`}>
+                {formatTime(timeLeft)}
+              </p>
+            </div>
+          </div>
+          
+          {/* Progress indicator */}
+          <div className="text-right">
+            <p className="text-xs opacity-70">Complete payment</p>
+            <p className="text-xs opacity-70">before timer ends</p>
+          </div>
+        </div>
+        
+        {/* Progress bar */}
+        <div className="mt-3 h-2 bg-background/30 rounded-full overflow-hidden max-w-lg mx-auto">
+          <div 
+            className={`h-full transition-all duration-1000 rounded-full ${
+              isVeryLow ? 'bg-white' : isCritical ? 'bg-destructive' : isUrgent ? 'bg-orange-500' : 'bg-primary'
+            }`}
+            style={{ width: `${(timeLeft / (7 * 60)) * 100}%` }}
+          />
+        </div>
+      </div>
 
       <div className="max-w-lg mx-auto p-4 space-y-5">
         
