@@ -807,6 +807,14 @@ export type Database = {
       is_creator: { Args: { _user_id: string }; Returns: boolean }
       is_organizer: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      process_tournament_exit: {
+        Args: { p_tournament_id: string; p_user_id: string }
+        Returns: Json
+      }
+      process_tournament_join: {
+        Args: { p_tournament_id: string; p_user_id: string }
+        Returns: Json
+      }
       process_withdrawal: {
         Args: {
           p_amount: number
