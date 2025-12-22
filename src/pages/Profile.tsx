@@ -505,38 +505,6 @@ const ProfilePage = () => {
             </button>
           )}
 
-          {/* Apply to Become Organizer - Only for Regular Users */}
-          {!isOrganizer && !isAdmin && (
-            <button
-              onClick={() => {
-                if (organizerApplication?.status === 'pending') {
-                  toast({ title: 'Application Pending', description: 'Your application is under review.' });
-                } else {
-                  setApplyDialogOpen(true);
-                }
-              }}
-              className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors"
-            >
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                <UserCheck className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm">Become an Organizer</p>
-                  {organizerApplication?.status === 'pending' && (
-                    <Badge className="bg-yellow-500/10 text-yellow-600 text-[9px]">Pending</Badge>
-                  )}
-                  {organizerApplication?.status === 'rejected' && (
-                    <Badge variant="destructive" className="text-[9px]">Reapply</Badge>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {organizerApplication?.status === 'rejected' ? 'Submit a new application' : 'Host your own tournaments'}
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </button>
-          )}
         </div>
       </div>
 

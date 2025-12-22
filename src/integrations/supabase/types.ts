@@ -617,24 +617,30 @@ export type Database = {
       tournament_registrations: {
         Row: {
           id: string
+          is_team_leader: boolean | null
           registered_at: string
           status: string | null
+          team_members: string[] | null
           team_name: string | null
           tournament_id: string
           user_id: string
         }
         Insert: {
           id?: string
+          is_team_leader?: boolean | null
           registered_at?: string
           status?: string | null
+          team_members?: string[] | null
           team_name?: string | null
           tournament_id: string
           user_id: string
         }
         Update: {
           id?: string
+          is_team_leader?: boolean | null
           registered_at?: string
           status?: string | null
+          team_members?: string[] | null
           team_name?: string | null
           tournament_id?: string
           user_id?: string
@@ -833,6 +839,16 @@ export type Database = {
         Args: { p_action: string; p_reason?: string; p_withdrawal_id: string }
         Returns: Json
       }
+      create_notification: {
+        Args: {
+          p_message: string
+          p_related_id?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       has_admin_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean
@@ -848,6 +864,23 @@ export type Database = {
       is_creator: { Args: { _user_id: string }; Returns: boolean }
       is_organizer: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      process_team_tournament_join: {
+        Args: {
+          p_leader_id: string
+          p_team_member_ids: string[]
+          p_team_name: string
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
+      process_team_winner_declaration: {
+        Args: {
+          p_organizer_id: string
+          p_team_positions: Json
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       process_tournament_exit: {
         Args: { p_tournament_id: string; p_user_id: string }
         Returns: Json
