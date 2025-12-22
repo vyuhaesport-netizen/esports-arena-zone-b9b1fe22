@@ -180,32 +180,49 @@ const AdminSettings = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: 'File too large', description: 'Maximum file size is 2MB', variant: 'destructive' });
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid File', description: 'Please upload an image file (PNG, JPG, etc.)', variant: 'destructive' });
+      return;
+    }
+
+    // 5MB limit
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      toast({ 
+        title: 'File Too Large', 
+        description: `Your file is ${fileSizeMB}MB. Please upload an image under 5MB.`, 
+        variant: 'destructive' 
+      });
       return;
     }
 
     setUploadingQr(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png';
       const filePath = `payment-qr/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('payment-screenshots')
         .upload(filePath, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage
-        .from('avatars')
+        .from('payment-screenshots')
         .getPublicUrl(filePath);
 
       setPaymentSettings(prev => ({ ...prev, payment_qr_url: urlData.publicUrl }));
       toast({ title: 'QR Uploaded', description: 'QR code image uploaded successfully.' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading QR:', error);
-      toast({ title: 'Upload Failed', description: 'Failed to upload QR code.', variant: 'destructive' });
+      toast({ 
+        title: 'Upload Failed', 
+        description: error?.message || 'Failed to upload QR code. Please try again.', 
+        variant: 'destructive' 
+      });
     } finally {
       setUploadingQr(false);
     }

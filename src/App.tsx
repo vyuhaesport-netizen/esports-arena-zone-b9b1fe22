@@ -31,6 +31,7 @@ import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
+import AdminDocumentation from "./pages/admin/AdminDocumentation";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import CreatorDashboard from "./pages/creator/CreatorDashboard";
 import ChangePassword from "./pages/ChangePassword";
@@ -195,6 +196,7 @@ const AppRoutes = () => {
       <Route path="/admin/messages" element={<ProtectedRoute><AdminMessages /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
       <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
+      <Route path="/admin/docs" element={<ProtectedRoute><AdminDocumentation /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
