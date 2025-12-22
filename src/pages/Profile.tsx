@@ -377,54 +377,57 @@ const ProfilePage = () => {
     <AppLayout>
       {/* Profile Header */}
       <div className="bg-card px-4 pt-6 pb-4">
-        {/* Username above avatar */}
-        <div className="text-center mb-4">
-          <h1 className="font-bold text-xl text-foreground">
-            @{profile?.username || 'username'}
-          </h1>
-          <div className="flex items-center justify-center gap-2 mt-1 flex-wrap">
-            {isSuperAdmin && (
-              <Badge className="bg-gradient-to-r from-primary to-orange-500 text-primary-foreground text-[10px]">
-                <Crown className="h-2.5 w-2.5 mr-0.5" /> Owner
-              </Badge>
+        {/* Username above everything */}
+        <h1 className="font-bold text-xl text-foreground text-center mb-4">
+          @{profile?.username || 'username'}
+        </h1>
+
+        <div className="flex items-center gap-6">
+          {/* Avatar on left */}
+          <div className="shrink-0">
+            <Avatar className="h-20 w-20 border-2 border-primary/20">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
+                {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+
+          {/* Details on right */}
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <p className="font-semibold text-base text-foreground">
+                {profile?.full_name || 'Gamer'}
+              </p>
+              {isSuperAdmin && (
+                <Badge className="bg-gradient-to-r from-primary to-orange-500 text-primary-foreground text-[10px]">
+                  <Crown className="h-2.5 w-2.5 mr-0.5" /> Owner
+                </Badge>
+              )}
+              {isAdmin && !isSuperAdmin && (
+                <Badge className="bg-primary/10 text-primary text-[10px]">
+                  <Shield className="h-2.5 w-2.5 mr-0.5" /> Team
+                </Badge>
+              )}
+              {isOrganizer && (
+                <Badge className="bg-purple-500/10 text-purple-600 text-[10px]">
+                  <UserCheck className="h-2.5 w-2.5 mr-0.5" /> Organizer
+                </Badge>
+              )}
+            </div>
+            {profile?.in_game_name && (
+              <p className="text-sm text-foreground">
+                <Gamepad2 className="h-3.5 w-3.5 inline mr-1 text-primary" />
+                {profile.in_game_name}
+              </p>
             )}
-            {isAdmin && !isSuperAdmin && (
-              <Badge className="bg-primary/10 text-primary text-[10px]">
-                <Shield className="h-2.5 w-2.5 mr-0.5" /> Team
-              </Badge>
-            )}
-            {isOrganizer && (
-              <Badge className="bg-purple-500/10 text-purple-600 text-[10px]">
-                <UserCheck className="h-2.5 w-2.5 mr-0.5" /> Organizer
-              </Badge>
+            {profile?.game_uid && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                <Hash className="h-3 w-3 inline mr-1" />
+                UID: {profile.game_uid}
+              </p>
             )}
           </div>
-        </div>
-
-        {/* Avatar */}
-        <div className="flex justify-center mb-4">
-          <Avatar className="h-24 w-24 border-2 border-primary/20">
-            <AvatarImage src={profile?.avatar_url || ''} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
-              {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-
-        {/* In-game name and UID */}
-        <div className="text-center space-y-1">
-          {profile?.in_game_name && (
-            <p className="text-sm text-foreground">
-              <Gamepad2 className="h-3.5 w-3.5 inline mr-1.5 text-primary" />
-              {profile.in_game_name}
-            </p>
-          )}
-          {profile?.game_uid && (
-            <p className="text-sm text-muted-foreground">
-              <Hash className="h-3.5 w-3.5 inline mr-1.5" />
-              UID: {profile.game_uid}
-            </p>
-          )}
         </div>
 
         <button 
