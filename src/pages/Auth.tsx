@@ -45,6 +45,16 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  const getErrorMessage = (error: Error): string => {
+    if (error.message === 'Failed to fetch') {
+      return 'Unable to connect to server. Please check your internet connection and try again.';
+    }
+    if (error.message === 'Invalid login credentials') {
+      return 'Invalid email or password. Please try again.';
+    }
+    return error.message;
+  };
+
   const validateForm = () => {
     const newErrors: {
       email?: string;
@@ -142,23 +152,21 @@ const Auth = () => {
     setLoading(true);
     try {
       if (isLogin) {
-        const {
-          error
-        } = await signIn(email, password);
+        const { error } = await signIn(email, password);
         if (error) {
+          const errorMessage = getErrorMessage(error);
           toast({
             title: 'Login Failed',
-            description: error.message === 'Invalid login credentials' ? 'Invalid email or password. Please try again.' : error.message,
+            description: errorMessage,
             variant: 'destructive'
           });
         } else {
           navigate('/home');
         }
       } else {
-        const {
-          error
-        } = await signUp(email, password);
+        const { error } = await signUp(email, password);
         if (error) {
+          const errorMessage = getErrorMessage(error);
           if (error.message.includes('already registered')) {
             toast({
               title: 'Account Exists',
@@ -168,7 +176,7 @@ const Auth = () => {
           } else {
             toast({
               title: 'Sign Up Failed',
-              description: error.message,
+              description: errorMessage,
               variant: 'destructive'
             });
           }
@@ -180,10 +188,13 @@ const Auth = () => {
           navigate('/home');
         }
       }
-    } catch {
+    } catch (err) {
+      const errorMessage = err instanceof Error && err.message === 'Failed to fetch'
+        ? 'Unable to connect to server. Please check your internet connection and try again.'
+        : 'An unexpected error occurred. Please try again.';
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        title: 'Connection Error',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
