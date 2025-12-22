@@ -178,13 +178,26 @@ const TournamentCard = ({
 
         {/* Action Row */}
         <div className="flex items-center gap-2">
-          {isJoined ? <Button onClick={onExitClick} disabled={isLoading} variant="outline" size="sm" className="flex-1 h-9 text-destructive border-destructive/50 hover:bg-destructive/10 hover:border-destructive transition-all">
-              {isLoading ? 'Processing...' : 'Exit'}
-            </Button> : <button onClick={onJoinClick} disabled={isLoading || tournament.status !== 'upcoming' || spotsLeft <= 0} className="flex-1 h-9 rounded-lg font-semibold text-xs text-white bg-gradient-to-r from-gray-900 via-gray-800 to-gaming-orange hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transition-all duration-200">
-              {isLoading ? 'Joining...' : spotsLeft <= 0 ? 'Full' : 'Join Now'}
-            </button>}
+          {isJoined ? (
+            <Button onClick={onExitClick} disabled={isLoading} variant="outline" size="sm" className="flex-1 h-9 text-destructive border-destructive/50 hover:bg-destructive/10 hover:border-destructive transition-all">
+              {isLoading ? 'Processing...' : 'Exit Tournament'}
+            </Button>
+          ) : (
+            /* Swipe to Join indicator - replaces Join button */
+            canSwipeJoin ? (
+              <div className="flex-1 h-9 rounded-lg bg-gradient-to-r from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center gap-2 text-emerald-600">
+                <ChevronRight className="h-4 w-4 animate-pulse" />
+                <span className="text-xs font-medium">Swipe left to join</span>
+                <ChevronRight className="h-4 w-4 animate-pulse" />
+              </div>
+            ) : (
+              <div className="flex-1 h-9 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground text-xs">
+                {spotsLeft <= 0 ? 'Tournament Full' : 'Not Available'}
+              </div>
+            )
+          )}
           
-          {/* Always show Prize Distribution button */}
+          {/* Prize Distribution button */}
           <Button variant="outline" size="sm" onClick={onPrizeClick} className="h-9 px-3 hover:bg-accent hover:scale-105 transition-all">
             <Award className="h-3.5 w-3.5 mr-1" />
             Prizes
@@ -194,11 +207,6 @@ const TournamentCard = ({
             <Share2 className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
-
-        {/* Swipe hint for mobile */}
-        {canSwipeJoin && <div className="absolute bottom-1 right-2 text-[9px] text-muted-foreground/50 md:hidden">
-            ← Swipe to join
-          </div>}
       </div>
     </div>;
 };
