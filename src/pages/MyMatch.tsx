@@ -4,6 +4,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +17,9 @@ import {
   X,
   Users,
   Eye,
-  ChevronDown
+  ChevronDown,
+  Copy,
+  Check
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -175,18 +178,37 @@ const MyMatch = () => {
   const completedMatches = registrations.filter(r => r.tournaments.status === 'completed');
 
   const MatchCard = ({ registration, showCancel = false }: { registration: Registration; showCancel?: boolean }) => {
-    const [playersOpen, setPlayersOpen] = useState(false);
+    const [playersDialogOpen, setPlayersDialogOpen] = useState(false);
     const [roomOpen, setRoomOpen] = useState(false);
     const [players, setPlayers] = useState<PlayerInfo[]>([]);
     const [loadingPlayers, setLoadingPlayers] = useState(false);
+    const [copiedField, setCopiedField] = useState<string | null>(null);
 
-    const handlePlayersToggle = async (open: boolean) => {
-      setPlayersOpen(open);
-      if (open && players.length === 0 && registration.tournaments.joined_users?.length) {
+    const handleViewPlayers = async () => {
+      setPlayersDialogOpen(true);
+      if (players.length === 0 && registration.tournaments.joined_users?.length) {
         setLoadingPlayers(true);
         const playerData = await fetchPlayers(registration.tournaments.joined_users);
         setPlayers(playerData);
         setLoadingPlayers(false);
+      }
+    };
+
+    const copyToClipboard = async (text: string, field: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedField(field);
+        toast({
+          title: 'Copied!',
+          description: `${field} copied to clipboard.`,
+        });
+        setTimeout(() => setCopiedField(null), 2000);
+      } catch (err) {
+        toast({
+          title: 'Failed to copy',
+          description: 'Please copy manually.',
+          variant: 'destructive',
+        });
       }
     };
 
@@ -237,74 +259,119 @@ const MyMatch = () => {
           </div>
         </div>
 
-        {/* Expandable Sections */}
-        <div className="mt-3 space-y-2">
-          {/* Players Section */}
-          <Collapsible open={playersOpen} onOpenChange={handlePlayersToggle}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 hover:bg-muted text-xs">
-              <div className="flex items-center gap-2">
-                <Users className="h-3.5 w-3.5 text-blue-500" />
-                <span className="font-medium">Players ({playerCount})</span>
-              </div>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${playersOpen ? 'rotate-180' : ''}`} />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2">
-              <div className="p-2 bg-muted/30 rounded-lg space-y-1.5 max-h-40 overflow-y-auto">
-                {loadingPlayers ? (
-                  <div className="flex items-center justify-center py-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  </div>
-                ) : players.length === 0 ? (
-                  <p className="text-[10px] text-muted-foreground text-center py-2">No players yet</p>
-                ) : (
-                  players.map((player, idx) => (
-                    <div key={player.user_id} className="flex items-center justify-between text-[10px] p-1.5 bg-background/50 rounded">
-                      <span className="text-muted-foreground">#{idx + 1}</span>
-                      <span className="font-medium">{player.in_game_name || 'Unknown'}</span>
-                      <span className="text-muted-foreground">UID: {player.game_uid || 'N/A'}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+        {/* Action Buttons Section */}
+        <div className="mt-3 flex gap-2">
+          {/* View Players Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewPlayers}
+            className="flex-1 h-8 text-xs gap-1.5"
+          >
+            <Users className="h-3.5 w-3.5 text-blue-500" />
+            View Players ({playerCount})
+          </Button>
 
-          {/* Room Details Section */}
-          <Collapsible open={roomOpen} onOpenChange={setRoomOpen}>
-            <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 hover:bg-muted text-xs">
-              <div className="flex items-center gap-2">
+          {/* Room Details Collapsible */}
+          <Collapsible open={roomOpen} onOpenChange={setRoomOpen} className="flex-1">
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-8 text-xs gap-1.5"
+              >
                 <Eye className="h-3.5 w-3.5 text-emerald-500" />
-                <span className="font-medium">Room Details</span>
-                {!hasRoomDetails && <span className="text-[9px] text-muted-foreground">(Not set yet)</span>}
-              </div>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
+                Room Details
+                <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
+              </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2">
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                {hasRoomDetails ? (
-                  <div className="space-y-2">
-                    {registration.tournaments.room_id && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Room ID:</span>
-                        <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_id}</span>
-                      </div>
-                    )}
-                    {registration.tournaments.room_password && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Password:</span>
-                        <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_password}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    Room details will appear here once the organizer sets them up.
-                  </p>
-                )}
-              </div>
-            </CollapsibleContent>
           </Collapsible>
         </div>
+
+        {/* Room Details Content */}
+        <Collapsible open={roomOpen} onOpenChange={setRoomOpen}>
+          <CollapsibleContent className="mt-2">
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              {hasRoomDetails ? (
+                <div className="space-y-2">
+                  {registration.tournaments.room_id && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Room ID:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_id}</span>
+                        <button
+                          onClick={() => copyToClipboard(registration.tournaments.room_id!, 'Room ID')}
+                          className="p-1 hover:bg-emerald-500/20 rounded transition-colors"
+                        >
+                          {copiedField === 'Room ID' ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5 text-emerald-600" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {registration.tournaments.room_password && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Password:</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_password}</span>
+                        <button
+                          onClick={() => copyToClipboard(registration.tournaments.room_password!, 'Password')}
+                          className="p-1 hover:bg-emerald-500/20 rounded transition-colors"
+                        >
+                          {copiedField === 'Password' ? (
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5 text-emerald-600" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Room details will appear here once the organizer sets them up.
+                </p>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Players Dialog */}
+        <Dialog open={playersDialogOpen} onOpenChange={setPlayersDialogOpen}>
+          <DialogContent className="max-w-sm max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-500" />
+                Total Players ({playerCount})
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
+              {loadingPlayers ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : players.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No players yet</p>
+              ) : (
+                players.map((player, idx) => (
+                  <div key={player.user_id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-600 font-semibold text-sm">
+                      {idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{player.in_game_name || 'Unknown'}</p>
+                      <p className="text-xs text-muted-foreground">UID: {player.game_uid || 'N/A'}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   };
