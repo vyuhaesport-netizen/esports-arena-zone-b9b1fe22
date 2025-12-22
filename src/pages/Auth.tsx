@@ -12,6 +12,14 @@ import { supabase } from '@/integrations/supabase/client';
 
 const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
+const usernameSchema = z.string()
+  .min(3, 'Username must be at least 3 characters')
+  .max(20, 'Username must be at most 20 characters')
+  .regex(/^[a-z0-9]+$/, 'Username must contain only lowercase letters and numbers');
+const fullNameSchema = z.string().min(2, 'Full name is required');
+const phoneSchema = z.string()
+  .min(10, 'Phone number must be at least 10 digits')
+  .regex(/^[0-9]+$/, 'Phone number must contain only digits');
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
@@ -20,14 +28,21 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [gameUid, setGameUid] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
     terms?: string;
     gameUid?: string;
+    username?: string;
+    fullName?: string;
+    phone?: string;
   }>({});
   const {
     signIn,
@@ -45,6 +60,37 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  // Check username availability with debounce
+  useEffect(() => {
+    if (!username || isLogin) return;
+    
+    const timer = setTimeout(async () => {
+      try {
+        usernameSchema.parse(username);
+        setCheckingUsername(true);
+        const { data } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username.toLowerCase())
+          .maybeSingle();
+        
+        if (data) {
+          setErrors(prev => ({ ...prev, username: 'Username is already taken' }));
+        } else {
+          setErrors(prev => ({ ...prev, username: undefined }));
+        }
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          setErrors(prev => ({ ...prev, username: e.errors[0].message }));
+        }
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [username, isLogin]);
+
   const getErrorMessage = (error: Error): string => {
     if (error.message === 'Failed to fetch') {
       return 'Unable to connect to server. Please check your internet connection and try again.';
@@ -61,6 +107,9 @@ const Auth = () => {
       password?: string;
       terms?: string;
       gameUid?: string;
+      username?: string;
+      fullName?: string;
+      phone?: string;
     } = {};
     try {
       emailSchema.parse(email);
@@ -78,12 +127,42 @@ const Auth = () => {
         }
       }
     }
+    
+    // Signup-specific validations
+    if (!isLogin && !isForgotPassword) {
+      try {
+        usernameSchema.parse(username);
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.username = e.errors[0].message;
+        }
+      }
+      
+      try {
+        fullNameSchema.parse(fullName.trim());
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.fullName = e.errors[0].message;
+        }
+      }
+      
+      try {
+        phoneSchema.parse(phone);
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          newErrors.phone = e.errors[0].message;
+        }
+      }
+      
+      if (!acceptedTerms) {
+        newErrors.terms = 'You must accept the Terms & Conditions';
+      }
+    }
+    
     if (isForgotPassword && !gameUid.trim()) {
       newErrors.gameUid = 'Game UID is required';
     }
-    if (!isLogin && !isForgotPassword && !acceptedTerms) {
-      newErrors.terms = 'You must accept the Terms & Conditions';
-    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -164,7 +243,24 @@ const Auth = () => {
           navigate('/home');
         }
       } else {
-        const { error } = await signUp(email, password);
+        // Check username availability one more time before signup
+        const { data: existingUser } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('username', username.toLowerCase())
+          .maybeSingle();
+        
+        if (existingUser) {
+          toast({
+            title: 'Username Taken',
+            description: 'This username is already taken. Please choose another.',
+            variant: 'destructive'
+          });
+          setLoading(false);
+          return;
+        }
+
+        const { data: authData, error } = await signUp(email, password);
         if (error) {
           const errorMessage = getErrorMessage(error);
           if (error.message.includes('already registered')) {
@@ -180,7 +276,21 @@ const Auth = () => {
               variant: 'destructive'
             });
           }
-        } else {
+        } else if (authData?.user) {
+          // Update the profile with additional fields
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              username: username.toLowerCase(),
+              full_name: fullName.trim(),
+              phone: phone
+            })
+            .eq('user_id', authData.user.id);
+          
+          if (profileError) {
+            console.error('Profile update error:', profileError);
+          }
+          
           toast({
             title: 'Account Created!',
             description: 'Welcome to Vyuha Esport!'
@@ -322,8 +432,105 @@ const Auth = () => {
               {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
             </div>
 
+            {/* Signup-only fields */}
+            {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium text-gray-700">
+                    Username
+                  </Label>
+                  <div className="relative">
+                    <Input 
+                      id="username" 
+                      type="text" 
+                      placeholder="yourname123" 
+                      value={username} 
+                      onChange={e => {
+                        setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''));
+                      }} 
+                      className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.username ? 'border-red-500' : ''}`} 
+                    />
+                    {checkingUsername && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  {errors.username && <p className="text-red-500 text-xs">{errors.username}</p>}
+                  <p className="text-xs text-gray-500">Only lowercase letters and numbers</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
+                    Full Name
+                  </Label>
+                  <Input 
+                    id="fullName" 
+                    type="text" 
+                    placeholder="Your Full Name" 
+                    value={fullName} 
+                    onChange={e => {
+                      setFullName(e.target.value);
+                      setErrors(prev => ({ ...prev, fullName: undefined }));
+                    }} 
+                    className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.fullName ? 'border-red-500' : ''}`} 
+                  />
+                  {errors.fullName && <p className="text-red-500 text-xs">{errors.fullName}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                    Phone Number
+                  </Label>
+                  <Input 
+                    id="phone" 
+                    type="tel" 
+                    placeholder="9876543210" 
+                    value={phone} 
+                    onChange={e => {
+                      const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                      setPhone(value);
+                      setErrors(prev => ({ ...prev, phone: undefined }));
+                    }} 
+                    className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.phone ? 'border-red-500' : ''}`} 
+                  />
+                  {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <Checkbox 
+                      id="terms" 
+                      checked={acceptedTerms} 
+                      onCheckedChange={checked => {
+                        setAcceptedTerms(checked as boolean);
+                        setErrors(prev => ({ ...prev, terms: undefined }));
+                      }} 
+                      className="mt-0.5" 
+                    />
+                    <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed">
+                      I agree to the{' '}
+                      <Link to="/terms" className="text-orange-600 hover:underline">
+                        Terms & Conditions
+                      </Link>
+                      ,{' '}
+                      <Link to="/refund-policy" className="text-orange-600 hover:underline">
+                        Refund Policy
+                      </Link>
+                      {' '}and{' '}
+                      <Link to="/about" className="text-orange-600 hover:underline">
+                        Privacy Policy
+                      </Link>
+                    </label>
+                  </div>
+                  {errors.terms && <p className="text-red-500 text-xs">{errors.terms}</p>}
+                </div>
+              </>
+            )}
+
             {/* Forgot Password - Login Only */}
-            {isLogin && <div className="text-right">
+            {isLogin && (
+              <div className="text-right">
                 <button 
                   type="button" 
                   onClick={() => setIsForgotPassword(true)}
@@ -331,35 +538,8 @@ const Auth = () => {
                 >
                   Forgot password?
                 </button>
-              </div>}
-
-            {/* Terms & Conditions Checkbox - Only for Signup */}
-            {!isLogin && <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={checked => {
-                setAcceptedTerms(checked as boolean);
-                setErrors(prev => ({
-                  ...prev,
-                  terms: undefined
-                }));
-              }} className="mt-0.5" />
-                  <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed">
-                    I agree to the{' '}
-                    <Link to="/terms" className="text-orange-600 hover:underline">
-                      Terms & Conditions
-                    </Link>
-                    ,{' '}
-                    <Link to="/refund-policy" className="text-orange-600 hover:underline">
-                      Refund Policy
-                    </Link>
-                    {' '}and{' '}
-                    <Link to="/about" className="text-orange-600 hover:underline">
-                      Privacy Policy
-                    </Link>
-                  </label>
-                </div>
-                {errors.terms && <p className="text-red-500 text-xs">{errors.terms}</p>}
-              </div>}
+              </div>
+            )}
 
             {/* Submit Button */}
             <button type="submit" disabled={loading} className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
