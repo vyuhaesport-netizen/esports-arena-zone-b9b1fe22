@@ -32,6 +32,7 @@ import AdminMessages from "./pages/admin/AdminMessages";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminDocumentation from "./pages/admin/AdminDocumentation";
+import AdminWalletAudit from "./pages/admin/AdminWalletAudit";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import CreatorDashboard from "./pages/creator/CreatorDashboard";
 import ChangePassword from "./pages/ChangePassword";
@@ -197,6 +198,7 @@ const AppRoutes = () => {
       <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
       <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
       <Route path="/admin/docs" element={<ProtectedRoute><AdminDocumentation /></ProtectedRoute>} />
+      <Route path="/admin/wallet-audit" element={<ProtectedRoute><AdminWalletAudit /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />

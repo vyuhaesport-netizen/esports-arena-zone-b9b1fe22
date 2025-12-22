@@ -45,6 +45,7 @@ const menuItems: MenuItem[] = [
   { icon: Palette, label: 'Creator Management', path: '/admin/creators', permission: 'creators:view' },
   { icon: ArrowDownLeft, label: 'Deposits', path: '/admin/deposits', permission: 'deposits:view' },
   { icon: Receipt, label: 'Transactions', path: '/admin/transactions', permission: 'transactions:view' },
+  { icon: Wallet, label: 'Wallet Audit', path: '/admin/wallet-audit', permission: 'transactions:view' },
   { icon: ArrowUpRight, label: 'Withdrawals', path: '/admin/withdrawals', permission: 'withdrawals:view' },
   { icon: HeadphonesIcon, label: 'Support', path: '/admin/support', permission: 'support:view' },
   { icon: Bell, label: 'Notifications', path: '/admin/notifications', permission: 'notifications:view' },

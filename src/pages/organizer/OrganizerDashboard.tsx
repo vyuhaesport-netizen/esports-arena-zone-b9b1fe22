@@ -103,6 +103,7 @@ const OrganizerDashboard = () => {
     status: 'upcoming',
     tournament_mode: 'solo',
     prize_distribution: '',
+    prize_pool: '',
   });
   const [commissionSettings, setCommissionSettings] = useState({
     organizer_percent: 10,
@@ -187,16 +188,13 @@ const OrganizerDashboard = () => {
       status: 'upcoming',
       tournament_mode: 'solo',
       prize_distribution: '',
+      prize_pool: '',
     });
     setSelectedTournament(null);
   };
 
-  const calculatePrizePool = () => {
-    const entryFee = parseFloat(formData.entry_fee) || 0;
-    const maxParticipants = parseInt(formData.max_participants) || 0;
-    const totalCollection = entryFee * maxParticipants;
-    const prizePool = (totalCollection * commissionSettings.prize_pool_percent) / 100;
-    return prizePool;
+  const getPrizePool = () => {
+    return parseFloat(formData.prize_pool) || 0;
   };
 
   const handleSave = async () => {
@@ -220,23 +218,21 @@ const OrganizerDashboard = () => {
         }
       }
 
-      // Calculate prize pool based on commission settings
       const entryFee = parseFloat(formData.entry_fee) || 0;
       const maxParticipants = parseInt(formData.max_participants) || 100;
-      const totalCollection = entryFee * maxParticipants;
-      const calculatedPrizePool = Math.floor((totalCollection * commissionSettings.prize_pool_percent) / 100);
+      const prizePoolValue = parseFloat(formData.prize_pool) || 0;
 
       const tournamentData = {
         title: formData.title,
         game: formData.game,
         description: formData.description || null,
-        prize_pool: `₹${calculatedPrizePool.toLocaleString()}`,
+        prize_pool: `₹${prizePoolValue.toLocaleString()}`,
         entry_fee: entryFee,
         max_participants: maxParticipants,
         start_date: new Date(formData.start_date).toISOString(),
         status: formData.status,
         created_by: user?.id,
-        tournament_type: 'creator',
+        tournament_type: 'organizer',
         tournament_mode: formData.tournament_mode,
         prize_distribution: prizeDistribution,
       };
@@ -671,6 +667,7 @@ const OrganizerDashboard = () => {
                             status: tournament.status || 'upcoming',
                             tournament_mode: tournament.tournament_mode || 'solo',
                             prize_distribution: tournament.prize_distribution ? JSON.stringify(tournament.prize_distribution, null, 2) : '',
+                            prize_pool: tournament.prize_pool?.replace(/[₹,]/g, '') || '',
                           });
                           setDialogOpen(true);
                         }}>
@@ -743,26 +740,22 @@ const OrganizerDashboard = () => {
               </div>
             </div>
 
-            {/* Auto-calculated Prize Pool Info */}
-            <div className="bg-primary/10 rounded-lg p-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Auto Prize Pool ({commissionSettings.prize_pool_percent}%)</span>
-                <span className="font-gaming font-bold text-primary">₹{calculatePrizePool().toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center mt-1">
-                <span className="text-xs text-muted-foreground">Your Commission ({commissionSettings.organizer_percent}%)</span>
-                <span className="text-xs text-green-600">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.organizer_percent) / 100).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">Platform ({commissionSettings.platform_percent}%)</span>
-                <span className="text-xs">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.platform_percent) / 100).toLocaleString()}</span>
-              </div>
+            {/* Direct Prize Pool Input */}
+            <div className="space-y-2">
+              <Label>Prize Pool (₹) *</Label>
+              <Input 
+                type="number" 
+                value={formData.prize_pool} 
+                onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })} 
+                placeholder="Enter prize pool amount" 
+              />
+              <p className="text-xs text-muted-foreground">Enter the total prize pool amount to be distributed among winners</p>
             </div>
 
             <PrizeDistributionInput
               value={formData.prize_distribution}
               onChange={(value) => setFormData({ ...formData, prize_distribution: value })}
-              prizePool={calculatePrizePool()}
+              prizePool={getPrizePool()}
             />
 
             <div className="space-y-2">
