@@ -256,8 +256,8 @@ const Payment = () => {
               {qrCodeUrl ? (
                 <img 
                   src={qrCodeUrl} 
-                  alt="Payment QR Code" 
-                  className="w-full h-full object-cover"
+                  alt="Payment QR code" 
+                  className="w-full h-full object-contain bg-card"
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-muted">

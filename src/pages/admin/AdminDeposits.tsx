@@ -110,38 +110,27 @@ const AdminDeposits = () => {
     }
 
     setProcessing(deposit.id);
-    
+
     try {
-      // Get user's current wallet balance
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('wallet_balance')
-        .eq('user_id', deposit.user_id)
-        .single();
+      const { data, error } = await supabase.rpc('admin_process_deposit', {
+        p_deposit_id: deposit.id,
+        p_action: 'approve',
+        p_reason: null,
+      } as any);
 
-      const currentBalance = profile?.wallet_balance || 0;
-      const newBalance = currentBalance + deposit.amount;
+      if (error) throw error;
 
-      // Update user's wallet balance
-      const { error: walletError } = await supabase
-        .from('profiles')
-        .update({ wallet_balance: newBalance })
-        .eq('user_id', deposit.user_id);
+      const result = data as any;
+      if (!result?.success) {
+        toast({
+          title: 'Error',
+          description: result?.error || 'Failed to approve deposit.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
-      if (walletError) throw walletError;
-
-      // Update deposit status
-      const { error: depositError } = await supabase
-        .from('wallet_transactions')
-        .update({ 
-          status: 'completed',
-          processed_by: user?.id,
-        })
-        .eq('id', deposit.id);
-
-      if (depositError) throw depositError;
-
-      toast({ title: 'Deposit Approved', description: `₹${deposit.amount} added to user wallet.` });
+      toast({ title: 'Deposit Approved', description: `₹${deposit.amount} credited to user wallet.` });
       setConfirmDialog({ open: false, deposit: null, action: null });
       fetchDeposits();
     } catch (error) {
@@ -161,16 +150,23 @@ const AdminDeposits = () => {
     setProcessing(deposit.id);
 
     try {
-      const { error } = await supabase
-        .from('wallet_transactions')
-        .update({ 
-          status: 'failed',
-          processed_by: user?.id,
-          reason: 'Rejected by admin',
-        })
-        .eq('id', deposit.id);
+      const { data, error } = await supabase.rpc('admin_process_deposit', {
+        p_deposit_id: deposit.id,
+        p_action: 'reject',
+        p_reason: 'Rejected by admin',
+      } as any);
 
       if (error) throw error;
+
+      const result = data as any;
+      if (!result?.success) {
+        toast({
+          title: 'Error',
+          description: result?.error || 'Failed to reject deposit.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       toast({ title: 'Deposit Rejected', description: 'Deposit request has been rejected.' });
       setConfirmDialog({ open: false, deposit: null, action: null });
