@@ -377,8 +377,8 @@ const ProfilePage = () => {
     <AppLayout>
       {/* Profile Header */}
       <div className="bg-card px-4 pt-6 pb-4">
-        {/* Username above everything */}
-        <h1 className="font-bold text-xl text-foreground text-center mb-4">
+        {/* Username above avatar - left aligned */}
+        <h1 className="font-bold text-xl text-foreground mb-3 pl-1">
           @{profile?.username || 'username'}
         </h1>
 
