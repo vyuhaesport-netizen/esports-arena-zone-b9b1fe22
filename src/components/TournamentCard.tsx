@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import FollowButton from '@/components/FollowButton';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap } from 'lucide-react';
+import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock } from 'lucide-react';
+
 interface Tournament {
   id: string;
   title: string;
@@ -22,7 +23,9 @@ interface Tournament {
   room_password?: string | null;
   prize_distribution?: any;
   created_by?: string | null;
+  registration_deadline?: string | null;
 }
+
 interface TournamentCardProps {
   tournament: Tournament;
   isJoined?: boolean;
@@ -38,6 +41,26 @@ interface TournamentCardProps {
   isFollowing?: boolean;
   onFollowChange?: (isFollowing: boolean) => void;
 }
+
+const formatCountdown = (ms: number): string => {
+  if (ms <= 0) return 'Closed';
+  
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) {
+    return `${days}d ${hours % 24}h left`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes % 60}m left`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds % 60}s left`;
+  } else {
+    return `${seconds}s left`;
+  }
+};
+
 const TournamentCard = ({
   tournament,
   isJoined = false,
@@ -54,9 +77,35 @@ const TournamentCard = ({
   onFollowChange
 }: TournamentCardProps) => {
   const [profilePreviewOpen, setProfilePreviewOpen] = useState(false);
+  const [countdown, setCountdown] = useState<string>('');
+  const [isDeadlineSoon, setIsDeadlineSoon] = useState(false);
+  
   const spotsLeft = (tournament.max_participants || 100) - (tournament.joined_users?.length || 0);
   const prizeAmount = tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`;
   const entryFee = tournament.entry_fee ? `₹${tournament.entry_fee}` : 'Free';
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!tournament.registration_deadline) {
+      setCountdown('');
+      return;
+    }
+
+    const updateCountdown = () => {
+      const deadline = new Date(tournament.registration_deadline!).getTime();
+      const now = Date.now();
+      const remaining = deadline - now;
+      
+      setCountdown(formatCountdown(remaining));
+      // Mark as "soon" if less than 1 hour remaining
+      setIsDeadlineSoon(remaining > 0 && remaining < 60 * 60 * 1000);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(interval);
+  }, [tournament.registration_deadline]);
 
   // Swipe state
   const [swipeX, setSwipeX] = useState(0);
@@ -65,11 +114,13 @@ const TournamentCard = ({
   const cardRef = useRef<HTMLDivElement>(null);
   const SWIPE_THRESHOLD = 100;
   const canSwipeJoin = !isJoined && tournament.status === 'upcoming' && spotsLeft > 0;
+  
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!canSwipeJoin) return;
     startXRef.current = e.touches[0].clientX;
     setIsSwiping(true);
   };
+  
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isSwiping || !canSwipeJoin) return;
     const currentX = e.touches[0].clientX;
@@ -79,6 +130,7 @@ const TournamentCard = ({
       setSwipeX(Math.max(diff, -150));
     }
   };
+  
   const handleTouchEnd = () => {
     if (!canSwipeJoin) return;
     if (swipeX < -SWIPE_THRESHOLD && onSwipeJoin) {
@@ -135,8 +187,20 @@ const TournamentCard = ({
         {/* Organizer Profile Preview Dialog */}
         {tournament.created_by && <OrganizerProfilePreview organizerId={tournament.created_by} open={profilePreviewOpen} onOpenChange={setProfilePreviewOpen} isFollowing={isFollowing} onFollowChange={onFollowChange} />}
 
+        {/* Registration Deadline Countdown */}
+        {countdown && !isJoined && (
+          <div className={`flex items-center gap-1.5 mb-2 px-2 py-1 rounded text-[10px] font-medium ${
+            isDeadlineSoon 
+              ? 'bg-red-500/10 text-red-600 animate-pulse' 
+              : 'bg-orange-500/10 text-orange-600'
+          }`}>
+            <Clock className="h-3 w-3" />
+            <span>Registration closes in {countdown}</span>
+          </div>
+        )}
+
         {/* Stats Row */}
-        <div className="flex items-center gap-2 mb-2 text-[10px]">
+        <div className="flex items-center gap-2 mb-2 text-[10px] flex-wrap">
           <div className="flex items-center gap-1 text-amber-600">
             <Trophy className="h-3 w-3" />
             <span className="font-medium">{prizeAmount}</span>
