@@ -322,13 +322,6 @@ const Creator = () => {
         </div>
       </div>
 
-      {/* Info Banner */}
-      <div className="px-4 mb-4">
-        <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl p-4">
-          <p className="text-sm font-semibold text-purple-600 dark:text-purple-400">Creator Tournaments</p>
-          <p className="text-xs text-muted-foreground mt-1">Community-created matches for gamers by gamers</p>
-        </div>
-      </div>
 
       {/* Tournaments List */}
       <div className="px-4 pb-4">
