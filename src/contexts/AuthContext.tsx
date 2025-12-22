@@ -67,9 +67,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('email')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
-      if (!error && data?.email === 'vyuhaesport@gmail.com') {
+      const adminEmails = ['vyuhaesport@gmail.com', 'vyuhaesporthelp@gmail.com'];
+      
+      if (!error && data?.email && adminEmails.includes(data.email)) {
         setIsSuperAdmin(true);
         setIsAdmin(true);
         // Super admin has all permissions
