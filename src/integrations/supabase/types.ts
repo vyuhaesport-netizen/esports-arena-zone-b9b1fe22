@@ -825,6 +825,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_process_deposit: {
+        Args: { p_action: string; p_deposit_id: string; p_reason?: string }
+        Returns: Json
+      }
       has_admin_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean
