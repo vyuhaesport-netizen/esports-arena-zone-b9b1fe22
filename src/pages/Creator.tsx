@@ -74,6 +74,29 @@ const Creator = () => {
       fetchUserProfile();
       fetchFollowedOrganizers();
     }
+
+    // Subscribe to real-time updates for tournaments
+    const channel = supabase
+      .channel('creator-tournaments')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tournaments',
+        },
+        (payload) => {
+          // Update the specific tournament in state
+          setTournaments(prev => prev.map(t => 
+            t.id === payload.new.id ? { ...t, ...payload.new } as Tournament : t
+          ));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchUserProfile = async () => {
