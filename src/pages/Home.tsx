@@ -145,79 +145,39 @@ const HomePage = () => {
     if (!joinDialog.tournament || !user) return;
 
     const tournament = joinDialog.tournament;
-    const entryFee = tournament.entry_fee || 0;
-
-    if (tournament.joined_users?.includes(user.id)) {
-      toast({ title: 'Already Joined', description: 'You have already joined this tournament.', variant: 'destructive' });
-      setJoinDialog({ open: false, tournament: null });
-      return;
-    }
-
-    if (walletBalance < entryFee) {
-      toast({ title: 'Insufficient Balance', description: `You need ₹${entryFee} to join. Your balance: ₹${walletBalance}`, variant: 'destructive' });
-      setJoinDialog({ open: false, tournament: null });
-      return;
-    }
-
-    const currentJoined = tournament.joined_users?.length || 0;
-    if (tournament.max_participants && currentJoined >= tournament.max_participants) {
-      toast({ title: 'Tournament Full', description: 'This tournament has reached maximum participants.', variant: 'destructive' });
-      setJoinDialog({ open: false, tournament: null });
-      return;
-    }
-
     setJoining(true);
 
     try {
-      const { data: settings } = await supabase
-        .from('platform_settings')
-        .select('setting_key, setting_value');
-
-      const organizerPercent = parseFloat(settings?.find(s => s.setting_key === 'organizer_commission_percent')?.setting_value || '10');
-      const platformPercent = parseFloat(settings?.find(s => s.setting_key === 'platform_commission_percent')?.setting_value || '10');
-      const prizePoolPercent = parseFloat(settings?.find(s => s.setting_key === 'prize_pool_percent')?.setting_value || '80');
-
-      const organizerShare = (entryFee * organizerPercent) / 100;
-      const platformShare = (entryFee * platformPercent) / 100;
-      const prizePoolShare = (entryFee * prizePoolPercent) / 100;
-
-      const { error: walletError } = await supabase
-        .from('profiles')
-        .update({ wallet_balance: walletBalance - entryFee })
-        .eq('user_id', user.id);
-
-      if (walletError) throw walletError;
-
-      await supabase.from('wallet_transactions').insert({
-        user_id: user.id,
-        type: 'entry_fee',
-        amount: -entryFee,
-        status: 'completed',
-        description: `Entry fee for ${tournament.title}`,
+      // Use atomic secure database function to prevent any exploits
+      const { data, error } = await supabase.rpc('process_tournament_join', {
+        p_user_id: user.id,
+        p_tournament_id: tournament.id,
       });
 
-      const newJoinedUsers = [...(tournament.joined_users || []), user.id];
-      const newPrizePool = (tournament.current_prize_pool || 0) + prizePoolShare;
+      if (error) throw error;
 
-      const { error: tournamentError } = await supabase
-        .from('tournaments')
-        .update({
-          joined_users: newJoinedUsers,
-          organizer_earnings: organizerShare,
-          platform_earnings: platformShare,
-          current_prize_pool: newPrizePool,
-        })
-        .eq('id', tournament.id);
+      const result = data as { 
+        success: boolean; 
+        error?: string; 
+        entry_fee?: number;
+        new_balance?: number;
+        participants?: number;
+      };
 
-      if (tournamentError) throw tournamentError;
+      if (!result.success) {
+        toast({ 
+          title: 'Cannot Join', 
+          description: result.error || 'Failed to join tournament.', 
+          variant: 'destructive' 
+        });
+        setJoinDialog({ open: false, tournament: null });
+        return;
+      }
 
-      await supabase.from('tournament_registrations').insert({
-        user_id: user.id,
-        tournament_id: tournament.id,
-        status: 'registered',
+      toast({ 
+        title: 'Joined!', 
+        description: `You have successfully joined ${tournament.title}. ₹${result.entry_fee} deducted.` 
       });
-
-      toast({ title: 'Joined!', description: `You have successfully joined ${tournament.title}. ₹${entryFee} deducted.` });
       
       setJoinDialog({ open: false, tournament: null });
       fetchTournaments();
@@ -253,54 +213,38 @@ const HomePage = () => {
     if (!exitDialog.tournament || !user) return;
 
     const tournament = exitDialog.tournament;
-    const entryFee = tournament.entry_fee || 0;
-
-    // Double check exit restriction
-    if (!canExitTournament(tournament)) {
-      toast({ 
-        title: 'Cannot Exit', 
-        description: 'You cannot exit a tournament less than 30 minutes before it starts.', 
-        variant: 'destructive' 
-      });
-      setExitDialog({ open: false, tournament: null });
-      return;
-    }
-
     setExiting(true);
+
     try {
-      // Refund entry fee to wallet
-      const { error: walletError } = await supabase
-        .from('profiles')
-        .update({ wallet_balance: walletBalance + entryFee })
-        .eq('user_id', user.id);
-
-      if (walletError) throw walletError;
-
-      // Record refund transaction
-      await supabase.from('wallet_transactions').insert({
-        user_id: user.id,
-        type: 'refund',
-        amount: entryFee,
-        status: 'completed',
-        description: `Refund for exiting ${tournament.title}`,
+      // Use atomic secure database function to prevent any exploits
+      const { data, error } = await supabase.rpc('process_tournament_exit', {
+        p_user_id: user.id,
+        p_tournament_id: tournament.id,
       });
 
-      // Remove user from tournament
-      const newJoinedUsers = (tournament.joined_users || []).filter(id => id !== user.id);
-      
-      await supabase
-        .from('tournaments')
-        .update({ joined_users: newJoinedUsers })
-        .eq('id', tournament.id);
+      if (error) throw error;
 
-      // Remove registration
-      await supabase
-        .from('tournament_registrations')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('tournament_id', tournament.id);
+      const result = data as { 
+        success: boolean; 
+        error?: string; 
+        refunded_amount?: number;
+        new_balance?: number;
+      };
 
-      toast({ title: 'Exited!', description: `You left ${tournament.title}. ₹${entryFee} refunded.` });
+      if (!result.success) {
+        toast({ 
+          title: 'Cannot Exit', 
+          description: result.error || 'Failed to exit tournament.', 
+          variant: 'destructive' 
+        });
+        setExitDialog({ open: false, tournament: null });
+        return;
+      }
+
+      toast({ 
+        title: 'Exited!', 
+        description: `You left ${tournament.title}. ₹${result.refunded_amount} refunded.` 
+      });
       setExitDialog({ open: false, tournament: null });
       fetchTournaments();
       fetchUserProfile();
