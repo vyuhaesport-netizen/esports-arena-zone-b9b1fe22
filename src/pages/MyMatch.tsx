@@ -27,12 +27,14 @@ interface Registration {
     start_date: string;
     status: string | null;
     prize_pool: string | null;
+    entry_fee: number | null;
   };
 }
 
 const MyMatch = () => {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [canceling, setCanceling] = useState<string | null>(null);
   
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -66,7 +68,8 @@ const MyMatch = () => {
             game,
             start_date,
             status,
-            prize_pool
+            prize_pool,
+            entry_fee
           )
         `)
         .eq('user_id', user.id)
@@ -81,73 +84,57 @@ const MyMatch = () => {
     }
   };
 
-  const handleCancel = async (registrationId: string, tournamentId: string) => {
+  const handleCancel = async (registrationId: string, tournamentId: string, startDate: string) => {
     if (!user) return;
-    
+
+    const matchTime = new Date(startDate);
+    const now = new Date();
+    const timeDiff = matchTime.getTime() - now.getTime();
+
+    if (timeDiff <= 30 * 60 * 1000) {
+      toast({
+        title: 'Cannot Exit',
+        description: 'You cannot exit a tournament less than 30 minutes before it starts.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setCanceling(registrationId);
+
     try {
-      // First get the tournament entry fee
-      const { data: tournament } = await supabase
-        .from('tournaments')
-        .select('entry_fee, title')
-        .eq('id', tournamentId)
-        .single();
-
-      const entryFee = tournament?.entry_fee || 0;
-
-      // Delete registration
-      const { error } = await supabase
-        .from('tournament_registrations')
-        .delete()
-        .eq('id', registrationId);
+      const { data, error } = await supabase.rpc('process_tournament_exit', {
+        p_user_id: user.id,
+        p_tournament_id: tournamentId,
+      });
 
       if (error) throw error;
 
-      // If there was an entry fee, refund it
-      if (entryFee > 0) {
-        // Credit wallet
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('wallet_balance')
-          .eq('user_id', user.id)
-          .single();
-
-        const currentBalance = profile?.wallet_balance || 0;
-        
-        await supabase
-          .from('profiles')
-          .update({ wallet_balance: currentBalance + entryFee })
-          .eq('user_id', user.id);
-
-        // Create refund transaction
-        await supabase
-          .from('wallet_transactions')
-          .insert({
-            user_id: user.id,
-            type: 'refund',
-            amount: entryFee,
-            status: 'completed',
-            description: `Refund for exiting tournament: ${tournament?.title || 'Unknown'}`,
-          });
-
+      const result = data as { success: boolean; error?: string; refunded_amount?: number };
+      if (!result.success) {
         toast({
-          title: 'Registration Cancelled',
-          description: `₹${entryFee} has been refunded to your wallet.`,
+          title: 'Exit Failed',
+          description: result.error || 'Failed to exit tournament.',
+          variant: 'destructive',
         });
-      } else {
-        toast({
-          title: 'Cancelled',
-          description: 'Registration cancelled successfully.',
-        });
+        return;
       }
-      
+
+      toast({
+        title: 'Exited',
+        description: `₹${result.refunded_amount || 0} refunded to your wallet.`,
+      });
+
       fetchRegistrations();
     } catch (error) {
-      console.error('Error cancelling:', error);
+      console.error('Error exiting tournament:', error);
       toast({
         title: 'Error',
-        description: 'Failed to cancel. Please try again.',
+        description: 'Failed to exit. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setCanceling(null);
     }
   };
 
@@ -189,10 +176,11 @@ const MyMatch = () => {
           </Badge>
           {showCancel && (
             <button 
-              onClick={() => handleCancel(registration.id, registration.tournament_id)}
-              className="text-destructive text-xs flex items-center gap-1"
+              onClick={() => handleCancel(registration.id, registration.tournament_id, registration.tournaments.start_date)}
+              disabled={canceling === registration.id}
+              className="text-destructive text-xs flex items-center gap-1 disabled:opacity-50"
             >
-              <X className="h-3 w-3" /> Cancel
+              <X className="h-3 w-3" /> {canceling === registration.id ? 'Exiting...' : 'Exit'}
             </button>
           )}
         </div>
