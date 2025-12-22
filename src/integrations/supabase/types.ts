@@ -816,6 +816,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_wallet: {
+        Args: {
+          p_action: string
+          p_amount: number
+          p_reason: string
+          p_target_user_id: string
+        }
+        Returns: Json
+      }
       has_admin_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean

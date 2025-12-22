@@ -280,56 +280,57 @@ const AdminUsers = () => {
     }
 
     if (!isSuperAdmin) {
-      toast({ title: 'Access Denied', description: 'Only Super Admin can perform this action.', variant: 'destructive' });
+      toast({
+        title: 'Access Denied',
+        description: 'Only Super Admin can perform this action.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const amount = Number(walletAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast({ title: 'Error', description: 'Enter a valid amount.', variant: 'destructive' });
       return;
     }
 
     setProcessing(true);
     try {
-      const amount = parseFloat(walletAmount);
-      const currentBalance = selectedUser.wallet_balance || 0;
-      const newBalance = walletAction === 'add' 
-        ? currentBalance + amount 
-        : currentBalance - amount;
+      const { data, error } = await supabase.rpc('admin_adjust_wallet', {
+        p_target_user_id: selectedUser.user_id,
+        p_action: walletAction,
+        p_amount: amount,
+        p_reason: walletReason,
+      } as any);
 
-      // Update wallet balance
-      const { error: balanceError } = await supabase
-        .from('profiles')
-        .update({ wallet_balance: newBalance })
-        .eq('user_id', selectedUser.user_id);
+      if (error) throw error;
 
-      if (balanceError) throw balanceError;
-
-      // Create transaction record
-      const { error: txError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: selectedUser.user_id,
-          type: walletAction === 'add' ? 'admin_credit' : 'admin_debit',
-          amount: walletAction === 'add' ? amount : -amount,
-          status: 'completed',
-          description: `Admin ${walletAction === 'add' ? 'credit' : 'debit'}`,
-          reason: walletReason,
-          processed_by: user?.id,
+      const result = data as any;
+      if (!result?.success) {
+        toast({
+          title: 'Error',
+          description: result?.error || 'Failed to update wallet.',
+          variant: 'destructive',
         });
+        return;
+      }
 
-      if (txError) throw txError;
+      const newBalance = Number(result.new_balance);
 
-      toast({ 
-        title: 'Success', 
-        description: `₹${amount} ${walletAction === 'add' ? 'added to' : 'deducted from'} wallet.` 
+      toast({
+        title: 'Success',
+        description: `₹${amount} ${walletAction === 'add' ? 'added to' : 'deducted from'} wallet.`,
       });
-      
+
       setWalletDialogOpen(false);
       fetchUsers();
-      
-      // Update selected user
+
       setSelectedUser({
         ...selectedUser,
-        wallet_balance: newBalance
+        wallet_balance: Number.isFinite(newBalance) ? newBalance : selectedUser.wallet_balance,
       });
-    } catch (error) {
-      console.error('Error:', error);
+    } catch (err) {
+      console.error('Error:', err);
       toast({ title: 'Error', description: 'Failed to update wallet.', variant: 'destructive' });
     } finally {
       setProcessing(false);
