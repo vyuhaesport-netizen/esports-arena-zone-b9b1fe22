@@ -274,8 +274,8 @@ const Payment = () => {
         </div>
       </header>
 
-      {/* Floating Timer - Always Visible - RED URGENCY */}
-      <div className={`sticky top-16 z-40 mx-4 mt-4 rounded-xl border-2 p-4 transition-all ${
+      {/* Fixed Timer - Always Visible at Top - RED URGENCY */}
+      <div className={`fixed top-16 left-0 right-0 z-40 mx-4 rounded-xl border-2 p-4 transition-all ${
         isVeryLow
           ? 'bg-destructive text-destructive-foreground border-destructive animate-bounce shadow-lg shadow-destructive/30'
           : isCritical
@@ -320,6 +320,9 @@ const Payment = () => {
           />
         </div>
       </div>
+
+      {/* Spacer for fixed timer */}
+      <div className="h-32" />
 
       <div className="max-w-lg mx-auto p-4 space-y-5">
         
