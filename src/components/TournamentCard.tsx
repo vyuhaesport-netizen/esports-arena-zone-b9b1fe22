@@ -118,15 +118,18 @@ const TournamentCard = ({
               </Badge>
             </div>
             {/* Organizer Info */}
-            {(organizerName || tournament.created_by) && (
-              <div className="flex items-center gap-2 mt-0.5">
-                {organizerName && tournament.created_by && <button onClick={() => setProfilePreviewOpen(true)} className="text-[9px] text-muted-foreground hover:text-primary hover:underline transition-colors">
-                    by {organizerName}
-                  </button>}
-                {tournament.created_by && onFollowChange && <FollowButton organizerId={tournament.created_by} isFollowing={isFollowing} onFollowChange={onFollowChange} organizerName={organizerName} />}
-              </div>
+            {organizerName && tournament.created_by && (
+              <button onClick={() => setProfilePreviewOpen(true)} className="text-[9px] text-muted-foreground hover:text-primary hover:underline transition-colors mt-0.5">
+                by {organizerName}
+              </button>
             )}
           </div>
+          {/* Follow Button - Right Side */}
+          {tournament.created_by && onFollowChange && (
+            <div className="flex-shrink-0">
+              <FollowButton organizerId={tournament.created_by} isFollowing={isFollowing} onFollowChange={onFollowChange} organizerName={organizerName} />
+            </div>
+          )}
         </div>
 
         {/* Organizer Profile Preview Dialog */}

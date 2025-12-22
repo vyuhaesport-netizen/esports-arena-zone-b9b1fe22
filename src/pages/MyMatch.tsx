@@ -4,6 +4,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -12,9 +13,18 @@ import {
   Calendar,
   Loader2,
   Gamepad2,
-  X
+  X,
+  Users,
+  Eye,
+  ChevronDown
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+interface PlayerInfo {
+  user_id: string;
+  in_game_name: string | null;
+  game_uid: string | null;
+}
 
 interface Registration {
   id: string;
@@ -28,6 +38,9 @@ interface Registration {
     status: string | null;
     prize_pool: string | null;
     entry_fee: number | null;
+    room_id: string | null;
+    room_password: string | null;
+    joined_users: string[] | null;
   };
 }
 
@@ -69,7 +82,10 @@ const MyMatch = () => {
             start_date,
             status,
             prize_pool,
-            entry_fee
+            entry_fee,
+            room_id,
+            room_password,
+            joined_users
           )
         `)
         .eq('user_id', user.id)
@@ -82,6 +98,22 @@ const MyMatch = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPlayers = async (userIds: string[]): Promise<PlayerInfo[]> => {
+    if (!userIds.length) return [];
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, in_game_name, game_uid')
+      .in('user_id', userIds);
+    
+    if (error) {
+      console.error('Error fetching players:', error);
+      return [];
+    }
+    
+    return data || [];
   };
 
   const handleCancel = async (registrationId: string, tournamentId: string, startDate: string) => {
@@ -142,51 +174,140 @@ const MyMatch = () => {
   const liveMatches = registrations.filter(r => r.tournaments.status === 'ongoing');
   const completedMatches = registrations.filter(r => r.tournaments.status === 'completed');
 
-  const MatchCard = ({ registration, showCancel = false }: { registration: Registration; showCancel?: boolean }) => (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <Gamepad2 className="h-6 w-6 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-sm line-clamp-1">{registration.tournaments.title}</h3>
-          <p className="text-xs text-muted-foreground">{registration.tournaments.game}</p>
-          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            {format(new Date(registration.tournaments.start_date), 'MMM dd, hh:mm a')}
+  const MatchCard = ({ registration, showCancel = false }: { registration: Registration; showCancel?: boolean }) => {
+    const [playersOpen, setPlayersOpen] = useState(false);
+    const [roomOpen, setRoomOpen] = useState(false);
+    const [players, setPlayers] = useState<PlayerInfo[]>([]);
+    const [loadingPlayers, setLoadingPlayers] = useState(false);
+
+    const handlePlayersToggle = async (open: boolean) => {
+      setPlayersOpen(open);
+      if (open && players.length === 0 && registration.tournaments.joined_users?.length) {
+        setLoadingPlayers(true);
+        const playerData = await fetchPlayers(registration.tournaments.joined_users);
+        setPlayers(playerData);
+        setLoadingPlayers(false);
+      }
+    };
+
+    const hasRoomDetails = registration.tournaments.room_id || registration.tournaments.room_password;
+    const playerCount = registration.tournaments.joined_users?.length || 0;
+
+    return (
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Gamepad2 className="h-6 w-6 text-primary" />
           </div>
-          {registration.tournaments.prize_pool && (
-            <div className="flex items-center gap-1 mt-1 text-xs">
-              <Trophy className="h-3 w-3 text-primary" />
-              <span className="text-primary font-medium">{registration.tournaments.prize_pool}</span>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-sm line-clamp-1">{registration.tournaments.title}</h3>
+            <p className="text-xs text-muted-foreground">{registration.tournaments.game}</p>
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(registration.tournaments.start_date), 'MMM dd, hh:mm a')}
             </div>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <Badge 
-            className={`text-[10px] ${
-              registration.tournaments.status === 'upcoming' 
-                ? 'bg-primary/10 text-primary' 
-                : registration.tournaments.status === 'ongoing'
-                ? 'bg-green-500/10 text-green-600'
-                : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            {registration.tournaments.status}
-          </Badge>
-          {showCancel && (
-            <button 
-              onClick={() => handleCancel(registration.id, registration.tournament_id, registration.tournaments.start_date)}
-              disabled={canceling === registration.id}
-              className="text-destructive text-xs flex items-center gap-1 disabled:opacity-50"
+            {registration.tournaments.prize_pool && (
+              <div className="flex items-center gap-1 mt-1 text-xs">
+                <Trophy className="h-3 w-3 text-primary" />
+                <span className="text-primary font-medium">{registration.tournaments.prize_pool}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Badge 
+              className={`text-[10px] ${
+                registration.tournaments.status === 'upcoming' 
+                  ? 'bg-primary/10 text-primary' 
+                  : registration.tournaments.status === 'ongoing'
+                  ? 'bg-green-500/10 text-green-600'
+                  : 'bg-muted text-muted-foreground'
+              }`}
             >
-              <X className="h-3 w-3" /> {canceling === registration.id ? 'Exiting...' : 'Exit'}
-            </button>
-          )}
+              {registration.tournaments.status}
+            </Badge>
+            {showCancel && (
+              <button 
+                onClick={() => handleCancel(registration.id, registration.tournament_id, registration.tournaments.start_date)}
+                disabled={canceling === registration.id}
+                className="text-destructive text-xs flex items-center gap-1 disabled:opacity-50"
+              >
+                <X className="h-3 w-3" /> {canceling === registration.id ? 'Exiting...' : 'Exit'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Expandable Sections */}
+        <div className="mt-3 space-y-2">
+          {/* Players Section */}
+          <Collapsible open={playersOpen} onOpenChange={handlePlayersToggle}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 hover:bg-muted text-xs">
+              <div className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-blue-500" />
+                <span className="font-medium">Players ({playerCount})</span>
+              </div>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${playersOpen ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2">
+              <div className="p-2 bg-muted/30 rounded-lg space-y-1.5 max-h-40 overflow-y-auto">
+                {loadingPlayers ? (
+                  <div className="flex items-center justify-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                ) : players.length === 0 ? (
+                  <p className="text-[10px] text-muted-foreground text-center py-2">No players yet</p>
+                ) : (
+                  players.map((player, idx) => (
+                    <div key={player.user_id} className="flex items-center justify-between text-[10px] p-1.5 bg-background/50 rounded">
+                      <span className="text-muted-foreground">#{idx + 1}</span>
+                      <span className="font-medium">{player.in_game_name || 'Unknown'}</span>
+                      <span className="text-muted-foreground">UID: {player.game_uid || 'N/A'}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Room Details Section */}
+          <Collapsible open={roomOpen} onOpenChange={setRoomOpen}>
+            <CollapsibleTrigger className="flex items-center justify-between w-full p-2 rounded-lg bg-muted/50 hover:bg-muted text-xs">
+              <div className="flex items-center gap-2">
+                <Eye className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="font-medium">Room Details</span>
+                {!hasRoomDetails && <span className="text-[9px] text-muted-foreground">(Not set yet)</span>}
+              </div>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2">
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                {hasRoomDetails ? (
+                  <div className="space-y-2">
+                    {registration.tournaments.room_id && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Room ID:</span>
+                        <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_id}</span>
+                      </div>
+                    )}
+                    {registration.tournaments.room_password && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Password:</span>
+                        <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_password}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Room details will appear here once the organizer sets them up.
+                  </p>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (authLoading || loading) {
     return (
