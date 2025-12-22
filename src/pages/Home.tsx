@@ -333,22 +333,6 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Creator Section Banner */}
-      <div className="px-4 mb-4">
-        <button 
-          onClick={() => navigate('/creator')}
-          className="w-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center gap-3 hover:from-purple-500/20 hover:to-pink-500/20 transition-colors"
-        >
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-            <Users className="h-6 w-6 text-white" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-semibold text-sm">Creator Tournaments</p>
-            <p className="text-xs text-muted-foreground">Join community-created matches</p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </button>
-      </div>
 
       {/* Tournaments Section */}
       <div className="px-4 pb-6">
