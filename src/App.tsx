@@ -48,17 +48,34 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [profileComplete, setProfileComplete] = useState(true);
+  const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkProfile = async () => {
       if (!user) {
-        setCheckingProfile(false);
+        if (isMounted) {
+          setCheckingProfile(false);
+          setHasChecked(true);
+        }
         return;
       }
 
       // Skip profile check for complete-profile page
       if (location.pathname === '/complete-profile') {
-        setCheckingProfile(false);
+        if (isMounted) {
+          setCheckingProfile(false);
+          setHasChecked(true);
+        }
+        return;
+      }
+
+      // If we've already checked and profile is complete, don't check again
+      if (hasChecked && profileComplete) {
+        if (isMounted) {
+          setCheckingProfile(false);
+        }
         return;
       }
 
@@ -69,10 +86,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           .eq('user_id', user.id)
           .maybeSingle();
 
+        if (!isMounted) return;
+
         // If there's an error or no profile, allow access (don't block users)
         if (error || !profile) {
           setProfileComplete(true);
           setCheckingProfile(false);
+          setHasChecked(true);
           return;
         }
 
@@ -88,14 +108,24 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       } catch (error) {
         console.error('Error checking profile:', error);
         // On error, allow access to prevent blocking users
-        setProfileComplete(true);
+        if (isMounted) {
+          setProfileComplete(true);
+        }
       } finally {
-        setCheckingProfile(false);
+        if (isMounted) {
+          setCheckingProfile(false);
+          setHasChecked(true);
+        }
       }
     };
 
+    setCheckingProfile(true);
     checkProfile();
-  }, [user, location.pathname]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, location.pathname]);
 
   if (loading || checkingProfile) {
     return (
