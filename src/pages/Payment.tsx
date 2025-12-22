@@ -244,7 +244,7 @@ const Payment = () => {
       )}
 
       {/* Header */}
-      <header className={`sticky top-0 z-50 backdrop-blur-sm border-b-2 px-4 py-3 transition-colors ${
+      <header className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b-2 px-4 py-3 transition-colors ${
         isCritical 
           ? 'bg-destructive/10 border-destructive' 
           : 'bg-card/95 border-border'
@@ -274,55 +274,56 @@ const Payment = () => {
         </div>
       </header>
 
-      {/* Fixed Timer - Always Visible at Top - RED URGENCY */}
-      <div className={`fixed top-16 left-0 right-0 z-40 mx-4 rounded-xl border-2 p-4 transition-all ${
+      {/* Fixed Timer - Below Header - RED URGENCY */}
+      <div className={`fixed top-14 left-0 right-0 z-40 px-4 py-3 transition-all ${
         isVeryLow
-          ? 'bg-destructive text-destructive-foreground border-destructive animate-bounce shadow-lg shadow-destructive/30'
+          ? 'bg-destructive text-destructive-foreground shadow-lg shadow-destructive/30'
           : isCritical
-          ? 'bg-destructive/90 border-destructive text-destructive-foreground shadow-lg shadow-destructive/20'
+          ? 'bg-destructive/95 text-destructive-foreground shadow-lg shadow-destructive/20'
           : isUrgent
-          ? 'bg-destructive/80 border-destructive text-destructive-foreground shadow-md shadow-destructive/20'
-          : 'bg-destructive/70 border-destructive text-destructive-foreground shadow-sm'
+          ? 'bg-destructive/90 text-destructive-foreground shadow-md shadow-destructive/20'
+          : 'bg-destructive text-destructive-foreground shadow-sm'
       }`}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-full bg-white/20 ${isVeryLow ? 'animate-ping' : isCritical ? 'animate-pulse' : ''}`}>
               {isCritical ? (
-                <AlertTriangle className="h-7 w-7" />
+                <AlertTriangle className="h-6 w-6" />
               ) : (
-                <Clock className="h-7 w-7" />
+                <Clock className="h-6 w-6" />
               )}
             </div>
             <div>
               <p className="text-xs font-bold uppercase tracking-wider opacity-90">
-                {isVeryLow ? '⚠️ HURRY UP!' : isCritical ? '⏰ Almost expired!' : isUrgent ? '⏱️ Time running low' : '⏱️ Time remaining'}
+                {isVeryLow ? '⚠️ HURRY!' : isCritical ? '⏰ Expiring!' : isUrgent ? '⏱️ Low time' : '⏱️ Time left'}
               </p>
-              <p className={`font-mono font-black text-4xl tracking-wider ${isVeryLow ? 'animate-pulse' : ''}`}>
+              <p className={`font-mono font-black text-3xl tracking-wider ${isVeryLow ? 'animate-pulse' : ''}`}>
                 {formatTime(timeLeft)}
               </p>
             </div>
           </div>
           
-          {/* Urgency message */}
-          <div className="text-right bg-white/10 px-3 py-2 rounded-lg">
-            <p className="text-xs font-semibold">Pay Now</p>
-            <p className="text-xs opacity-80">Before expiry</p>
+          {/* Progress bar */}
+          <div className="flex-1 mx-4 max-w-32">
+            <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+              <div 
+                className={`h-full transition-all duration-1000 rounded-full ${
+                  isVeryLow ? 'bg-white animate-pulse' : 'bg-white/80'
+                }`}
+                style={{ width: `${(timeLeft / (7 * 60)) * 100}%` }}
+              />
+            </div>
           </div>
-        </div>
-        
-        {/* Progress bar */}
-        <div className="mt-3 h-3 bg-white/20 rounded-full overflow-hidden max-w-lg mx-auto">
-          <div 
-            className={`h-full transition-all duration-1000 rounded-full ${
-              isVeryLow ? 'bg-white animate-pulse' : 'bg-white/80'
-            }`}
-            style={{ width: `${(timeLeft / (7 * 60)) * 100}%` }}
-          />
+          
+          {/* Urgency message */}
+          <div className="text-right bg-white/10 px-2 py-1 rounded-lg">
+            <p className="text-xs font-semibold">Pay Now</p>
+          </div>
         </div>
       </div>
 
-      {/* Spacer for fixed timer */}
-      <div className="h-32" />
+      {/* Spacer for fixed header + timer */}
+      <div className="h-28" />
 
       <div className="max-w-lg mx-auto p-4 space-y-5">
         
