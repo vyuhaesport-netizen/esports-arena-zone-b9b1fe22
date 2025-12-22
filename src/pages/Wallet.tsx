@@ -25,7 +25,9 @@ import {
   History,
   IndianRupee,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  ArrowDownFromLine
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -45,9 +47,12 @@ const Wallet = () => {
   const { toast } = useToast();
 
   const [balance, setBalance] = useState(0);
+  const [totalEarned, setTotalEarned] = useState(0);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState('');
+  const [addMoneyDialog, setAddMoneyDialog] = useState(false);
   const [withdrawDialog, setWithdrawDialog] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
     amount: '',
@@ -84,6 +89,18 @@ const Wallet = () => {
         .limit(50);
 
       setTransactions(txns || []);
+
+      // Calculate total earned (completed deposits + winnings)
+      const earned = (txns || [])
+        .filter(t => (t.type === 'deposit' || t.type === 'winning' || t.type === 'prize') && t.status === 'completed')
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      setTotalEarned(earned);
+
+      // Calculate total withdrawn (completed withdrawals)
+      const withdrawn = (txns || [])
+        .filter(t => t.type === 'withdrawal' && t.status === 'completed')
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      setTotalWithdrawn(withdrawn);
     } catch (error) {
       console.error('Error fetching wallet data:', error);
     } finally {
@@ -105,6 +122,7 @@ const Wallet = () => {
       });
       return;
     }
+    setAddMoneyDialog(false);
     navigate(`/payment?amount=${amount}`);
   };
 
@@ -221,14 +239,38 @@ const Wallet = () => {
     <AppLayout title="Wallet">
       <div className="p-4">
         {/* Balance Card */}
-        <div className="bg-gradient-to-br from-primary to-orange-400 rounded-xl p-6 text-primary-foreground mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <WalletIcon className="h-5 w-5" />
-            <span className="text-sm opacity-90">Available Balance</span>
+        <div className="bg-gradient-to-br from-primary to-orange-400 rounded-xl p-5 text-primary-foreground mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <WalletIcon className="h-4 w-4" />
+            <span className="text-xs opacity-90">Available Balance</span>
           </div>
           <div className="flex items-baseline gap-1">
-            <IndianRupee className="h-6 w-6" />
-            <span className="text-4xl font-gaming font-bold">{balance.toFixed(2)}</span>
+            <IndianRupee className="h-5 w-5" />
+            <span className="text-3xl font-gaming font-bold">{balance.toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Stats Cards - Total Earned & Withdrawn */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-3 text-white">
+            <div className="flex items-center gap-1.5 mb-1">
+              <TrendingUp className="h-3.5 w-3.5" />
+              <span className="text-[10px] opacity-90">Total Earned</span>
+            </div>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-xs">₹</span>
+              <span className="text-xl font-bold">{totalEarned.toFixed(0)}</span>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-3 text-white">
+            <div className="flex items-center gap-1.5 mb-1">
+              <ArrowDownFromLine className="h-3.5 w-3.5" />
+              <span className="text-[10px] opacity-90">Withdrawn</span>
+            </div>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-xs">₹</span>
+              <span className="text-xl font-bold">{totalWithdrawn.toFixed(0)}</span>
+            </div>
           </div>
         </div>
 
@@ -237,7 +279,7 @@ const Wallet = () => {
           <Button 
             variant="outline" 
             className="h-14 flex-col gap-1"
-            onClick={() => document.getElementById('deposit-section')?.scrollIntoView({ behavior: 'smooth' })}
+            onClick={() => setAddMoneyDialog(true)}
           >
             <Plus className="h-5 w-5 text-primary" />
             <span className="text-xs">Add Money</span>
@@ -250,43 +292,6 @@ const Wallet = () => {
             <ArrowUpRight className="h-5 w-5 text-primary" />
             <span className="text-xs">Withdraw</span>
           </Button>
-        </div>
-
-        {/* Quick Add Section */}
-        <div id="deposit-section" className="bg-card rounded-xl border border-border p-4 mb-6">
-          <h3 className="font-semibold text-sm mb-3">Add Money</h3>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            {[50, 100, 200, 500].map((amount) => (
-              <button
-                key={amount}
-                onClick={() => handleQuickAdd(amount)}
-                className={`rounded-lg py-2 text-sm font-medium transition-colors ${
-                  depositAmount === amount.toString()
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted hover:bg-primary/10 hover:text-primary'
-                }`}
-              >
-                ₹{amount}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input 
-              placeholder="Enter amount" 
-              type="number" 
-              min="10"
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
-            />
-            <Button 
-              variant="gaming" 
-              onClick={handleAddMoney}
-              disabled={!depositAmount}
-            >
-              Add
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">Minimum: ₹10</p>
         </div>
 
         {/* Transaction History */}
@@ -339,6 +344,64 @@ const Wallet = () => {
           )}
         </div>
       </div>
+
+      {/* Add Money Dialog */}
+      <Dialog open={addMoneyDialog} onOpenChange={setAddMoneyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              Add Money
+            </DialogTitle>
+            <DialogDescription>
+              Enter the amount you want to add to your wallet
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-4 gap-2">
+              {[50, 100, 200, 500].map((amt) => (
+                <button
+                  key={amt}
+                  onClick={() => setDepositAmount(amt.toString())}
+                  className={`rounded-lg py-2.5 text-sm font-medium transition-colors ${
+                    depositAmount === amt.toString()
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted hover:bg-primary/10 hover:text-primary'
+                  }`}
+                >
+                  ₹{amt}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Enter Amount</Label>
+              <Input
+                type="number"
+                placeholder="₹ Enter amount"
+                value={depositAmount}
+                onChange={(e) => setDepositAmount(e.target.value)}
+                min="10"
+                className="text-lg h-12"
+              />
+              <p className="text-xs text-muted-foreground">Minimum: ₹10</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddMoneyDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAddMoney}
+              disabled={!depositAmount || parseFloat(depositAmount) < 10}
+            >
+              Proceed to Pay
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Withdraw Dialog */}
       <Dialog open={withdrawDialog} onOpenChange={setWithdrawDialog}>

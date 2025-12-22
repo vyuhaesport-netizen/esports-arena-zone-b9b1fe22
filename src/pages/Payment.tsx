@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Copy, Check, Upload, Loader2, Clock, QrCode, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,29 +7,6 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-
-// Audio context for countdown sounds
-const createBeepSound = (frequency: number, duration: number, volume: number = 0.3) => {
-  try {
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.value = frequency;
-    oscillator.type = 'sine';
-    gainNode.gain.value = volume;
-    
-    oscillator.start();
-    oscillator.stop(audioContext.currentTime + duration / 1000);
-    
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -46,39 +23,8 @@ const Payment = () => {
   const [submitting, setSubmitting] = useState(false);
   const [adminUpiId, setAdminUpiId] = useState('abbishekvyuha@fam');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [soundEnabled, setSoundEnabled] = useState(true);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const lastBeepTimeRef = useRef<number>(0);
-
-  // Play urgency sounds based on time remaining
-  const playUrgencySound = useCallback((seconds: number) => {
-    if (!soundEnabled) return;
-    
-    const now = Date.now();
-    if (now - lastBeepTimeRef.current < 900) return; // Prevent overlapping sounds
-    
-    // Critical: Last 10 seconds - rapid beeps
-    if (seconds <= 10 && seconds > 0) {
-      createBeepSound(880, 100, 0.4); // High pitch, short
-      lastBeepTimeRef.current = now;
-    }
-    // Warning: Last 30 seconds - beep every second
-    else if (seconds <= 30 && seconds > 10) {
-      createBeepSound(660, 150, 0.3);
-      lastBeepTimeRef.current = now;
-    }
-    // Caution: Last minute - beep every 10 seconds
-    else if (seconds <= 60 && seconds % 10 === 0) {
-      createBeepSound(440, 200, 0.2);
-      lastBeepTimeRef.current = now;
-    }
-    // Alert at specific intervals
-    else if (seconds === 120 || seconds === 180 || seconds === 300) {
-      createBeepSound(520, 300, 0.25);
-      lastBeepTimeRef.current = now;
-    }
-  }, [soundEnabled]);
 
   useEffect(() => {
     if (!amount || amount <= 0) {
@@ -90,8 +36,6 @@ const Payment = () => {
 
   useEffect(() => {
     if (timeLeft <= 0) {
-      // Play final alarm
-      createBeepSound(220, 500, 0.5);
       toast({
         title: 'Time Expired',
         description: 'Payment session has expired. Please try again.',
@@ -101,15 +45,12 @@ const Payment = () => {
       return;
     }
 
-    // Play urgency sound
-    playUrgencySound(timeLeft);
-
     const timer = setInterval(() => {
       setTimeLeft((prev) => prev - 1);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft, navigate, toast, playUrgencySound]);
+  }, [timeLeft, navigate, toast]);
 
   const fetchPaymentSettings = async () => {
     try {
@@ -258,15 +199,6 @@ const Payment = () => {
               <p className="text-xs text-muted-foreground">Secure UPI Payment</p>
             </div>
           </div>
-          
-          {/* Sound Toggle */}
-          <button
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 rounded-lg hover:bg-muted border border-border text-xs"
-            title={soundEnabled ? 'Mute sounds' : 'Enable sounds'}
-          >
-            {soundEnabled ? '🔊' : '🔇'}
-          </button>
         </div>
       </header>
 
