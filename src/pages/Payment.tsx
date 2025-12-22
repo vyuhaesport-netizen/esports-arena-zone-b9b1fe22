@@ -251,16 +251,16 @@ const Payment = () => {
           </div>
           
           <div className="p-6 flex flex-col items-center">
-            {/* Large QR Code */}
-            <div className="w-72 h-72 bg-card border-2 border-border rounded-xl p-3 shadow-xs">
+            {/* Large QR Code - Full Fitted */}
+            <div className="w-72 h-72 bg-card border-2 border-border rounded-xl overflow-hidden shadow-xs">
               {qrCodeUrl ? (
                 <img 
                   src={qrCodeUrl} 
                   alt="Payment QR Code" 
-                  className="w-full h-full object-contain rounded-lg"
+                  className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-muted rounded-lg">
+                <div className="w-full h-full flex flex-col items-center justify-center bg-muted">
                   <QrCode className="h-16 w-16 text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground text-center">QR not available</p>
                   <p className="text-xs text-muted-foreground">Use UPI ID below</p>

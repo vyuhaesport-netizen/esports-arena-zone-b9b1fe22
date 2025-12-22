@@ -749,7 +749,12 @@ const CreatorDashboard = () => {
                 <Input
                   type="number"
                   value={formData.entry_fee}
-                  onChange={(e) => setFormData({ ...formData, entry_fee: e.target.value })}
+                  onChange={(e) => {
+                    const newEntryFee = e.target.value;
+                    const maxP = parseInt(formData.max_participants) || 100;
+                    const autoPool = Math.round((parseFloat(newEntryFee) || 0) * maxP * (commissionSettings.prize_pool_percent / 100));
+                    setFormData({ ...formData, entry_fee: newEntryFee, prize_pool: autoPool.toString() });
+                  }}
                   placeholder="0"
                 />
               </div>
@@ -759,22 +764,29 @@ const CreatorDashboard = () => {
                 <Input
                   type="number"
                   value={formData.max_participants}
-                  onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
+                  onChange={(e) => {
+                    const newMaxP = e.target.value;
+                    const entryFee = parseFloat(formData.entry_fee) || 0;
+                    const autoPool = Math.round(entryFee * (parseInt(newMaxP) || 100) * (commissionSettings.prize_pool_percent / 100));
+                    setFormData({ ...formData, max_participants: newMaxP, prize_pool: autoPool.toString() });
+                  }}
                   placeholder="100"
                 />
               </div>
             </div>
 
-            {/* Direct Prize Pool Input */}
+            {/* Auto-calculated Prize Pool */}
             <div className="space-y-2">
-              <Label>Prize Pool (₹) *</Label>
-              <Input 
-                type="number" 
-                value={formData.prize_pool} 
-                onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })} 
-                placeholder="Enter prize pool amount" 
-              />
-              <p className="text-xs text-muted-foreground">Enter the total prize pool amount to be distributed among winners</p>
+              <Label>Estimated Prize Pool (₹)</Label>
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-xl font-bold text-green-600">₹{parseInt(formData.prize_pool || '0').toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Auto-calculated: Entry Fee × Max Players × {commissionSettings.prize_pool_percent}%
+                </p>
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ Final prize pool will be recalculated based on actual players 2 min before start
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">

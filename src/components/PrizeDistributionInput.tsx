@@ -12,24 +12,24 @@ interface PrizeDistributionInputProps {
 
 interface PrizeEntry {
   position: number;
-  percentage: number;
+  amount: number;
 }
 
 const PrizeDistributionInput = ({ value, onChange, prizePool }: PrizeDistributionInputProps) => {
   const [prizes, setPrizes] = useState<PrizeEntry[]>([
-    { position: 1, percentage: 50 },
-    { position: 2, percentage: 30 },
-    { position: 3, percentage: 20 },
+    { position: 1, amount: 0 },
+    { position: 2, amount: 0 },
+    { position: 3, amount: 0 },
   ]);
 
-  // Parse initial value
+  // Parse initial value - handle both old percentage format and new amount format
   useEffect(() => {
     if (value) {
       try {
         const parsed = JSON.parse(value);
-        const entries: PrizeEntry[] = Object.entries(parsed).map(([pos, pct]) => ({
+        const entries: PrizeEntry[] = Object.entries(parsed).map(([pos, amt]) => ({
           position: parseInt(pos),
-          percentage: typeof pct === 'number' ? pct : parseFloat(pct as string) || 0,
+          amount: typeof amt === 'number' ? amt : parseFloat(amt as string) || 0,
         })).sort((a, b) => a.position - b.position);
         
         if (entries.length > 0) {
@@ -46,20 +46,20 @@ const PrizeDistributionInput = ({ value, onChange, prizePool }: PrizeDistributio
     setPrizes(newPrizes);
     const obj: Record<string, number> = {};
     newPrizes.forEach(p => {
-      obj[p.position.toString()] = p.percentage;
+      obj[p.position.toString()] = p.amount;
     });
     onChange(JSON.stringify(obj));
   };
 
-  const handlePercentageChange = (index: number, percentage: string) => {
+  const handleAmountChange = (index: number, amount: string) => {
     const newPrizes = [...prizes];
-    newPrizes[index].percentage = parseFloat(percentage) || 0;
+    newPrizes[index].amount = parseFloat(amount) || 0;
     updateValue(newPrizes);
   };
 
   const addPosition = () => {
     const nextPosition = prizes.length > 0 ? Math.max(...prizes.map(p => p.position)) + 1 : 1;
-    updateValue([...prizes, { position: nextPosition, percentage: 0 }]);
+    updateValue([...prizes, { position: nextPosition, amount: 0 }]);
   };
 
   const removePosition = (index: number) => {
@@ -68,8 +68,8 @@ const PrizeDistributionInput = ({ value, onChange, prizePool }: PrizeDistributio
     updateValue(newPrizes);
   };
 
-  const totalPercentage = prizes.reduce((sum, p) => sum + p.percentage, 0);
-  const isValidTotal = Math.abs(totalPercentage - 100) < 0.01;
+  const totalAmount = prizes.reduce((sum, p) => sum + p.amount, 0);
+  const isValidTotal = totalAmount <= prizePool;
 
   const getPositionLabel = (pos: number) => {
     if (pos === 1) return '1st';
@@ -83,7 +83,7 @@ const PrizeDistributionInput = ({ value, onChange, prizePool }: PrizeDistributio
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-2">
           <Trophy className="h-4 w-4 text-primary" />
-          Prize Distribution
+          Prize Distribution (₹ amounts)
         </Label>
         <Button type="button" variant="outline" size="sm" onClick={addPosition}>
           <Plus className="h-3 w-3 mr-1" /> Add Position
@@ -97,19 +97,15 @@ const PrizeDistributionInput = ({ value, onChange, prizePool }: PrizeDistributio
               {getPositionLabel(prize.position)}
             </div>
             <div className="flex-1 relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
               <Input
                 type="number"
-                value={prize.percentage || ''}
-                onChange={(e) => handlePercentageChange(index, e.target.value)}
+                value={prize.amount || ''}
+                onChange={(e) => handleAmountChange(index, e.target.value)}
                 placeholder="0"
-                className="pr-8"
+                className="pl-7"
                 min="0"
-                max="100"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-            </div>
-            <div className="w-24 text-right text-sm font-medium text-green-600">
-              ₹{Math.round((prizePool * prize.percentage) / 100).toLocaleString()}
             </div>
             {prizes.length > 1 && (
               <Button
@@ -127,11 +123,16 @@ const PrizeDistributionInput = ({ value, onChange, prizePool }: PrizeDistributio
       </div>
 
       <div className={`flex items-center justify-between p-2 rounded-lg ${isValidTotal ? 'bg-green-500/10' : 'bg-destructive/10'}`}>
-        <span className="text-sm font-medium">Total</span>
+        <span className="text-sm font-medium">Total Distribution</span>
         <span className={`text-sm font-bold ${isValidTotal ? 'text-green-600' : 'text-destructive'}`}>
-          {totalPercentage.toFixed(0)}% {!isValidTotal && '(Must be 100%)'}
+          ₹{totalAmount.toLocaleString()} / ₹{prizePool.toLocaleString()}
+          {!isValidTotal && ' (Exceeds prize pool!)'}
         </span>
       </div>
+
+      <p className="text-xs text-muted-foreground">
+        Note: Prize pool will be auto-recalculated 2 minutes before tournament start based on actual players joined.
+      </p>
     </div>
   );
 };
