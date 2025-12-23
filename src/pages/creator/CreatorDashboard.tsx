@@ -31,7 +31,6 @@ import {
   Loader2, 
   Trophy,
   Edit2,
-  Trash2,
   Gamepad2,
   Users,
   Wallet,
@@ -45,7 +44,8 @@ import {
   Clock,
   Play,
   Square,
-  RefreshCw
+  RefreshCw,
+  XCircle
 } from 'lucide-react';
 import { format, differenceInMinutes, differenceInMilliseconds } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
@@ -98,6 +98,8 @@ const CreatorDashboard = () => {
   const [winnerPositions, setWinnerPositions] = useState<{[key: string]: number}>({});
   const [teamPositions, setTeamPositions] = useState<{[teamName: string]: number}>({});
   const [roomData, setRoomData] = useState({ room_id: '', room_password: '' });
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     game: 'BGMI',
@@ -288,17 +290,48 @@ const CreatorDashboard = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this tournament?')) return;
+  const openCancelDialog = (tournament: Tournament) => {
+    setSelectedTournament(tournament);
+    setCancelReason('');
+    setCancelDialogOpen(true);
+  };
 
+  const handleCancelTournament = async () => {
+    if (!selectedTournament || !user) return;
+    
+    if (!cancelReason.trim()) {
+      toast({ title: 'Error', description: 'Please provide a cancellation reason.', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
     try {
-      const { error } = await supabase.from('tournaments').delete().eq('id', id);
+      const { data, error } = await supabase.rpc('process_tournament_cancellation', {
+        p_tournament_id: selectedTournament.id,
+        p_organizer_id: user.id,
+        p_cancellation_reason: cancelReason.trim(),
+      });
+
       if (error) throw error;
-      toast({ title: 'Deleted', description: 'Tournament deleted successfully.' });
+
+      const result = data as { success: boolean; error?: string; refunded_players?: number; total_refunded?: number; message?: string };
+
+      if (!result.success) {
+        toast({ title: 'Error', description: result.error || 'Failed to cancel tournament.', variant: 'destructive' });
+        return;
+      }
+
+      toast({ 
+        title: 'Tournament Cancelled', 
+        description: `${result.refunded_players || 0} players refunded ₹${result.total_refunded || 0} total.` 
+      });
+      setCancelDialogOpen(false);
       fetchMyTournaments();
     } catch (error) {
-      console.error('Error deleting tournament:', error);
-      toast({ title: 'Error', description: 'Failed to delete tournament.', variant: 'destructive' });
+      console.error('Error cancelling tournament:', error);
+      toast({ title: 'Error', description: 'Failed to cancel tournament.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -808,14 +841,20 @@ const CreatorDashboard = () => {
                           <Key className="h-3.5 w-3.5 mr-1" /> Room
                         </Button>
                         {t.status === 'upcoming' && (
-                          <>
-                            <Button variant="outline" size="sm" onClick={() => openEditDialog(t)}>
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete(t.id)}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </>
+                          <Button variant="outline" size="sm" onClick={() => openEditDialog(t)}>
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {/* Cancel Tournament - for upcoming or ongoing */}
+                        {(t.status === 'upcoming' || t.status === 'ongoing') && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                            onClick={() => openCancelDialog(t)}
+                          >
+                            <XCircle className="h-3.5 w-3.5" />
+                          </Button>
                         )}
                       </div>
 
@@ -1363,6 +1402,62 @@ const CreatorDashboard = () => {
               className="bg-gradient-to-r from-amber-500 to-orange-500"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Confirm Winners'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Tournament Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={(open) => setCancelDialogOpen(open)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <XCircle className="h-5 w-5" />
+              Cancel Tournament
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm font-medium text-destructive">Warning</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cancelling this tournament will refund all joined players their entry fees. This action cannot be undone.
+              </p>
+            </div>
+
+            {selectedTournament && (
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="font-medium">{selectedTournament.title}</p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedTournament.joined_users?.length || 0} players × ₹{selectedTournament.entry_fee || 0} = 
+                  ₹{(selectedTournament.joined_users?.length || 0) * (selectedTournament.entry_fee || 0)} to refund
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Cancellation Reason *</Label>
+              <Textarea 
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Explain why this tournament is being cancelled..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">
+                This reason will be shown to all players in their notification.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>Back</Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleCancelTournament} 
+              disabled={saving || !cancelReason.trim()}
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <XCircle className="h-4 w-4 mr-2" />}
+              Cancel Tournament
             </Button>
           </DialogFooter>
         </DialogContent>

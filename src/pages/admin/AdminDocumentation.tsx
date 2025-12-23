@@ -43,6 +43,24 @@ const AdminDocumentation = () => {
 
   const recentUpdates: FunctionDoc[] = [
     {
+      name: 'Cancel Tournament with Refunds',
+      description: 'Organizers/Creators can cancel tournaments and automatically refund all players',
+      location: 'src/pages/organizer/OrganizerDashboard.tsx, src/pages/creator/CreatorDashboard.tsx',
+      logic: [
+        'Delete button replaced with Cancel Tournament button',
+        'Available for "upcoming" and "ongoing" status tournaments',
+        'Requires a cancellation reason to be provided',
+        'Automatically refunds entry fee to all joined players',
+        'Creates refund transaction records in wallet_transactions',
+        'Sends notification to all affected players with reason',
+        'Tournament status changes to "cancelled"',
+        'Tournament is not deleted, kept for records with cancellation reason'
+      ],
+      database: 'process_tournament_cancellation RPC function, profiles (wallet_balance), wallet_transactions (refund type), notifications',
+      security: 'Only tournament creator can cancel their own tournaments',
+      addedDate: '2024-12-23'
+    },
+    {
       name: 'Profile Completion Flow',
       description: 'Mandatory profile completion after signup with essential gaming fields',
       location: 'src/pages/Auth.tsx, src/pages/CompleteProfile.tsx, src/App.tsx',

@@ -891,6 +891,14 @@ export type Database = {
         }
         Returns: Json
       }
+      process_tournament_cancellation: {
+        Args: {
+          p_cancellation_reason: string
+          p_organizer_id: string
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       process_tournament_exit: {
         Args: { p_tournament_id: string; p_user_id: string }
         Returns: Json
