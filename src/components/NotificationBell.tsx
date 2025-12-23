@@ -34,7 +34,17 @@ const NotificationBell = () => {
       case 'wallet_debit':
       case 'withdrawal_approved':
       case 'withdrawal_rejected':
+      case 'deposit_approved':
+      case 'deposit_rejected':
         navigate('/wallet');
+        setOpen(false);
+        break;
+      case 'prize_won':
+      case 'commission_earned':
+      case 'tournament_join':
+      case 'tournament_exit':
+      case 'tournament_cancelled':
+        navigate('/my-match');
         setOpen(false);
         break;
       default:
@@ -55,12 +65,17 @@ const NotificationBell = () => {
       case 'admin_broadcast':
         return <Megaphone className="h-4 w-4 text-primary" />;
       case 'prize_won':
-        return <Gift className="h-4 w-4 text-green-500" />;
+        return <Gift className="h-4 w-4 text-yellow-500 animate-pulse" />;
+      case 'commission_earned':
+        return <Wallet className="h-4 w-4 text-green-500" />;
       case 'wallet_credit':
       case 'wallet_debit':
       case 'withdrawal_approved':
+      case 'deposit_approved':
         return <Wallet className="h-4 w-4 text-emerald-500" />;
       case 'withdrawal_rejected':
+      case 'deposit_rejected':
+      case 'tournament_cancelled':
         return <AlertCircle className="h-4 w-4 text-red-500" />;
       default:
         return <Bell className="h-4 w-4 text-muted-foreground" />;
@@ -80,12 +95,17 @@ const NotificationBell = () => {
       case 'admin_broadcast':
         return 'bg-primary/10';
       case 'prize_won':
+        return 'bg-gradient-to-br from-yellow-500/20 to-amber-500/20';
+      case 'commission_earned':
         return 'bg-green-500/10';
       case 'wallet_credit':
       case 'wallet_debit':
       case 'withdrawal_approved':
+      case 'deposit_approved':
         return 'bg-emerald-500/10';
       case 'withdrawal_rejected':
+      case 'deposit_rejected':
+      case 'tournament_cancelled':
         return 'bg-red-500/10';
       default:
         return 'bg-muted';
