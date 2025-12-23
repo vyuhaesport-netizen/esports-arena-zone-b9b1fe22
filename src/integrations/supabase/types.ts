@@ -457,6 +457,7 @@ export type Database = {
           max_participants: number
           organizer_earnings: number | null
           organizer_id: string
+          platform_earnings: number | null
           private_code: string
           prize_distribution: Json | null
           qr_code_url: string | null
@@ -485,6 +486,7 @@ export type Database = {
           max_participants?: number
           organizer_earnings?: number | null
           organizer_id: string
+          platform_earnings?: number | null
           private_code: string
           prize_distribution?: Json | null
           qr_code_url?: string | null
@@ -513,6 +515,7 @@ export type Database = {
           max_participants?: number
           organizer_earnings?: number | null
           organizer_id?: string
+          platform_earnings?: number | null
           private_code?: string
           prize_distribution?: Json | null
           qr_code_url?: string | null
@@ -1381,10 +1384,9 @@ export type Database = {
       is_creator: { Args: { _user_id: string }; Returns: boolean }
       is_organizer: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
-      join_local_tournament: {
-        Args: { p_private_code: string; p_user_id: string }
-        Returns: Json
-      }
+      join_local_tournament:
+        | { Args: { p_private_code: string; p_user_id: string }; Returns: Json }
+        | { Args: { p_private_code: string; p_user_id: string }; Returns: Json }
       process_dhana_maturation: { Args: never; Returns: Json }
       process_local_tournament_exit: {
         Args: { p_tournament_id: string }
