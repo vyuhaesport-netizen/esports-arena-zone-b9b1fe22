@@ -205,8 +205,19 @@ const MyMatch = () => {
     const [winnerCountdown, setWinnerCountdown] = useState<string | null>(null);
 
     // Find user's winning position and amount from prize_distribution
-    const userWinnerInfo = registration.tournaments.prize_distribution?.find(
-      (p) => p.user_id === user?.id
+    // prize_distribution can be an array or a JSON object/string, so handle safely
+    const prizeDistributionArray = (() => {
+      const pd = registration.tournaments.prize_distribution;
+      if (!pd) return [];
+      if (Array.isArray(pd)) return pd;
+      if (typeof pd === 'string') {
+        try { return JSON.parse(pd); } catch { return []; }
+      }
+      return [];
+    })();
+    
+    const userWinnerInfo = prizeDistributionArray.find(
+      (p: { position?: number; amount?: number; user_id?: string }) => p.user_id === user?.id
     );
     const isWinner = !!userWinnerInfo;
     const winnerPosition = userWinnerInfo?.position;
