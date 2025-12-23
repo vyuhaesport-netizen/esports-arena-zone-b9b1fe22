@@ -15,8 +15,12 @@ import {
   CreditCard,
   QrCode,
   Upload,
-  Check
+  Check,
+  MessageCircle,
+  Instagram,
+  FileText
 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 interface CommissionSettings {
   organizer_commission_percent: string;
@@ -29,6 +33,12 @@ interface PaymentSettings {
   payment_qr_url: string;
 }
 
+interface OwnerContactSettings {
+  owner_whatsapp: string;
+  owner_instagram: string;
+  owner_contact_note: string;
+}
+
 const AdminSettings = () => {
   const [settings, setSettings] = useState<CommissionSettings>({
     organizer_commission_percent: '10',
@@ -39,9 +49,15 @@ const AdminSettings = () => {
     admin_upi_id: '',
     payment_qr_url: '',
   });
+  const [ownerContactSettings, setOwnerContactSettings] = useState<OwnerContactSettings>({
+    owner_whatsapp: '',
+    owner_instagram: '',
+    owner_contact_note: '',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
+  const [savingOwnerContact, setSavingOwnerContact] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
 
   const qrInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +101,12 @@ const AdminSettings = () => {
         payment_qr_url: '',
       };
 
+      const ownerContactMap: OwnerContactSettings = {
+        owner_whatsapp: '',
+        owner_instagram: '',
+        owner_contact_note: '',
+      };
+
       data?.forEach((s) => {
         if (s.setting_key in commissionMap) {
           commissionMap[s.setting_key as keyof CommissionSettings] = s.setting_value;
@@ -92,10 +114,14 @@ const AdminSettings = () => {
         if (s.setting_key in paymentMap) {
           paymentMap[s.setting_key as keyof PaymentSettings] = s.setting_value;
         }
+        if (s.setting_key in ownerContactMap) {
+          ownerContactMap[s.setting_key as keyof OwnerContactSettings] = s.setting_value;
+        }
       });
 
       setSettings(commissionMap);
       setPaymentSettings(paymentMap);
+      setOwnerContactSettings(ownerContactMap);
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -173,6 +199,36 @@ const AdminSettings = () => {
       toast({ title: 'Error', description: 'Failed to save payment settings.', variant: 'destructive' });
     } finally {
       setSavingPayment(false);
+    }
+  };
+
+  const handleSaveOwnerContact = async () => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Access Denied', description: 'Only Super Admin can change settings.', variant: 'destructive' });
+      return;
+    }
+
+    setSavingOwnerContact(true);
+
+    try {
+      for (const [key, value] of Object.entries(ownerContactSettings)) {
+        const { error } = await supabase
+          .from('platform_settings')
+          .upsert({ 
+            setting_key: key,
+            setting_value: value,
+            updated_by: user?.id,
+          }, { onConflict: 'setting_key' });
+
+        if (error) throw error;
+      }
+
+      toast({ title: 'Owner Contact Saved', description: 'Contact details for organizers/creators have been updated.' });
+    } catch (error) {
+      console.error('Error saving owner contact settings:', error);
+      toast({ title: 'Error', description: 'Failed to save owner contact settings.', variant: 'destructive' });
+    } finally {
+      setSavingOwnerContact(false);
     }
   };
 
@@ -454,6 +510,78 @@ const AdminSettings = () => {
               <p className="text-sm text-muted-foreground text-center">
                 Only Super Admin can modify these settings.
               </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Owner Contact Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <MessageCircle className="h-5 w-5 text-primary" />
+              Owner Contact (For Organizers/Creators)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure contact details that organizers and creators can use to reach you.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-green-500" />
+                  WhatsApp Number
+                </Label>
+                <Input
+                  placeholder="+91 9876543210"
+                  value={ownerContactSettings.owner_whatsapp}
+                  onChange={(e) => setOwnerContactSettings(prev => ({ ...prev, owner_whatsapp: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+                <p className="text-xs text-muted-foreground">Include country code (e.g., +91 for India)</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Instagram className="h-4 w-4 text-pink-500" />
+                  Instagram Link
+                </Label>
+                <Input
+                  placeholder="https://instagram.com/yourusername"
+                  value={ownerContactSettings.owner_instagram}
+                  onChange={(e) => setOwnerContactSettings(prev => ({ ...prev, owner_instagram: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+                <p className="text-xs text-muted-foreground">Full Instagram profile URL</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-500" />
+                  Note for Organizers/Creators
+                </Label>
+                <Textarea
+                  placeholder="Enter any important message or guidelines for organizers and creators..."
+                  value={ownerContactSettings.owner_contact_note}
+                  onChange={(e) => setOwnerContactSettings(prev => ({ ...prev, owner_contact_note: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                  rows={4}
+                />
+                <p className="text-xs text-muted-foreground">This note will be displayed on the "Connect With Owner" page</p>
+              </div>
+            </div>
+
+            {isSuperAdmin && (
+              <Button 
+                variant="gaming" 
+                className="w-full" 
+                onClick={handleSaveOwnerContact}
+                disabled={savingOwnerContact}
+              >
+                {savingOwnerContact ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Owner Contact Settings
+              </Button>
             )}
           </CardContent>
         </Card>
