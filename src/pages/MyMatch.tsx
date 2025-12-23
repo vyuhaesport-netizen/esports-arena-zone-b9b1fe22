@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import CountdownTimer from '@/components/CountdownTimer';
-import confetti from 'canvas-confetti';
-import { 
+import {
   Trophy, 
   Calendar,
   Loader2,
@@ -269,47 +268,19 @@ const MyMatch = () => {
                              winnerDeclarationTime && 
                              new Date() < winnerDeclarationTime;
 
-    // Confetti effect for winners
-    const triggerConfetti = useCallback(() => {
-      if (hasShownConfetti) return;
-      
-      const duration = 3000;
-      const animationEnd = Date.now() + duration;
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+    // Show confetti animation state for this specific card
+    const [showCardConfetti, setShowCardConfetti] = useState(false);
 
-      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-      const interval = setInterval(() => {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) {
-          clearInterval(interval);
-          return;
-        }
-
-        const particleCount = 50 * (timeLeft / duration);
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-          colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'],
-        });
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-          colors: ['#FFD700', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'],
-        });
-      }, 250);
-
-      setHasShownConfetti(true);
-    }, [hasShownConfetti]);
-
-    // Trigger confetti when winner card is viewed
+    // Trigger card confetti when winner card is viewed
     useEffect(() => {
       if (isWinner && registration.tournaments.status === 'completed' && !hasShownConfetti) {
-        triggerConfetti();
+        setShowCardConfetti(true);
+        setHasShownConfetti(true);
+        // Auto-hide confetti after 4 seconds
+        const timer = setTimeout(() => setShowCardConfetti(false), 4000);
+        return () => clearTimeout(timer);
       }
-    }, [isWinner, registration.tournaments.status, hasShownConfetti, triggerConfetti]);
+    }, [isWinner, registration.tournaments.status, hasShownConfetti]);
 
     // Winner declaration countdown timer
     useEffect(() => {
@@ -369,7 +340,31 @@ const MyMatch = () => {
     const playerCount = registration.tournaments.joined_users?.length || 0;
 
     return (
-      <div className="bg-card rounded-xl border border-border p-4">
+      <div className={`bg-card rounded-xl border p-4 relative overflow-hidden transition-all duration-300 ${isWinner && registration.tournaments.status === 'completed' ? 'border-yellow-500/50 bg-gradient-to-br from-yellow-500/5 to-orange-500/5 shadow-lg shadow-yellow-500/10' : 'border-border'}`}>
+        {/* Card Confetti Animation for Winners */}
+        {showCardConfetti && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden z-10">
+            {[...Array(15)].map((_, i) => {
+              const emojis = ['🎉', '✨', '🏆', '⭐', '🎊', '💰', '🥇'];
+              const randomEmoji = emojis[i % emojis.length];
+              const randomLeft = 5 + (i * 6.5);
+              const randomDelay = i * 0.15;
+              return (
+                <div
+                  key={i}
+                  className="absolute animate-confetti-fall text-base"
+                  style={{
+                    left: `${randomLeft}%`,
+                    top: '-10px',
+                    animationDelay: `${randomDelay}s`,
+                  }}
+                >
+                  {randomEmoji}
+                </div>
+              );
+            })}
+          </div>
+        )}
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Gamepad2 className="h-6 w-6 text-primary" />
