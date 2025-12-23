@@ -59,6 +59,7 @@ interface Registration {
     joined_users: string[] | null;
     winner_user_id: string | null;
     prize_distribution: { position: number; amount: number; user_id?: string }[] | null;
+    current_prize_pool: number | null;
   };
 }
 
@@ -106,7 +107,8 @@ const MyMatch = () => {
             room_password,
             joined_users,
             winner_user_id,
-            prize_distribution
+            prize_distribution,
+            current_prize_pool
           )
         `)
         .eq('user_id', user.id)
@@ -205,20 +207,56 @@ const MyMatch = () => {
     const [winnerCountdown, setWinnerCountdown] = useState<string | null>(null);
 
     // Find user's winning position and amount from prize_distribution
-    // prize_distribution can be an array or a JSON object/string, so handle safely
-    const prizeDistributionArray = (() => {
+    // prize_distribution can be stored in different formats:
+    // 1. Object with position as key and amount as value: {"1": 60, "2": 30}
+    // 2. Array with position, amount, and user_id
+    // 3. Object with user_id mapped to position
+    const getUserWinnerInfo = () => {
       const pd = registration.tournaments.prize_distribution;
-      if (!pd) return [];
-      if (Array.isArray(pd)) return pd;
-      if (typeof pd === 'string') {
-        try { return JSON.parse(pd); } catch { return []; }
+      const winnerId = registration.tournaments.winner_user_id;
+      
+      if (!pd) {
+        // Check if user is the winner_user_id (1st place winner)
+        if (winnerId === user?.id) {
+          return { position: 1, amount: registration.tournaments.current_prize_pool || 0 };
+        }
+        return null;
       }
-      return [];
-    })();
+      
+      // Handle array format with user_id
+      if (Array.isArray(pd)) {
+        const found = pd.find((p: any) => p.user_id === user?.id);
+        if (found) return { position: found.position, amount: found.amount };
+      }
+      
+      // Handle object format {"1": 60, "2": 30} - check if user is winner_user_id
+      if (typeof pd === 'object' && !Array.isArray(pd)) {
+        // If user is the declared winner, they are position 1
+        if (winnerId === user?.id) {
+          const amount = (pd as any)['1'] || (pd as any)[1] || 0;
+          return { position: 1, amount };
+        }
+      }
+      
+      // Parse if string
+      if (typeof pd === 'string') {
+        try {
+          const parsed = JSON.parse(pd);
+          if (Array.isArray(parsed)) {
+            const found = parsed.find((p: any) => p.user_id === user?.id);
+            if (found) return { position: found.position, amount: found.amount };
+          }
+          if (winnerId === user?.id) {
+            const amount = parsed['1'] || parsed[1] || 0;
+            return { position: 1, amount };
+          }
+        } catch { /* ignore */ }
+      }
+      
+      return null;
+    };
     
-    const userWinnerInfo = prizeDistributionArray.find(
-      (p: { position?: number; amount?: number; user_id?: string }) => p.user_id === user?.id
-    );
+    const userWinnerInfo = getUserWinnerInfo();
     const isWinner = !!userWinnerInfo;
     const winnerPosition = userWinnerInfo?.position;
     const winnerAmount = userWinnerInfo?.amount;
