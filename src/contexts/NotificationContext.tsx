@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 interface Notification {
   id: string;
@@ -31,10 +32,63 @@ export const useNotifications = () => {
   return context;
 };
 
+// Prize-related notification types that deserve special attention
+const PRIZE_NOTIFICATION_TYPES = ['prize_won', 'commission_earned'];
+const IMPORTANT_NOTIFICATION_TYPES = [...PRIZE_NOTIFICATION_TYPES, 'tournament_cancelled', 'deposit_approved', 'withdrawal_approved'];
+
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+
+  // Play notification sound for important notifications
+  const playNotificationSound = useCallback(() => {
+    try {
+      // Create a simple beep sound using Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+      console.log('Could not play notification sound:', error);
+    }
+  }, []);
+
+  // Show toast for new notifications
+  const showNotificationToast = useCallback((notification: Notification) => {
+    const isPrizeNotification = PRIZE_NOTIFICATION_TYPES.includes(notification.type);
+    const isImportant = IMPORTANT_NOTIFICATION_TYPES.includes(notification.type);
+
+    if (isImportant) {
+      playNotificationSound();
+    }
+
+    // Special handling for prize won notifications
+    if (isPrizeNotification) {
+      toast({
+        title: notification.title,
+        description: notification.message || 'Check your wallet!',
+        duration: 8000,
+        className: 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-amber-500/50',
+      });
+    } else if (isImportant) {
+      toast({
+        title: notification.title,
+        description: notification.message || '',
+        duration: 5000,
+      });
+    }
+  }, [playNotificationSound]);
 
   const fetchNotifications = async () => {
     if (!user) {
@@ -76,7 +130,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            setNotifications((prev) => [payload.new as Notification, ...prev]);
+            const newNotification = payload.new as Notification;
+            setNotifications((prev) => [newNotification, ...prev]);
+            
+            // Show toast notification for new notifications
+            showNotificationToast(newNotification);
           }
         )
         .subscribe();
@@ -85,7 +143,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         supabase.removeChannel(channel);
       };
     }
-  }, [user]);
+  }, [user, showNotificationToast]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
