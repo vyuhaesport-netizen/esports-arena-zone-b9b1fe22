@@ -31,7 +31,9 @@ import {
   Info,
   AlertTriangle,
   User,
-  Send
+  Send,
+  MapPin,
+  QrCode
 } from 'lucide-react';
 import { differenceInMinutes } from 'date-fns';
 import { format } from 'date-fns';
@@ -70,8 +72,28 @@ interface Registration {
   };
 }
 
+interface LocalTournament {
+  id: string;
+  tournament_name: string;
+  game: string;
+  tournament_mode: string;
+  tournament_date: string;
+  status: string;
+  entry_fee: number;
+  institution_name: string;
+  current_prize_pool: number | null;
+  room_id: string | null;
+  room_password: string | null;
+  joined_users: string[] | null;
+  prize_distribution: any;
+  winner_user_id: string | null;
+  started_at: string | null;
+  ended_at: string | null;
+}
+
 const MyMatch = () => {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [localTournaments, setLocalTournaments] = useState<LocalTournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState<string | null>(null);
   
@@ -88,6 +110,7 @@ const MyMatch = () => {
   useEffect(() => {
     if (user) {
       fetchRegistrations();
+      fetchLocalTournaments();
     }
   }, [user]);
 
@@ -127,6 +150,23 @@ const MyMatch = () => {
       console.error('Error fetching registrations:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLocalTournaments = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('local_tournaments')
+        .select('*')
+        .contains('joined_users', [user.id])
+        .order('tournament_date', { ascending: false });
+
+      if (error) throw error;
+      setLocalTournaments(data || []);
+    } catch (error) {
+      console.error('Error fetching local tournaments:', error);
     }
   };
 
@@ -203,6 +243,139 @@ const MyMatch = () => {
   const upcomingMatches = registrations.filter(r => r.tournaments.status === 'upcoming');
   const liveMatches = registrations.filter(r => r.tournaments.status === 'ongoing');
   const completedMatches = registrations.filter(r => r.tournaments.status === 'completed');
+
+  // Local Tournament Card Component
+  const LocalTournamentCard = ({ tournament }: { tournament: LocalTournament }) => {
+    const [roomOpen, setRoomOpen] = useState(false);
+    const [copiedField, setCopiedField] = useState<string | null>(null);
+
+    const copyToClipboard = async (text: string, field: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedField(field);
+        toast({ title: 'Copied!', description: `${field} copied to clipboard.` });
+        setTimeout(() => setCopiedField(null), 2000);
+      } catch {
+        toast({ title: 'Failed to copy', variant: 'destructive' });
+      }
+    };
+
+    const getStatusBadge = () => {
+      switch (tournament.status) {
+        case 'upcoming':
+          return <Badge variant="outline" className="text-blue-500 border-blue-500/50">Upcoming</Badge>;
+        case 'ongoing':
+          return <Badge variant="outline" className="text-green-500 border-green-500/50 animate-pulse">Live</Badge>;
+        case 'completed':
+          return <Badge variant="outline" className="text-muted-foreground">Completed</Badge>;
+        default:
+          return <Badge variant="outline">{tournament.status}</Badge>;
+      }
+    };
+
+    const hasRoomDetails = tournament.room_id || tournament.room_password;
+    const isOngoingOrCompleted = tournament.status === 'ongoing' || tournament.status === 'completed';
+
+    return (
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+            <MapPin className="h-6 w-6 text-orange-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h3 className="font-semibold text-sm line-clamp-1">{tournament.tournament_name}</h3>
+                <p className="text-xs text-muted-foreground">{tournament.game} • {tournament.tournament_mode}</p>
+              </div>
+              {getStatusBadge()}
+            </div>
+            
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(tournament.tournament_date), 'MMM dd, hh:mm a')}
+            </div>
+            
+            <p className="text-xs text-muted-foreground mt-1">
+              📍 {tournament.institution_name}
+            </p>
+
+            {/* Countdown for upcoming */}
+            {tournament.status === 'upcoming' && (
+              <div className="mt-2 p-2 bg-primary/10 rounded-lg">
+                <CountdownTimer 
+                  targetDate={new Date(tournament.tournament_date)}
+                  label="Starts in:"
+                  className="text-primary justify-center"
+                />
+              </div>
+            )}
+
+            {/* Prize Pool */}
+            {tournament.current_prize_pool && tournament.current_prize_pool > 0 && (
+              <div className="flex items-center gap-1 mt-2 text-xs">
+                <Trophy className="h-3 w-3 text-yellow-500" />
+                <span className="text-yellow-500 font-medium">Prize Pool: ₹{tournament.current_prize_pool}</span>
+              </div>
+            )}
+
+            {/* Room Details Collapsible */}
+            {hasRoomDetails && isOngoingOrCompleted && (
+              <Collapsible open={roomOpen} onOpenChange={setRoomOpen} className="mt-3">
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full text-xs">
+                    <Eye className="h-3 w-3 mr-1" />
+                    {roomOpen ? 'Hide' : 'View'} Room Details
+                    <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2 p-3 bg-muted/50 rounded-lg">
+                  {tournament.room_id && (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Room ID</p>
+                        <p className="font-mono text-sm font-medium">{tournament.room_id}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => copyToClipboard(tournament.room_id!, 'Room ID')}
+                      >
+                        {copiedField === 'Room ID' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  )}
+                  {tournament.room_password && (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Password</p>
+                        <p className="font-mono text-sm font-medium">{tournament.room_password}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => copyToClipboard(tournament.room_password!, 'Password')}
+                      >
+                        {copiedField === 'Password' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Player count */}
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+              <Users className="h-3 w-3" />
+              <span>{tournament.joined_users?.length || 0} players joined</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const MatchCard = ({ registration, showCancel = false, isCompleted = false }: { registration: Registration; showCancel?: boolean; isCompleted?: boolean }) => {
     const [playersDialogOpen, setPlayersDialogOpen] = useState(false);
@@ -809,7 +982,7 @@ const MyMatch = () => {
     <AppLayout title="My Matches">
       <div className="p-4">
         <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="w-full grid grid-cols-3">
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="upcoming" className="text-xs">
               Upcoming ({upcomingMatches.length})
             </TabsTrigger>
@@ -817,7 +990,10 @@ const MyMatch = () => {
               Live ({liveMatches.length})
             </TabsTrigger>
             <TabsTrigger value="completed" className="text-xs">
-              Completed ({completedMatches.length})
+              Done ({completedMatches.length})
+            </TabsTrigger>
+            <TabsTrigger value="local" className="text-xs">
+              Local ({localTournaments.length})
             </TabsTrigger>
           </TabsList>
 
@@ -864,6 +1040,22 @@ const MyMatch = () => {
               <div className="space-y-3">
                 {completedMatches.map((reg) => (
                   <MatchCard key={reg.id} registration={reg} isCompleted />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="local" className="mt-4">
+            {localTournaments.length === 0 ? (
+              <div className="text-center py-12">
+                <QrCode className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground text-sm">No local tournaments joined</p>
+                <p className="text-muted-foreground text-xs mt-1">Scan a tournament QR code to join</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {localTournaments.map((lt) => (
+                  <LocalTournamentCard key={lt.id} tournament={lt} />
                 ))}
               </div>
             )}
