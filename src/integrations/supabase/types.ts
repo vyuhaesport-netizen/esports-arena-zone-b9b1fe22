@@ -446,6 +446,71 @@ export type Database = {
         }
         Relationships: []
       }
+      player_bans: {
+        Row: {
+          ban_duration_hours: number | null
+          ban_number: number
+          ban_reason: string
+          ban_type: string
+          banned_at: string
+          banned_by: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          lift_reason: string | null
+          lifted_at: string | null
+          lifted_by: string | null
+          report_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ban_duration_hours?: number | null
+          ban_number?: number
+          ban_reason: string
+          ban_type?: string
+          banned_at?: string
+          banned_by: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          lift_reason?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          report_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ban_duration_hours?: number | null
+          ban_number?: number
+          ban_reason?: string
+          ban_type?: string
+          banned_at?: string
+          banned_by?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          lift_reason?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          report_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_bans_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_team_members: {
         Row: {
           id: string
@@ -937,6 +1002,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_lift_ban: {
+        Args: { p_ban_id: string; p_lift_reason: string }
+        Returns: Json
+      }
       admin_process_deposit: {
         Args: { p_action: string; p_deposit_id: string; p_reason?: string }
         Returns: Json
@@ -945,6 +1014,19 @@ export type Database = {
         Args: { p_action: string; p_reason?: string; p_withdrawal_id: string }
         Returns: Json
       }
+      admin_restore_account: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: Json
+      }
+      admin_terminate_account: {
+        Args: { p_reason: string; p_user_id: string }
+        Returns: Json
+      }
+      ban_player_from_report: {
+        Args: { p_ban_reason: string; p_report_id: string }
+        Returns: Json
+      }
+      check_user_ban_status: { Args: { p_user_id: string }; Returns: Json }
       create_notification: {
         Args: {
           p_message: string
@@ -955,6 +1037,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_user_ban_count: { Args: { p_user_id: string }; Returns: number }
       has_admin_permission: {
         Args: { _permission: string; _user_id: string }
         Returns: boolean

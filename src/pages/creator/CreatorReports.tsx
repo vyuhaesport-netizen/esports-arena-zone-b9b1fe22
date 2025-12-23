@@ -23,7 +23,8 @@ import {
   User,
   Trophy,
   Eye,
-  Sparkles
+  Sparkles,
+  Ban
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -58,6 +59,8 @@ const CreatorReports = () => {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [banDialogOpen, setBanDialogOpen] = useState(false);
+  const [banReason, setBanReason] = useState('');
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('pending');
@@ -180,6 +183,41 @@ const CreatorReports = () => {
     } catch (error) {
       console.error('Error updating report:', error);
       toast({ title: 'Error', description: 'Failed to update report.', variant: 'destructive' });
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleBanPlayer = async () => {
+    if (!selectedReport || !banReason.trim()) {
+      toast({ title: 'Please provide a ban reason', variant: 'destructive' });
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const { data, error } = await supabase.rpc('ban_player_from_report', {
+        p_report_id: selectedReport.id,
+        p_ban_reason: banReason
+      });
+
+      if (error) throw error;
+      const result = data as { success: boolean; error?: string; ban_type?: string; ban_number?: number };
+      if (!result.success) throw new Error(result.error || 'Failed to ban player');
+
+      const banMessage = result.ban_type === 'terminated' 
+        ? 'Player account has been terminated (3rd offense)'
+        : result.ban_number === 2 
+          ? 'Player suspended for 7 days (2nd offense)'
+          : 'Player suspended for 24 hours (1st offense)';
+
+      toast({ title: 'Player Banned', description: banMessage });
+      setBanDialogOpen(false);
+      setBanReason('');
+      fetchReports();
+    } catch (error: any) {
+      console.error('Error banning player:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to ban player.', variant: 'destructive' });
     } finally {
       setProcessing(false);
     }
@@ -326,6 +364,19 @@ const CreatorReports = () => {
                             Take Action
                           </Button>
                         )}
+                        {(report.status === 'pending' || report.status === 'reviewed') && (
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => {
+                              setSelectedReport(report);
+                              setBanDialogOpen(true);
+                            }}
+                          >
+                            <Ban className="h-4 w-4 mr-1" />
+                            Ban
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -430,6 +481,66 @@ const CreatorReports = () => {
             >
               {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle className="h-4 w-4 mr-1" />}
               Resolve
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ban Player Dialog */}
+      <Dialog open={banDialogOpen} onOpenChange={setBanDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Ban className="h-5 w-5" />
+              Ban Player
+            </DialogTitle>
+          </DialogHeader>
+          {selectedReport && (
+            <div className="space-y-4">
+              <div className="p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                <p className="text-sm font-medium">Player to ban:</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Avatar className="h-8 w-8 ring-2 ring-destructive">
+                    <AvatarImage src={selectedReport.reported_player?.avatar_url || ''} />
+                    <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium text-destructive">
+                    {selectedReport.reported_player?.username || 'Unknown'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  <strong>Ban Escalation:</strong><br/>
+                  • 1st ban = 24 hours suspension<br/>
+                  • 2nd ban (by different creator) = 7 days suspension<br/>
+                  • 3rd ban = Account terminated
+                </p>
+              </div>
+
+              <div>
+                <Label>Ban Reason</Label>
+                <Textarea
+                  placeholder="Provide detailed reason for the ban..."
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBanDialogOpen(false)} disabled={processing}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleBanPlayer}
+              disabled={processing || !banReason.trim()}
+            >
+              {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Ban className="h-4 w-4 mr-1" />}
+              Confirm Ban
             </Button>
           </DialogFooter>
         </DialogContent>
