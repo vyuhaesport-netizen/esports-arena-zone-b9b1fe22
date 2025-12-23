@@ -33,14 +33,11 @@ import {
   Edit2,
   Gamepad2,
   Users,
-  Wallet,
-  TrendingUp,
   ArrowLeft,
   Award,
   Key,
   Lock,
   Eye,
-  Medal,
   Clock,
   Play,
   Square,
@@ -695,22 +692,8 @@ const OrganizerDashboard = () => {
       </header>
 
       <div className="p-4 space-y-4">
-        {/* Earnings Card */}
-        <Card className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm opacity-90">Total Earnings</p>
-                <p className="text-3xl font-gaming font-bold mt-1">₹{totalEarnings.toFixed(0)}</p>
-                <p className="text-xs opacity-75 mt-1">10% commission from entry fees</p>
-              </div>
-              <TrendingUp className="h-12 w-12 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Card>
             <CardContent className="p-4 text-center">
               <Trophy className="h-6 w-6 mx-auto text-primary mb-1" />
@@ -725,15 +708,6 @@ const OrganizerDashboard = () => {
                 {tournaments.reduce((sum, t) => sum + (t.joined_users?.length || 0), 0)}
               </p>
               <p className="text-xs text-muted-foreground">Participants</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Wallet className="h-6 w-6 mx-auto text-green-500 mb-1" />
-              <p className="text-xl font-bold">
-                ₹{tournaments.reduce((sum, t) => sum + (t.current_prize_pool || 0), 0).toFixed(0)}
-              </p>
-              <p className="text-xs text-muted-foreground">Prize Pools</p>
             </CardContent>
           </Card>
         </div>
@@ -774,18 +748,15 @@ const OrganizerDashboard = () => {
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
+                      {/* Prize Pool Badge */}
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                          <Trophy className="h-3 w-3 mr-1" />
+                          Prize Pool: ₹{tournament.current_prize_pool || 0}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Users className="h-3 w-3" />
                           {tournament.joined_users?.length || 0}/{tournament.max_participants}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Wallet className="h-3 w-3 text-green-500" />
-                          ₹{tournament.organizer_earnings || 0}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Trophy className="h-3 w-3 text-primary" />
-                          ₹{tournament.current_prize_pool || 0}
                         </span>
                       </div>
 
@@ -1080,7 +1051,7 @@ const OrganizerDashboard = () => {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Medal className="h-5 w-5 text-primary" />
+              <Award className="h-5 w-5 text-primary" />
               Declare Winners
             </DialogTitle>
           </DialogHeader>
