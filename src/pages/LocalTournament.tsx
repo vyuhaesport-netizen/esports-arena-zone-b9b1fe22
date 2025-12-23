@@ -38,6 +38,8 @@ import {
   Share2,
   FileText,
   RefreshCw,
+  MessageCircle,
+  Ban,
 } from 'lucide-react';
 import {
   Select,
@@ -143,6 +145,8 @@ const LocalTournamentPage = () => {
     max_participants: '',
     tournament_date: '',
   });
+  const [cancelling, setCancelling] = useState(false);
+  const [editablePrizeDistribution, setEditablePrizeDistribution] = useState<Record<string, number>>({});
 
   const { user } = useAuth();
   const { toast } = useToast();
@@ -301,6 +305,7 @@ const LocalTournamentPage = () => {
   const openManageTournament = async (tournament: LocalTournament) => {
     setSelectedTournament(tournament);
     setRoomDetails({ room_id: tournament.room_id || '', room_password: tournament.room_password || '' });
+    setEditablePrizeDistribution(tournament.prize_distribution || {});
     
     if (tournament.joined_users && tournament.joined_users.length > 0) {
       const { data } = await supabase
@@ -476,6 +481,74 @@ const LocalTournamentPage = () => {
         await navigator.clipboard.writeText(getShareLink(tournament.private_code));
         toast({ title: 'Link Copied!', description: 'Tournament link copied to clipboard.' });
       }
+    }
+  };
+
+  const handleShareWhatsApp = (tournament: LocalTournament) => {
+    const message = `🎮 Join my tournament: *${tournament.tournament_name}*\n\n📍 ${tournament.institution_name}\n🎯 Game: ${tournament.game}\n💰 Entry: ₹${tournament.entry_fee}\n🏆 Prize Pool: ₹${tournament.current_prize_pool}\n\n🔗 Join using code: *${tournament.private_code}*\n${getShareLink(tournament.private_code)}`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleCancelTournament = async () => {
+    if (!selectedTournament || !user) return;
+    
+    setCancelling(true);
+    try {
+      const { data, error } = await supabase.rpc('cancel_local_tournament', {
+        p_tournament_id: selectedTournament.id,
+        p_organizer_id: user.id,
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string; refunded_count?: number };
+      
+      if (!result.success) {
+        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+        return;
+      }
+
+      toast({
+        title: 'Tournament Cancelled',
+        description: `${result.refunded_count || 0} players have been refunded.`,
+      });
+      setManageTournamentOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleUpdatePrizeDistribution = async () => {
+    if (!selectedTournament || !user) return;
+    
+    try {
+      const { data, error } = await supabase.rpc('update_local_tournament_prize_distribution', {
+        p_tournament_id: selectedTournament.id,
+        p_organizer_id: user.id,
+        p_prize_distribution: editablePrizeDistribution,
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; error?: string };
+      
+      if (!result.success) {
+        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+        return;
+      }
+
+      setSelectedTournament({
+        ...selectedTournament,
+        prize_distribution: editablePrizeDistribution,
+      });
+
+      toast({ title: 'Updated!', description: 'Prize distribution updated successfully.' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -809,7 +882,7 @@ const LocalTournamentPage = () => {
             </div>
           ) : (
             tournaments.map((tournament) => (
-              <Card key={tournament.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => openManageTournament(tournament)}>
+              <Card key={tournament.id}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -819,13 +892,16 @@ const LocalTournamentPage = () => {
                     <Badge
                       variant={
                         tournament.status === 'completed' ? 'default' :
-                        tournament.status === 'ongoing' ? 'secondary' : 'outline'
+                        tournament.status === 'ongoing' ? 'secondary' :
+                        tournament.status === 'cancelled' ? 'destructive' : 'outline'
                       }
                       className={
-                        tournament.status === 'ongoing' ? 'bg-green-500 text-white' : ''
+                        tournament.status === 'ongoing' ? 'bg-green-500 text-white' :
+                        tournament.status === 'cancelled' ? 'bg-red-500/10 text-red-500' : ''
                       }
                     >
                       {tournament.status === 'ongoing' && <Play className="h-3 w-3 mr-1" />}
+                      {tournament.status === 'cancelled' && <Ban className="h-3 w-3 mr-1" />}
                       {tournament.status}
                     </Badge>
                   </div>
@@ -854,17 +930,17 @@ const LocalTournamentPage = () => {
                       ₹{tournament.organizer_earnings} commission
                     </span>
                   </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Badge variant="outline" className="font-mono">
-                      {tournament.private_code}
-                    </Badge>
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); copyToClipboard(tournament.private_code); }}>
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleShare(tournament); }}>
-                      <Share2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  
+                  {/* View Details Button */}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-3"
+                    onClick={() => openManageTournament(tournament)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Tournament Details
+                  </Button>
                 </CardContent>
               </Card>
             ))
@@ -894,7 +970,7 @@ const LocalTournamentPage = () => {
                 </Card>
               )}
 
-              {/* QR Code & Link */}
+              {/* QR Code & Sharing */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -913,6 +989,14 @@ const LocalTournamentPage = () => {
                       Code: {selectedTournament.private_code}
                     </Badge>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full bg-green-500/10 hover:bg-green-500/20 text-green-600 border-green-500/30"
+                    onClick={() => handleShareWhatsApp(selectedTournament)}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Share on WhatsApp
+                  </Button>
                 </CardContent>
               </Card>
 
@@ -929,17 +1013,26 @@ const LocalTournamentPage = () => {
                   <CardContent className="p-3 text-center">
                     <Trophy className="h-5 w-5 mx-auto text-green-600 mb-1" />
                     <p className="text-lg font-bold">₹{selectedTournament.current_prize_pool}</p>
-                    <p className="text-xs text-muted-foreground">Prize Pool</p>
+                    <p className="text-xs text-muted-foreground">Prize Pool (80%)</p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardContent className="p-3 text-center">
                     <Wallet className="h-5 w-5 mx-auto text-orange-500 mb-1" />
                     <p className="text-lg font-bold">₹{selectedTournament.organizer_earnings}</p>
-                    <p className="text-xs text-muted-foreground">Your Earning</p>
+                    <p className="text-xs text-muted-foreground">Your 10%</p>
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Prize Distribution Info */}
+              <Card>
+                <CardContent className="p-3">
+                  <p className="text-xs text-muted-foreground text-center">
+                    💰 <strong>Commission Split:</strong> 10% to you (Wallet) + 10% Platform = 80% Prize Pool
+                  </p>
+                </CardContent>
+              </Card>
 
               {/* Recalculate Button */}
               {selectedTournament.status === 'upcoming' && (
@@ -991,27 +1084,29 @@ const LocalTournamentPage = () => {
               </Card>
 
               {/* Room Details (for upcoming/ongoing) */}
-              {selectedTournament.status !== 'completed' && (
+              {selectedTournament.status !== 'completed' && selectedTournament.status !== 'cancelled' && (
                 <Card>
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Room Details *</CardTitle>
+                    <CardTitle className="text-sm">Room Details</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div>
-                      <Label>Room ID *</Label>
-                      <Input
-                        value={roomDetails.room_id}
-                        onChange={(e) => setRoomDetails({ ...roomDetails, room_id: e.target.value })}
-                        placeholder="Enter room ID"
-                      />
-                    </div>
-                    <div>
-                      <Label>Room Password *</Label>
-                      <Input
-                        value={roomDetails.room_password}
-                        onChange={(e) => setRoomDetails({ ...roomDetails, room_password: e.target.value })}
-                        placeholder="Enter room password"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Room ID</Label>
+                        <Input
+                          value={roomDetails.room_id}
+                          onChange={(e) => setRoomDetails({ ...roomDetails, room_id: e.target.value })}
+                          placeholder="Enter room ID"
+                        />
+                      </div>
+                      <div>
+                        <Label>Room Password</Label>
+                        <Input
+                          value={roomDetails.room_password}
+                          onChange={(e) => setRoomDetails({ ...roomDetails, room_password: e.target.value })}
+                          placeholder="Enter password"
+                        />
+                      </div>
                     </div>
                     <p className="text-xs text-muted-foreground">Required before starting the tournament</p>
                   </CardContent>
@@ -1019,23 +1114,42 @@ const LocalTournamentPage = () => {
               )}
 
               {/* Controls */}
-              <div className="flex gap-2">
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  {selectedTournament.status === 'upcoming' && (
+                    <Button onClick={startTournament} className="flex-1 bg-green-600 hover:bg-green-700">
+                      <Play className="h-4 w-4 mr-2" />
+                      Start Tournament
+                    </Button>
+                  )}
+                  {selectedTournament.status === 'ongoing' && (
+                    <Button onClick={endTournament} className="flex-1" variant="destructive">
+                      <Square className="h-4 w-4 mr-2" />
+                      End Tournament
+                    </Button>
+                  )}
+                  {selectedTournament.status === 'completed' && !selectedTournament.winner_user_id && (
+                    <Button onClick={() => { setManageTournamentOpen(false); setWinnerDialogOpen(true); }} className="flex-1">
+                      <Award className="h-4 w-4 mr-2" />
+                      Declare Winner
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Cancel Tournament Button */}
                 {selectedTournament.status === 'upcoming' && (
-                  <Button onClick={startTournament} className="flex-1 bg-green-600 hover:bg-green-700">
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Tournament
-                  </Button>
-                )}
-                {selectedTournament.status === 'ongoing' && (
-                  <Button onClick={endTournament} className="flex-1" variant="destructive">
-                    <Square className="h-4 w-4 mr-2" />
-                    End Tournament
-                  </Button>
-                )}
-                {selectedTournament.status === 'completed' && !selectedTournament.winner_user_id && (
-                  <Button onClick={() => { setManageTournamentOpen(false); setWinnerDialogOpen(true); }} className="flex-1">
-                    <Award className="h-4 w-4 mr-2" />
-                    Declare Winner
+                  <Button 
+                    variant="outline" 
+                    className="w-full text-red-500 border-red-500/30 hover:bg-red-500/10"
+                    onClick={handleCancelTournament}
+                    disabled={cancelling}
+                  >
+                    {cancelling ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Ban className="h-4 w-4 mr-2" />
+                    )}
+                    Cancel Tournament (Refund All Players)
                   </Button>
                 )}
               </div>
@@ -1046,7 +1160,7 @@ const LocalTournamentPage = () => {
 
       {/* Winner Declaration Dialog */}
       <Dialog open={winnerDialogOpen} onOpenChange={setWinnerDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Award className="h-5 w-5 text-primary" />
@@ -1055,44 +1169,106 @@ const LocalTournamentPage = () => {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Editable Prize Distribution */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  Prize Distribution (Editable)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Adjust prize amounts for each position before declaring winners.
+                </p>
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((pos) => (
+                    <div key={pos} className="flex items-center gap-2">
+                      <Badge variant="outline" className="w-12 justify-center">#{pos}</Badge>
+                      <Input
+                        type="number"
+                        placeholder="Amount"
+                        value={editablePrizeDistribution[pos.toString()] || ''}
+                        onChange={(e) => {
+                          const newDist = { ...editablePrizeDistribution };
+                          if (e.target.value) {
+                            newDist[pos.toString()] = parseFloat(e.target.value);
+                          } else {
+                            delete newDist[pos.toString()];
+                          }
+                          setEditablePrizeDistribution(newDist);
+                        }}
+                        className="flex-1"
+                      />
+                      <span className="text-xs text-muted-foreground">₹</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between text-sm pt-2 border-t">
+                  <span className="text-muted-foreground">Total Distribution:</span>
+                  <span className="font-bold">
+                    ₹{Object.values(editablePrizeDistribution).reduce((a, b) => a + (b || 0), 0)}
+                  </span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={handleUpdatePrizeDistribution}
+                >
+                  Save Prize Distribution
+                </Button>
+              </CardContent>
+            </Card>
+
             <p className="text-sm text-muted-foreground">
-              Select winners for each position. Prize money will be credited instantly.
+              Select winners for each position. Prize money will be credited to their wallets.
             </p>
 
-            {participants.map((p) => (
-              <div key={p.user_id} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span>{p.full_name || p.username}</span>
+            {participants.map((p) => {
+              const assignedPos = winnerPositions[p.user_id];
+              const prizeAmount = assignedPos ? (editablePrizeDistribution[assignedPos.toString()] || 0) : 0;
+              
+              return (
+                <div key={p.user_id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1">
+                    <User className="h-4 w-4" />
+                    <span className="truncate">{p.full_name || p.username}</span>
+                    {prizeAmount > 0 && (
+                      <Badge variant="secondary" className="text-xs">₹{prizeAmount}</Badge>
+                    )}
+                  </div>
+                  <Select
+                    value={winnerPositions[p.user_id]?.toString() || ''}
+                    onValueChange={(value) => {
+                      if (value) {
+                        setWinnerPositions({ ...winnerPositions, [p.user_id]: parseInt(value) });
+                      } else {
+                        const updated = { ...winnerPositions };
+                        delete updated[p.user_id];
+                        setWinnerPositions(updated);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue placeholder="Position" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {[1, 2, 3, 4, 5].map((pos) => (
+                        <SelectItem key={pos} value={pos.toString()}>
+                          #{pos} - ₹{editablePrizeDistribution[pos.toString()] || 0}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select
-                  value={winnerPositions[p.user_id]?.toString() || ''}
-                  onValueChange={(value) => {
-                    if (value) {
-                      setWinnerPositions({ ...winnerPositions, [p.user_id]: parseInt(value) });
-                    } else {
-                      const updated = { ...winnerPositions };
-                      delete updated[p.user_id];
-                      setWinnerPositions(updated);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-24">
-                    <SelectValue placeholder="Position" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    <SelectItem value="1">#1</SelectItem>
-                    <SelectItem value="2">#2</SelectItem>
-                    <SelectItem value="3">#3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+              );
+            })}
 
             <Button onClick={declareWinner} className="w-full">
               <Trophy className="h-4 w-4 mr-2" />
-              Confirm Winners
+              Confirm Winners & Distribute Prizes
             </Button>
 
             {declaredWinners.length > 0 && (
