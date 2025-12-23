@@ -33,6 +33,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminDocumentation from "./pages/admin/AdminDocumentation";
 import AdminWalletAudit from "./pages/admin/AdminWalletAudit";
+import AdminBanManagement from "./pages/admin/AdminBanManagement";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerHub from "./pages/organizer/OrganizerHub";
 import OrganizerWallet from "./pages/organizer/OrganizerWallet";
@@ -206,6 +207,7 @@ const AppRoutes = () => {
       <Route path="/admin/support" element={<ProtectedRoute><AdminSupport /></ProtectedRoute>} />
       <Route path="/admin/docs" element={<ProtectedRoute><AdminDocumentation /></ProtectedRoute>} />
       <Route path="/admin/wallet-audit" element={<ProtectedRoute><AdminWalletAudit /></ProtectedRoute>} />
+      <Route path="/admin/bans" element={<ProtectedRoute><AdminBanManagement /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerHub /></ProtectedRoute>} />
