@@ -366,6 +366,56 @@ export type Database = {
         }
         Relationships: []
       }
+      organizer_earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          credited_at: string
+          currency: string
+          id: string
+          settlement_date: string
+          status: string
+          tournament_id: string | null
+          updated_at: string
+          user_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          credited_at?: string
+          currency?: string
+          id?: string
+          settlement_date?: string
+          status?: string
+          tournament_id?: string | null
+          updated_at?: string
+          user_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credited_at?: string
+          currency?: string
+          id?: string
+          settlement_date?: string
+          status?: string
+          tournament_id?: string | null
+          updated_at?: string
+          user_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizer_earnings_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -648,6 +698,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "tournament_registrations_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_reports: {
+        Row: {
+          admin_notes: string | null
+          attachments: Json | null
+          created_at: string
+          description: string
+          id: string
+          report_type: string
+          reported_player_id: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          attachments?: Json | null
+          created_at?: string
+          description: string
+          id?: string
+          report_type?: string
+          reported_player_id: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          attachments?: Json | null
+          created_at?: string
+          description?: string
+          id?: string
+          report_type?: string
+          reported_player_id?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_reports_tournament_id_fkey"
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"

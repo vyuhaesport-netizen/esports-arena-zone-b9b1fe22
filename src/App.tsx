@@ -34,6 +34,10 @@ import AdminSupport from "./pages/admin/AdminSupport";
 import AdminDocumentation from "./pages/admin/AdminDocumentation";
 import AdminWalletAudit from "./pages/admin/AdminWalletAudit";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
+import OrganizerHub from "./pages/organizer/OrganizerHub";
+import OrganizerWallet from "./pages/organizer/OrganizerWallet";
+import OrganizerReports from "./pages/organizer/OrganizerReports";
+import OrganizerContact from "./pages/organizer/OrganizerContact";
 import CreatorDashboard from "./pages/creator/CreatorDashboard";
 import ChangePassword from "./pages/ChangePassword";
 import CompleteProfile from "./pages/CompleteProfile";
@@ -200,7 +204,11 @@ const AppRoutes = () => {
       <Route path="/admin/wallet-audit" element={<ProtectedRoute><AdminWalletAudit /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
-      <Route path="/organizer" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
+      <Route path="/organizer" element={<ProtectedRoute><OrganizerHub /></ProtectedRoute>} />
+      <Route path="/organizer/dashboard" element={<ProtectedRoute><OrganizerDashboard /></ProtectedRoute>} />
+      <Route path="/organizer/wallet" element={<ProtectedRoute><OrganizerWallet /></ProtectedRoute>} />
+      <Route path="/organizer/reports" element={<ProtectedRoute><OrganizerReports /></ProtectedRoute>} />
+      <Route path="/organizer/contact" element={<ProtectedRoute><OrganizerContact /></ProtectedRoute>} />
       
       {/* Creator Routes */}
       <Route path="/creator-dashboard" element={<ProtectedRoute><CreatorDashboard /></ProtectedRoute>} />
