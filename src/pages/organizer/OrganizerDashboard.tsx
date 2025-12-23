@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
+import CountdownTimer from '@/components/CountdownTimer';
 
 interface Tournament {
   id: string;
@@ -376,20 +377,27 @@ const OrganizerDashboard = () => {
     }
   };
 
-  const canDeclareWinner = (tournament: Tournament): { canDeclare: boolean; minutesRemaining: number } => {
+  const canDeclareWinner = (tournament: Tournament): { canDeclare: boolean; minutesRemaining: number; targetDate: Date | null } => {
+    // Can only declare winner for completed tournaments
+    if (tournament.status !== 'completed' || tournament.winner_user_id) {
+      return { canDeclare: false, minutesRemaining: 0, targetDate: null };
+    }
+    
     if (!tournament.end_date) {
       // If no end_date, use start_date + 2 hours as default end
       const endTime = new Date(tournament.start_date);
       endTime.setHours(endTime.getHours() + 2);
+      const targetDate = new Date(endTime.getTime() + 30 * 60 * 1000);
       const now = new Date();
       const minutesSinceEnd = differenceInMinutes(now, endTime);
-      return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd) };
+      return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd), targetDate };
     }
     
     const endTime = new Date(tournament.end_date);
+    const targetDate = new Date(endTime.getTime() + 30 * 60 * 1000);
     const now = new Date();
     const minutesSinceEnd = differenceInMinutes(now, endTime);
-    return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd) };
+    return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd), targetDate };
   };
 
   const openDeclareWinner = async (tournament: Tournament) => {
@@ -747,6 +755,17 @@ const OrganizerDashboard = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         {format(new Date(tournament.start_date), 'MMM dd, hh:mm a')}
                       </p>
+                      {/* Countdown to tournament start */}
+                      {tournament.status === 'upcoming' && new Date(tournament.start_date) > new Date() && (
+                        <div className="mt-2 p-1.5 bg-blue-500/10 rounded">
+                          <CountdownTimer 
+                            targetDate={new Date(tournament.start_date)}
+                            label="Starts in:"
+                            className="text-blue-600 text-[10px]"
+                            compact
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -787,15 +806,32 @@ const OrganizerDashboard = () => {
                     )}
                     
                     {/* Winner Declaration - Only for completed tournaments */}
-                    {tournament.status === 'completed' && !tournament.winner_user_id && (
-                      <Button variant="gaming" size="sm" onClick={() => openDeclareWinner(tournament)}>
-                        <Award className="h-3 w-3 mr-1" /> 
-                        {(() => {
-                          const { canDeclare, minutesRemaining } = canDeclareWinner(tournament);
-                          return canDeclare ? 'Winner' : `Wait ${minutesRemaining}m`;
-                        })()}
-                      </Button>
-                    )}
+                    {tournament.status === 'completed' && !tournament.winner_user_id && (() => {
+                      const { canDeclare, minutesRemaining, targetDate } = canDeclareWinner(tournament);
+                      return (
+                        <div className="flex flex-col gap-1">
+                          {!canDeclare && targetDate && (
+                            <div className="p-1.5 bg-amber-500/10 rounded text-center">
+                              <CountdownTimer 
+                                targetDate={targetDate}
+                                label="Winner in:"
+                                className="text-amber-600 justify-center text-[10px]"
+                                compact
+                              />
+                            </div>
+                          )}
+                          <Button 
+                            variant="gaming" 
+                            size="sm" 
+                            onClick={() => openDeclareWinner(tournament)}
+                            disabled={!canDeclare}
+                          >
+                            <Award className="h-3 w-3 mr-1" /> 
+                            {canDeclare ? 'Winner' : `Wait ${minutesRemaining}m`}
+                          </Button>
+                        </div>
+                      );
+                    })()}
                     
                     {tournament.status === 'upcoming' && (
                       <>

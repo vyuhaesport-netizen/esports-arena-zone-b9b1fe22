@@ -139,6 +139,22 @@ const AdminDocumentation = () => {
       addedDate: '2024-12-23'
     },
     {
+      name: 'Countdown Timers',
+      description: 'Live countdown timers showing time until tournament start and winner declaration',
+      location: 'src/components/CountdownTimer.tsx, src/pages/MyMatch.tsx, src/pages/organizer/OrganizerDashboard.tsx, src/pages/creator/CreatorDashboard.tsx',
+      logic: [
+        'Reusable CountdownTimer component with real-time updates',
+        'My Match page shows countdown to tournament start for upcoming matches',
+        'Organizer/Creator dashboards show countdown to when tournament can be started',
+        'After tournament ends, shows countdown to winner declaration (30 minutes)',
+        'Compact mode available for smaller UI elements',
+        'Auto-hides when countdown reaches zero'
+      ],
+      database: 'N/A - Frontend component',
+      security: 'N/A',
+      addedDate: '2024-12-23'
+    },
+    {
       name: 'Profile Auto-Creation on Deposit',
       description: 'Admin deposit approval now auto-creates missing profiles',
       location: 'Database RPC (admin_process_deposit)',

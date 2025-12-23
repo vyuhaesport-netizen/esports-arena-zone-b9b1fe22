@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { format, differenceInMinutes, differenceInMilliseconds } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
+import CountdownTimer from '@/components/CountdownTimer';
 
 interface Tournament {
   id: string;
@@ -391,21 +392,22 @@ const CreatorDashboard = () => {
   };
 
   // Winner declaration: only 30 minutes AFTER tournament is ENDED (status = completed)
-  const canDeclareWinner = (tournament: Tournament): { canDeclare: boolean; minutesRemaining: number } => {
+  const canDeclareWinner = (tournament: Tournament): { canDeclare: boolean; minutesRemaining: number; targetDate: Date | null } => {
     // Can only declare winner after tournament status is 'completed' and winner not already declared
     if (tournament.status !== 'completed' || tournament.winner_user_id) {
-      return { canDeclare: false, minutesRemaining: 0 };
+      return { canDeclare: false, minutesRemaining: 0, targetDate: null };
     }
     
     // Need to check when tournament was ended - we'll use end_date for this
     if (!tournament.end_date) {
-      return { canDeclare: false, minutesRemaining: 30 };
+      return { canDeclare: false, minutesRemaining: 30, targetDate: null };
     }
     
     const endTime = new Date(tournament.end_date);
+    const targetDate = new Date(endTime.getTime() + 30 * 60 * 1000); // 30 minutes after end
     const now = new Date();
     const minutesSinceEnd = differenceInMinutes(now, endTime);
-    return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd) };
+    return { canDeclare: minutesSinceEnd >= 30, minutesRemaining: Math.max(0, 30 - minutesSinceEnd), targetDate };
   };
 
   // Handle starting tournament
@@ -757,7 +759,7 @@ const CreatorDashboard = () => {
             </Card>
           ) : (
             tournaments.map((t) => {
-              const { canDeclare, minutesRemaining } = canDeclareWinner(t);
+              const { canDeclare, minutesRemaining, targetDate } = canDeclareWinner(t);
               
               return (
                 <Card key={t.id} className="overflow-hidden">
@@ -842,22 +844,34 @@ const CreatorDashboard = () => {
 
                       {/* Winner Declaration - Only after tournament is ended and 30 min passed */}
                       {t.status === 'completed' && !t.winner_user_id && (
-                        <Button 
-                          className="w-full mt-2 bg-gradient-to-r from-amber-500 to-orange-500"
-                          size="sm"
-                          onClick={() => openDeclareWinner(t)}
-                          disabled={!canDeclare}
-                        >
-                          {canDeclare ? (
-                            <>
-                              <Award className="h-4 w-4 mr-2" /> Declare Winners
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="h-4 w-4 mr-2" /> Wait {minutesRemaining}m
-                            </>
+                        <div className="mt-2">
+                          {!canDeclare && targetDate && (
+                            <div className="mb-2 p-2 bg-amber-500/10 rounded-lg text-center">
+                              <p className="text-xs text-amber-600 mb-1">Winner declaration available in:</p>
+                              <CountdownTimer 
+                                targetDate={targetDate}
+                                className="text-amber-600 justify-center font-semibold"
+                                showIcon={false}
+                              />
+                            </div>
                           )}
-                        </Button>
+                          <Button 
+                            className="w-full bg-gradient-to-r from-amber-500 to-orange-500"
+                            size="sm"
+                            onClick={() => openDeclareWinner(t)}
+                            disabled={!canDeclare}
+                          >
+                            {canDeclare ? (
+                              <>
+                                <Award className="h-4 w-4 mr-2" /> Declare Winners
+                              </>
+                            ) : (
+                              <>
+                                <Clock className="h-4 w-4 mr-2" /> Wait {minutesRemaining}m
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       )}
 
                       {t.winner_declared_at && (

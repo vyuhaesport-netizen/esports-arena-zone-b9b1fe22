@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import CountdownTimer from '@/components/CountdownTimer';
 import { 
   Trophy, 
   Calendar,
@@ -19,7 +20,8 @@ import {
   Eye,
   ChevronDown,
   Copy,
-  Check
+  Check,
+  Clock
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -228,6 +230,16 @@ const MyMatch = () => {
               <Calendar className="h-3 w-3" />
               {format(new Date(registration.tournaments.start_date), 'MMM dd, hh:mm a')}
             </div>
+            {/* Countdown Timer for upcoming tournaments */}
+            {registration.tournaments.status === 'upcoming' && (
+              <div className="mt-2 p-2 bg-primary/10 rounded-lg">
+                <CountdownTimer 
+                  targetDate={new Date(registration.tournaments.start_date)}
+                  label="Starts in:"
+                  className="text-primary justify-center"
+                />
+              </div>
+            )}
             {registration.tournaments.prize_pool && (
               <div className="flex items-center gap-1 mt-1 text-xs">
                 <Trophy className="h-3 w-3 text-primary" />
