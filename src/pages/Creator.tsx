@@ -448,17 +448,28 @@ const Creator = () => {
           <div className="p-4 pb-8">
             {prizeDrawer.tournament?.prize_distribution ? (
               <div className="space-y-2">
-                {Object.entries(prizeDrawer.tournament.prize_distribution).map(([rank, amount]) => (
+                {Object.entries(prizeDrawer.tournament.prize_distribution)
+                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                  .map(([rank, amount]) => (
                   <div key={rank} className="flex justify-between items-center bg-muted/50 rounded-lg p-3">
-                    <span className="font-medium">Rank {rank}</span>
+                    <span className="font-medium flex items-center gap-2">
+                      {rank === '1' ? '🥇' : rank === '2' ? '🥈' : rank === '3' ? '🥉' : '🏅'} Rank {rank}
+                    </span>
                     <span className="text-purple-500 font-semibold">₹{String(amount)}</span>
                   </div>
                 ))}
+                <p className="text-xs text-muted-foreground text-center mt-3 bg-amber-500/10 p-2 rounded">
+                  ⚠️ Note: Prize amounts may be adjusted if maximum players don't join. 
+                  Final amounts are recalculated 2 minutes before tournament start.
+                </p>
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Trophy className="h-10 w-10 mx-auto mb-2 opacity-50" />
                 <p>Prize distribution not set</p>
+                <p className="text-xs mt-2 bg-amber-500/10 p-2 rounded">
+                  ⚠️ Note: Prize amounts may be adjusted based on actual participants.
+                </p>
               </div>
             )}
           </div>

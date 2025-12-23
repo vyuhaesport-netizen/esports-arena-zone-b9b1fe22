@@ -1285,7 +1285,7 @@ const CreatorDashboard = () => {
                             }
                           }}
                         >
-                          <SelectTrigger className="w-24">
+                          <SelectTrigger className="w-28">
                             <SelectValue placeholder="Rank" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1293,8 +1293,13 @@ const CreatorDashboard = () => {
                             <SelectItem value="1">🥇 1st</SelectItem>
                             <SelectItem value="2">🥈 2nd</SelectItem>
                             <SelectItem value="3">🥉 3rd</SelectItem>
-                            <SelectItem value="4">4th</SelectItem>
-                            <SelectItem value="5">5th</SelectItem>
+                            <SelectItem value="4">🏅 4th</SelectItem>
+                            <SelectItem value="5">🏅 5th</SelectItem>
+                            <SelectItem value="6">🏅 6th</SelectItem>
+                            <SelectItem value="7">🏅 7th</SelectItem>
+                            <SelectItem value="8">🏅 8th</SelectItem>
+                            <SelectItem value="9">🏅 9th</SelectItem>
+                            <SelectItem value="10">🏅 10th</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1344,7 +1349,7 @@ const CreatorDashboard = () => {
                         }
                       }}
                     >
-                      <SelectTrigger className="w-24">
+                      <SelectTrigger className="w-28">
                         <SelectValue placeholder="Rank" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1352,8 +1357,13 @@ const CreatorDashboard = () => {
                         <SelectItem value="1">🥇 1st</SelectItem>
                         <SelectItem value="2">🥈 2nd</SelectItem>
                         <SelectItem value="3">🥉 3rd</SelectItem>
-                        <SelectItem value="4">4th</SelectItem>
-                        <SelectItem value="5">5th</SelectItem>
+                        <SelectItem value="4">🏅 4th</SelectItem>
+                        <SelectItem value="5">🏅 5th</SelectItem>
+                        <SelectItem value="6">🏅 6th</SelectItem>
+                        <SelectItem value="7">🏅 7th</SelectItem>
+                        <SelectItem value="8">🏅 8th</SelectItem>
+                        <SelectItem value="9">🏅 9th</SelectItem>
+                        <SelectItem value="10">🏅 10th</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

@@ -570,12 +570,20 @@ const HomePage = () => {
           <div className="p-4 pb-8">
             {prizeDrawer.tournament?.prize_distribution ? (
               <div className="space-y-2">
-                {Object.entries(prizeDrawer.tournament.prize_distribution).map(([rank, amount]) => (
+                {Object.entries(prizeDrawer.tournament.prize_distribution)
+                  .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                  .map(([rank, amount]) => (
                   <div key={rank} className="flex justify-between items-center bg-muted/50 rounded-lg p-3">
-                    <span className="font-medium">Rank {rank}</span>
+                    <span className="font-medium flex items-center gap-2">
+                      {rank === '1' ? '🥇' : rank === '2' ? '🥈' : rank === '3' ? '🥉' : '🏅'} Rank {rank}
+                    </span>
                     <span className="text-primary font-semibold">₹{String(amount)}</span>
                   </div>
                 ))}
+                <p className="text-xs text-muted-foreground text-center mt-3 bg-amber-500/10 p-2 rounded">
+                  ⚠️ Note: Prize amounts may be adjusted if maximum players don't join. 
+                  Final amounts are recalculated 2 minutes before tournament start.
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -599,8 +607,10 @@ const HomePage = () => {
                     <span className="text-orange-600 font-semibold">20%</span>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground text-center mt-3">
-                  *Default distribution. Organizer may set custom prizes.</p>
+                <p className="text-xs text-muted-foreground text-center mt-3 bg-amber-500/10 p-2 rounded">
+                  ⚠️ Note: Prize amounts may be adjusted if maximum players don't join. 
+                  Final amounts are recalculated 2 minutes before tournament start.
+                </p>
               </div>
             )}
           </div>
