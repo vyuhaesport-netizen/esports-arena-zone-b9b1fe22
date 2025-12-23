@@ -10,6 +10,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
+const getPasswordStrength = (password: string): { level: 'weak' | 'medium' | 'strong'; score: number } => {
+  let score = 0;
+  if (password.length >= 6) score++;
+  if (password.length >= 8) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+  
+  if (score <= 2) return { level: 'weak', score };
+  if (score <= 3) return { level: 'medium', score };
+  return { level: 'strong', score };
+};
+
 const ChangePassword = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -143,6 +156,35 @@ const ChangePassword = () => {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {newPassword && (
+                <div className="space-y-1">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full transition-colors ${
+                          i <= getPasswordStrength(newPassword).score
+                            ? getPasswordStrength(newPassword).level === 'weak'
+                              ? 'bg-red-500'
+                              : getPasswordStrength(newPassword).level === 'medium'
+                              ? 'bg-yellow-500'
+                              : 'bg-green-500'
+                            : 'bg-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className={`text-xs ${
+                    getPasswordStrength(newPassword).level === 'weak'
+                      ? 'text-red-500'
+                      : getPasswordStrength(newPassword).level === 'medium'
+                      ? 'text-yellow-600'
+                      : 'text-green-600'
+                  }`}>
+                    Password strength: {getPasswordStrength(newPassword).level}
+                  </p>
+                </div>
+              )}
               {errors.newPassword && <p className="text-red-500 text-xs">{errors.newPassword}</p>}
             </div>
 
