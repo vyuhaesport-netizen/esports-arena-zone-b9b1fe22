@@ -1382,6 +1382,10 @@ export type Database = {
         Returns: Json
       }
       process_dhana_maturation: { Args: never; Returns: Json }
+      process_local_tournament_exit: {
+        Args: { p_tournament_id: string }
+        Returns: Json
+      }
       process_team_tournament_join:
         | {
             Args: {
