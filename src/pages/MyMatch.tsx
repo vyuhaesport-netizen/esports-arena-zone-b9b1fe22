@@ -21,7 +21,8 @@ import {
   ChevronDown,
   Copy,
   Check,
-  Clock
+  Clock,
+  Crown
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -46,6 +47,8 @@ interface Registration {
     room_id: string | null;
     room_password: string | null;
     joined_users: string[] | null;
+    winner_user_id: string | null;
+    prize_distribution: { position: number; amount: number }[] | null;
   };
 }
 
@@ -90,7 +93,9 @@ const MyMatch = () => {
             entry_fee,
             room_id,
             room_password,
-            joined_users
+            joined_users,
+            winner_user_id,
+            prize_distribution
           )
         `)
         .eq('user_id', user.id)
@@ -186,6 +191,9 @@ const MyMatch = () => {
     const [loadingPlayers, setLoadingPlayers] = useState(false);
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
+    // Check if current user is the winner
+    const isWinner = user && registration.tournaments.winner_user_id === user.id;
+
     const handleViewPlayers = async () => {
       setPlayersDialogOpen(true);
       if (players.length === 0 && registration.tournaments.joined_users?.length) {
@@ -248,6 +256,13 @@ const MyMatch = () => {
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
+            {/* Winner Badge - Show prominently if user won */}
+            {isWinner && registration.tournaments.status === 'completed' && (
+              <Badge className="bg-red-500/20 text-red-600 border border-red-500/30 text-[10px] font-bold animate-pulse">
+                <Crown className="h-3 w-3 mr-1" />
+                Winner
+              </Badge>
+            )}
             <Badge 
               className={`text-[10px] ${
                 registration.tournaments.status === 'upcoming' 
