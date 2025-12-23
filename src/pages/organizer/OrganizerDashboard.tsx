@@ -1136,21 +1136,24 @@ const OrganizerDashboard = () => {
                                 }
                               }}
                             >
-                              <SelectTrigger className="w-28">
+                              <SelectTrigger className="w-32">
                                 <SelectValue placeholder="Rank" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">None</SelectItem>
-                                <SelectItem value="1">🥇 1st</SelectItem>
-                                <SelectItem value="2">🥈 2nd</SelectItem>
-                                <SelectItem value="3">🥉 3rd</SelectItem>
-                                <SelectItem value="4">🏅 4th</SelectItem>
-                                <SelectItem value="5">🏅 5th</SelectItem>
-                                <SelectItem value="6">🏅 6th</SelectItem>
-                                <SelectItem value="7">🏅 7th</SelectItem>
-                                <SelectItem value="8">🏅 8th</SelectItem>
-                                <SelectItem value="9">🏅 9th</SelectItem>
-                                <SelectItem value="10">🏅 10th</SelectItem>
+                                {(() => {
+                                  const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
+                                  return Array.from({ length: 10 }, (_, i) => i + 1).map(pos => {
+                                    const amount = dist?.[pos.toString()] || 0;
+                                    const emoji = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : '🏅';
+                                    const suffix = pos === 1 ? 'st' : pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th';
+                                    return (
+                                      <SelectItem key={pos} value={pos.toString()}>
+                                        {emoji} {pos}{suffix} {amount > 0 && `(₹${amount})`}
+                                      </SelectItem>
+                                    );
+                                  });
+                                })()}
                               </SelectContent>
                             </Select>
                           </div>
@@ -1179,83 +1182,127 @@ const OrganizerDashboard = () => {
                 // Solo player selection
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-2">
-                    {joinedPlayers.map((player) => (
-                      <div key={player.user_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={player.avatar_url || undefined} />
-                            <AvatarFallback>{(player.username || player.email)?.[0]?.toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium text-sm">{player.username || player.email.split('@')[0]}</p>
-                            {player.in_game_name && (
-                              <p className="text-xs text-muted-foreground">IGN: {player.in_game_name}</p>
-                            )}
+                    {joinedPlayers.map((player) => {
+                      const playerPosition = winnerPositions[player.user_id];
+                      const prizeDistribution = selectedTournament?.prize_distribution as Record<string, number> | null;
+                      const prizeAmount = playerPosition && prizeDistribution 
+                        ? prizeDistribution[playerPosition.toString()] || 0 
+                        : 0;
+                      
+                      return (
+                        <div key={player.user_id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={player.avatar_url || undefined} />
+                              <AvatarFallback>{(player.username || player.email)?.[0]?.toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-sm">{player.username || player.email.split('@')[0]}</p>
+                              {player.in_game_name && (
+                                <p className="text-xs text-muted-foreground">IGN: {player.in_game_name}</p>
+                              )}
+                              {playerPosition && prizeAmount > 0 && (
+                                <p className="text-xs text-green-600 font-medium">Prize: ₹{prizeAmount.toLocaleString()}</p>
+                              )}
+                            </div>
                           </div>
+                          <Select 
+                            value={winnerPositions[player.user_id]?.toString() || ''} 
+                            onValueChange={(value) => {
+                              if (value === 'none') {
+                                const newPositions = { ...winnerPositions };
+                                delete newPositions[player.user_id];
+                                setWinnerPositions(newPositions);
+                              } else {
+                                setWinnerPositions({ ...winnerPositions, [player.user_id]: parseInt(value) });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="w-28">
+                              <SelectValue placeholder="Rank" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {(() => {
+                                const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
+                                return Array.from({ length: 10 }, (_, i) => i + 1).map(pos => {
+                                  const amount = dist?.[pos.toString()] || 0;
+                                  const emoji = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : '🏅';
+                                  const suffix = pos === 1 ? 'st' : pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th';
+                                  return (
+                                    <SelectItem key={pos} value={pos.toString()}>
+                                      {emoji} {pos}{suffix} {amount > 0 && `(₹${amount})`}
+                                    </SelectItem>
+                                  );
+                                });
+                              })()}
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <Select 
-                          value={winnerPositions[player.user_id]?.toString() || ''} 
-                          onValueChange={(value) => {
-                            if (value === 'none') {
-                              const newPositions = { ...winnerPositions };
-                              delete newPositions[player.user_id];
-                              setWinnerPositions(newPositions);
-                            } else {
-                              setWinnerPositions({ ...winnerPositions, [player.user_id]: parseInt(value) });
-                            }
-                          }}
-                        >
-                          <SelectTrigger className="w-28">
-                            <SelectValue placeholder="Rank" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            <SelectItem value="1">🥇 1st</SelectItem>
-                            <SelectItem value="2">🥈 2nd</SelectItem>
-                            <SelectItem value="3">🥉 3rd</SelectItem>
-                            <SelectItem value="4">🏅 4th</SelectItem>
-                            <SelectItem value="5">🏅 5th</SelectItem>
-                            <SelectItem value="6">🏅 6th</SelectItem>
-                            <SelectItem value="7">🏅 7th</SelectItem>
-                            <SelectItem value="8">🏅 8th</SelectItem>
-                            <SelectItem value="9">🏅 9th</SelectItem>
-                            <SelectItem value="10">🏅 10th</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               )}
             </div>
 
-            {/* Show selected winners/teams */}
+            {/* Show selected winners/teams with prize amounts */}
             {selectedTournament?.tournament_mode !== 'solo' && Object.keys(teamPositions).length > 0 && (
               <div className="bg-green-500/10 rounded-lg p-3">
                 <p className="text-sm font-medium text-green-700">Selected Team Winners:</p>
-                {Object.entries(teamPositions)
-                  .sort(([, a], [, b]) => a - b)
-                  .map(([teamName, position]) => (
-                    <p key={teamName} className="text-xs text-green-600">
-                      #{position} - Team {teamName}
-                    </p>
-                  ))}
+                {(() => {
+                  const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
+                  let totalPrize = 0;
+                  const items = Object.entries(teamPositions)
+                    .sort(([, a], [, b]) => a - b)
+                    .map(([teamName, position]) => {
+                      const amount = dist?.[position.toString()] || 0;
+                      totalPrize += amount;
+                      return (
+                        <p key={teamName} className="text-xs text-green-600">
+                          #{position} - Team {teamName} → ₹{amount.toLocaleString()}
+                        </p>
+                      );
+                    });
+                  return (
+                    <>
+                      {items}
+                      <p className="text-xs text-green-700 font-semibold mt-2 pt-2 border-t border-green-500/20">
+                        Total: ₹{totalPrize.toLocaleString()}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             )}
 
             {selectedTournament?.tournament_mode === 'solo' && Object.keys(winnerPositions).length > 0 && (
               <div className="bg-green-500/10 rounded-lg p-3">
                 <p className="text-sm font-medium text-green-700">Selected Winners:</p>
-                {Object.entries(winnerPositions)
-                  .sort(([, a], [, b]) => a - b)
-                  .map(([userId, position]) => {
-                    const player = joinedPlayers.find(p => p.user_id === userId);
-                    return (
-                      <p key={userId} className="text-xs text-green-600">
-                        #{position} - {player?.username || player?.email?.split('@')[0]}
+                {(() => {
+                  const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
+                  let totalPrize = 0;
+                  const items = Object.entries(winnerPositions)
+                    .sort(([, a], [, b]) => a - b)
+                    .map(([userId, position]) => {
+                      const player = joinedPlayers.find(p => p.user_id === userId);
+                      const amount = dist?.[position.toString()] || 0;
+                      totalPrize += amount;
+                      return (
+                        <p key={userId} className="text-xs text-green-600">
+                          #{position} - {player?.username || player?.email?.split('@')[0]} → ₹{amount.toLocaleString()}
+                        </p>
+                      );
+                    });
+                  return (
+                    <>
+                      {items}
+                      <p className="text-xs text-green-700 font-semibold mt-2 pt-2 border-t border-green-500/20">
+                        Total: ₹{totalPrize.toLocaleString()}
                       </p>
-                    );
-                  })}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
