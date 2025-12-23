@@ -445,6 +445,17 @@ const CreatorDashboard = () => {
 
   // Handle starting tournament
   const handleStartTournament = async (tournament: Tournament) => {
+    // Validate room ID is set before starting
+    if (!tournament.room_id || tournament.room_id.trim() === '') {
+      toast({ 
+        title: 'Room ID Required', 
+        description: 'Please set the Room ID before starting the tournament. Players need this to join the game.', 
+        variant: 'destructive' 
+      });
+      openEditRoom(tournament);
+      return;
+    }
+
     if (!canStartTournament(tournament)) {
       toast({ 
         title: 'Cannot Start Yet', 

@@ -57,6 +57,8 @@ interface Tournament {
   tournament_type: string;
   joined_users: string[] | null;
   current_prize_pool: number | null;
+  room_id: string | null;
+  room_password: string | null;
 }
 
 interface PrizePosition {
@@ -362,6 +364,16 @@ const AdminTournaments = () => {
 
   // Handle starting tournament
   const handleStartTournament = async (tournament: Tournament) => {
+    // Validate room ID is set before starting
+    if (!tournament.room_id || tournament.room_id.trim() === '') {
+      toast({ 
+        title: 'Room ID Required', 
+        description: 'Room ID must be set before starting the tournament.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     if (!canStartTournament(tournament)) {
       toast({ 
         title: 'Cannot Start Yet', 
