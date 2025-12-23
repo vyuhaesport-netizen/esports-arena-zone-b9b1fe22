@@ -108,8 +108,7 @@ const AdminLocalTournamentsPage = () => {
         profiles: profilesMap.get(app.user_id) || { full_name: null, username: null, email: '' }
       }));
 
-      if (error) throw error;
-      setApplications((data || []) as Application[]);
+      setApplications(appsWithProfiles as Application[]);
     } catch (error) {
       console.error('Error fetching applications:', error);
     } finally {

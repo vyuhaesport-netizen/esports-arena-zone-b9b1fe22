@@ -51,6 +51,9 @@ import Terms from "./pages/Terms";
 import RefundPolicy from "./pages/RefundPolicy";
 import AboutUs from "./pages/AboutUs";
 import TournamentDetails from "./pages/TournamentDetails";
+import LocalTournament from "./pages/LocalTournament";
+import JoinLocalTournament from "./pages/JoinLocalTournament";
+import AdminLocalTournaments from "./pages/admin/AdminLocalTournaments";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -210,6 +213,7 @@ const AppRoutes = () => {
       <Route path="/admin/wallet-audit" element={<ProtectedRoute><AdminWalletAudit /></ProtectedRoute>} />
       <Route path="/admin/bans" element={<ProtectedRoute><AdminBanManagement /></ProtectedRoute>} />
       <Route path="/admin/dhana-withdrawals" element={<ProtectedRoute><AdminDhanaWithdrawals /></ProtectedRoute>} />
+      <Route path="/admin/local-tournaments" element={<ProtectedRoute><AdminLocalTournaments /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerHub /></ProtectedRoute>} />
@@ -227,6 +231,10 @@ const AppRoutes = () => {
       
       {/* Profile Completion */}
       <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
+      
+      {/* Local Tournaments */}
+      <Route path="/local-tournament" element={<ProtectedRoute><LocalTournament /></ProtectedRoute>} />
+      <Route path="/join-local" element={<JoinLocalTournament />} />
       
       {/* Public Routes */}
       <Route path="/change-password" element={<ChangePassword />} />
