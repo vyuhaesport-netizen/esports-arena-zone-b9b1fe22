@@ -81,10 +81,10 @@ const ChangePassword = () => {
 
       toast({
         title: 'Password Changed!',
-        description: 'Your password has been updated successfully. Please login.',
+        description: 'Your password has been updated successfully.',
       });
 
-      navigate('/auth');
+      navigate('/home');
     } catch (error: any) {
       console.error('Password change error:', error);
       toast({
