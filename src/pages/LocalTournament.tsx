@@ -96,6 +96,7 @@ interface LocalTournament {
   total_fees_collected: number;
   current_prize_pool: number;
   organizer_earnings: number;
+  platform_earnings: number;
   winner_user_id: string | null;
   room_id: string | null;
   room_password: string | null;
@@ -279,7 +280,8 @@ const LocalTournamentPage = () => {
     const entryFee = parseFloat(formData.entry_fee) || 0;
     const maxPlayers = parseInt(formData.max_participants) || 0;
     const totalFees = entryFee * maxPlayers;
-    const prizePool = totalFees * ((100 - commissionPercent) / 100);
+    // 10% organizer + 10% platform = 20% total commission, 80% prize pool
+    const prizePool = totalFees * 0.8;
     return prizePool.toFixed(0);
   };
 
@@ -331,7 +333,7 @@ const LocalTournamentPage = () => {
 
       if (error) throw error;
 
-      const result = data as { success: boolean; prize_pool?: number; organizer_earnings?: number };
+      const result = data as { success: boolean; prize_pool?: number; organizer_earnings?: number; platform_earnings?: number };
       
       if (result.success) {
         toast({ 
@@ -344,6 +346,7 @@ const LocalTournamentPage = () => {
           ...selectedTournament,
           current_prize_pool: result.prize_pool || 0,
           organizer_earnings: result.organizer_earnings || 0,
+          platform_earnings: result.platform_earnings || 0,
         });
       }
     } catch (error: any) {
@@ -762,12 +765,19 @@ const LocalTournamentPage = () => {
 
               {/* Auto Prize Pool */}
               {formData.entry_fee && formData.max_participants && (
-                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Estimated Prize Pool ({100 - commissionPercent}%)</span>
+                    <span className="text-sm text-muted-foreground">Estimated Prize Pool (80%)</span>
                     <span className="text-lg font-bold text-green-600">₹{calculatePrizePool()}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{commissionPercent}% goes to you as commission</p>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Your Commission (10%)</span>
+                    <span>₹{((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * 0.1).toFixed(0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Platform Fee (10%)</span>
+                    <span>₹{((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * 0.1).toFixed(0)}</span>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -1001,7 +1011,7 @@ const LocalTournamentPage = () => {
               </Card>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Card>
                   <CardContent className="p-3 text-center">
                     <Users className="h-5 w-5 mx-auto text-primary mb-1" />
@@ -1011,26 +1021,48 @@ const LocalTournamentPage = () => {
                 </Card>
                 <Card>
                   <CardContent className="p-3 text-center">
-                    <Trophy className="h-5 w-5 mx-auto text-green-600 mb-1" />
-                    <p className="text-lg font-bold">₹{selectedTournament.current_prize_pool}</p>
-                    <p className="text-xs text-muted-foreground">Prize Pool (80%)</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 text-center">
-                    <Wallet className="h-5 w-5 mx-auto text-orange-500 mb-1" />
-                    <p className="text-lg font-bold">₹{selectedTournament.organizer_earnings}</p>
-                    <p className="text-xs text-muted-foreground">Your 10%</p>
+                    <Wallet className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+                    <p className="text-lg font-bold">₹{selectedTournament.total_fees_collected || 0}</p>
+                    <p className="text-xs text-muted-foreground">Total Collected</p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Prize Distribution Info */}
-              <Card>
-                <CardContent className="p-3">
-                  <p className="text-xs text-muted-foreground text-center">
-                    💰 <strong>Commission Split:</strong> 10% to you (Wallet) + 10% Platform = 80% Prize Pool
-                  </p>
+              {/* Commission & Prize Breakdown */}
+              <Card className="bg-gradient-to-br from-green-500/5 to-orange-500/5">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-green-600" />
+                    Commission & Prize Split
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Trophy className="h-4 w-4 text-green-600" />
+                      Prize Pool (80%)
+                    </span>
+                    <span className="font-bold text-green-600">₹{selectedTournament.current_prize_pool}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-orange-500" />
+                      Your Commission (10%)
+                    </span>
+                    <span className="font-bold text-orange-500">₹{selectedTournament.organizer_earnings}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-purple-500" />
+                      Platform Fee (10%)
+                    </span>
+                    <span className="font-bold text-purple-500">₹{selectedTournament.platform_earnings || 0}</span>
+                  </div>
+                  <div className="border-t border-border pt-2 mt-2">
+                    <p className="text-xs text-muted-foreground text-center">
+                      💰 Your commission will be credited to your <strong>Wallet</strong> after declaring winners
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
 
