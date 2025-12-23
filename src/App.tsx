@@ -185,7 +185,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<AuthRoute><Auth /></AuthRoute>} />
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-      <Route path="/creator" element={<ProtectedRoute><Creator /></ProtectedRoute>} />
+      <Route path="/creator-tournaments" element={<ProtectedRoute><Creator /></ProtectedRoute>} />
       <Route path="/my-match" element={<ProtectedRoute><MyMatch /></ProtectedRoute>} />
       <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -224,7 +224,7 @@ const AppRoutes = () => {
       
       {/* Creator Routes */}
       <Route path="/creator" element={<ProtectedRoute><CreatorHub /></ProtectedRoute>} />
-      <Route path="/creator-dashboard" element={<ProtectedRoute><CreatorDashboard /></ProtectedRoute>} />
+      <Route path="/creator/dashboard" element={<ProtectedRoute><CreatorDashboard /></ProtectedRoute>} />
       <Route path="/creator/wallet" element={<ProtectedRoute><CreatorWallet /></ProtectedRoute>} />
       <Route path="/creator/reports" element={<ProtectedRoute><CreatorReports /></ProtectedRoute>} />
       <Route path="/creator/contact" element={<ProtectedRoute><CreatorContact /></ProtectedRoute>} />

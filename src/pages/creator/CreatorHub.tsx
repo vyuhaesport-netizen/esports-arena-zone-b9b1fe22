@@ -123,7 +123,7 @@ const CreatorHub = () => {
       title: 'Tournament Management',
       description: 'Create and manage your tournaments',
       icon: Trophy,
-      path: '/creator-dashboard',
+      path: '/creator/dashboard',
       color: 'from-purple-500 to-pink-600',
       stat: `${stats.totalTournaments} Tournaments`
     },
