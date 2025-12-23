@@ -85,7 +85,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('full_name, username, phone, preferred_game, in_game_name, game_uid')
+          .select('username, preferred_game, in_game_name, game_uid')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -99,10 +99,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
           return;
         }
 
+        // Only check gaming-related required fields
         const isComplete = !!(
-          profile.full_name && 
           profile.username && 
-          profile.phone && 
           profile.preferred_game && 
           profile.in_game_name && 
           profile.game_uid

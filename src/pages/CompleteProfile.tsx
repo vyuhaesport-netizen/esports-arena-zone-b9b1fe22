@@ -20,9 +20,7 @@ const CompleteProfile = () => {
   const [loading, setLoading] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [formData, setFormData] = useState({
-    full_name: '',
     username: '',
-    phone: '',
     preferred_game: '',
     in_game_name: '',
     game_uid: '',
@@ -52,9 +50,9 @@ const CompleteProfile = () => {
         .eq('user_id', user.id)
         .single();
 
-      // If profile is already complete, redirect to home
-      if (profile?.full_name && profile?.username && profile?.phone && 
-          profile?.preferred_game && profile?.in_game_name && profile?.game_uid) {
+      // If profile is already complete (has required gaming fields), redirect to home
+      if (profile?.username && profile?.preferred_game && 
+          profile?.in_game_name && profile?.game_uid) {
         navigate('/home');
         return;
       }
@@ -62,9 +60,7 @@ const CompleteProfile = () => {
       // Pre-fill existing data
       if (profile) {
         setFormData({
-          full_name: profile.full_name || '',
           username: profile.username || '',
-          phone: profile.phone || '',
           preferred_game: profile.preferred_game || '',
           in_game_name: profile.in_game_name || '',
           game_uid: profile.game_uid || '',
@@ -80,18 +76,12 @@ const CompleteProfile = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Full name is required';
-    }
     if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
     } else if (formData.username.length < 3) {
       newErrors.username = 'Username must be at least 3 characters';
-    }
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^[0-9]{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-      newErrors.phone = 'Please enter a valid 10-digit phone number';
+    } else if (!/^[a-z0-9]+$/.test(formData.username)) {
+      newErrors.username = 'Username must contain only lowercase letters and numbers';
     }
     if (!formData.preferred_game) {
       newErrors.preferred_game = 'Please select your primary game';
@@ -130,9 +120,7 @@ const CompleteProfile = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: formData.full_name.trim(),
           username: formData.username.toLowerCase().trim(),
-          phone: formData.phone.replace(/\D/g, ''),
           preferred_game: formData.preferred_game,
           in_game_name: formData.in_game_name.trim(),
           game_uid: formData.game_uid.trim(),
@@ -173,24 +161,6 @@ const CompleteProfile = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Full Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="full_name" className="text-sm font-medium text-gray-700">
-                Full Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="full_name"
-                value={formData.full_name}
-                onChange={(e) => {
-                  setFormData({ ...formData, full_name: e.target.value });
-                  setErrors({ ...errors, full_name: '' });
-                }}
-                placeholder="Enter your full name"
-                className={errors.full_name ? 'border-red-500' : ''}
-              />
-              {errors.full_name && <p className="text-red-500 text-xs">{errors.full_name}</p>}
-            </div>
-
             {/* Username */}
             <div className="space-y-1.5">
               <Label htmlFor="username" className="text-sm font-medium text-gray-700">
@@ -200,31 +170,14 @@ const CompleteProfile = () => {
                 id="username"
                 value={formData.username}
                 onChange={(e) => {
-                  setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') });
+                  setFormData({ ...formData, username: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '') });
                   setErrors({ ...errors, username: '' });
                 }}
                 placeholder="Choose a unique username"
                 className={errors.username ? 'border-red-500' : ''}
               />
               {errors.username && <p className="text-red-500 text-xs">{errors.username}</p>}
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-1.5">
-              <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
-                Phone Number <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => {
-                  setFormData({ ...formData, phone: e.target.value });
-                  setErrors({ ...errors, phone: '' });
-                }}
-                placeholder="10-digit phone number"
-                className={errors.phone ? 'border-red-500' : ''}
-              />
-              {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
+              <p className="text-xs text-gray-500">Only lowercase letters and numbers</p>
             </div>
 
             {/* Primary Game */}
