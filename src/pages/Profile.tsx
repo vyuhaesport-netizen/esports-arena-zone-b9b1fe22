@@ -37,7 +37,8 @@ import {
   Youtube,
   CreditCard,
   Users,
-  Megaphone
+  Megaphone,
+  Building2
 } from 'lucide-react';
 import {
   Dialog,
@@ -504,6 +505,21 @@ const ProfilePage = () => {
               <ChevronRight className="h-5 w-5 text-blue-500" />
             </button>
           )}
+
+          {/* Local Tournament - Available for all users */}
+          <button
+            onClick={() => navigate('/local-tournament')}
+            className="w-full bg-gradient-to-r from-green-500/5 to-emerald-500/5 hover:from-green-500/10 hover:to-emerald-500/10 p-4 flex items-center gap-3 transition-colors"
+          >
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold text-sm">Local Tournament</p>
+              <p className="text-xs text-muted-foreground">Organize in Schools & Colleges</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-green-500" />
+          </button>
 
         </div>
       </div>

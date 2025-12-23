@@ -22,6 +22,7 @@ import {
   Palette,
   Megaphone,
   FileText,
+  Building2,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -51,6 +52,7 @@ const menuItems: MenuItem[] = [
   { icon: Bell, label: 'Notifications', path: '/admin/notifications', permission: 'notifications:view' },
   { icon: Megaphone, label: 'Broadcast Channel', path: '/admin/messages', permission: 'notifications:view' },
   { icon: Settings, label: 'Settings', path: '/admin/settings', permission: 'settings:view' },
+  { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'tournaments:view' },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
 ];
