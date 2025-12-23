@@ -42,7 +42,9 @@ import {
   Lock,
   Eye,
   Medal,
-  Clock
+  Clock,
+  Play,
+  Square
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
@@ -552,6 +554,70 @@ const OrganizerDashboard = () => {
     }
   };
 
+  // Check if tournament can be started (start_date has passed)
+  const canStartTournament = (tournament: Tournament): boolean => {
+    if (tournament.status !== 'upcoming') return false;
+    const startTime = new Date(tournament.start_date);
+    const now = new Date();
+    return now >= startTime;
+  };
+
+  // Handle starting a tournament
+  const handleStartTournament = async (tournament: Tournament) => {
+    if (!confirm('Start this tournament? This will recalculate the prize pool based on actual participants.')) return;
+
+    setSaving(true);
+    try {
+      // First recalculate the prize pool
+      const { error: recalcError } = await supabase.rpc('recalculate_tournament_prizepool', {
+        p_tournament_id: tournament.id
+      });
+      if (recalcError) console.error('Recalculation error:', recalcError);
+
+      // Update status to ongoing
+      const { error } = await supabase
+        .from('tournaments')
+        .update({ status: 'ongoing' })
+        .eq('id', tournament.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Tournament Started!', description: 'Prize pool has been recalculated and tournament is now live.' });
+      fetchMyTournaments();
+    } catch (error) {
+      console.error('Error starting tournament:', error);
+      toast({ title: 'Error', description: 'Failed to start tournament.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle ending a tournament
+  const handleEndTournament = async (tournament: Tournament) => {
+    if (!confirm('End this tournament? Players will see it in the completed section.')) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('tournaments')
+        .update({ 
+          status: 'completed',
+          end_date: new Date().toISOString()
+        })
+        .eq('id', tournament.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Tournament Ended!', description: 'You can declare winners after 30 minutes.' });
+      fetchMyTournaments();
+    } catch (error) {
+      console.error('Error ending tournament:', error);
+      toast({ title: 'Error', description: 'Failed to end tournament.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -695,8 +761,33 @@ const OrganizerDashboard = () => {
                         <Lock className="h-3 w-3 mr-1" /> Room ID
                       </Button>
                     )}
+
+                    {/* Start Tournament Button - Only for upcoming tournaments when start time has passed */}
+                    {tournament.status === 'upcoming' && canStartTournament(tournament) && (
+                      <Button 
+                        variant="gaming" 
+                        size="sm" 
+                        onClick={() => handleStartTournament(tournament)}
+                        disabled={saving}
+                      >
+                        <Play className="h-3 w-3 mr-1" /> Start
+                      </Button>
+                    )}
+
+                    {/* End Tournament Button - Only for ongoing tournaments */}
+                    {tournament.status === 'ongoing' && !tournament.winner_user_id && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => handleEndTournament(tournament)}
+                        disabled={saving}
+                      >
+                        <Square className="h-3 w-3 mr-1" /> End
+                      </Button>
+                    )}
                     
-                    {(tournament.status === 'ongoing' || tournament.status === 'completed') && !tournament.winner_user_id && (
+                    {/* Winner Declaration - Only for completed tournaments */}
+                    {tournament.status === 'completed' && !tournament.winner_user_id && (
                       <Button variant="gaming" size="sm" onClick={() => openDeclareWinner(tournament)}>
                         <Award className="h-3 w-3 mr-1" /> 
                         {(() => {

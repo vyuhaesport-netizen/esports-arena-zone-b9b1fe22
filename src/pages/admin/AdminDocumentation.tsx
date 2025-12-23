@@ -61,7 +61,7 @@ const AdminDocumentation = () => {
     {
       name: 'Start Tournament Button',
       description: 'Organizers/Creators manually start tournaments when scheduled time is reached',
-      location: 'src/pages/creator/CreatorDashboard.tsx, src/pages/admin/AdminTournaments.tsx',
+      location: 'src/pages/organizer/OrganizerDashboard.tsx, src/pages/creator/CreatorDashboard.tsx, src/pages/admin/AdminTournaments.tsx',
       logic: [
         'Button appears when tournament start_date is reached (past or current)',
         'Only visible for "upcoming" status tournaments',
@@ -77,7 +77,7 @@ const AdminDocumentation = () => {
     {
       name: 'End Tournament Button',
       description: 'Organizers/Creators end tournaments to move them to completed status',
-      location: 'src/pages/creator/CreatorDashboard.tsx, src/pages/admin/AdminTournaments.tsx',
+      location: 'src/pages/organizer/OrganizerDashboard.tsx, src/pages/creator/CreatorDashboard.tsx, src/pages/admin/AdminTournaments.tsx',
       logic: [
         'Button appears for tournaments with "ongoing" status',
         'Clicking updates status from "ongoing" to "completed"',
