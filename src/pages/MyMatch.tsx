@@ -11,6 +11,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import CountdownTimer from '@/components/CountdownTimer';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Trophy, 
   Calendar,
@@ -24,8 +28,12 @@ import {
   Check,
   Clock,
   Crown,
-  Info
+  Info,
+  AlertTriangle,
+  User,
+  Send
 } from 'lucide-react';
+import { differenceInMinutes } from 'date-fns';
 import { format } from 'date-fns';
 
 interface PlayerInfo {
@@ -204,6 +212,17 @@ const MyMatch = () => {
     const [copiedField, setCopiedField] = useState<string | null>(null);
     const [hasShownConfetti, setHasShownConfetti] = useState(false);
     const [winnerCountdown, setWinnerCountdown] = useState<string | null>(null);
+    
+    // Report states
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [reportPlayers, setReportPlayers] = useState<PlayerInfo[]>([]);
+    const [loadingReportPlayers, setLoadingReportPlayers] = useState(false);
+    const [submittingReport, setSubmittingReport] = useState(false);
+    const [reportForm, setReportForm] = useState({
+      reported_player_id: '',
+      report_type: 'hack',
+      description: ''
+    });
 
     // Find user's winning position and amount from prize_distribution
     // prize_distribution can be stored in different formats:
@@ -307,6 +326,92 @@ const MyMatch = () => {
       const interval = setInterval(updateCountdown, 1000);
       return () => clearInterval(interval);
     }, [isAwaitingWinner, winnerDeclarationTime]);
+
+    // Check if player can report (within 30 minutes after tournament ends)
+    const canReport = () => {
+      if (!endDate || registration.tournaments.status !== 'completed') return false;
+      if (registration.tournaments.winner_user_id) return false; // Winner already declared
+      const now = new Date();
+      const minutesSinceEnd = differenceInMinutes(now, endDate);
+      return minutesSinceEnd >= 0 && minutesSinceEnd < 30;
+    };
+
+    const reportTimeRemaining = () => {
+      if (!endDate) return null;
+      const now = new Date();
+      const reportDeadline = new Date(endDate.getTime() + 30 * 60 * 1000);
+      const diff = reportDeadline.getTime() - now.getTime();
+      if (diff <= 0) return null;
+      const minutes = Math.floor(diff / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const handleOpenReport = async () => {
+      setReportDialogOpen(true);
+      setReportForm({ reported_player_id: '', report_type: 'hack', description: '' });
+      
+      if (reportPlayers.length === 0 && registration.tournaments.joined_users?.length) {
+        setLoadingReportPlayers(true);
+        // Filter out current user from report list
+        const otherPlayers = registration.tournaments.joined_users.filter(id => id !== user?.id);
+        const playerData = await fetchPlayers(otherPlayers);
+        setReportPlayers(playerData);
+        setLoadingReportPlayers(false);
+      }
+    };
+
+    const handleSubmitReport = async () => {
+      if (!user || !reportForm.reported_player_id || !reportForm.description.trim()) {
+        toast({
+          title: 'Missing Information',
+          description: 'Please select a player and provide a description.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      setSubmittingReport(true);
+      try {
+        const { error } = await supabase
+          .from('tournament_reports')
+          .insert({
+            tournament_id: registration.tournament_id,
+            reporter_id: user.id,
+            reported_player_id: reportForm.reported_player_id,
+            report_type: reportForm.report_type,
+            description: reportForm.description.trim(),
+          });
+
+        if (error) {
+          if (error.code === '42501') {
+            toast({
+              title: 'Report Window Closed',
+              description: 'The 30-minute report window has ended.',
+              variant: 'destructive',
+            });
+          } else {
+            throw error;
+          }
+          return;
+        }
+
+        toast({
+          title: 'Report Submitted',
+          description: 'Your report has been submitted to the organizer.',
+        });
+        setReportDialogOpen(false);
+      } catch (error) {
+        console.error('Error submitting report:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to submit report. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setSubmittingReport(false);
+      }
+    };
 
     const handleViewPlayers = async () => {
       setPlayersDialogOpen(true);
@@ -539,6 +644,24 @@ const MyMatch = () => {
           </>
         )}
 
+        {/* Report Player Button - Only show in 30-min window after tournament ends */}
+        {isCompleted && canReport() && (
+          <div className="mt-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenReport}
+              className="w-full h-9 text-xs gap-1.5 border-red-200 bg-red-50 hover:bg-red-100 dark:border-red-800 dark:bg-red-950/30 dark:hover:bg-red-950/50"
+            >
+              <AlertTriangle className="h-4 w-4 text-red-500" />
+              <span className="text-red-600 dark:text-red-400">Report a Player</span>
+              <span className="ml-auto text-red-500 text-[10px]">
+                ⏱ {reportTimeRemaining()} left
+              </span>
+            </Button>
+          </div>
+        )}
+
         {/* Players Dialog */}
         <Dialog open={playersDialogOpen} onOpenChange={setPlayersDialogOpen}>
           <DialogContent className="max-w-sm max-h-[80vh]">
@@ -568,6 +691,103 @@ const MyMatch = () => {
                   </div>
                 ))
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Report Player Dialog */}
+        <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+                Report a Player
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {/* Info Banner */}
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  ⚠️ Submit reports for hacking, cheating, or unethical practices. 
+                  False reports may result in action against your account.
+                </p>
+              </div>
+
+              {/* Select Player */}
+              <div className="space-y-2">
+                <Label className="text-sm">Select Player to Report *</Label>
+                {loadingReportPlayers ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <Select
+                    value={reportForm.reported_player_id}
+                    onValueChange={(value) => setReportForm(prev => ({ ...prev, reported_player_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a player..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {reportPlayers.map((player) => (
+                        <SelectItem key={player.user_id} value={player.user_id}>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>{player.in_game_name || 'Unknown'}</span>
+                            <span className="text-xs text-muted-foreground">({player.game_uid || 'N/A'})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {/* Report Type */}
+              <div className="space-y-2">
+                <Label className="text-sm">Report Type *</Label>
+                <Select
+                  value={reportForm.report_type}
+                  onValueChange={(value) => setReportForm(prev => ({ ...prev, report_type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hack">🎮 Hacking / Cheating</SelectItem>
+                    <SelectItem value="exploit">⚠️ Exploit Abuse</SelectItem>
+                    <SelectItem value="teaming">🤝 Illegal Teaming</SelectItem>
+                    <SelectItem value="toxic">💬 Toxic Behavior</SelectItem>
+                    <SelectItem value="other">📝 Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label className="text-sm">Description *</Label>
+                <Textarea
+                  placeholder="Describe what happened in detail..."
+                  value={reportForm.description}
+                  onChange={(e) => setReportForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                className="w-full bg-red-600 hover:bg-red-700"
+                onClick={handleSubmitReport}
+                disabled={submittingReport || !reportForm.reported_player_id || !reportForm.description.trim()}
+              >
+                {submittingReport ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                Submit Report
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
