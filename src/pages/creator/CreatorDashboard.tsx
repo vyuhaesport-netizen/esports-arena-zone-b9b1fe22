@@ -45,7 +45,9 @@ import {
   Play,
   Square,
   RefreshCw,
-  XCircle
+  XCircle,
+  FileWarning,
+  MessageCircle
 } from 'lucide-react';
 import { format, differenceInMinutes, differenceInMilliseconds } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
@@ -725,6 +727,36 @@ const CreatorDashboard = () => {
             <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-lg" />
             <span className="font-gaming font-bold text-pink-500">Creator Dashboard</span>
           </div>
+        </div>
+        {/* Quick Navigation */}
+        <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-t border-border overflow-x-auto">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/creator/wallet')}
+            className="flex items-center gap-2 whitespace-nowrap"
+          >
+            <Wallet className="h-4 w-4 text-green-500" />
+            Dhana Wallet
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/creator/reports')}
+            className="flex items-center gap-2 whitespace-nowrap"
+          >
+            <FileWarning className="h-4 w-4 text-red-500" />
+            Reports
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/creator/contact')}
+            className="flex items-center gap-2 whitespace-nowrap"
+          >
+            <MessageCircle className="h-4 w-4 text-blue-500" />
+            Contact Owner
+          </Button>
         </div>
       </header>
 

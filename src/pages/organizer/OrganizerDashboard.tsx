@@ -43,7 +43,9 @@ import {
   Clock,
   Play,
   Square,
-  XCircle
+  XCircle,
+  FileWarning,
+  MessageCircle
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
@@ -690,6 +692,36 @@ const OrganizerDashboard = () => {
             <h1 className="font-gaming font-bold">Organizer Dashboard</h1>
             <p className="text-xs text-muted-foreground">Manage your tournaments</p>
           </div>
+        </div>
+        {/* Quick Navigation */}
+        <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 border-t border-border overflow-x-auto">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/organizer/wallet')}
+            className="flex items-center gap-2 whitespace-nowrap"
+          >
+            <Wallet className="h-4 w-4 text-green-500" />
+            Dhana Wallet
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/organizer/reports')}
+            className="flex items-center gap-2 whitespace-nowrap"
+          >
+            <FileWarning className="h-4 w-4 text-red-500" />
+            Reports
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/organizer/contact')}
+            className="flex items-center gap-2 whitespace-nowrap"
+          >
+            <MessageCircle className="h-4 w-4 text-blue-500" />
+            Contact Owner
+          </Button>
         </div>
       </header>
 
