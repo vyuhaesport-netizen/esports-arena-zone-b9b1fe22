@@ -1332,6 +1332,10 @@ export type Database = {
         Args: { p_ban_reason: string; p_report_id: string }
         Returns: Json
       }
+      cancel_local_tournament: {
+        Args: { p_organizer_id: string; p_tournament_id: string }
+        Returns: Json
+      }
       check_user_ban_status: { Args: { p_user_id: string }; Returns: Json }
       create_notification: {
         Args: {
@@ -1464,6 +1468,14 @@ export type Database = {
           p_phone?: string
           p_upi_id: string
           p_user_id: string
+        }
+        Returns: Json
+      }
+      update_local_tournament_prize_distribution: {
+        Args: {
+          p_organizer_id: string
+          p_prize_distribution: Json
+          p_tournament_id: string
         }
         Returns: Json
       }
