@@ -122,6 +122,128 @@ export type Database = {
         }
         Relationships: []
       }
+      dhana_balances: {
+        Row: {
+          available_dhana: number
+          created_at: string
+          id: string
+          pending_dhana: number
+          total_earned: number
+          total_withdrawn: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available_dhana?: number
+          created_at?: string
+          id?: string
+          pending_dhana?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available_dhana?: number
+          created_at?: string
+          id?: string
+          pending_dhana?: number
+          total_earned?: number
+          total_withdrawn?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dhana_transactions: {
+        Row: {
+          amount: number
+          available_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          status: string
+          tournament_id: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          available_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          tournament_id?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          available_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          tournament_id?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dhana_transactions_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dhana_withdrawals: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          phone: string | null
+          processed_at: string | null
+          processed_by: string | null
+          rejection_reason: string | null
+          status: string
+          updated_at: string
+          upi_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          upi_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          phone?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string
+          upi_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
@@ -1010,6 +1132,10 @@ export type Database = {
         Args: { p_action: string; p_deposit_id: string; p_reason?: string }
         Returns: Json
       }
+      admin_process_dhana_withdrawal: {
+        Args: { p_action: string; p_reason?: string; p_withdrawal_id: string }
+        Returns: Json
+      }
       admin_process_withdrawal: {
         Args: { p_action: string; p_reason?: string; p_withdrawal_id: string }
         Returns: Json
@@ -1037,6 +1163,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      credit_dhana_commission: {
+        Args: {
+          p_amount: number
+          p_description?: string
+          p_tournament_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       get_user_ban_count: { Args: { p_user_id: string }; Returns: number }
       has_admin_permission: {
         Args: { _permission: string; _user_id: string }
@@ -1053,6 +1188,7 @@ export type Database = {
       is_creator: { Args: { _user_id: string }; Returns: boolean }
       is_organizer: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      process_dhana_maturation: { Args: never; Returns: Json }
       process_team_tournament_join:
         | {
             Args: {
@@ -1115,6 +1251,15 @@ export type Database = {
       }
       recalculate_tournament_prizepool: {
         Args: { p_tournament_id: string }
+        Returns: Json
+      }
+      request_dhana_withdrawal: {
+        Args: {
+          p_amount: number
+          p_phone?: string
+          p_upi_id: string
+          p_user_id: string
+        }
         Returns: Json
       }
     }
