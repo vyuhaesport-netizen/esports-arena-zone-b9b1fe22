@@ -43,7 +43,13 @@ interface SupportTicket {
   created_at: string;
   user_email?: string;
   user_name?: string;
-  user_phone?: string;
+  user_phone?: string | null;
+  user_username?: string | null;
+  user_ign?: string | null;
+  user_uid?: string | null;
+  user_wallet?: number;
+  user_game?: string | null;
+  user_joined?: string | null;
 }
 
 const AdminSupport = () => {
@@ -88,7 +94,7 @@ const AdminSupport = () => {
       const userIds = [...new Set(data?.map(t => t.user_id) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, email, full_name, phone')
+        .select('user_id, email, full_name, phone, username, in_game_name, game_uid, wallet_balance, preferred_game, created_at')
         .in('user_id', userIds);
 
       const ticketsWithUsers: SupportTicket[] = (data || []).map(ticket => {
@@ -109,6 +115,12 @@ const AdminSupport = () => {
           user_email: profile?.email || 'Unknown',
           user_name: profile?.full_name || 'Unknown',
           user_phone: profile?.phone || null,
+          user_username: profile?.username || null,
+          user_ign: profile?.in_game_name || null,
+          user_uid: profile?.game_uid || null,
+          user_wallet: profile?.wallet_balance || 0,
+          user_game: profile?.preferred_game || null,
+          user_joined: profile?.created_at || null,
         };
       });
 
@@ -289,6 +301,7 @@ const AdminSupport = () => {
                 <div>
                   <Label className="text-muted-foreground">User</Label>
                   <p className="font-medium">{selectedTicket.user_name}</p>
+                  <p className="text-xs text-muted-foreground">@{selectedTicket.user_username || 'N/A'}</p>
                   <p className="text-xs text-muted-foreground">{selectedTicket.user_email}</p>
                 </div>
                 <div>
@@ -300,14 +313,36 @@ const AdminSupport = () => {
                 </div>
               </div>
 
-              {selectedTicket.request_callback && selectedTicket.user_phone && (
-                <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-primary" />
-                    Callback Requested: {selectedTicket.user_phone}
-                  </p>
+              {/* User Details Card */}
+              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">User Details</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Phone: </span>
+                    <span className="font-medium">{selectedTicket.user_phone || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Game: </span>
+                    <span className="font-medium">{selectedTicket.user_game || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">IGN: </span>
+                    <span className="font-medium">{selectedTicket.user_ign || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">UID: </span>
+                    <span className="font-medium">{selectedTicket.user_uid || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Wallet: </span>
+                    <span className="font-medium">₹{selectedTicket.user_wallet?.toFixed(0) || 0}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Joined: </span>
+                    <span className="font-medium">{selectedTicket.user_joined ? format(new Date(selectedTicket.user_joined), 'MMM dd, yyyy') : 'N/A'}</span>
+                  </div>
                 </div>
-              )}
+              </div>
 
               <div>
                 <Label className="text-muted-foreground">Description</Label>

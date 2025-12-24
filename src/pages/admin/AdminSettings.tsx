@@ -18,7 +18,9 @@ import {
   Check,
   MessageCircle,
   Instagram,
-  FileText
+  FileText,
+  Youtube,
+  Globe
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -40,6 +42,12 @@ interface OwnerContactSettings {
   owner_contact_note: string;
 }
 
+interface SocialSettings {
+  social_discord: string;
+  social_instagram: string;
+  social_youtube: string;
+}
+
 const AdminSettings = () => {
   const [settings, setSettings] = useState<CommissionSettings>({
     organizer_commission_percent: '10',
@@ -56,10 +64,16 @@ const AdminSettings = () => {
     owner_instagram: '',
     owner_contact_note: '',
   });
+  const [socialSettings, setSocialSettings] = useState<SocialSettings>({
+    social_discord: '',
+    social_instagram: '',
+    social_youtube: '',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [savingOwnerContact, setSavingOwnerContact] = useState(false);
+  const [savingSocial, setSavingSocial] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
 
   const qrInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +124,12 @@ const AdminSettings = () => {
         owner_contact_note: '',
       };
 
+      const socialMap: SocialSettings = {
+        social_discord: '',
+        social_instagram: '',
+        social_youtube: '',
+      };
+
       data?.forEach((s) => {
         if (s.setting_key in commissionMap) {
           commissionMap[s.setting_key as keyof CommissionSettings] = s.setting_value;
@@ -120,11 +140,15 @@ const AdminSettings = () => {
         if (s.setting_key in ownerContactMap) {
           ownerContactMap[s.setting_key as keyof OwnerContactSettings] = s.setting_value;
         }
+        if (s.setting_key in socialMap) {
+          socialMap[s.setting_key as keyof SocialSettings] = s.setting_value;
+        }
       });
 
       setSettings(commissionMap);
       setPaymentSettings(paymentMap);
       setOwnerContactSettings(ownerContactMap);
+      setSocialSettings(socialMap);
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -232,6 +256,36 @@ const AdminSettings = () => {
       toast({ title: 'Error', description: 'Failed to save owner contact settings.', variant: 'destructive' });
     } finally {
       setSavingOwnerContact(false);
+    }
+  };
+
+  const handleSaveSocial = async () => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Access Denied', description: 'Only Super Admin can change settings.', variant: 'destructive' });
+      return;
+    }
+
+    setSavingSocial(true);
+
+    try {
+      for (const [key, value] of Object.entries(socialSettings)) {
+        const { error } = await supabase
+          .from('platform_settings')
+          .upsert({ 
+            setting_key: key,
+            setting_value: value,
+            updated_by: user?.id,
+          }, { onConflict: 'setting_key' });
+
+        if (error) throw error;
+      }
+
+      toast({ title: 'Social Links Saved', description: 'Social media links have been updated.' });
+    } catch (error) {
+      console.error('Error saving social settings:', error);
+      toast({ title: 'Error', description: 'Failed to save social links.', variant: 'destructive' });
+    } finally {
+      setSavingSocial(false);
     }
   };
 
@@ -584,6 +638,74 @@ const AdminSettings = () => {
               >
                 {savingOwnerContact ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                 Save Owner Contact Settings
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Social Media Links */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Globe className="h-5 w-5 text-primary" />
+              Social Media Links (Profile Page)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure social media links displayed on user profile pages.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-indigo-500" />
+                  Discord Server
+                </Label>
+                <Input
+                  placeholder="https://discord.gg/your-server"
+                  value={socialSettings.social_discord}
+                  onChange={(e) => setSocialSettings(prev => ({ ...prev, social_discord: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Instagram className="h-4 w-4 text-pink-500" />
+                  Instagram
+                </Label>
+                <Input
+                  placeholder="https://instagram.com/yourusername"
+                  value={socialSettings.social_instagram}
+                  onChange={(e) => setSocialSettings(prev => ({ ...prev, social_instagram: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Youtube className="h-4 w-4 text-red-500" />
+                  YouTube Channel
+                </Label>
+                <Input
+                  placeholder="https://youtube.com/@yourchannel"
+                  value={socialSettings.social_youtube}
+                  onChange={(e) => setSocialSettings(prev => ({ ...prev, social_youtube: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+              </div>
+            </div>
+
+            {isSuperAdmin && (
+              <Button 
+                variant="gaming" 
+                className="w-full" 
+                onClick={handleSaveSocial}
+                disabled={savingSocial}
+              >
+                {savingSocial ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Social Links
               </Button>
             )}
           </CardContent>
