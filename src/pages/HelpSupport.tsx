@@ -103,6 +103,7 @@ const HelpSupport = () => {
   const [topic, setTopic] = useState('');
   const [description, setDescription] = useState('');
   const [requestCallback, setRequestCallback] = useState(false);
+  const [callbackPhone, setCallbackPhone] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -208,6 +209,15 @@ const HelpSupport = () => {
       return;
     }
 
+    if (requestCallback && !callbackPhone.trim()) {
+      toast({
+        title: 'Phone Required',
+        description: 'Please enter your phone number for callback',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -235,7 +245,7 @@ const HelpSupport = () => {
         .insert({
           user_id: user.id,
           topic,
-          description: description.trim(),
+          description: `${description.trim()}${requestCallback && callbackPhone ? `\n\n📞 Callback Phone: ${callbackPhone}` : ''}`,
           request_callback: requestCallback,
           attachments: attachmentUrls,
         });
@@ -245,7 +255,7 @@ const HelpSupport = () => {
       toast({
         title: 'Request Submitted',
         description: requestCallback 
-          ? 'Our team will contact you soon on your registered number.'
+          ? `Our team will contact you soon on ${callbackPhone}.`
           : "We'll get back to you via email within 24 hours.",
       });
 
@@ -254,6 +264,7 @@ const HelpSupport = () => {
       setDescription('');
       setAttachments([]);
       setRequestCallback(false);
+      setCallbackPhone('');
     } catch (error) {
       console.error('Error submitting ticket:', error);
       toast({
@@ -560,8 +571,25 @@ const HelpSupport = () => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Please explain your issue in detail..."
             className="min-h-[120px] bg-card border-border resize-none"
-          />
+        />
         </div>
+
+        {/* Callback Phone */}
+        {requestCallback && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Phone className="h-4 w-4 text-green-500" />
+              Your Phone Number *
+            </Label>
+            <Input
+              value={callbackPhone}
+              onChange={(e) => setCallbackPhone(e.target.value)}
+              placeholder="+91 XXXXX XXXXX"
+              className="bg-card border-border"
+            />
+            <p className="text-xs text-muted-foreground">We'll call you on this number</p>
+          </div>
+        )}
 
         {/* Attachments */}
         <div className="space-y-2">

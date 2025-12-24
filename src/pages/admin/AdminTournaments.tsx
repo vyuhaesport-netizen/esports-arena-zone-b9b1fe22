@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -18,10 +20,17 @@ import {
   Building2,
   Palette,
   MapPin,
-  TrendingUp
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { generateTournamentDetailPDF, TournamentReportData } from '@/utils/pdfGenerator';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 interface UnifiedTournament {
   id: string;
@@ -48,11 +57,28 @@ interface CommissionSettings {
   local_platform_percent: number;
 }
 
+const pieChartConfig = {
+  organizer: {
+    label: "Organizer",
+    color: "hsl(25, 95%, 53%)",
+  },
+  creator: {
+    label: "Creator",
+    color: "hsl(330, 80%, 60%)",
+  },
+  local: {
+    label: "Local",
+    color: "hsl(217, 91%, 60%)",
+  },
+};
+
 const AdminTournaments = () => {
   const [tournaments, setTournaments] = useState<UnifiedTournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'organizer' | 'creator' | 'local'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [commissionSettings, setCommissionSettings] = useState<CommissionSettings>({
     organizer_percent: 10,
     platform_percent: 10,
@@ -222,8 +248,32 @@ const AdminTournaments = () => {
     if (activeTab !== 'all') {
       filtered = filtered.filter(t => t.status === activeTab);
     }
+
+    // Filter by date range
+    if (startDate) {
+      const start = new Date(startDate);
+      filtered = filtered.filter(t => new Date(t.start_date) >= start);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(t => new Date(t.start_date) <= end);
+    }
     
     return filtered.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
+  };
+
+  // Calculate pie chart data
+  const getPieChartData = () => {
+    const organizerRevenue = tournaments.filter(t => t.type === 'organizer').reduce((sum, t) => sum + t.platform_commission, 0);
+    const creatorRevenue = tournaments.filter(t => t.type === 'creator').reduce((sum, t) => sum + t.platform_commission, 0);
+    const localRevenue = tournaments.filter(t => t.type === 'local').reduce((sum, t) => sum + t.platform_commission, 0);
+    
+    return [
+      { name: 'Organizer', value: organizerRevenue, color: 'hsl(25, 95%, 53%)' },
+      { name: 'Creator', value: creatorRevenue, color: 'hsl(330, 80%, 60%)' },
+      { name: 'Local', value: localRevenue, color: 'hsl(217, 91%, 60%)' },
+    ].filter(d => d.value > 0);
   };
 
   const getStatusColor = (status: string | null) => {
@@ -315,6 +365,84 @@ const AdminTournaments = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Revenue Pie Chart */}
+        {getPieChartData().length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Revenue by Source</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <ChartContainer config={pieChartConfig} className="h-[120px] w-[120px]">
+                  <PieChart>
+                    <Pie
+                      data={getPieChartData()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={30}
+                      outerRadius={50}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {getPieChartData().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ChartContainer>
+                <div className="flex-1 space-y-2">
+                  {getPieChartData().map((entry) => (
+                    <div key={entry.name} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span>{entry.name}</span>
+                      </div>
+                      <span className="font-medium">₹{entry.value.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Date Range Filter */}
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-xs font-medium">Filter by Date</Label>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="text-xs h-8"
+                placeholder="Start Date"
+              />
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="text-xs h-8"
+                placeholder="End Date"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="mt-2 w-full text-xs h-7"
+                onClick={() => { setStartDate(''); setEndDate(''); }}
+              >
+                Clear Filter
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Type Filter Slider */}
         <div className="flex gap-2 overflow-x-auto pb-2">
