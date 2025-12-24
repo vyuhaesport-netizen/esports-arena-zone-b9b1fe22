@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Lock, Check, Loader2, Trophy, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { useConfetti } from '@/hooks/useConfetti';
+import { toast } from '@/hooks/use-toast';
 import {
   Tooltip,
   TooltipContent,
@@ -70,17 +72,38 @@ export const UnlockableAvatarGallery = ({
   disabled = false,
 }: UnlockableAvatarGalleryProps) => {
   const { user } = useAuth();
+  const { triggerAchievementConfetti } = useConfetti();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState<string | null>(null);
+  const previousUnlockedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (user) {
       fetchData();
     }
   }, [user]);
+
+  // Check for newly unlocked achievements
+  useEffect(() => {
+    if (previousUnlockedRef.current.size > 0 && unlockedIds.size > previousUnlockedRef.current.size) {
+      // Find newly unlocked achievements
+      const newUnlocks = [...unlockedIds].filter(id => !previousUnlockedRef.current.has(id));
+      if (newUnlocks.length > 0) {
+        const newAchievement = achievements.find(a => a.id === newUnlocks[0]);
+        triggerAchievementConfetti();
+        if (newAchievement) {
+          toast({
+            title: "🏆 Achievement Unlocked!",
+            description: `You've unlocked "${newAchievement.name}" and a new avatar!`,
+          });
+        }
+      }
+    }
+    previousUnlockedRef.current = new Set(unlockedIds);
+  }, [unlockedIds, achievements, triggerAchievementConfetti]);
 
   const fetchData = async () => {
     if (!user) return;

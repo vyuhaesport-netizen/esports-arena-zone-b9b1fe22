@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useConfetti } from '@/hooks/useConfetti';
+import { toast } from '@/hooks/use-toast';
 import { 
   Trophy, 
   Star, 
@@ -87,11 +89,14 @@ interface UserStats {
 const AchievementsPage = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { triggerAchievementConfetti, triggerStarsConfetti } = useConfetti();
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const previousUnlockedRef = useRef<Set<string>>(new Set());
+  const hasCheckedRef = useRef(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -104,6 +109,27 @@ const AchievementsPage = () => {
       fetchData();
     }
   }, [user]);
+
+  // Check for newly unlocked achievements and trigger confetti
+  useEffect(() => {
+    if (!loading && achievements.length > 0 && unlockedIds.size > 0) {
+      if (previousUnlockedRef.current.size > 0 && unlockedIds.size > previousUnlockedRef.current.size) {
+        // Find newly unlocked achievements
+        const newUnlocks = [...unlockedIds].filter(id => !previousUnlockedRef.current.has(id));
+        if (newUnlocks.length > 0) {
+          const newAchievement = achievements.find(a => a.id === newUnlocks[0]);
+          triggerAchievementConfetti();
+          if (newAchievement) {
+            toast({
+              title: "🏆 Achievement Unlocked!",
+              description: `Congratulations! You've earned "${newAchievement.name}"!`,
+            });
+          }
+        }
+      }
+      previousUnlockedRef.current = new Set(unlockedIds);
+    }
+  }, [unlockedIds, achievements, loading, triggerAchievementConfetti]);
 
   const fetchData = async () => {
     if (!user) return;
