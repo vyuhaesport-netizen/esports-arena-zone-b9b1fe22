@@ -38,7 +38,8 @@ import {
   CreditCard,
   Users,
   Megaphone,
-  Building2
+  Building2,
+  Star
 } from 'lucide-react';
 import {
   Dialog,
@@ -56,6 +57,7 @@ import {
 } from '@/components/ui/select';
 import { ImageCropper } from '@/components/ImageCropper';
 import { PresetAvatarGallery } from '@/components/PresetAvatarGallery';
+import { UnlockableAvatarGallery } from '@/components/UnlockableAvatarGallery';
 
 interface Profile {
   id: string;
@@ -427,6 +429,7 @@ const ProfilePage = () => {
     { icon: Wallet, label: 'Wallet', onClick: () => navigate('/wallet') },
     { icon: Users, label: 'Team', onClick: () => navigate('/team') },
     { icon: Crown, label: 'Leaderboard', onClick: () => navigate('/leaderboard') },
+    { icon: Star, label: 'Achievements', onClick: () => navigate('/achievements') },
   ];
 
   const moreItems = [
@@ -689,6 +692,15 @@ const ProfilePage = () => {
                 onSelect={handlePresetAvatarSelect}
                 disabled={uploadingAvatar}
               />
+              
+              {/* Unlockable Achievement Avatars */}
+              <div className="border-t border-border pt-4">
+                <UnlockableAvatarGallery
+                  currentAvatarUrl={profile?.avatar_url}
+                  onSelect={handlePresetAvatarSelect}
+                  disabled={uploadingAvatar}
+                />
+              </div>
             </div>
 
             {/* Gaming Details Section */}

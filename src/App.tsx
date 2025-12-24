@@ -54,6 +54,7 @@ import TournamentDetails from "./pages/TournamentDetails";
 import LocalTournament from "./pages/LocalTournament";
 import JoinLocalTournament from "./pages/JoinLocalTournament";
 import AdminLocalTournaments from "./pages/admin/AdminLocalTournaments";
+import Achievements from "./pages/Achievements";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -194,6 +195,7 @@ const AppRoutes = () => {
       <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
       <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
       <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+      <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

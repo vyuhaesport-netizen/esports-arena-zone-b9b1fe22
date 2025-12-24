@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          points: number
+          requirement_type: string
+          requirement_value: number
+          reward_type: string
+          reward_value: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          points?: number
+          requirement_type: string
+          requirement_value?: number
+          reward_type?: string
+          reward_value?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          points?: number
+          requirement_type?: string
+          requirement_value?: number
+          reward_type?: string
+          reward_value?: string | null
+        }
+        Relationships: []
+      }
       admin_broadcasts: {
         Row: {
           admin_id: string
@@ -1220,6 +1265,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -1234,6 +1308,48 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          created_at: string
+          first_place_count: number
+          id: string
+          local_tournament_wins: number
+          second_place_count: number
+          third_place_count: number
+          total_earnings: number
+          tournament_participations: number
+          tournament_wins: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_place_count?: number
+          id?: string
+          local_tournament_wins?: number
+          second_place_count?: number
+          third_place_count?: number
+          total_earnings?: number
+          tournament_participations?: number
+          tournament_wins?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_place_count?: number
+          id?: string
+          local_tournament_wins?: number
+          second_place_count?: number
+          third_place_count?: number
+          total_earnings?: number
+          tournament_participations?: number
+          tournament_wins?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -1337,6 +1453,10 @@ export type Database = {
       }
       cancel_local_tournament: {
         Args: { p_organizer_id: string; p_tournament_id: string }
+        Returns: Json
+      }
+      check_and_award_achievements: {
+        Args: { p_user_id: string }
         Returns: Json
       }
       check_user_ban_status: { Args: { p_user_id: string }; Returns: Json }
