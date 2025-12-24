@@ -23,9 +23,13 @@ import {
   Trash2,
   Eye,
   Calendar,
-  Palette
+  Palette,
+  Download,
+  TrendingUp,
+  Phone
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { generateCreatorsReportPDF } from '@/utils/pdfGenerator';
 
 interface Creator {
   id: string;
@@ -40,6 +44,7 @@ interface Creator {
   completed_tournaments: number;
   total_participants: number;
   total_earnings: number;
+  platform_revenue: number;
   total_prize_pool: number;
 }
 
@@ -101,7 +106,7 @@ const AdminCreators = () => {
         (profiles || []).map(async (profile) => {
           const { data: tournaments } = await supabase
             .from('tournaments')
-            .select('id, status, joined_users, current_prize_pool, organizer_earnings')
+            .select('id, status, joined_users, current_prize_pool, organizer_earnings, platform_earnings')
             .eq('created_by', profile.user_id)
             .eq('tournament_type', 'creator');
 
@@ -110,6 +115,7 @@ const AdminCreators = () => {
           const completed = tournaments?.filter(t => t.status === 'completed').length || 0;
           const participants = tournaments?.reduce((sum, t) => sum + (t.joined_users?.length || 0), 0) || 0;
           const earnings = tournaments?.reduce((sum, t) => sum + (t.organizer_earnings || 0), 0) || 0;
+          const platformRevenue = tournaments?.reduce((sum, t) => sum + (t.platform_earnings || 0), 0) || 0;
           const prizePool = tournaments?.reduce((sum, t) => sum + (t.current_prize_pool || 0), 0) || 0;
 
           return {
@@ -125,6 +131,7 @@ const AdminCreators = () => {
             completed_tournaments: completed,
             total_participants: participants,
             total_earnings: earnings,
+            platform_revenue: platformRevenue,
             total_prize_pool: prizePool,
           };
         })
@@ -165,7 +172,26 @@ const AdminCreators = () => {
     }
   };
 
-  const totalRevenue = creators.reduce((sum, c) => sum + c.total_earnings, 0);
+  const handleDownloadPDF = () => {
+    const pdfData = creators.map(creator => ({
+      name: creator.full_name || creator.username || 'Creator',
+      email: creator.email,
+      phone: creator.phone,
+      total_tournaments: creator.total_tournaments,
+      active_tournaments: creator.active_tournaments,
+      completed_tournaments: creator.completed_tournaments,
+      total_earnings: creator.total_earnings,
+      platform_revenue: creator.platform_revenue,
+      total_participants: creator.total_participants,
+    }));
+    
+    const totalPlatformRevenue = creators.reduce((sum, c) => sum + c.platform_revenue, 0);
+    generateCreatorsReportPDF(pdfData, totalPlatformRevenue);
+  };
+
+  const totalPlatformRevenue = creators.reduce((sum, c) => sum + c.platform_revenue, 0);
+  const totalCreatorEarnings = creators.reduce((sum, c) => sum + c.total_earnings, 0);
+  const totalTournaments = creators.reduce((sum, c) => sum + c.total_tournaments, 0);
 
   if (authLoading || loading) {
     return (
@@ -191,13 +217,51 @@ const AdminCreators = () => {
               <p className="text-2xl font-bold">{creators.length}</p>
             </CardContent>
           </Card>
+          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Trophy className="h-4 w-4 text-purple-500" />
+                <span className="text-xs text-muted-foreground">Total Tournaments</span>
+              </div>
+              <p className="text-2xl font-bold">{totalTournaments}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Revenue Cards */}
+        <Card className="bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-90">Platform Revenue from Creators</p>
+                <p className="text-2xl font-bold mt-1">₹{totalPlatformRevenue.toFixed(0)}</p>
+              </div>
+              <TrendingUp className="h-10 w-10 opacity-50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-3">
           <Card className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-1">
                 <IndianRupee className="h-4 w-4 text-green-500" />
-                <span className="text-xs text-muted-foreground">Platform Revenue</span>
+                <span className="text-xs text-muted-foreground">Creator Earnings</span>
               </div>
-              <p className="text-2xl font-bold">₹{totalRevenue.toFixed(0)}</p>
+              <p className="text-xl font-bold text-green-600">₹{totalCreatorEarnings.toFixed(0)}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <Button 
+                variant="outline" 
+                className="w-full h-full flex flex-col gap-1"
+                onClick={handleDownloadPDF}
+                disabled={creators.length === 0}
+              >
+                <Download className="h-5 w-5" />
+                <span className="text-xs">Download PDF</span>
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -236,7 +300,7 @@ const AdminCreators = () => {
                   </div>
 
                   <div className="p-4">
-                    <div className="grid grid-cols-3 gap-4 text-center mb-4">
+                    <div className="grid grid-cols-4 gap-2 text-center mb-4">
                       <div>
                         <p className="text-lg font-bold text-pink-500">{creator.total_tournaments}</p>
                         <p className="text-[10px] text-muted-foreground">Tournaments</p>
@@ -248,6 +312,10 @@ const AdminCreators = () => {
                       <div>
                         <p className="text-lg font-bold text-green-500">₹{creator.total_earnings.toFixed(0)}</p>
                         <p className="text-[10px] text-muted-foreground">Earnings</p>
+                      </div>
+                      <div>
+                        <p className="text-lg font-bold text-primary">₹{creator.platform_revenue.toFixed(0)}</p>
+                        <p className="text-[10px] text-muted-foreground">Platform</p>
                       </div>
                     </div>
 
@@ -307,7 +375,9 @@ const AdminCreators = () => {
                   <p className="font-semibold">{selectedCreator.full_name || selectedCreator.username || 'Creator'}</p>
                   <p className="text-sm text-muted-foreground">{selectedCreator.email}</p>
                   {selectedCreator.phone && (
-                    <p className="text-xs text-muted-foreground">{selectedCreator.phone}</p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Phone className="h-3 w-3" /> {selectedCreator.phone}
+                    </p>
                   )}
                 </div>
               </div>
@@ -344,16 +414,23 @@ const AdminCreators = () => {
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
                     <IndianRupee className="h-4 w-4 text-green-500" />
-                    <span className="text-xs">Total Earnings</span>
+                    <span className="text-xs">Their Earnings</span>
                   </div>
                   <p className="text-lg font-bold text-green-600">₹{selectedCreator.total_earnings.toFixed(0)}</p>
                 </div>
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-2 text-muted-foreground mb-1">
                     <IndianRupee className="h-4 w-4 text-primary" />
-                    <span className="text-xs">Prize Pool</span>
+                    <span className="text-xs">Platform Revenue</span>
                   </div>
-                  <p className="text-lg font-bold text-primary">₹{selectedCreator.total_prize_pool.toFixed(0)}</p>
+                  <p className="text-lg font-bold text-primary">₹{selectedCreator.platform_revenue.toFixed(0)}</p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg col-span-2">
+                  <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                    <IndianRupee className="h-4 w-4 text-yellow-500" />
+                    <span className="text-xs">Total Prize Pool Distributed</span>
+                  </div>
+                  <p className="text-lg font-bold text-yellow-600">₹{selectedCreator.total_prize_pool.toFixed(0)}</p>
                 </div>
               </div>
 
