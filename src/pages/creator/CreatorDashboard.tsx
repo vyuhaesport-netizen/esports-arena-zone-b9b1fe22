@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -104,6 +104,7 @@ const CreatorDashboard = () => {
   const [roomData, setRoomData] = useState({ room_id: '', room_password: '' });
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [editablePrizeDistribution, setEditablePrizeDistribution] = useState<Record<string, number>>({});
   const [formData, setFormData] = useState({
     title: '',
     game: 'BGMI',
@@ -560,6 +561,7 @@ const CreatorDashboard = () => {
     setSelectedTournament(tournament);
     setWinnerPositions({});
     setTeamPositions({});
+    setEditablePrizeDistribution(tournament.prize_distribution as Record<string, number> || {});
     setWinnerDialogOpen(true);
     setLoadingPlayers(true);
 
@@ -1276,6 +1278,99 @@ const CreatorDashboard = () => {
             </div>
           )}
 
+          {/* Editable Prize Distribution */}
+          {selectedTournament && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  Edit Prize Distribution
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((pos) => (
+                    <div key={pos} className="flex items-center gap-2">
+                      <Badge variant="outline" className="w-12 justify-center">#{pos}</Badge>
+                      <Input
+                        type="number"
+                        placeholder="Amount"
+                        value={editablePrizeDistribution[pos.toString()] || ''}
+                        onChange={(e) => {
+                          const newDist = { ...editablePrizeDistribution };
+                          if (e.target.value) {
+                            newDist[pos.toString()] = parseFloat(e.target.value);
+                          } else {
+                            delete newDist[pos.toString()];
+                          }
+                          setEditablePrizeDistribution(newDist);
+                        }}
+                        className="flex-1"
+                      />
+                      <span className="text-xs text-muted-foreground">₹</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Validation Display */}
+                {(() => {
+                  const totalDist = Object.values(editablePrizeDistribution).reduce((a, b) => a + (b || 0), 0);
+                  const prizePool = selectedTournament?.current_prize_pool || 0;
+                  const isValid = totalDist <= prizePool;
+                  const remaining = prizePool - totalDist;
+                  
+                  return (
+                    <div className={`flex flex-col gap-1 pt-2 border-t ${!isValid ? 'text-destructive' : ''}`}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Total Distribution:</span>
+                        <span className={`font-bold ${!isValid ? 'text-destructive' : ''}`}>
+                          ₹{totalDist}
+                        </span>
+                      </div>
+                      {!isValid ? (
+                        <p className="text-xs text-destructive">
+                          ⚠️ Exceeds prize pool by ₹{totalDist - prizePool}. Please reduce amounts.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Remaining: ₹{remaining}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={async () => {
+                    if (!selectedTournament) return;
+                    const totalDist = Object.values(editablePrizeDistribution).reduce((a, b) => a + (b || 0), 0);
+                    if (totalDist > (selectedTournament.current_prize_pool || 0)) {
+                      toast({ title: 'Error', description: 'Total distribution exceeds prize pool.', variant: 'destructive' });
+                      return;
+                    }
+                    const { error } = await supabase
+                      .from('tournaments')
+                      .update({ prize_distribution: editablePrizeDistribution })
+                      .eq('id', selectedTournament.id);
+                    
+                    if (error) {
+                      toast({ title: 'Error', description: 'Failed to save prize distribution.', variant: 'destructive' });
+                    } else {
+                      toast({ title: 'Saved!', description: 'Prize distribution updated.' });
+                      setSelectedTournament({ ...selectedTournament, prize_distribution: editablePrizeDistribution });
+                    }
+                  }}
+                  disabled={Object.values(editablePrizeDistribution).reduce((a, b) => a + (b || 0), 0) > (selectedTournament?.current_prize_pool || 0)}
+                >
+                  Save Prize Distribution
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="space-y-2">
             <Label>
               {selectedTournament?.tournament_mode === 'solo' 
@@ -1338,9 +1433,8 @@ const CreatorDashboard = () => {
                           <SelectContent>
                             <SelectItem value="none">None</SelectItem>
                             {(() => {
-                              const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
                               return Array.from({ length: 10 }, (_, i) => i + 1).map(pos => {
-                                const amount = dist?.[pos.toString()] || 0;
+                                const amount = editablePrizeDistribution[pos.toString()] || 0;
                                 const emoji = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : '🏅';
                                 const suffix = pos === 1 ? 'st' : pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th';
                                 return (
@@ -1380,9 +1474,8 @@ const CreatorDashboard = () => {
               <div className="space-y-2">
                 {joinedPlayers.map((player) => {
                   const playerPosition = winnerPositions[player.user_id];
-                  const prizeDistribution = selectedTournament?.prize_distribution as Record<string, number> | null;
-                  const prizeAmount = playerPosition && prizeDistribution 
-                    ? prizeDistribution[playerPosition.toString()] || 0 
+                  const prizeAmount = playerPosition 
+                    ? editablePrizeDistribution[playerPosition.toString()] || 0 
                     : 0;
                   
                   return (
@@ -1415,9 +1508,8 @@ const CreatorDashboard = () => {
                         <SelectContent>
                           <SelectItem value="none">None</SelectItem>
                           {(() => {
-                            const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
                             return Array.from({ length: 10 }, (_, i) => i + 1).map(pos => {
-                              const amount = dist?.[pos.toString()] || 0;
+                              const amount = editablePrizeDistribution[pos.toString()] || 0;
                               const emoji = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : '🏅';
                               const suffix = pos === 1 ? 'st' : pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th';
                               return (
@@ -1441,12 +1533,11 @@ const CreatorDashboard = () => {
             <div className="bg-green-500/10 rounded-lg p-3">
               <p className="text-sm font-medium text-green-700">Selected Team Winners:</p>
               {(() => {
-                const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
                 let totalPrize = 0;
                 const items = Object.entries(teamPositions)
                   .sort(([, a], [, b]) => a - b)
                   .map(([teamName, position]) => {
-                    const amount = dist?.[position.toString()] || 0;
+                    const amount = editablePrizeDistribution[position.toString()] || 0;
                     totalPrize += amount;
                     return (
                       <p key={teamName} className="text-xs text-green-600">
@@ -1470,13 +1561,12 @@ const CreatorDashboard = () => {
             <div className="bg-green-500/10 rounded-lg p-3">
               <p className="text-sm font-medium text-green-700">Selected Winners:</p>
               {(() => {
-                const dist = selectedTournament?.prize_distribution as Record<string, number> | null;
                 let totalPrize = 0;
                 const items = Object.entries(winnerPositions)
                   .sort(([, a], [, b]) => a - b)
                   .map(([userId, position]) => {
                     const player = joinedPlayers.find(p => p.user_id === userId);
-                    const amount = dist?.[position.toString()] || 0;
+                    const amount = editablePrizeDistribution[position.toString()] || 0;
                     totalPrize += amount;
                     return (
                       <p key={userId} className="text-xs text-green-600">
