@@ -91,8 +91,9 @@ const Wallet = () => {
       setTransactions(txns || []);
 
       // Calculate total earned (ONLY prize winnings - not deposits)
+      const creditTypes = ['winning', 'prize', 'prize_won', 'commission', 'admin_credit', 'refund'];
       const earned = (txns || [])
-        .filter(t => (t.type === 'winning' || t.type === 'prize' || t.type === 'commission') && t.status === 'completed')
+        .filter(t => creditTypes.includes(t.type) && t.status === 'completed')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
       setTotalEarned(earned);
 
@@ -311,39 +312,36 @@ const Wallet = () => {
             </div>
           ) : (
             <div className="space-y-3">
-              {transactions.map((txn) => (
-                <div key={txn.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund'
-                        ? 'bg-green-500/10' 
-                        : 'bg-red-500/10'
-                    }`}>
-                      {txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund' ? (
-                        <ArrowDownLeft className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <ArrowUpRight className="h-4 w-4 text-red-500" />
-                      )}
+              {transactions.map((txn) => {
+                const isCreditType = ['deposit', 'prize', 'prize_won', 'winning', 'admin_credit', 'commission', 'refund'].includes(txn.type);
+                return (
+                  <div key={txn.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        isCreditType ? 'bg-green-500/10' : 'bg-red-500/10'
+                      }`}>
+                        {isCreditType ? (
+                          <ArrowDownLeft className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <ArrowUpRight className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium capitalize">{txn.type.replace('_', ' ')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(txn.created_at), 'MMM dd, hh:mm a')}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium capitalize">{txn.type}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(txn.created_at), 'MMM dd, hh:mm a')}
+                    <div className="text-right">
+                      <p className={`font-semibold text-sm ${isCreditType ? 'text-green-600' : 'text-red-600'}`}>
+                        {isCreditType ? '+' : '-'}₹{Math.abs(txn.amount)}
                       </p>
+                      {getStatusBadge(txn.status)}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`font-semibold text-sm ${
-                      txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund'
-                        ? 'text-green-600' 
-                        : 'text-red-600'
-                    }`}>
-                      {txn.type === 'deposit' || txn.type === 'prize' || txn.type === 'winning' || txn.type === 'admin_credit' || txn.type === 'commission' || txn.type === 'refund' ? '+' : '-'}₹{Math.abs(txn.amount)}
-                    </p>
-                    {getStatusBadge(txn.status)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

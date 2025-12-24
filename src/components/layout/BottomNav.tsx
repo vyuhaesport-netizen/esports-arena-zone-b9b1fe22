@@ -7,7 +7,7 @@ const BottomNav = () => {
 
   const navItems = [
     { path: '/home', label: 'Home', icon: Home },
-    { path: '/creator', label: 'Creator', icon: Trophy },
+    { path: '/creator-tournaments', label: 'Creator', icon: Trophy },
     { path: '/my-match', label: 'My Match', icon: Gamepad2 },
     { path: '/wallet', label: 'Wallet', icon: Wallet },
     { path: '/profile', label: 'Profile', icon: User },
