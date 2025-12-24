@@ -42,7 +42,10 @@ import {
   IndianRupee,
   RefreshCw,
   Settings2,
-  History
+  History,
+  Copy,
+  Link2,
+  ExternalLink
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -536,6 +539,66 @@ const AdminApiPayment = () => {
                     <Save className="h-4 w-4 mr-2" />
                   )}
                   Save Configuration
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Webhook URL - Important */}
+            <Card className="border-primary/50 bg-primary/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-primary" />
+                  Webhook URL (Important)
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Add this URL in your Razorpay Dashboard → Webhooks section
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-sm">Webhook Endpoint URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'drwxtjgtjejwegsneutq'}.supabase.co/functions/v1/razorpay-webhook`}
+                      className="bg-muted text-xs font-mono"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'drwxtjgtjejwegsneutq'}.supabase.co/functions/v1/razorpay-webhook`;
+                        navigator.clipboard.writeText(url);
+                        toast({
+                          title: 'Copied!',
+                          description: 'Webhook URL copied to clipboard',
+                        });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="bg-background/50 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium">Setup Instructions:</p>
+                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Go to Razorpay Dashboard → Settings → Webhooks</li>
+                    <li>Click "Add New Webhook"</li>
+                    <li>Paste the above URL</li>
+                    <li>Select events: <span className="font-mono text-[10px]">payment.captured, payment.failed</span></li>
+                    <li>Copy the Webhook Secret and paste it above</li>
+                  </ol>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => window.open('https://dashboard.razorpay.com/app/webhooks', '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Razorpay Dashboard
                 </Button>
               </CardContent>
             </Card>
