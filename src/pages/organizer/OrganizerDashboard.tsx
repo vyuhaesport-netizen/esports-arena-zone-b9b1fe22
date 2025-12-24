@@ -45,7 +45,9 @@ import {
   Square,
   XCircle,
   FileWarning,
-  MessageCircle
+  MessageCircle,
+  Youtube,
+  Instagram
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
@@ -111,6 +113,8 @@ const OrganizerDashboard = () => {
     tournament_mode: 'solo',
     prize_distribution: '',
     prize_pool: '',
+    youtube_link: '',
+    instagram_link: '',
   });
   const [commissionSettings, setCommissionSettings] = useState({
     organizer_percent: 10,
@@ -196,6 +200,8 @@ const OrganizerDashboard = () => {
       tournament_mode: 'solo',
       prize_distribution: '',
       prize_pool: '',
+      youtube_link: '',
+      instagram_link: '',
     });
     setSelectedTournament(null);
   };
@@ -242,6 +248,8 @@ const OrganizerDashboard = () => {
         tournament_type: 'organizer',
         tournament_mode: formData.tournament_mode,
         prize_distribution: prizeDistribution,
+        youtube_link: formData.youtube_link || null,
+        instagram_link: formData.instagram_link || null,
       };
 
       if (selectedTournament) {
@@ -822,6 +830,8 @@ const OrganizerDashboard = () => {
                               tournament_mode: t.tournament_mode || 'solo',
                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                              youtube_link: (t as any).youtube_link || '',
+                              instagram_link: (t as any).instagram_link || '',
                             });
                             setDialogOpen(true);
                           }}>
@@ -1010,6 +1020,29 @@ const OrganizerDashboard = () => {
             <div className="space-y-2">
               <Label>Description</Label>
               <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Tournament details..." rows={3} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Youtube className="h-4 w-4 text-red-500" /> YouTube Link
+                </Label>
+                <Input 
+                  value={formData.youtube_link} 
+                  onChange={(e) => setFormData({ ...formData, youtube_link: e.target.value })} 
+                  placeholder="https://youtube.com/..." 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Instagram className="h-4 w-4 text-pink-500" /> Instagram Link
+                </Label>
+                <Input 
+                  value={formData.instagram_link} 
+                  onChange={(e) => setFormData({ ...formData, instagram_link: e.target.value })} 
+                  placeholder="https://instagram.com/..." 
+                />
+              </div>
             </div>
           </div>
 

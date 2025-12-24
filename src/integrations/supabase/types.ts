@@ -497,6 +497,7 @@ export type Database = {
           entry_fee: number
           game: string
           id: string
+          instagram_link: string | null
           institution_name: string
           joined_users: string[] | null
           max_participants: number
@@ -517,6 +518,7 @@ export type Database = {
           updated_at: string
           winner_declared_at: string | null
           winner_user_id: string | null
+          youtube_link: string | null
         }
         Insert: {
           application_id: string
@@ -526,6 +528,7 @@ export type Database = {
           entry_fee?: number
           game: string
           id?: string
+          instagram_link?: string | null
           institution_name: string
           joined_users?: string[] | null
           max_participants?: number
@@ -546,6 +549,7 @@ export type Database = {
           updated_at?: string
           winner_declared_at?: string | null
           winner_user_id?: string | null
+          youtube_link?: string | null
         }
         Update: {
           application_id?: string
@@ -555,6 +559,7 @@ export type Database = {
           entry_fee?: number
           game?: string
           id?: string
+          instagram_link?: string | null
           institution_name?: string
           joined_users?: string[] | null
           max_participants?: number
@@ -575,6 +580,7 @@ export type Database = {
           updated_at?: string
           winner_declared_at?: string | null
           winner_user_id?: string | null
+          youtube_link?: string | null
         }
         Relationships: [
           {
@@ -1183,6 +1189,7 @@ export type Database = {
           game: string
           id: string
           image_url: string | null
+          instagram_link: string | null
           joined_users: string[] | null
           max_participants: number | null
           organizer_earnings: number | null
@@ -1202,6 +1209,7 @@ export type Database = {
           updated_at: string
           winner_declared_at: string | null
           winner_user_id: string | null
+          youtube_link: string | null
         }
         Insert: {
           created_at?: string
@@ -1213,6 +1221,7 @@ export type Database = {
           game: string
           id?: string
           image_url?: string | null
+          instagram_link?: string | null
           joined_users?: string[] | null
           max_participants?: number | null
           organizer_earnings?: number | null
@@ -1232,6 +1241,7 @@ export type Database = {
           updated_at?: string
           winner_declared_at?: string | null
           winner_user_id?: string | null
+          youtube_link?: string | null
         }
         Update: {
           created_at?: string
@@ -1243,6 +1253,7 @@ export type Database = {
           game?: string
           id?: string
           image_url?: string | null
+          instagram_link?: string | null
           joined_users?: string[] | null
           max_participants?: number | null
           organizer_earnings?: number | null
@@ -1262,6 +1273,7 @@ export type Database = {
           updated_at?: string
           winner_declared_at?: string | null
           winner_user_id?: string | null
+          youtube_link?: string | null
         }
         Relationships: []
       }

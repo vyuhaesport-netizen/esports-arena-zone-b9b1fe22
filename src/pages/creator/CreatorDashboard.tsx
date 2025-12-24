@@ -47,7 +47,9 @@ import {
   RefreshCw,
   XCircle,
   FileWarning,
-  MessageCircle
+  MessageCircle,
+  Youtube,
+  Instagram
 } from 'lucide-react';
 import { format, differenceInMinutes, differenceInMilliseconds } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
@@ -113,6 +115,8 @@ const CreatorDashboard = () => {
     tournament_mode: 'solo',
     prize_distribution: '',
     prize_pool: '',
+    youtube_link: '',
+    instagram_link: '',
   });
   const [commissionSettings, setCommissionSettings] = useState({
     organizer_percent: 10,
@@ -199,6 +203,8 @@ const CreatorDashboard = () => {
       tournament_mode: 'solo',
       prize_distribution: '',
       prize_pool: '',
+      youtube_link: '',
+      instagram_link: '',
     });
     setSelectedTournament(null);
   };
@@ -244,6 +250,8 @@ const CreatorDashboard = () => {
         tournament_type: 'creator',
         tournament_mode: formData.tournament_mode,
         prize_distribution: prizeDistribution,
+        youtube_link: formData.youtube_link || null,
+        instagram_link: formData.instagram_link || null,
       };
 
       if (selectedTournament) {
@@ -703,6 +711,8 @@ const CreatorDashboard = () => {
       tournament_mode: tournament.tournament_mode || 'solo',
       prize_distribution: tournament.prize_distribution ? JSON.stringify(tournament.prize_distribution) : '',
       prize_pool: tournament.prize_pool?.replace(/[₹,]/g, '') || '',
+      youtube_link: (tournament as any).youtube_link || '',
+      instagram_link: (tournament as any).instagram_link || '',
     });
     setDialogOpen(true);
   };
@@ -1055,6 +1065,29 @@ const CreatorDashboard = () => {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Tournament rules and info"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Youtube className="h-4 w-4 text-red-500" /> YouTube Link
+                </Label>
+                <Input 
+                  value={formData.youtube_link} 
+                  onChange={(e) => setFormData({ ...formData, youtube_link: e.target.value })} 
+                  placeholder="https://youtube.com/..." 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Instagram className="h-4 w-4 text-pink-500" /> Instagram Link
+                </Label>
+                <Input 
+                  value={formData.instagram_link} 
+                  onChange={(e) => setFormData({ ...formData, instagram_link: e.target.value })} 
+                  placeholder="https://instagram.com/..." 
+                />
+              </div>
             </div>
           </div>
 

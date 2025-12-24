@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import FollowButton from '@/components/FollowButton';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock } from 'lucide-react';
+import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock, Youtube, Instagram } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -24,6 +24,8 @@ interface Tournament {
   prize_distribution?: any;
   created_by?: string | null;
   registration_deadline?: string | null;
+  youtube_link?: string | null;
+  instagram_link?: string | null;
 }
 
 interface TournamentCardProps {
@@ -234,6 +236,36 @@ const TournamentCard = ({
               {tournament.room_password && <span className="text-muted-foreground">| Pass: {tournament.room_password}</span>}
             </div>
           </div>}
+
+        {/* Social Links */}
+        {(tournament.youtube_link || tournament.instagram_link) && (
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            {tournament.youtube_link && (
+              <a 
+                href={tournament.youtube_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 px-2 py-1 rounded bg-red-500/10 text-red-600 text-[10px] hover:bg-red-500/20 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Youtube className="h-3 w-3" />
+                <span>YouTube</span>
+              </a>
+            )}
+            {tournament.instagram_link && (
+              <a 
+                href={tournament.instagram_link} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 px-2 py-1 rounded bg-pink-500/10 text-pink-600 text-[10px] hover:bg-pink-500/20 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Instagram className="h-3 w-3" />
+                <span>Instagram</span>
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Action Row */}
         <div className="flex items-center gap-1.5">
