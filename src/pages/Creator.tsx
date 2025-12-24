@@ -44,6 +44,8 @@ interface Tournament {
   room_password: string | null;
   prize_distribution: any;
   created_by: string | null;
+  youtube_link: string | null;
+  instagram_link: string | null;
 }
 
 interface Profile {
