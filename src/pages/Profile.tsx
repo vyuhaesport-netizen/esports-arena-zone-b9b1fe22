@@ -55,6 +55,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ImageCropper } from '@/components/ImageCropper';
+import { PresetAvatarGallery } from '@/components/PresetAvatarGallery';
 
 interface Profile {
   id: string;
@@ -251,6 +252,47 @@ const ProfilePage = () => {
       setSelectedImageSrc(null);
     }
   }, [selectedImageSrc]);
+
+  const handlePresetAvatarSelect = useCallback(async (avatarSrc: string) => {
+    if (!user) return;
+    
+    setUploadingAvatar(true);
+    try {
+      // Fetch the preset image and convert to blob
+      const response = await fetch(avatarSrc);
+      const blob = await response.blob();
+      
+      const filePath = `${user.id}/avatar.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, blob, { upsert: true, contentType: 'image/jpeg' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Add timestamp to bust cache
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: urlWithTimestamp })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      toast({ title: 'Avatar Updated', description: 'Your profile picture has been updated.' });
+      fetchProfile();
+    } catch (error) {
+      console.error('Error setting preset avatar:', error);
+      toast({ title: 'Error', description: 'Could not set avatar. Please try again.', variant: 'destructive' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }, [user, toast]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -625,18 +667,28 @@ const ProfilePage = () => {
           </DialogHeader>
           
           <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 border-2 border-border">
-                <AvatarImage src={profile?.avatar_url || ''} />
-                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                  {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <Button variant="outline" onClick={() => editFileInputRef.current?.click()} disabled={uploadingAvatar}>
-                {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Camera className="h-4 w-4 mr-2" />}
-                Change Photo
-              </Button>
-              <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
+            {/* Avatar Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16 border-2 border-border">
+                  <AvatarImage src={profile?.avatar_url || ''} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                    {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <Button variant="outline" onClick={() => editFileInputRef.current?.click()} disabled={uploadingAvatar}>
+                  {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Camera className="h-4 w-4 mr-2" />}
+                  Upload Photo
+                </Button>
+                <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
+              </div>
+              
+              {/* Preset Avatar Gallery */}
+              <PresetAvatarGallery
+                currentAvatarUrl={profile?.avatar_url}
+                onSelect={handlePresetAvatarSelect}
+                disabled={uploadingAvatar}
+              />
             </div>
 
             {/* Gaming Details Section */}
