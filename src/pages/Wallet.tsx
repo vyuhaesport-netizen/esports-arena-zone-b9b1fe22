@@ -27,7 +27,11 @@ import {
   Loader2,
   AlertCircle,
   TrendingUp,
-  ArrowDownFromLine
+  ArrowDownFromLine,
+  Trophy,
+  Award,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -41,6 +45,14 @@ interface Transaction {
   reason: string | null;
 }
 
+interface EarningBreakdown {
+  tournamentName: string;
+  amount: number;
+  date: string;
+  type: string;
+  position?: string;
+}
+
 const Wallet = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -50,10 +62,12 @@ const Wallet = () => {
   const [totalEarned, setTotalEarned] = useState(0);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [earningsBreakdown, setEarningsBreakdown] = useState<EarningBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState('');
   const [addMoneyDialog, setAddMoneyDialog] = useState(false);
   const [withdrawDialog, setWithdrawDialog] = useState(false);
+  const [showEarningsBreakdown, setShowEarningsBreakdown] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
     amount: '',
     phone: '',
@@ -91,11 +105,37 @@ const Wallet = () => {
       setTransactions(txns || []);
 
       // Calculate total earned (ONLY prize winnings - not deposits)
-      const creditTypes = ['winning', 'prize', 'prize_won', 'commission', 'admin_credit', 'refund'];
-      const earned = (txns || [])
-        .filter(t => creditTypes.includes(t.type) && t.status === 'completed')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const prizeTypes = ['winning', 'prize', 'prize_won'];
+      const earningTxns = (txns || []).filter(t => prizeTypes.includes(t.type) && t.status === 'completed');
+      const earned = earningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
       setTotalEarned(earned);
+
+      // Create earnings breakdown from prize transactions
+      const breakdown: EarningBreakdown[] = earningTxns.map(t => {
+        // Parse tournament name and position from description
+        let tournamentName = 'Tournament Prize';
+        let position = '';
+        
+        if (t.description) {
+          // Try to extract tournament name and position from description
+          const match = t.description.match(/(?:Prize|Won|Winning).*?(?:for|from|in)\s+(.+?)(?:\s*-\s*Rank\s*(\d+))?$/i);
+          if (match) {
+            tournamentName = match[1] || t.description;
+            position = match[2] ? `Rank ${match[2]}` : '';
+          } else {
+            tournamentName = t.description;
+          }
+        }
+
+        return {
+          tournamentName,
+          amount: Math.abs(t.amount),
+          date: t.created_at,
+          type: t.type,
+          position
+        };
+      });
+      setEarningsBreakdown(breakdown);
 
       // Calculate total withdrawn (completed withdrawals)
       const withdrawn = (txns || [])
@@ -253,16 +293,27 @@ const Wallet = () => {
 
         {/* Stats Cards - Total Earned & Withdrawn */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-3 text-white">
+          <button 
+            onClick={() => setShowEarningsBreakdown(!showEarningsBreakdown)}
+            className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-3 text-white text-left relative"
+          >
             <div className="flex items-center gap-1.5 mb-1">
               <TrendingUp className="h-3.5 w-3.5" />
               <span className="text-[10px] opacity-90">Total Earned</span>
+              {showEarningsBreakdown ? (
+                <ChevronUp className="h-3 w-3 ml-auto" />
+              ) : (
+                <ChevronDown className="h-3 w-3 ml-auto" />
+              )}
             </div>
             <div className="flex items-baseline gap-0.5">
               <span className="text-xs">₹</span>
               <span className="text-xl font-bold">{totalEarned.toFixed(0)}</span>
             </div>
-          </div>
+            {earningsBreakdown.length > 0 && (
+              <p className="text-[9px] opacity-75 mt-1">Tap to see breakdown</p>
+            )}
+          </button>
           <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-3 text-white">
             <div className="flex items-center gap-1.5 mb-1">
               <ArrowDownFromLine className="h-3.5 w-3.5" />
@@ -274,6 +325,58 @@ const Wallet = () => {
             </div>
           </div>
         </div>
+
+        {/* Earnings Breakdown Section */}
+        {showEarningsBreakdown && (
+          <div className="bg-card rounded-xl border border-border p-4 mb-4 animate-in slide-in-from-top-2">
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="h-4 w-4 text-amber-500" />
+              <h3 className="font-semibold text-sm">Earnings Breakdown</h3>
+              <Badge variant="secondary" className="ml-auto text-[10px]">
+                {earningsBreakdown.length} wins
+              </Badge>
+            </div>
+
+            {earningsBreakdown.length === 0 ? (
+              <div className="text-center py-6">
+                <Award className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
+                <p className="text-muted-foreground text-sm">No prize earnings yet</p>
+                <p className="text-muted-foreground text-xs mt-1">Win tournaments to earn prizes!</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {earningsBreakdown.map((earning, index) => (
+                  <div 
+                    key={index} 
+                    className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                        <Trophy className="h-4 w-4 text-amber-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{earning.tournamentName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(earning.date), 'MMM dd, yyyy')}
+                          </p>
+                          {earning.position && (
+                            <Badge className="bg-amber-500/10 text-amber-600 text-[9px] px-1.5">
+                              {earning.position}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-green-600 font-bold text-sm flex-shrink-0 ml-2">
+                      +₹{earning.amount}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3 mb-6">
