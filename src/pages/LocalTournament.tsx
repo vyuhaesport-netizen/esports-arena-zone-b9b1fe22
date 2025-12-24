@@ -419,6 +419,7 @@ const LocalTournamentPage = () => {
         p_tournament_id: selectedTournament.id,
         p_organizer_id: user?.id,
         p_winner_positions: winnerPositions,
+        p_prize_distribution: editablePrizeDistribution,
       });
 
       if (error) throw error;

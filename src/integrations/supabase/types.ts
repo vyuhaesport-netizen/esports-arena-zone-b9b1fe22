@@ -1359,14 +1359,24 @@ export type Database = {
         }
         Returns: Json
       }
-      declare_local_winner: {
-        Args: {
-          p_organizer_id: string
-          p_tournament_id: string
-          p_winner_positions: Json
-        }
-        Returns: Json
-      }
+      declare_local_winner:
+        | {
+            Args: {
+              p_organizer_id: string
+              p_tournament_id: string
+              p_winner_positions: Json
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_organizer_id: string
+              p_prize_distribution?: Json
+              p_tournament_id: string
+              p_winner_positions: Json
+            }
+            Returns: Json
+          }
       generate_private_code: { Args: never; Returns: string }
       get_user_ban_count: { Args: { p_user_id: string }; Returns: number }
       has_admin_permission: {
