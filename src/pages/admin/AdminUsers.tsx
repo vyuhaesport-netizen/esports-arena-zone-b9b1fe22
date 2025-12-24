@@ -44,7 +44,10 @@ import {
   UserPlus,
   Palette,
   Users,
-  TrendingUp
+  TrendingUp,
+  Download,
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 import { format, subDays, eachDayOfInterval, parseISO } from 'date-fns';
 import {
@@ -53,6 +56,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar } from 'recharts';
+import { generateUsersPDF, generateUsersCSV, UserData } from '@/utils/pdfGenerator';
 
 interface UserProfile {
   id: string;
@@ -412,6 +416,27 @@ const AdminUsers = () => {
   return (
     <AdminLayout title="User Management">
       <div className="p-4 space-y-4">
+        {/* Export Buttons */}
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => generateUsersPDF(filteredUsers as UserData[])}
+            className="flex-1"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => generateUsersCSV(filteredUsers as UserData[])}
+            className="flex-1"
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
+        </div>
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-3">
           <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5">

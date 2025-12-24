@@ -1,107 +1,67 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Plus, 
   Loader2, 
   Trophy,
-  Edit2,
-  Trash2,
   Gamepad2,
-  Youtube,
   Users,
   Wallet,
-  Key,
-  Play,
-  Square
+  FileText,
+  Building2,
+  Palette,
+  MapPin,
+  TrendingUp
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { generateTournamentDetailPDF, TournamentReportData } from '@/utils/pdfGenerator';
 
-interface Tournament {
+interface UnifiedTournament {
   id: string;
   title: string;
   game: string;
-  description: string | null;
-  prize_pool: string | null;
-  entry_fee: number | null;
-  max_participants: number | null;
-  start_date: string;
-  end_date: string | null;
-  registration_deadline: string | null;
   status: string | null;
-  rules: string | null;
-  image_url: string | null;
-  tournament_type: string;
-  joined_users: string[] | null;
-  current_prize_pool: number | null;
-  room_id: string | null;
-  room_password: string | null;
+  type: 'organizer' | 'creator' | 'local';
+  creator_id: string;
+  creator_name: string;
+  prize_pool: number;
+  entry_fee: number;
+  participants: number;
+  max_participants: number;
+  organizer_commission: number;
+  platform_commission: number;
+  start_date: string;
 }
 
-interface PrizePosition {
-  rank: number;
-  amount: string;
+interface CommissionSettings {
+  organizer_percent: number;
+  platform_percent: number;
+  prize_pool_percent: number;
+  local_organizer_percent: number;
+  local_platform_percent: number;
 }
 
 const AdminTournaments = () => {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [tournaments, setTournaments] = useState<UnifiedTournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [editingTournament, setEditingTournament] = useState<Tournament | null>(null);
-  const [activeTab, setActiveTab] = useState('upcoming');
-  const [prizePositions, setPrizePositions] = useState<PrizePosition[]>([
-    { rank: 1, amount: '' },
-    { rank: 2, amount: '' },
-    { rank: 3, amount: '' },
-  ]);
-  const [formData, setFormData] = useState({
-    title: '',
-    game: 'BGMI',
-    tournament_mode: 'Squad',
-    description: '',
-    entry_fee: '',
-    max_participants: '100',
-    start_date: '',
-    end_date: '',
-    registration_deadline: '',
-    status: 'upcoming',
-    rules: '',
-    youtube_link: '',
-    youtube_type: 'live',
-    room_id: '',
-    room_password: '',
-  });
-  const [commissionSettings, setCommissionSettings] = useState({
+  const [activeTab, setActiveTab] = useState('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'organizer' | 'creator' | 'local'>('all');
+  const [commissionSettings, setCommissionSettings] = useState<CommissionSettings>({
     organizer_percent: 10,
     platform_percent: 10,
     prize_pool_percent: 80,
+    local_organizer_percent: 20,
+    local_platform_percent: 10,
   });
 
-  const { user, isAdmin, loading: authLoading, hasPermission } = useAuth();
+  const { user, hasPermission, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -117,10 +77,27 @@ const AdminTournaments = () => {
 
   useEffect(() => {
     if (hasPermission('tournaments:view')) {
-      fetchTournaments();
+      fetchAllTournaments();
       fetchCommissionSettings();
     }
   }, [hasPermission]);
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-tournaments-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
+        fetchAllTournaments();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'local_tournaments' }, () => {
+        fetchAllTournaments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const fetchCommissionSettings = async () => {
     try {
@@ -129,11 +106,13 @@ const AdminTournaments = () => {
         .select('setting_key, setting_value');
       
       if (data) {
-        const settings: any = {};
+        const settings: Partial<CommissionSettings> = {};
         data.forEach((s) => {
           if (s.setting_key === 'organizer_commission_percent') settings.organizer_percent = parseFloat(s.setting_value);
           if (s.setting_key === 'platform_commission_percent') settings.platform_percent = parseFloat(s.setting_value);
           if (s.setting_key === 'prize_pool_percent') settings.prize_pool_percent = parseFloat(s.setting_value);
+          if (s.setting_key === 'local_organizer_commission_percent') settings.local_organizer_percent = parseFloat(s.setting_value);
+          if (s.setting_key === 'local_platform_commission_percent') settings.local_platform_percent = parseFloat(s.setting_value);
         });
         if (Object.keys(settings).length > 0) {
           setCommissionSettings(prev => ({ ...prev, ...settings }));
@@ -144,15 +123,86 @@ const AdminTournaments = () => {
     }
   };
 
-  const fetchTournaments = async () => {
+  const fetchAllTournaments = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch regular tournaments (organizer/creator)
+      const { data: regularTournaments, error: regularError } = await supabase
         .from('tournaments')
-        .select('*')
+        .select('*, profiles!tournaments_created_by_fkey(full_name, username)')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setTournaments(data || []);
+      // Fetch local tournaments
+      const { data: localTournaments, error: localError } = await supabase
+        .from('local_tournaments')
+        .select('*, profiles!local_tournaments_organizer_id_fkey(full_name, username)')
+        .order('created_at', { ascending: false });
+
+      if (regularError) console.error('Error fetching regular tournaments:', regularError);
+      if (localError) console.error('Error fetching local tournaments:', localError);
+
+      // Get creator roles to determine tournament type
+      const creatorIds = regularTournaments?.map(t => t.created_by).filter(Boolean) || [];
+      const { data: creatorRoles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', creatorIds)
+        .in('role', ['organizer', 'creator']);
+
+      const roleMap = new Map<string, string>();
+      creatorRoles?.forEach(r => {
+        // Prefer 'organizer' if both exist
+        if (!roleMap.has(r.user_id) || r.role === 'organizer') {
+          roleMap.set(r.user_id, r.role);
+        }
+      });
+
+      // Transform regular tournaments
+      const transformedRegular: UnifiedTournament[] = (regularTournaments || []).map(t => {
+        const creatorRole = roleMap.get(t.created_by || '') || 'organizer';
+        const type = creatorRole === 'creator' ? 'creator' : 'organizer';
+        const profile = (t as any).profiles;
+        
+        return {
+          id: t.id,
+          title: t.title,
+          game: t.game,
+          status: t.status,
+          type: type as 'organizer' | 'creator',
+          creator_id: t.created_by || '',
+          creator_name: profile?.full_name || profile?.username || 'Unknown',
+          prize_pool: t.current_prize_pool || 0,
+          entry_fee: t.entry_fee || 0,
+          participants: t.joined_users?.length || 0,
+          max_participants: t.max_participants || 100,
+          organizer_commission: t.organizer_earnings || 0,
+          platform_commission: t.platform_earnings || 0,
+          start_date: t.start_date,
+        };
+      });
+
+      // Transform local tournaments
+      const transformedLocal: UnifiedTournament[] = (localTournaments || []).map(t => {
+        const profile = (t as any).profiles;
+        
+        return {
+          id: t.id,
+          title: t.tournament_name,
+          game: t.game,
+          status: t.status,
+          type: 'local' as const,
+          creator_id: t.organizer_id,
+          creator_name: profile?.full_name || profile?.username || 'Unknown',
+          prize_pool: t.current_prize_pool || 0,
+          entry_fee: t.entry_fee || 0,
+          participants: t.joined_users?.length || 0,
+          max_participants: t.max_participants || 50,
+          organizer_commission: t.organizer_earnings || 0,
+          platform_commission: t.platform_earnings || 0,
+          start_date: t.tournament_date,
+        };
+      });
+
+      setTournaments([...transformedRegular, ...transformedLocal]);
     } catch (error) {
       console.error('Error fetching tournaments:', error);
     } finally {
@@ -160,304 +210,20 @@ const AdminTournaments = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      game: 'BGMI',
-      tournament_mode: 'Squad',
-      description: '',
-      entry_fee: '',
-      max_participants: '100',
-      start_date: '',
-      end_date: '',
-      registration_deadline: '',
-      status: 'upcoming',
-      rules: '',
-      youtube_link: '',
-      youtube_type: 'live',
-      room_id: '',
-      room_password: '',
-    });
-    setPrizePositions([
-      { rank: 1, amount: '' },
-      { rank: 2, amount: '' },
-      { rank: 3, amount: '' },
-    ]);
-    setEditingTournament(null);
-  };
-
-  const calculatePrizePool = () => {
-    const entryFee = parseFloat(formData.entry_fee) || 0;
-    const maxParticipants = parseInt(formData.max_participants) || 0;
-    const totalCollection = entryFee * maxParticipants;
-    const prizePool = (totalCollection * commissionSettings.prize_pool_percent) / 100;
-    return prizePool;
-  };
-
-  const openEditDialog = (tournament: Tournament) => {
-    setEditingTournament(tournament);
-    setFormData({
-      title: tournament.title,
-      game: tournament.game,
-      tournament_mode: 'Squad',
-      description: tournament.description || '',
-      entry_fee: tournament.entry_fee?.toString() || '',
-      max_participants: tournament.max_participants?.toString() || '100',
-      start_date: tournament.start_date ? new Date(tournament.start_date).toISOString().slice(0, 16) : '',
-      end_date: tournament.end_date ? new Date(tournament.end_date).toISOString().slice(0, 16) : '',
-      registration_deadline: tournament.registration_deadline ? new Date(tournament.registration_deadline).toISOString().slice(0, 16) : '',
-      status: tournament.status || 'upcoming',
-      rules: tournament.rules || '',
-      youtube_link: '',
-      youtube_type: 'live',
-      room_id: (tournament as any).room_id || '',
-      room_password: (tournament as any).room_password || '',
-    });
-    setDialogOpen(true);
-  };
-
-  const addPrizePosition = () => {
-    setPrizePositions(prev => [
-      ...prev,
-      { rank: prev.length + 1, amount: '' }
-    ]);
-  };
-
-  const updatePrizePosition = (index: number, amount: string) => {
-    setPrizePositions(prev => 
-      prev.map((p, i) => i === index ? { ...p, amount } : p)
-    );
-  };
-
-  const removePrizePosition = (index: number) => {
-    if (prizePositions.length > 1) {
-      setPrizePositions(prev => 
-        prev.filter((_, i) => i !== index).map((p, i) => ({ ...p, rank: i + 1 }))
-      );
-    }
-  };
-
-  const getTotalDistribution = () => {
-    return prizePositions.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
-  };
-
-  const handleSave = async () => {
-    if (!formData.title || !formData.game || !formData.start_date) {
-      toast({
-        title: 'Error',
-        description: 'Please fill all required fields.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!hasPermission(editingTournament ? 'tournaments:edit' : 'tournaments:create')) {
-      toast({
-        title: 'Access Denied',
-        description: 'You do not have permission for this action.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      // Calculate prize pool based on commission settings
-      const entryFee = parseFloat(formData.entry_fee) || 0;
-      const maxParticipants = parseInt(formData.max_participants) || 100;
-      const totalCollection = entryFee * maxParticipants;
-      const calculatedPrizePool = Math.floor((totalCollection * commissionSettings.prize_pool_percent) / 100);
-
-      const tournamentData = {
-        title: formData.title,
-        game: formData.game,
-        description: formData.description || null,
-        prize_pool: `₹${calculatedPrizePool.toLocaleString()}`,
-        entry_fee: entryFee,
-        max_participants: maxParticipants,
-        start_date: new Date(formData.start_date).toISOString(),
-        end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
-        registration_deadline: formData.registration_deadline ? new Date(formData.registration_deadline).toISOString() : null,
-        status: formData.status,
-        rules: formData.rules || null,
-        created_by: user?.id,
-        room_id: formData.room_id || null,
-        room_password: formData.room_password || null,
-      };
-
-      if (editingTournament) {
-        const { error } = await supabase
-          .from('tournaments')
-          .update(tournamentData)
-          .eq('id', editingTournament.id);
-
-        if (error) throw error;
-        toast({ title: 'Updated!', description: 'Tournament updated successfully.' });
-      } else {
-        const { error } = await supabase
-          .from('tournaments')
-          .insert(tournamentData);
-
-        if (error) throw error;
-        toast({ title: 'Created!', description: 'Tournament created successfully.' });
-      }
-
-      setDialogOpen(false);
-      resetForm();
-      fetchTournaments();
-    } catch (error) {
-      console.error('Error saving tournament:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save tournament.',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!hasPermission('tournaments:delete')) {
-      toast({
-        title: 'Access Denied',
-        description: 'You do not have permission to delete tournaments.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!confirm('Delete this tournament?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('tournaments')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      toast({ title: 'Deleted', description: 'Tournament deleted successfully.' });
-      fetchTournaments();
-    } catch (error) {
-      console.error('Error deleting tournament:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete tournament.',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  // Check if tournament can be started (when start_date is reached)
-  const canStartTournament = (tournament: Tournament): boolean => {
-    if (tournament.status !== 'upcoming') return false;
-    const startTime = new Date(tournament.start_date);
-    const now = new Date();
-    return now >= startTime;
-  };
-
-  // Check if tournament can be ended (only if live/ongoing)
-  const canEndTournament = (tournament: Tournament): boolean => {
-    return tournament.status === 'ongoing';
-  };
-
-  // Handle starting tournament
-  const handleStartTournament = async (tournament: Tournament) => {
-    // Validate room ID is set before starting
-    if (!tournament.room_id || tournament.room_id.trim() === '') {
-      toast({ 
-        title: 'Room ID Required', 
-        description: 'Room ID must be set before starting the tournament.', 
-        variant: 'destructive' 
-      });
-      return;
-    }
-
-    if (!canStartTournament(tournament)) {
-      toast({ 
-        title: 'Cannot Start Yet', 
-        description: 'Tournament can only be started when the scheduled time is reached.', 
-        variant: 'destructive' 
-      });
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // First, trigger prize pool recalculation
-      const { data: recalcData, error: recalcError } = await supabase.rpc('recalculate_tournament_prizepool', {
-        p_tournament_id: tournament.id,
-      });
-
-      if (recalcError) {
-        console.error('Recalculation error:', recalcError);
-      } else {
-        console.log('Prize pool recalculated:', recalcData);
-      }
-
-      // Update tournament status to ongoing/live
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ 
-          status: 'ongoing',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', tournament.id);
-
-      if (error) throw error;
-
-      toast({ title: 'Tournament Started!', description: 'Tournament is now live. Prize pool has been recalculated.' });
-      fetchTournaments();
-    } catch (error) {
-      console.error('Error starting tournament:', error);
-      toast({ title: 'Error', description: 'Failed to start tournament.', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Handle ending tournament
-  const handleEndTournament = async (tournament: Tournament) => {
-    if (!canEndTournament(tournament)) {
-      toast({ 
-        title: 'Cannot End', 
-        description: 'Only live tournaments can be ended.', 
-        variant: 'destructive' 
-      });
-      return;
-    }
-
-    if (!confirm('Are you sure you want to end this tournament?')) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ 
-          status: 'completed',
-          end_date: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', tournament.id);
-
-      if (error) throw error;
-
-      toast({ title: 'Tournament Ended!', description: 'Tournament has been completed.' });
-      fetchTournaments();
-    } catch (error) {
-      console.error('Error ending tournament:', error);
-      toast({ title: 'Error', description: 'Failed to end tournament.', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const getFilteredTournaments = () => {
-    return tournaments.filter(t => {
-      if (activeTab === 'all') return true;
-      return t.status === activeTab;
-    });
+    let filtered = tournaments;
+    
+    // Filter by type
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(t => t.type === typeFilter);
+    }
+    
+    // Filter by status
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(t => t.status === activeTab);
+    }
+    
+    return filtered.sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime());
   };
 
   const getStatusColor = (status: string | null) => {
@@ -470,6 +236,47 @@ const AdminTournaments = () => {
     }
   };
 
+  const getTypeColor = (type: 'organizer' | 'creator' | 'local') => {
+    switch (type) {
+      case 'organizer': return 'bg-orange-500/10 text-orange-600';
+      case 'creator': return 'bg-pink-500/10 text-pink-600';
+      case 'local': return 'bg-blue-500/10 text-blue-600';
+    }
+  };
+
+  const getTypeIcon = (type: 'organizer' | 'creator' | 'local') => {
+    switch (type) {
+      case 'organizer': return <Building2 className="h-4 w-4" />;
+      case 'creator': return <Palette className="h-4 w-4" />;
+      case 'local': return <MapPin className="h-4 w-4" />;
+    }
+  };
+
+  const handleDownloadPDF = (tournament: UnifiedTournament) => {
+    const reportData: TournamentReportData = {
+      id: tournament.id,
+      title: tournament.title,
+      game: tournament.game,
+      status: tournament.status,
+      type: tournament.type,
+      creator_name: tournament.creator_name,
+      prize_pool: tournament.prize_pool,
+      entry_fee: tournament.entry_fee,
+      participants: tournament.participants,
+      max_participants: tournament.max_participants,
+      organizer_commission: tournament.organizer_commission,
+      platform_commission: tournament.platform_commission,
+      start_date: tournament.start_date,
+    };
+    generateTournamentDetailPDF(reportData);
+    toast({ title: 'PDF Generated', description: 'Tournament details PDF is ready to print.' });
+  };
+
+  // Calculate stats
+  const totalPlatformRevenue = tournaments.reduce((sum, t) => sum + t.platform_commission, 0);
+  const organizerCount = new Set(tournaments.filter(t => t.type === 'organizer').map(t => t.creator_id)).size;
+  const creatorCount = new Set(tournaments.filter(t => t.type === 'creator').map(t => t.creator_id)).size;
+
   if (authLoading || loading) {
     return (
       <AdminLayout title="Tournaments">
@@ -481,24 +288,59 @@ const AdminTournaments = () => {
   }
 
   return (
-    <AdminLayout title="Tournament Management">
+    <AdminLayout title="All Tournaments">
       <div className="p-4 space-y-4">
-        {/* Create Button */}
-        {hasPermission('tournaments:create') && (
-          <Button 
-            variant="gaming" 
-            className="w-full"
-            onClick={() => {
-              resetForm();
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Tournament
-          </Button>
-        )}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <Trophy className="h-4 w-4 text-primary" />
+                <div>
+                  <p className="text-lg font-bold">{tournaments.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Total Tournaments</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <div>
+                  <p className="text-lg font-bold">₹{totalPlatformRevenue.toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">Platform Revenue</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Tabs */}
+        {/* Type Filter Slider */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {(['all', 'organizer', 'creator', 'local'] as const).map((type) => (
+            <Button
+              key={type}
+              variant={typeFilter === type ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTypeFilter(type)}
+              className="flex-shrink-0 gap-2"
+            >
+              {type === 'organizer' && <Building2 className="h-3 w-3" />}
+              {type === 'creator' && <Palette className="h-3 w-3" />}
+              {type === 'local' && <MapPin className="h-3 w-3" />}
+              {type === 'all' && <Trophy className="h-3 w-3" />}
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5">
+                {type === 'all' 
+                  ? tournaments.length 
+                  : tournaments.filter(t => t.type === type).length}
+              </Badge>
+            </Button>
+          ))}
+        </div>
+
+        {/* Status Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
@@ -511,79 +353,77 @@ const AdminTournaments = () => {
         {/* Tournament List */}
         <div className="space-y-3">
           {getFilteredTournaments().map((tournament) => (
-            <Card key={tournament.id}>
+            <Card key={`${tournament.type}-${tournament.id}`} className="overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Gamepad2 className="h-6 w-6 text-primary" />
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${getTypeColor(tournament.type)}`}>
+                    {getTypeIcon(tournament.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
                         <h3 className="font-semibold line-clamp-1">{tournament.title}</h3>
                         <p className="text-xs text-muted-foreground">{tournament.game}</p>
                       </div>
-                      <Badge className={`text-[10px] ${getStatusColor(tournament.status)}`}>
-                        {tournament.status}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge className={`text-[10px] ${getStatusColor(tournament.status)}`}>
+                          {tournament.status}
+                        </Badge>
+                        <Badge className={`text-[10px] ${getTypeColor(tournament.type)}`}>
+                          {tournament.type}
+                        </Badge>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Trophy className="h-3 w-3" />
-                        {tournament.prize_pool || '₹0'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Wallet className="h-3 w-3" />
-                        ₹{tournament.entry_fee || 0}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {tournament.joined_users?.length || 0}/{tournament.max_participants || 100}
-                      </span>
+                    <div className="mt-2 p-2 bg-muted/30 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Created by: <span className="font-medium text-foreground">{tournament.creator_name}</span>
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="flex items-center gap-1">
+                          <Trophy className="h-3 w-3 text-yellow-500" />
+                          <span>₹{tournament.prize_pool.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Wallet className="h-3 w-3 text-green-500" />
+                          <span>₹{tournament.entry_fee}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3 text-blue-500" />
+                          <span>{tournament.participants}/{tournament.max_participants}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <p className="text-xs text-muted-foreground mt-1">
+                    {/* Commission Details */}
+                    <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 bg-orange-500/5 rounded border border-orange-500/10">
+                        <p className="text-muted-foreground">
+                          {tournament.type === 'local' ? 'Organizer' : tournament.type.charAt(0).toUpperCase() + tournament.type.slice(1)} Commission
+                        </p>
+                        <p className="font-bold text-orange-600">₹{tournament.organizer_commission.toLocaleString()}</p>
+                      </div>
+                      <div className="p-2 bg-primary/5 rounded border border-primary/10">
+                        <p className="text-muted-foreground">Platform Commission</p>
+                        <p className="font-bold text-primary">₹{tournament.platform_commission.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground mt-2">
                       {format(new Date(tournament.start_date), 'MMM dd, yyyy hh:mm a')}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-3 pt-3 border-t">
-                  {hasPermission('tournaments:edit') && tournament.status === 'upcoming' && (
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditDialog(tournament)}>
-                      <Edit2 className="h-3 w-3 mr-1" /> Edit
-                    </Button>
-                  )}
-                  {hasPermission('tournaments:delete') && tournament.status === 'upcoming' && (
-                    <Button variant="outline" size="sm" className="text-destructive" onClick={() => handleDelete(tournament.id)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-
-                {/* Start/End Tournament Buttons */}
-                {hasPermission('tournaments:edit') && tournament.status === 'upcoming' && canStartTournament(tournament) && (
-                  <Button 
-                    className="w-full mt-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-                    size="sm"
-                    onClick={() => handleStartTournament(tournament)}
-                    disabled={saving}
-                  >
-                    <Play className="h-4 w-4 mr-2" /> Start Tournament
-                  </Button>
-                )}
-
-                {hasPermission('tournaments:edit') && tournament.status === 'ongoing' && (
-                  <Button 
-                    className="w-full mt-2 bg-gradient-to-r from-red-500 to-rose-500 text-white"
-                    size="sm"
-                    onClick={() => handleEndTournament(tournament)}
-                    disabled={saving}
-                  >
-                    <Square className="h-4 w-4 mr-2" /> End Tournament
-                  </Button>
-                )}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-3"
+                  onClick={() => handleDownloadPDF(tournament)}
+                >
+                  <FileText className="h-3 w-3 mr-2" />
+                  Download PDF
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -596,279 +436,6 @@ const AdminTournaments = () => {
           )}
         </div>
       </div>
-
-      {/* Create/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(open) => {
-        setDialogOpen(open);
-        if (!open) resetForm();
-      }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-gaming">
-              {editingTournament ? 'Edit Tournament' : 'Create Tournament'}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 pt-4">
-            {/* Basic Info */}
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Tournament Title *</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Enter tournament title"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Game *</Label>
-                  <Select
-                    value={formData.game}
-                    onValueChange={(value) => setFormData({ ...formData, game: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BGMI">BGMI</SelectItem>
-                      <SelectItem value="Free Fire">Free Fire</SelectItem>
-                      <SelectItem value="COD Mobile">COD Mobile</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Mode</Label>
-                  <Select
-                    value={formData.tournament_mode}
-                    onValueChange={(value) => setFormData({ ...formData, tournament_mode: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Solo">Solo</SelectItem>
-                      <SelectItem value="Duo">Duo</SelectItem>
-                      <SelectItem value="Squad">Squad</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            {/* Financials */}
-            <div className="space-y-3 p-3 border rounded-lg bg-muted/30">
-              <h4 className="font-medium text-sm flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-primary" />
-                Financials
-              </h4>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Entry Fee (₹)</Label>
-                  <Input
-                    type="number"
-                    value={formData.entry_fee}
-                    onChange={(e) => setFormData({ ...formData, entry_fee: e.target.value })}
-                    placeholder="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Max Players</Label>
-                  <Input
-                    type="number"
-                    value={formData.max_participants}
-                    onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
-                    placeholder="100"
-                  />
-                </div>
-              </div>
-
-              {/* Auto-calculated Prize Pool Info */}
-              <div className="bg-primary/10 rounded-lg p-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Auto Prize Pool ({commissionSettings.prize_pool_percent}%)</span>
-                  <span className="font-gaming font-bold text-primary">₹{calculatePrizePool().toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-xs text-muted-foreground">Organizer ({commissionSettings.organizer_percent}%)</span>
-                  <span className="text-xs">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.organizer_percent) / 100).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Platform ({commissionSettings.platform_percent}%)</span>
-                  <span className="text-xs">₹{Math.floor(((parseFloat(formData.entry_fee) || 0) * (parseInt(formData.max_participants) || 0) * commissionSettings.platform_percent) / 100).toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Prize Distribution */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Prize Distribution</Label>
-                  <Button variant="ghost" size="sm" onClick={addPrizePosition}>
-                    <Plus className="h-3 w-3 mr-1" /> Add Position
-                  </Button>
-                </div>
-                
-                <div className="space-y-2">
-                  {prizePositions.map((pos, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <span className="w-8 text-sm font-medium text-primary">#{pos.rank}</span>
-                      <Input
-                        type="number"
-                        value={pos.amount}
-                        onChange={(e) => updatePrizePosition(index, e.target.value)}
-                        placeholder="Prize amount"
-                        className="flex-1"
-                      />
-                      {prizePositions.length > 1 && (
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-destructive"
-                          onClick={() => removePrizePosition(index)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex justify-between text-xs pt-2 border-t">
-                  <span className="text-muted-foreground">Total Distribution:</span>
-                  <span className={`font-medium ${
-                    getTotalDistribution() > calculatePrizePool() 
-                      ? 'text-destructive' 
-                      : 'text-green-600'
-                  }`}>
-                    ₹{getTotalDistribution().toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Room Details - Only show when editing */}
-            {editingTournament && (
-              <div className="space-y-3 p-3 border rounded-lg">
-                <h4 className="font-medium text-sm flex items-center gap-2">
-                  <Key className="h-4 w-4 text-green-500" />
-                  Room Details
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Room ID</Label>
-                    <Input
-                      value={formData.room_id}
-                      onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
-                      placeholder="Enter room ID"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Password</Label>
-                    <Input
-                      value={formData.room_password}
-                      onChange={(e) => setFormData({ ...formData, room_password: e.target.value })}
-                      placeholder="Enter password"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Settings */}
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Match Time *</Label>
-                <Input
-                  type="datetime-local"
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="ongoing">Ongoing</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Streaming */}
-            <div className="space-y-3 p-3 border rounded-lg">
-              <h4 className="font-medium text-sm flex items-center gap-2">
-                <Youtube className="h-4 w-4 text-red-500" />
-                Streaming (Optional)
-              </h4>
-
-              <div className="space-y-2">
-                <Label>YouTube Link</Label>
-                <Input
-                  value={formData.youtube_link}
-                  onChange={(e) => setFormData({ ...formData, youtube_link: e.target.value })}
-                  placeholder="https://youtube.com/..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>YouTube Type</Label>
-                <Select
-                  value={formData.youtube_type}
-                  onValueChange={(value) => setFormData({ ...formData, youtube_type: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="live">Live Stream</SelectItem>
-                    <SelectItem value="video">Recorded Video</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Tournament description..."
-                rows={3}
-              />
-            </div>
-
-            {/* Rules */}
-            <div className="space-y-2">
-              <Label>Rules</Label>
-              <Textarea
-                value={formData.rules}
-                onChange={(e) => setFormData({ ...formData, rules: e.target.value })}
-                placeholder="Tournament rules..."
-                rows={3}
-              />
-            </div>
-
-            {/* Submit Button */}
-            <Button variant="gaming" className="w-full" onClick={handleSave} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : (editingTournament ? 'Update Tournament' : 'Create Tournament')}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 };

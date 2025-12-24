@@ -36,6 +36,33 @@ interface CreatorData {
   total_participants: number;
 }
 
+export interface UserData {
+  email: string;
+  username: string | null;
+  full_name: string | null;
+  phone: string | null;
+  wallet_balance: number | null;
+  is_banned: boolean | null;
+  is_frozen: boolean | null;
+  created_at: string;
+}
+
+export interface TournamentReportData {
+  id: string;
+  title: string;
+  game: string;
+  status: string | null;
+  type: 'organizer' | 'creator' | 'local';
+  creator_name: string;
+  prize_pool: number;
+  entry_fee: number;
+  participants: number;
+  max_participants: number;
+  organizer_commission: number;
+  platform_commission: number;
+  start_date: string;
+}
+
 export const generatePlayersPDF = (
   tournamentName: string,
   players: Player[],
@@ -630,6 +657,362 @@ export const generateCreatorsReportPDF = (
       `).join('')}
     </tbody>
   </table>
+  
+  <div class="footer">
+    <p>Generated on ${new Date().toLocaleString('en-IN')}</p>
+    <p>Powered by Vyuha Esport</p>
+  </div>
+</body>
+</html>
+  `;
+
+  const blob = new Blob([content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  
+  const printWindow = window.open(url, '_blank');
+  if (printWindow) {
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  }
+};
+
+export const generateUsersPDF = (users: UserData[]) => {
+  const content = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Users Report - Vyuha Esport</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #1a1a1a;
+      margin: 0 0 10px 0;
+    }
+    .header p {
+      color: #666;
+      margin: 0;
+    }
+    .brand {
+      color: #3b82f6;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .summary {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+      gap: 20px;
+    }
+    .summary-item {
+      text-align: center;
+      padding: 15px 25px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .summary-item .value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3b82f6;
+    }
+    .summary-item .label {
+      font-size: 12px;
+      color: #666;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      font-size: 11px;
+    }
+    th {
+      background: #3b82f6;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .status-banned { color: #ef4444; font-weight: bold; }
+    .status-frozen { color: #f59e0b; font-weight: bold; }
+    .status-active { color: #22c55e; }
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <p class="brand">VYUHA ESPORT</p>
+    <h1>Users Report</h1>
+    <p>Generated on ${new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}</p>
+  </div>
+  
+  <div class="summary">
+    <div class="summary-item">
+      <div class="value">${users.length}</div>
+      <div class="label">Total Users</div>
+    </div>
+    <div class="summary-item">
+      <div class="value">${users.filter(u => u.is_banned).length}</div>
+      <div class="label">Banned</div>
+    </div>
+    <div class="summary-item">
+      <div class="value">${users.filter(u => u.is_frozen).length}</div>
+      <div class="label">Frozen</div>
+    </div>
+    <div class="summary-item">
+      <div class="value">₹${users.reduce((sum, u) => sum + (u.wallet_balance || 0), 0).toFixed(0)}</div>
+      <div class="label">Total Wallet Balance</div>
+    </div>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th class="text-right">Balance</th>
+        <th class="text-center">Status</th>
+        <th>Joined</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${users.map((user, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${user.full_name || '-'}</td>
+          <td>@${user.username || '-'}</td>
+          <td>${user.email}</td>
+          <td>${user.phone || '-'}</td>
+          <td class="text-right">₹${(user.wallet_balance || 0).toFixed(0)}</td>
+          <td class="text-center ${user.is_banned ? 'status-banned' : user.is_frozen ? 'status-frozen' : 'status-active'}">${user.is_banned ? 'Banned' : user.is_frozen ? 'Frozen' : 'Active'}</td>
+          <td>${new Date(user.created_at).toLocaleDateString('en-IN')}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+  
+  <div class="footer">
+    <p>Generated on ${new Date().toLocaleString('en-IN')}</p>
+    <p>Powered by Vyuha Esport</p>
+  </div>
+</body>
+</html>
+  `;
+
+  const blob = new Blob([content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  
+  const printWindow = window.open(url, '_blank');
+  if (printWindow) {
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  }
+};
+
+export const generateUsersCSV = (users: UserData[]) => {
+  const headers = ['#', 'Full Name', 'Username', 'Email', 'Phone', 'Wallet Balance', 'Status', 'Joined Date'];
+  const rows = users.map((user, index) => [
+    index + 1,
+    user.full_name || '-',
+    user.username || '-',
+    user.email,
+    user.phone || '-',
+    user.wallet_balance || 0,
+    user.is_banned ? 'Banned' : user.is_frozen ? 'Frozen' : 'Active',
+    new Date(user.created_at).toLocaleDateString('en-IN'),
+  ]);
+  
+  const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `users_report_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
+export const generateTournamentDetailPDF = (tournament: TournamentReportData) => {
+  const typeColor = tournament.type === 'organizer' ? '#f97316' : tournament.type === 'creator' ? '#ec4899' : '#3b82f6';
+  const typeLabel = tournament.type.charAt(0).toUpperCase() + tournament.type.slice(1);
+  
+  const content = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${tournament.title} - Tournament Details</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 3px solid ${typeColor};
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #1a1a1a;
+      margin: 0 0 10px 0;
+    }
+    .header p {
+      color: #666;
+      margin: 5px 0;
+    }
+    .brand {
+      color: ${typeColor};
+      font-weight: bold;
+      font-size: 18px;
+    }
+    .type-badge {
+      display: inline-block;
+      background: ${typeColor};
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    .status-badge {
+      display: inline-block;
+      background: ${tournament.status === 'ongoing' ? '#22c55e' : tournament.status === 'upcoming' ? '#3b82f6' : '#6b7280'};
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin: 30px 0;
+    }
+    .info-item {
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+    }
+    .info-item .label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 5px;
+    }
+    .info-item .value {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1a1a1a;
+    }
+    .commission-section {
+      background: linear-gradient(135deg, ${typeColor}15, ${typeColor}05);
+      border: 1px solid ${typeColor}30;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 30px 0;
+    }
+    .commission-section h3 {
+      color: ${typeColor};
+      margin: 0 0 15px 0;
+    }
+    .commission-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .commission-row:last-child {
+      border-bottom: none;
+    }
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <p class="brand">VYUHA ESPORT</p>
+    <h1>${tournament.title}</h1>
+    <p>Game: ${tournament.game}</p>
+    <p>Created by: ${tournament.creator_name}</p>
+    <span class="type-badge">${typeLabel} Tournament</span>
+    <span class="status-badge">${tournament.status}</span>
+  </div>
+  
+  <div class="info-grid">
+    <div class="info-item">
+      <div class="label">Start Date</div>
+      <div class="value">${new Date(tournament.start_date).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</div>
+    </div>
+    <div class="info-item">
+      <div class="label">Prize Pool</div>
+      <div class="value">₹${tournament.prize_pool.toLocaleString()}</div>
+    </div>
+    <div class="info-item">
+      <div class="label">Entry Fee</div>
+      <div class="value">₹${tournament.entry_fee}</div>
+    </div>
+    <div class="info-item">
+      <div class="label">Participants</div>
+      <div class="value">${tournament.participants} / ${tournament.max_participants}</div>
+    </div>
+  </div>
+  
+  <div class="commission-section">
+    <h3>Commission Breakdown</h3>
+    <div class="commission-row">
+      <span>Total Fees Collected</span>
+      <strong>₹${(tournament.entry_fee * tournament.participants).toLocaleString()}</strong>
+    </div>
+    <div class="commission-row">
+      <span>Prize Pool</span>
+      <strong>₹${tournament.prize_pool.toLocaleString()}</strong>
+    </div>
+    <div class="commission-row">
+      <span>${typeLabel} Commission</span>
+      <strong>₹${tournament.organizer_commission.toLocaleString()}</strong>
+    </div>
+    <div class="commission-row">
+      <span>Platform Commission</span>
+      <strong style="color: ${typeColor}">₹${tournament.platform_commission.toLocaleString()}</strong>
+    </div>
+  </div>
   
   <div class="footer">
     <p>Generated on ${new Date().toLocaleString('en-IN')}</p>
