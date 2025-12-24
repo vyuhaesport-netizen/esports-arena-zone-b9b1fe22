@@ -1210,9 +1210,17 @@ const LocalTournamentPage = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Adjust prize amounts for each position before declaring winners.
-                </p>
+                {/* Prize Pool Limit Display */}
+                <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Available Prize Pool:</span>
+                    <span className="text-lg font-bold text-primary">₹{selectedTournament?.current_prize_pool || 0}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total distribution cannot exceed this amount
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5].map((pos) => (
                     <div key={pos} className="flex items-center gap-2">
@@ -1236,17 +1244,41 @@ const LocalTournamentPage = () => {
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center justify-between text-sm pt-2 border-t">
-                  <span className="text-muted-foreground">Total Distribution:</span>
-                  <span className="font-bold">
-                    ₹{Object.values(editablePrizeDistribution).reduce((a, b) => a + (b || 0), 0)}
-                  </span>
-                </div>
+
+                {/* Validation Display */}
+                {(() => {
+                  const totalDist = Object.values(editablePrizeDistribution).reduce((a, b) => a + (b || 0), 0);
+                  const prizePool = selectedTournament?.current_prize_pool || 0;
+                  const isValid = totalDist <= prizePool;
+                  const remaining = prizePool - totalDist;
+                  
+                  return (
+                    <div className={`flex flex-col gap-1 pt-2 border-t ${!isValid ? 'text-destructive' : ''}`}>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Total Distribution:</span>
+                        <span className={`font-bold ${!isValid ? 'text-destructive' : ''}`}>
+                          ₹{totalDist}
+                        </span>
+                      </div>
+                      {!isValid ? (
+                        <p className="text-xs text-destructive">
+                          ⚠️ Exceeds prize pool by ₹{totalDist - prizePool}. Please reduce amounts.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Remaining: ₹{remaining}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="w-full"
                   onClick={handleUpdatePrizeDistribution}
+                  disabled={Object.values(editablePrizeDistribution).reduce((a, b) => a + (b || 0), 0) > (selectedTournament?.current_prize_pool || 0)}
                 >
                   Save Prize Distribution
                 </Button>
@@ -1298,7 +1330,39 @@ const LocalTournamentPage = () => {
               );
             })}
 
-            <Button onClick={declareWinner} className="w-full">
+            {/* Winner Total Display */}
+            {(() => {
+              const selectedWinnerPrizes = Object.entries(winnerPositions).reduce((total, [, position]) => {
+                return total + (editablePrizeDistribution[position.toString()] || 0);
+              }, 0);
+              const prizePool = selectedTournament?.current_prize_pool || 0;
+              const isValid = selectedWinnerPrizes <= prizePool;
+              
+              return (
+                <div className={`p-3 rounded-lg ${!isValid ? 'bg-destructive/10 border border-destructive/20' : 'bg-muted'}`}>
+                  <div className="flex items-center justify-between text-sm">
+                    <span>Prizes to distribute:</span>
+                    <span className={`font-bold ${!isValid ? 'text-destructive' : ''}`}>₹{selectedWinnerPrizes} / ₹{prizePool}</span>
+                  </div>
+                  {!isValid && (
+                    <p className="text-xs text-destructive mt-1">
+                      Distribution exceeds prize pool!
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
+
+            <Button 
+              onClick={declareWinner} 
+              className="w-full"
+              disabled={(() => {
+                const selectedWinnerPrizes = Object.entries(winnerPositions).reduce((total, [, position]) => {
+                  return total + (editablePrizeDistribution[position.toString()] || 0);
+                }, 0);
+                return selectedWinnerPrizes > (selectedTournament?.current_prize_pool || 0);
+              })()}
+            >
               <Trophy className="h-4 w-4 mr-2" />
               Confirm Winners & Distribute Prizes
             </Button>
