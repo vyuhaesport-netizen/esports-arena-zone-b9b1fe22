@@ -84,6 +84,7 @@ const TournamentDetails = () => {
   const [loadingTeams, setLoadingTeams] = useState(false);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [teamName, setTeamName] = useState('');
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -324,6 +325,17 @@ const TournamentDetails = () => {
     );
   };
 
+  const handleTeamSelect = (teamId: string) => {
+    setSelectedTeamId(teamId);
+    setSelectedTeamMembers([]);
+  };
+
+  const getSelectedTeamMembers = () => {
+    if (!selectedTeamId) return [];
+    const team = playerTeams.find(t => t.id === selectedTeamId);
+    return team?.members.filter(m => m.user_id !== user?.id) || [];
+  };
+
   const getRequiredTeamSize = () => {
     if (tournament?.tournament_mode === 'duo') return 2;
     if (tournament?.tournament_mode === 'squad') return 4;
@@ -331,15 +343,10 @@ const TournamentDetails = () => {
   };
 
   const getAllTeamMembersList = () => {
-    const allMembers: TeamMember[] = [];
-    playerTeams.forEach(team => {
-      team.members.forEach(member => {
-        if (!allMembers.find(m => m.user_id === member.user_id) && member.user_id !== user?.id) {
-          allMembers.push(member);
-        }
-      });
-    });
-    return allMembers;
+    // Return members only from the selected team
+    if (!selectedTeamId) return [];
+    const team = playerTeams.find(t => t.id === selectedTeamId);
+    return team?.members.filter(m => m.user_id !== user?.id) || [];
   };
 
   const canTeamJoin = () => {
@@ -625,7 +632,14 @@ const TournamentDetails = () => {
       </Dialog>
 
       {/* Team Selection Dialog */}
-      <Dialog open={teamSelectDialog} onOpenChange={setTeamSelectDialog}>
+      <Dialog open={teamSelectDialog} onOpenChange={(open) => { 
+        setTeamSelectDialog(open); 
+        if (!open) {
+          setSelectedTeamMembers([]);
+          setTeamName('');
+          setSelectedTeamId(null);
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -634,8 +648,8 @@ const TournamentDetails = () => {
             </DialogTitle>
             <DialogDescription>
               {tournament.tournament_mode === 'duo' 
-                ? 'Select 1 teammate for duo match' 
-                : 'Select 3 teammates for squad match'}
+                ? 'Select your team first, then pick 1 teammate for duo match' 
+                : 'Select your team first, then pick 3 teammates for squad match'}
             </DialogDescription>
           </DialogHeader>
           
@@ -676,73 +690,124 @@ const TournamentDetails = () => {
                 <Users className="h-10 w-10 text-muted-foreground/50 mx-auto mb-2" />
                 <p className="text-sm font-medium">No Player Team Found</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Create or join a player team first to participate in {tournament.tournament_mode} matches.
+                  You must join or create a player team first to participate in {tournament.tournament_mode} matches.
                 </p>
                 <Button size="sm" className="mt-3" onClick={() => { setTeamSelectDialog(false); navigate('/team'); }}>
                   Go to Teams
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">
-                  Select {getRequiredTeamSize() - 1} teammate(s) • Entry ₹{entryFee} per player
-                </Label>
-                <ScrollArea className="h-[200px]">
-                  <div className="space-y-2">
-                    {teamMembersList.map((member) => {
-                      const isSelected = selectedTeamMembers.includes(member.user_id);
-                      const hasInsufficientBalance = member.wallet_balance < entryFee;
-                      const maxSelected = selectedTeamMembers.length >= (getRequiredTeamSize() - 1);
+              <div className="space-y-4">
+                {/* Step 1: Select Team */}
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground font-semibold">
+                    Step 1: Select Your Player Team
+                  </Label>
+                  <div className="grid gap-2">
+                    {playerTeams.map((team) => {
+                      const isSelected = selectedTeamId === team.id;
+                      const teamMemberCount = team.members.length;
+                      const requiredSize = getRequiredTeamSize();
+                      const hasEnoughMembers = teamMemberCount >= requiredSize;
 
                       return (
-                        <div 
-                          key={member.user_id}
-                          onClick={() => !hasInsufficientBalance && toggleMemberSelection(member.user_id)}
-                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                        <div
+                          key={team.id}
+                          onClick={() => hasEnoughMembers && handleTeamSelect(team.id)}
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
                             isSelected 
                               ? 'bg-primary/10 border-primary' 
-                              : hasInsufficientBalance
+                              : !hasEnoughMembers
                               ? 'bg-muted/50 border-border opacity-60 cursor-not-allowed'
-                              : maxSelected && !isSelected
-                              ? 'bg-muted/30 border-border opacity-50'
                               : 'bg-card border-border hover:bg-muted/50'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <Checkbox 
-                              checked={isSelected} 
-                              disabled={hasInsufficientBalance || (maxSelected && !isSelected)}
-                            />
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={member.avatar_url || ''} />
-                              <AvatarFallback className="bg-muted text-xs">
-                                {member.username?.charAt(0).toUpperCase() || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium">{member.in_game_name || member.username || 'Player'}</p>
-                              <p className="text-xs text-muted-foreground">@{member.username}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4 text-primary" />
+                              <span className="font-medium text-sm">{team.name}</span>
                             </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <Badge className={`text-[10px] ${
-                              member.wallet_balance >= entryFee 
-                                ? 'bg-green-500/10 text-green-600' 
-                                : 'bg-red-500/10 text-red-600'
-                            }`}>
-                              ₹{member.wallet_balance}
-                            </Badge>
-                            {hasInsufficientBalance && (
-                              <span className="text-[9px] text-destructive flex items-center gap-0.5">
-                                <AlertCircle className="h-3 w-3" /> Low balance
-                              </span>
-                            )}
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-[10px]">
+                                {teamMemberCount} members
+                              </Badge>
+                              {!hasEnoughMembers && (
+                                <span className="text-[10px] text-destructive">
+                                  Need {requiredSize}+ members
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </ScrollArea>
+                </div>
+
+                {/* Step 2: Select Teammates (only if team is selected) */}
+                {selectedTeamId && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground font-semibold">
+                      Step 2: Select {getRequiredTeamSize() - 1} Teammate(s) • Entry ₹{entryFee} per player
+                    </Label>
+                    <ScrollArea className="h-[180px]">
+                      <div className="space-y-2">
+                        {teamMembersList.map((member) => {
+                          const isSelected = selectedTeamMembers.includes(member.user_id);
+                          const hasInsufficientBalance = member.wallet_balance < entryFee;
+                          const maxSelected = selectedTeamMembers.length >= (getRequiredTeamSize() - 1);
+
+                          return (
+                            <div 
+                              key={member.user_id}
+                              onClick={() => !hasInsufficientBalance && toggleMemberSelection(member.user_id)}
+                              className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                                isSelected 
+                                  ? 'bg-primary/10 border-primary' 
+                                  : hasInsufficientBalance
+                                  ? 'bg-muted/50 border-border opacity-60 cursor-not-allowed'
+                                  : maxSelected && !isSelected
+                                  ? 'bg-muted/30 border-border opacity-50'
+                                  : 'bg-card border-border hover:bg-muted/50'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Checkbox 
+                                  checked={isSelected} 
+                                  disabled={hasInsufficientBalance || (maxSelected && !isSelected)}
+                                />
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={member.avatar_url || ''} />
+                                  <AvatarFallback className="bg-muted text-xs">
+                                    {member.username?.charAt(0).toUpperCase() || '?'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="text-sm font-medium">{member.in_game_name || member.username || 'Player'}</p>
+                                  <p className="text-xs text-muted-foreground">@{member.username}</p>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <Badge className={`text-[10px] ${
+                                  member.wallet_balance >= entryFee 
+                                    ? 'bg-green-500/10 text-green-600' 
+                                    : 'bg-red-500/10 text-red-600'
+                                }`}>
+                                  ₹{member.wallet_balance}
+                                </Badge>
+                                {hasInsufficientBalance && (
+                                  <span className="text-[9px] text-destructive flex items-center gap-0.5">
+                                    <AlertCircle className="h-3 w-3" /> Low balance
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                )}
               </div>
             )}
 
@@ -766,7 +831,7 @@ const TournamentDetails = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setTeamSelectDialog(false); setSelectedTeamMembers([]); setTeamName(''); }}>
+            <Button variant="outline" onClick={() => { setTeamSelectDialog(false); setSelectedTeamMembers([]); setTeamName(''); setSelectedTeamId(null); }}>
               Cancel
             </Button>
             <Button 
