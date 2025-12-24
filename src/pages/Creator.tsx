@@ -285,8 +285,26 @@ const Creator = () => {
     return timeDiff < 30 * 60 * 1000;
   };
 
+  const canJoinTournament = (tournament: Tournament) => {
+    const now = new Date();
+    const startTime = new Date(tournament.start_date);
+    const timeDiff = startTime.getTime() - now.getTime();
+    // Can't join if less than 2 minutes before start
+    return timeDiff > 2 * 60 * 1000;
+  };
+
+  const isTournamentExpired = (tournament: Tournament) => {
+    const now = new Date();
+    const startTime = new Date(tournament.start_date);
+    // Tournament is expired if start time has passed
+    return startTime.getTime() < now.getTime();
+  };
+
   const getFilteredTournaments = () => {
     let filtered = tournaments;
+    
+    // Filter out expired tournaments (start time has passed)
+    filtered = filtered.filter(t => !isTournamentExpired(t));
     
     // Filter by user's preferred game
     if (userProfile?.preferred_game) {
@@ -369,6 +387,8 @@ const Creator = () => {
               const showRoomDetails = canSeeRoomDetails(tournament);
               const isFollowingCreator = tournament.created_by ? followedOrganizers.includes(tournament.created_by) : false;
               
+              const canJoin = canJoinTournament(tournament);
+              
               return (
                 <TournamentCard
                   key={tournament.id}
@@ -389,6 +409,8 @@ const Creator = () => {
                       setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
                     }
                   }}
+                  joinDisabled={!canJoin}
+                  joinDisabledReason={!canJoin ? "Registration closed (2 min before start)" : undefined}
                 />
               );
             })}

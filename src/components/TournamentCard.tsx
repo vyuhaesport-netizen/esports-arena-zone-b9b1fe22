@@ -40,6 +40,8 @@ interface TournamentCardProps {
   organizerName?: string;
   isFollowing?: boolean;
   onFollowChange?: (isFollowing: boolean) => void;
+  joinDisabled?: boolean;
+  joinDisabledReason?: string;
 }
 
 const formatCountdown = (ms: number): string => {
@@ -74,7 +76,9 @@ const TournamentCard = ({
   showRoomDetails = false,
   organizerName,
   isFollowing = false,
-  onFollowChange
+  onFollowChange,
+  joinDisabled = false,
+  joinDisabledReason
 }: TournamentCardProps) => {
   const [profilePreviewOpen, setProfilePreviewOpen] = useState(false);
   const [countdown, setCountdown] = useState<string>('');
@@ -113,7 +117,7 @@ const TournamentCard = ({
   const startXRef = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const SWIPE_THRESHOLD = 100;
-  const canSwipeJoin = !isJoined && tournament.status === 'upcoming' && spotsLeft > 0;
+  const canSwipeJoin = !isJoined && tournament.status === 'upcoming' && spotsLeft > 0 && !joinDisabled;
   
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!canSwipeJoin) return;
@@ -243,6 +247,10 @@ const TournamentCard = ({
                 <Zap className="h-3 w-3" />
                 <span>Swipe left to join</span>
                 <ChevronRight className="h-3 w-3 animate-pulse" />
+              </div>
+            ) : joinDisabled ? (
+              <div className="flex-1 h-7 rounded bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-600 text-[10px]">
+                {joinDisabledReason || 'Registration Closed'}
               </div>
             ) : (
               <div className="flex-1 h-7 rounded bg-muted/50 flex items-center justify-center text-muted-foreground text-[10px]">

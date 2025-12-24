@@ -1141,6 +1141,35 @@ const LocalTournamentPage = () => {
                         />
                       </div>
                     </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full mt-2"
+                      onClick={async () => {
+                        if (!selectedTournament) return;
+                        const { error } = await supabase
+                          .from('local_tournaments')
+                          .update({
+                            room_id: roomDetails.room_id,
+                            room_password: roomDetails.room_password,
+                          })
+                          .eq('id', selectedTournament.id);
+                        
+                        if (error) {
+                          toast({ title: 'Error', description: 'Failed to update room details.', variant: 'destructive' });
+                        } else {
+                          toast({ title: 'Updated!', description: 'Room details saved successfully.' });
+                          setSelectedTournament({
+                            ...selectedTournament,
+                            room_id: roomDetails.room_id,
+                            room_password: roomDetails.room_password,
+                          });
+                          fetchData();
+                        }
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Update Room Details
+                    </Button>
                     <p className="text-xs text-muted-foreground">Required before starting the tournament</p>
                   </CardContent>
                 </Card>

@@ -57,7 +57,7 @@ const TournamentScanner = ({ onScanSuccess }: TournamentScannerProps) => {
     }
     
     // Navigate to join page with the code
-    navigate(`/local-tournament?code=${privateCode}`);
+    navigate(`/join-local?code=${privateCode}`);
     setOpen(false);
     setMode(null);
     setManualCode('');
