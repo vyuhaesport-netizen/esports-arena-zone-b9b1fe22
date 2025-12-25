@@ -63,16 +63,21 @@ const Auth = () => {
 
   const checkMaintenanceMode = async () => {
     try {
+      // Check for bypass token in URL
+      const bypassToken = searchParams.get('bypass');
+      
       const { data } = await supabase
         .from('platform_settings')
         .select('setting_key, setting_value')
-        .in('setting_key', ['maintenance_mode', 'maintenance_message', 'maintenance_end_time']);
+        .in('setting_key', ['maintenance_mode', 'maintenance_message', 'maintenance_end_time', 'maintenance_bypass_token']);
 
       const maintenanceData: MaintenanceState = {
         isEnabled: false,
         message: 'We are currently performing scheduled maintenance. Please check back soon!',
         endTime: '',
       };
+
+      let storedBypassToken = '';
 
       data?.forEach((s) => {
         if (s.setting_key === 'maintenance_mode') {
@@ -84,7 +89,22 @@ const Auth = () => {
         if (s.setting_key === 'maintenance_end_time' && s.setting_value) {
           maintenanceData.endTime = s.setting_value;
         }
+        if (s.setting_key === 'maintenance_bypass_token' && s.setting_value) {
+          storedBypassToken = s.setting_value;
+        }
       });
+
+      // If bypass token matches, disable maintenance for this session
+      if (bypassToken && storedBypassToken && bypassToken === storedBypassToken) {
+        maintenanceData.isEnabled = false;
+        // Store bypass in sessionStorage so it persists during navigation
+        sessionStorage.setItem('maintenance_bypass', 'true');
+      }
+      
+      // Check if already bypassed in this session
+      if (sessionStorage.getItem('maintenance_bypass') === 'true') {
+        maintenanceData.isEnabled = false;
+      }
 
       setMaintenance(maintenanceData);
     } catch (error) {

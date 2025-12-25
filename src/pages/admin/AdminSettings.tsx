@@ -24,7 +24,10 @@ import {
   Globe,
   Wrench,
   AlertTriangle,
-  Clock
+  Clock,
+  Link,
+  Copy,
+  RefreshCw
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -56,6 +59,7 @@ interface MaintenanceSettings {
   maintenance_mode: string;
   maintenance_message: string;
   maintenance_end_time: string;
+  maintenance_bypass_token: string;
 }
 
 const AdminSettings = () => {
@@ -83,6 +87,7 @@ const AdminSettings = () => {
     maintenance_mode: 'false',
     maintenance_message: 'We are currently performing scheduled maintenance. Please check back soon!',
     maintenance_end_time: '',
+    maintenance_bypass_token: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -91,6 +96,7 @@ const AdminSettings = () => {
   const [savingSocial, setSavingSocial] = useState(false);
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
+  const [generatingBypassToken, setGeneratingBypassToken] = useState(false);
 
   const qrInputRef = useRef<HTMLInputElement>(null);
 
@@ -150,6 +156,7 @@ const AdminSettings = () => {
         maintenance_mode: 'false',
         maintenance_message: 'We are currently performing scheduled maintenance. Please check back soon!',
         maintenance_end_time: '',
+        maintenance_bypass_token: '',
       };
 
       data?.forEach((s) => {
@@ -379,6 +386,70 @@ const AdminSettings = () => {
     }
   };
 
+  const generateBypassToken = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let token = '';
+    for (let i = 0; i < 32; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+  };
+
+  const handleGenerateBypassLink = async () => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Access Denied', description: 'Only Super Admin can generate bypass links.', variant: 'destructive' });
+      return;
+    }
+
+    setGeneratingBypassToken(true);
+
+    try {
+      const newToken = generateBypassToken();
+      
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({ 
+          setting_key: 'maintenance_bypass_token',
+          setting_value: newToken,
+          updated_by: user?.id,
+        }, { onConflict: 'setting_key' });
+
+      if (error) throw error;
+
+      setMaintenanceSettings(prev => ({ ...prev, maintenance_bypass_token: newToken }));
+      
+      toast({ 
+        title: 'Bypass Link Generated', 
+        description: 'New bypass link has been created. Share it with your team.',
+      });
+    } catch (error) {
+      console.error('Error generating bypass token:', error);
+      toast({ title: 'Error', description: 'Failed to generate bypass link.', variant: 'destructive' });
+    } finally {
+      setGeneratingBypassToken(false);
+    }
+  };
+
+  const getBypassUrl = () => {
+    if (!maintenanceSettings.maintenance_bypass_token) return '';
+    return `${window.location.origin}/?bypass=${maintenanceSettings.maintenance_bypass_token}`;
+  };
+
+  const handleCopyBypassLink = async () => {
+    const url = getBypassUrl();
+    if (!url) {
+      toast({ title: 'No Link', description: 'Generate a bypass link first.', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: 'Copied!', description: 'Bypass link copied to clipboard.' });
+    } catch (error) {
+      toast({ title: 'Copy Failed', description: 'Please copy the link manually.', variant: 'destructive' });
+    }
+  };
+
   const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -525,6 +596,85 @@ const AdminSettings = () => {
                   disabled={!isSuperAdmin}
                 />
                 <p className="text-xs text-muted-foreground">Optional: Let users know when the site will be back</p>
+              </div>
+            </div>
+
+            {/* Bypass Link Section */}
+            <div className="border-t pt-4 mt-4">
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  <Link className="h-4 w-4 text-muted-foreground" />
+                  Maintenance Bypass Link
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Generate a special link that allows you and your team to access the site during maintenance.
+                </p>
+                
+                {maintenanceSettings.maintenance_bypass_token ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={getBypassUrl()}
+                        readOnly
+                        className="flex-1 text-xs font-mono bg-muted"
+                      />
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleCopyBypassLink}
+                        title="Copy bypass link"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyBypassLink}
+                        className="flex-1"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Link
+                      </Button>
+                      {isSuperAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleGenerateBypassLink}
+                          disabled={generatingBypassToken}
+                          className="flex-1"
+                        >
+                          {generatingBypassToken ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          ) : (
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                          )}
+                          Regenerate
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      ⚠️ Share this link only with trusted team members. Anyone with this link can bypass maintenance.
+                    </p>
+                  </div>
+                ) : (
+                  isSuperAdmin && (
+                    <Button
+                      variant="outline"
+                      onClick={handleGenerateBypassLink}
+                      disabled={generatingBypassToken}
+                      className="w-full"
+                    >
+                      {generatingBypassToken ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Link className="h-4 w-4 mr-2" />
+                      )}
+                      Generate Bypass Link
+                    </Button>
+                  )
+                )}
               </div>
             </div>
 
