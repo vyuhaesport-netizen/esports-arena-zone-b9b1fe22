@@ -440,12 +440,219 @@ const AdminApiPayment = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="razorpay" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="gateways" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="gateways" className="text-xs">Gateways</TabsTrigger>
             <TabsTrigger value="razorpay" className="text-xs">Razorpay</TabsTrigger>
             <TabsTrigger value="settings" className="text-xs">Settings</TabsTrigger>
             <TabsTrigger value="history" className="text-xs">History</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="gateways" className="space-y-4">
+            {/* Payment Gateway Apps */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  Payment Gateway Apps
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Select and configure payment gateways for your platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Razorpay */}
+                <div className={`p-4 rounded-lg border-2 ${razorpayGateway?.is_enabled ? 'border-green-500 bg-green-500/5' : 'border-border'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                        R
+                      </div>
+                      <div>
+                        <p className="font-semibold">Razorpay</p>
+                        <p className="text-xs text-muted-foreground">UPI, Cards, NetBanking, Wallets</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {razorpayGateway?.is_enabled && <Badge className="bg-green-500 text-white text-xs">Active</Badge>}
+                      <Switch
+                        checked={razorpayGateway?.is_enabled || false}
+                        onCheckedChange={(checked) => {
+                          setConfirmDialog({
+                            open: true,
+                            gateway: 'razorpay',
+                            action: checked ? 'enable' : 'disable'
+                          });
+                        }}
+                        disabled={saving}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">UPI</Badge>
+                    <Badge variant="outline" className="text-[10px]">Credit Card</Badge>
+                    <Badge variant="outline" className="text-[10px]">Debit Card</Badge>
+                    <Badge variant="outline" className="text-[10px]">NetBanking</Badge>
+                    <Badge variant="outline" className="text-[10px]">Paytm Wallet</Badge>
+                  </div>
+                </div>
+
+                {/* PhonePe */}
+                <div className="p-4 rounded-lg border-2 border-border opacity-75">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                        P
+                      </div>
+                      <div>
+                        <p className="font-semibold">PhonePe</p>
+                        <p className="text-xs text-muted-foreground">UPI, Cards, Wallets</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">PhonePe UPI</Badge>
+                    <Badge variant="outline" className="text-[10px]">PhonePe Wallet</Badge>
+                    <Badge variant="outline" className="text-[10px]">Cards</Badge>
+                  </div>
+                </div>
+
+                {/* Paytm */}
+                <div className="p-4 rounded-lg border-2 border-border opacity-75">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-sky-500 flex items-center justify-center text-white font-bold text-sm">
+                        Pt
+                      </div>
+                      <div>
+                        <p className="font-semibold">Paytm</p>
+                        <p className="text-xs text-muted-foreground">Paytm Wallet, UPI, Cards</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">Paytm UPI</Badge>
+                    <Badge variant="outline" className="text-[10px]">Paytm Wallet</Badge>
+                    <Badge variant="outline" className="text-[10px]">Postpaid</Badge>
+                  </div>
+                </div>
+
+                {/* Cashfree */}
+                <div className="p-4 rounded-lg border-2 border-border opacity-75">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-green-600 flex items-center justify-center text-white font-bold text-sm">
+                        CF
+                      </div>
+                      <div>
+                        <p className="font-semibold">Cashfree</p>
+                        <p className="text-xs text-muted-foreground">UPI, Cards, NetBanking</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">UPI AutoPay</Badge>
+                    <Badge variant="outline" className="text-[10px]">Paylater</Badge>
+                    <Badge variant="outline" className="text-[10px]">EMI</Badge>
+                  </div>
+                </div>
+
+                {/* PayU */}
+                <div className="p-4 rounded-lg border-2 border-border opacity-75">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                        PU
+                      </div>
+                      <div>
+                        <p className="font-semibold">PayU</p>
+                        <p className="text-xs text-muted-foreground">Multi-mode payments</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">UPI</Badge>
+                    <Badge variant="outline" className="text-[10px]">Cards</Badge>
+                    <Badge variant="outline" className="text-[10px]">NetBanking</Badge>
+                  </div>
+                </div>
+
+                {/* Instamojo */}
+                <div className="p-4 rounded-lg border-2 border-border opacity-75">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-yellow-500 flex items-center justify-center text-white font-bold text-sm">
+                        IM
+                      </div>
+                      <div>
+                        <p className="font-semibold">Instamojo</p>
+                        <p className="text-xs text-muted-foreground">Payment Links, UPI</p>
+                      </div>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">Payment Links</Badge>
+                    <Badge variant="outline" className="text-[10px]">UPI</Badge>
+                    <Badge variant="outline" className="text-[10px]">Cards</Badge>
+                  </div>
+                </div>
+
+                {/* Manual UPI */}
+                <div className={`p-4 rounded-lg border-2 ${manualGateway?.is_enabled ? 'border-blue-500 bg-blue-500/5' : 'border-border'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gray-600 flex items-center justify-center text-white font-bold text-sm">
+                        M
+                      </div>
+                      <div>
+                        <p className="font-semibold">Manual UPI</p>
+                        <p className="text-xs text-muted-foreground">QR Code + UTR verification</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {manualGateway?.is_enabled && <Badge className="bg-blue-500 text-white text-xs">Active</Badge>}
+                      <Switch
+                        checked={manualGateway?.is_enabled || false}
+                        onCheckedChange={(checked) => {
+                          setConfirmDialog({
+                            open: true,
+                            gateway: 'manual_upi',
+                            action: checked ? 'enable' : 'disable'
+                          });
+                        }}
+                        disabled={saving}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">Admin Approval</Badge>
+                    <Badge variant="outline" className="text-[10px]">No API needed</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Integration Guide */}
+            <Card className="border-primary/30 bg-primary/5">
+              <CardContent className="pt-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-primary mt-0.5" />
+                  <div>
+                    <p className="font-medium text-sm">Integration Guide</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Only Razorpay and Manual UPI are currently available. Other gateways require integration 
+                      development. Contact support if you need a specific gateway integrated.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="razorpay" className="space-y-4">
             {/* Enable/Disable Switch */}

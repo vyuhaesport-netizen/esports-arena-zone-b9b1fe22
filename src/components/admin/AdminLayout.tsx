@@ -27,6 +27,7 @@ import {
   Building2,
   CreditCard,
   Coins,
+  Search,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -55,6 +56,7 @@ const menuItems: MenuItem[] = [
   { icon: ArrowUpRight, label: 'Withdrawals', path: '/admin/withdrawals', permission: 'withdrawals:view', countKey: 'pendingWithdrawals' },
   { icon: Coins, label: 'Dhana Withdrawals', path: '/admin/dhana-withdrawals', permission: 'withdrawals:view', countKey: 'pendingDhanaWithdrawals' },
   { icon: CreditCard, label: 'API Payment', path: '/admin/api-payment', superAdminOnly: true },
+  { icon: Search, label: 'SEO Management', path: '/admin/seo', superAdminOnly: true },
   { icon: HeadphonesIcon, label: 'Support', path: '/admin/support', permission: 'support:view', countKey: 'pendingSupport' },
   { icon: Bell, label: 'Notifications', path: '/admin/notifications', permission: 'notifications:view' },
   { icon: Megaphone, label: 'Broadcast Channel', path: '/admin/messages', permission: 'notifications:view' },
