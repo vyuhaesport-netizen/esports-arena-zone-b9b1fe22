@@ -39,7 +39,13 @@ import {
   Shield,
   Gamepad2,
   Globe,
-  Lock
+  Inbox,
+  Check,
+  X,
+  Send,
+  Clock,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 interface PlayerTeam {
@@ -49,6 +55,7 @@ interface PlayerTeam {
   slogan: string | null;
   leader_id: string;
   is_open_for_players: boolean;
+  requires_approval: boolean;
   max_members: number;
   game: string | null;
   created_at: string;
@@ -69,23 +76,43 @@ interface TeamMember {
   };
 }
 
+interface JoinRequest {
+  id: string;
+  team_id: string;
+  user_id: string;
+  message: string | null;
+  status: string;
+  created_at: string;
+  profile?: {
+    username: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+    in_game_name: string | null;
+    game_uid: string | null;
+  };
+}
+
 const TeamPage = () => {
   const [activeTab, setActiveTab] = useState('my-team');
   const [loading, setLoading] = useState(true);
   const [myTeam, setMyTeam] = useState<PlayerTeam | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [openTeams, setOpenTeams] = useState<(PlayerTeam & { memberCount: number; leaderName: string })[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
+  const [myRequests, setMyRequests] = useState<(JoinRequest & { teamName: string })[]>([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [selectedTeamForRequest, setSelectedTeamForRequest] = useState<PlayerTeam | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
-  const [memberUid, setMemberUid] = useState('');
+  const [requestMessage, setRequestMessage] = useState('');
   
   const [teamForm, setTeamForm] = useState({
     name: '',
     slogan: '',
     game: '',
     is_open_for_players: true,
+    requires_approval: true,
   });
 
   const { user, loading: authLoading } = useAuth();
@@ -104,6 +131,7 @@ const TeamPage = () => {
     if (user) {
       fetchMyTeam();
       fetchOpenTeams();
+      fetchMyRequests();
     }
   }, [user]);
 
@@ -112,7 +140,6 @@ const TeamPage = () => {
     setLoading(true);
 
     try {
-      // First check if user is a member of any team
       const { data: membership } = await supabase
         .from('player_team_members')
         .select('team_id')
@@ -120,7 +147,6 @@ const TeamPage = () => {
         .maybeSingle();
 
       if (membership) {
-        // Fetch team details
         const { data: team } = await supabase
           .from('player_teams')
           .select('*')
@@ -128,12 +154,16 @@ const TeamPage = () => {
           .single();
 
         if (team) {
-          setMyTeam(team);
+          setMyTeam(team as PlayerTeam);
           fetchTeamMembers(team.id);
+          if (team.leader_id === user.id) {
+            fetchJoinRequests(team.id);
+          }
         }
       } else {
         setMyTeam(null);
         setTeamMembers([]);
+        setJoinRequests([]);
       }
     } catch (error) {
       console.error('Error fetching team:', error);
@@ -151,7 +181,6 @@ const TeamPage = () => {
         .order('role', { ascending: false });
 
       if (members) {
-        // Fetch profiles for each member
         const membersWithProfiles = await Promise.all(
           members.map(async (member) => {
             const { data: profile } = await supabase
@@ -169,6 +198,60 @@ const TeamPage = () => {
     }
   };
 
+  const fetchJoinRequests = async (teamId: string) => {
+    try {
+      const { data: requests } = await supabase
+        .from('player_team_requests')
+        .select('*')
+        .eq('team_id', teamId)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+
+      if (requests) {
+        const requestsWithProfiles = await Promise.all(
+          requests.map(async (request) => {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('username, full_name, avatar_url, in_game_name, game_uid')
+              .eq('user_id', request.user_id)
+              .single();
+            return { ...request, profile };
+          })
+        );
+        setJoinRequests(requestsWithProfiles);
+      }
+    } catch (error) {
+      console.error('Error fetching join requests:', error);
+    }
+  };
+
+  const fetchMyRequests = async () => {
+    if (!user) return;
+    try {
+      const { data: requests } = await supabase
+        .from('player_team_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (requests) {
+        const requestsWithTeams = await Promise.all(
+          requests.map(async (request) => {
+            const { data: team } = await supabase
+              .from('player_teams')
+              .select('name')
+              .eq('id', request.team_id)
+              .single();
+            return { ...request, teamName: team?.name || 'Unknown Team' };
+          })
+        );
+        setMyRequests(requestsWithTeams);
+      }
+    } catch (error) {
+      console.error('Error fetching my requests:', error);
+    }
+  };
+
   const fetchOpenTeams = async () => {
     try {
       const { data: teams } = await supabase
@@ -178,7 +261,6 @@ const TeamPage = () => {
         .order('created_at', { ascending: false });
 
       if (teams) {
-        // Get member counts and leader names
         const teamsWithDetails = await Promise.all(
           teams.map(async (team) => {
             const { count } = await supabase
@@ -199,7 +281,7 @@ const TeamPage = () => {
             };
           })
         );
-        setOpenTeams(teamsWithDetails);
+        setOpenTeams(teamsWithDetails as (PlayerTeam & { memberCount: number; leaderName: string })[]);
       }
     } catch (error) {
       console.error('Error fetching open teams:', error);
@@ -215,7 +297,6 @@ const TeamPage = () => {
     setSaving(true);
 
     try {
-      // Create team
       const { data: newTeam, error: teamError } = await supabase
         .from('player_teams')
         .insert({
@@ -224,13 +305,13 @@ const TeamPage = () => {
           game: teamForm.game || null,
           leader_id: user.id,
           is_open_for_players: teamForm.is_open_for_players,
+          requires_approval: teamForm.requires_approval,
         })
         .select()
         .single();
 
       if (teamError) throw teamError;
 
-      // Add creator as leader member
       const { error: memberError } = await supabase
         .from('player_team_members')
         .insert({
@@ -243,7 +324,7 @@ const TeamPage = () => {
 
       toast({ title: 'Team Created!', description: `Your team "${newTeam.name}" has been created.` });
       setCreateDialogOpen(false);
-      setTeamForm({ name: '', slogan: '', game: '', is_open_for_players: true });
+      setTeamForm({ name: '', slogan: '', game: '', is_open_for_players: true, requires_approval: true });
       fetchMyTeam();
       fetchOpenTeams();
     } catch (error: any) {
@@ -254,20 +335,69 @@ const TeamPage = () => {
     }
   };
 
-  const handleJoinTeam = async (teamId: string) => {
-    if (!user) return;
+  const handleSendRequest = async () => {
+    if (!user || !selectedTeamForRequest) return;
+
+    if (myTeam) {
+      toast({ title: 'Already in a Team', description: 'Leave your current team first.', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
 
     try {
-      // Check if already in a team
-      if (myTeam) {
-        toast({ title: 'Already in a Team', description: 'Leave your current team first to join another.', variant: 'destructive' });
-        return;
-      }
+      const { error } = await supabase
+        .from('player_team_requests')
+        .insert({
+          team_id: selectedTeamForRequest.id,
+          user_id: user.id,
+          message: requestMessage.trim() || null,
+        });
 
+      if (error) throw error;
+
+      toast({ title: 'Request Sent!', description: 'Your join request has been sent to the team leader.' });
+      setRequestDialogOpen(false);
+      setRequestMessage('');
+      setSelectedTeamForRequest(null);
+      fetchMyRequests();
+    } catch (error: any) {
+      if (error.code === '23505') {
+        toast({ title: 'Already Requested', description: 'You already have a pending request for this team.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Error', description: 'Failed to send request.', variant: 'destructive' });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleJoinTeam = async (team: PlayerTeam & { memberCount: number }) => {
+    if (!user) return;
+
+    if (myTeam) {
+      toast({ title: 'Already in a Team', description: 'Leave your current team first.', variant: 'destructive' });
+      return;
+    }
+
+    if (team.memberCount >= team.max_members) {
+      toast({ title: 'Team Full', description: 'This team has reached maximum capacity.', variant: 'destructive' });
+      return;
+    }
+
+    // If requires approval, open request dialog
+    if (team.requires_approval) {
+      setSelectedTeamForRequest(team);
+      setRequestDialogOpen(true);
+      return;
+    }
+
+    // Direct join
+    try {
       const { error } = await supabase
         .from('player_team_members')
         .insert({
-          team_id: teamId,
+          team_id: team.id,
           user_id: user.id,
           role: 'member',
         });
@@ -278,7 +408,6 @@ const TeamPage = () => {
       fetchMyTeam();
       fetchOpenTeams();
     } catch (error: any) {
-      console.error('Error joining team:', error);
       if (error.code === '23505') {
         toast({ title: 'Already a Member', description: 'You are already in this team.', variant: 'destructive' });
       } else {
@@ -287,13 +416,85 @@ const TeamPage = () => {
     }
   };
 
+  const handleApproveRequest = async (request: JoinRequest) => {
+    if (!user || !myTeam) return;
+
+    try {
+      // Check capacity
+      if (teamMembers.length >= myTeam.max_members) {
+        toast({ title: 'Team Full', description: 'Cannot approve - team is at maximum capacity.', variant: 'destructive' });
+        return;
+      }
+
+      // Add member
+      const { error: memberError } = await supabase
+        .from('player_team_members')
+        .insert({
+          team_id: myTeam.id,
+          user_id: request.user_id,
+          role: 'member',
+        });
+
+      if (memberError) throw memberError;
+
+      // Update request status
+      const { error: updateError } = await supabase
+        .from('player_team_requests')
+        .update({ status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: user.id })
+        .eq('id', request.id);
+
+      if (updateError) throw updateError;
+
+      toast({ title: 'Request Approved', description: `${request.profile?.full_name || 'Player'} has joined your team.` });
+      fetchTeamMembers(myTeam.id);
+      fetchJoinRequests(myTeam.id);
+    } catch (error) {
+      console.error('Error approving request:', error);
+      toast({ title: 'Error', description: 'Failed to approve request.', variant: 'destructive' });
+    }
+  };
+
+  const handleRejectRequest = async (request: JoinRequest) => {
+    if (!user || !myTeam) return;
+
+    try {
+      const { error } = await supabase
+        .from('player_team_requests')
+        .update({ status: 'rejected', reviewed_at: new Date().toISOString(), reviewed_by: user.id })
+        .eq('id', request.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Request Rejected', description: 'Join request has been rejected.' });
+      fetchJoinRequests(myTeam.id);
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast({ title: 'Error', description: 'Failed to reject request.', variant: 'destructive' });
+    }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('player_team_requests')
+        .delete()
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({ title: 'Request Cancelled', description: 'Your join request has been cancelled.' });
+      fetchMyRequests();
+    } catch (error) {
+      console.error('Error cancelling request:', error);
+      toast({ title: 'Error', description: 'Failed to cancel request.', variant: 'destructive' });
+    }
+  };
+
   const handleLeaveTeam = async () => {
     if (!user || !myTeam) return;
 
     try {
-      // Check if user is the leader
       if (myTeam.leader_id === user.id) {
-        // If leader, delete the entire team
         const { error } = await supabase
           .from('player_teams')
           .delete()
@@ -302,7 +503,6 @@ const TeamPage = () => {
         if (error) throw error;
         toast({ title: 'Team Disbanded', description: 'Your team has been disbanded.' });
       } else {
-        // Otherwise just leave
         const { error } = await supabase
           .from('player_team_members')
           .delete()
@@ -321,67 +521,11 @@ const TeamPage = () => {
     }
   };
 
-  const handleAddMember = async () => {
-    if (!user || !myTeam || !memberUid.trim()) {
-      toast({ title: 'Error', description: 'Please enter a Player UID.', variant: 'destructive' });
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      // Find user by game_uid
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('game_uid', memberUid.trim())
-        .single();
-
-      if (!profile) {
-        toast({ title: 'User Not Found', description: 'No player found with this UID.', variant: 'destructive' });
-        setSaving(false);
-        return;
-      }
-
-      // Check team capacity
-      if (teamMembers.length >= myTeam.max_members) {
-        toast({ title: 'Team Full', description: `Maximum ${myTeam.max_members} members allowed.`, variant: 'destructive' });
-        setSaving(false);
-        return;
-      }
-
-      // Add member
-      const { error } = await supabase
-        .from('player_team_members')
-        .insert({
-          team_id: myTeam.id,
-          user_id: profile.user_id,
-          role: 'member',
-        });
-
-      if (error) throw error;
-
-      toast({ title: 'Member Added!', description: 'Player has been added to your team.' });
-      setAddMemberDialogOpen(false);
-      setMemberUid('');
-      fetchTeamMembers(myTeam.id);
-    } catch (error: any) {
-      if (error.code === '23505') {
-        toast({ title: 'Already a Member', description: 'This player is already in the team.', variant: 'destructive' });
-      } else {
-        toast({ title: 'Error', description: 'Failed to add member.', variant: 'destructive' });
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleRemoveMember = async (memberId: string, memberUserId: string) => {
     if (!user || !myTeam || myTeam.leader_id !== user.id) return;
 
-    // Can't remove self (leader)
     if (memberUserId === user.id) {
-      toast({ title: 'Cannot Remove', description: 'You cannot remove yourself. Disband the team instead.', variant: 'destructive' });
+      toast({ title: 'Cannot Remove', description: 'You cannot remove yourself.', variant: 'destructive' });
       return;
     }
 
@@ -401,6 +545,29 @@ const TeamPage = () => {
     }
   };
 
+  const toggleTeamApproval = async () => {
+    if (!user || !myTeam || myTeam.leader_id !== user.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('player_teams')
+        .update({ requires_approval: !myTeam.requires_approval })
+        .eq('id', myTeam.id);
+
+      if (error) throw error;
+
+      toast({ 
+        title: myTeam.requires_approval ? 'Direct Join Enabled' : 'Approval Required',
+        description: myTeam.requires_approval 
+          ? 'Players can now join directly without approval.' 
+          : 'Players must request to join and you can approve/reject.'
+      });
+      fetchMyTeam();
+    } catch (error) {
+      console.error('Error updating team:', error);
+    }
+  };
+
   const toggleTeamVisibility = async () => {
     if (!user || !myTeam || myTeam.leader_id !== user.id) return;
 
@@ -413,10 +580,10 @@ const TeamPage = () => {
       if (error) throw error;
 
       toast({ 
-        title: myTeam.is_open_for_players ? 'Team Closed' : 'Team Open',
+        title: myTeam.is_open_for_players ? 'Team Hidden' : 'Team Visible',
         description: myTeam.is_open_for_players 
-          ? 'New players can no longer find your team.' 
-          : 'New players can now find and join your team.'
+          ? 'Your team is now hidden from browse.' 
+          : 'Players can now find your team.'
       });
       fetchMyTeam();
     } catch (error) {
@@ -428,6 +595,9 @@ const TeamPage = () => {
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (team.game && team.game.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const pendingRequestsForTeam = (teamId: string) => 
+    myRequests.filter(r => r.team_id === teamId && r.status === 'pending').length > 0;
 
   const isLeader = myTeam?.leader_id === user?.id;
 
@@ -449,7 +619,7 @@ const TeamPage = () => {
           </button>
           <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-full" />
           <div className="flex-1">
-            <h1 className="font-gaming font-bold">My Team</h1>
+            <h1 className="font-gaming font-bold">Teams</h1>
             <p className="text-xs text-muted-foreground">Build your squad for duo/squad matches</p>
           </div>
           {!myTeam && (
@@ -466,20 +636,27 @@ const TeamPage = () => {
         </div>
       </header>
 
-      {/* Tabs - Only show Find Team tab if user doesn't have a team */}
+      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <div className="px-4 pt-3">
-          <TabsList className={`w-full grid ${myTeam ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            <TabsTrigger value="my-team" className="gap-2">
-              <Shield className="h-4 w-4" />
+          <TabsList className="w-full grid grid-cols-3">
+            <TabsTrigger value="my-team" className="gap-1.5 text-xs">
+              <Shield className="h-3.5 w-3.5" />
               My Team
             </TabsTrigger>
-            {!myTeam && (
-              <TabsTrigger value="find-team" className="gap-2">
-                <Globe className="h-4 w-4" />
-                Find Team
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="browse" className="gap-1.5 text-xs">
+              <Globe className="h-3.5 w-3.5" />
+              Browse
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
+              <Inbox className="h-3.5 w-3.5" />
+              Requests
+              {(joinRequests.length > 0 || myRequests.filter(r => r.status === 'pending').length > 0) && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-[10px] rounded-full flex items-center justify-center text-primary-foreground">
+                  {isLeader ? joinRequests.length : myRequests.filter(r => r.status === 'pending').length}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -509,15 +686,26 @@ const TeamPage = () => {
                         )}
                       </div>
                     </div>
-                    {myTeam.is_open_for_players ? (
-                      <Badge variant="outline" className="text-green-600 border-green-600/30">
-                        <Globe className="h-3 w-3 mr-1" /> Open
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground">
-                        <Lock className="h-3 w-3 mr-1" /> Private
-                      </Badge>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {myTeam.is_open_for_players ? (
+                        <Badge variant="outline" className="text-green-600 border-green-600/30 text-[10px]">
+                          <Globe className="h-2.5 w-2.5 mr-1" /> Visible
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground text-[10px]">
+                          Hidden
+                        </Badge>
+                      )}
+                      {myTeam.requires_approval ? (
+                        <Badge variant="outline" className="text-orange-500 border-orange-500/30 text-[10px]">
+                          <Clock className="h-2.5 w-2.5 mr-1" /> Approval
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-blue-500 border-blue-500/30 text-[10px]">
+                          <Check className="h-2.5 w-2.5 mr-1" /> Direct
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -534,35 +722,52 @@ const TeamPage = () => {
 
                   {/* Leader Actions */}
                   {isLeader && (
-                    <div className="flex gap-2 mb-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setAddMemberDialogOpen(true)}
-                        className="flex-1"
-                        disabled={teamMembers.length >= myTeam.max_members}
-                      >
-                        <UserPlus className="h-4 w-4 mr-1" /> Add Member
-                      </Button>
+                    <div className="grid grid-cols-2 gap-2 mb-4">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={toggleTeamVisibility}
-                        className="flex-1"
+                        className="text-xs"
                       >
                         {myTeam.is_open_for_players ? (
-                          <><Lock className="h-4 w-4 mr-1" /> Make Private</>
+                          <><Globe className="h-3.5 w-3.5 mr-1" /> Hide Team</>
                         ) : (
-                          <><Globe className="h-4 w-4 mr-1" /> Make Open</>
+                          <><Globe className="h-3.5 w-3.5 mr-1" /> Show Team</>
                         )}
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleTeamApproval}
+                        className="text-xs"
+                      >
+                        {myTeam.requires_approval ? (
+                          <><Check className="h-3.5 w-3.5 mr-1" /> Direct Join</>
+                        ) : (
+                          <><Clock className="h-3.5 w-3.5 mr-1" /> Need Approval</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Pending Requests Alert */}
+                  {isLeader && joinRequests.length > 0 && (
+                    <div 
+                      onClick={() => setActiveTab('requests')}
+                      className="p-3 mb-4 bg-primary/10 border border-primary/20 rounded-lg cursor-pointer hover:bg-primary/15 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Inbox className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">{joinRequests.length} pending request{joinRequests.length > 1 ? 's' : ''}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Tap to review and approve players</p>
                     </div>
                   )}
 
                   {/* Team Members */}
                   <div className="space-y-2">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                      Team Members
+                      Team Members ({teamMembers.length})
                     </p>
                     {teamMembers.map((member) => (
                       <div
@@ -620,22 +825,22 @@ const TeamPage = () => {
               </div>
               <h3 className="font-semibold text-lg mb-1">No Team Yet</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Create your own team or join an existing one to play duo/squad matches
+                Create your own team or browse and request to join existing ones
               </p>
               <div className="flex gap-2 justify-center">
                 <Button variant="gaming" onClick={() => setCreateDialogOpen(true)}>
                   <Plus className="h-4 w-4 mr-1" /> Create Team
                 </Button>
-                <Button variant="outline" onClick={() => setActiveTab('find-team')}>
-                  <Search className="h-4 w-4 mr-1" /> Find Team
+                <Button variant="outline" onClick={() => setActiveTab('browse')}>
+                  <Search className="h-4 w-4 mr-1" /> Browse Teams
                 </Button>
               </div>
             </div>
           )}
         </TabsContent>
 
-        {/* Find Team Tab */}
-        <TabsContent value="find-team" className="flex-1 mt-0 p-4">
+        {/* Browse Teams Tab */}
+        <TabsContent value="browse" className="flex-1 mt-0 p-4">
           {/* Search */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -647,11 +852,18 @@ const TeamPage = () => {
             />
           </div>
 
+          {/* Info Box */}
+          <div className="p-3 mb-4 bg-muted/50 rounded-lg border border-border">
+            <p className="text-xs text-muted-foreground">
+              <strong>How it works:</strong> Browse teams and send a join request. Leaders will review and approve/reject your request.
+            </p>
+          </div>
+
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Open Teams ({filteredOpenTeams.length})
+            Available Teams ({filteredOpenTeams.length})
           </p>
 
-          <ScrollArea className="h-[calc(100vh-280px)]">
+          <ScrollArea className="h-[calc(100vh-340px)]">
             <div className="space-y-3">
               {filteredOpenTeams.length === 0 ? (
                 <div className="text-center py-12">
@@ -668,7 +880,18 @@ const TeamPage = () => {
                           <Users className="h-6 w-6 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-sm truncate">{team.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-sm truncate">{team.name}</h4>
+                            {team.requires_approval ? (
+                              <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500/30">
+                                Approval
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30">
+                                Direct
+                              </Badge>
+                            )}
+                          </div>
                           {team.slogan && (
                             <p className="text-xs text-muted-foreground italic truncate">"{team.slogan}"</p>
                           )}
@@ -678,16 +901,24 @@ const TeamPage = () => {
                                 {team.game}
                               </Badge>
                             )}
-                            <span>{team.memberCount}/{team.max_members} members</span>
+                            <span>{team.memberCount}/{team.max_members}</span>
                           </div>
                         </div>
                         <Button
-                          variant="gaming"
+                          variant={pendingRequestsForTeam(team.id) ? "outline" : "gaming"}
                           size="sm"
-                          onClick={() => handleJoinTeam(team.id)}
-                          disabled={!!myTeam || team.memberCount >= team.max_members}
+                          onClick={() => handleJoinTeam(team)}
+                          disabled={!!myTeam || team.memberCount >= team.max_members || pendingRequestsForTeam(team.id)}
                         >
-                          {team.memberCount >= team.max_members ? 'Full' : 'Join'}
+                          {team.memberCount >= team.max_members ? (
+                            'Full'
+                          ) : pendingRequestsForTeam(team.id) ? (
+                            <><Clock className="h-3.5 w-3.5 mr-1" /> Pending</>
+                          ) : team.requires_approval ? (
+                            <><Send className="h-3.5 w-3.5 mr-1" /> Request</>
+                          ) : (
+                            <><UserPlus className="h-3.5 w-3.5 mr-1" /> Join</>
+                          )}
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">
@@ -699,6 +930,155 @@ const TeamPage = () => {
               )}
             </div>
           </ScrollArea>
+        </TabsContent>
+
+        {/* Requests Tab */}
+        <TabsContent value="requests" className="flex-1 mt-0 p-4">
+          {isLeader && myTeam ? (
+            // Leader's inbox
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Inbox className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">Join Requests</h3>
+                <Badge variant="secondary">{joinRequests.length}</Badge>
+              </div>
+
+              {joinRequests.length === 0 ? (
+                <div className="text-center py-12">
+                  <Inbox className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="text-muted-foreground text-sm">No pending requests</p>
+                  <p className="text-xs text-muted-foreground mt-1">New requests will appear here</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[calc(100vh-280px)]">
+                  <div className="space-y-3">
+                    {joinRequests.map((request) => (
+                      <Card key={request.id} className="border-primary/20">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarImage src={request.profile?.avatar_url || ''} />
+                              <AvatarFallback className="bg-primary/10 text-primary">
+                                {request.profile?.username?.charAt(0).toUpperCase() || 'P'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm">
+                                {request.profile?.full_name || request.profile?.username || 'Player'}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="secondary" className="text-[10px]">
+                                  IGN: {request.profile?.in_game_name || 'Not set'}
+                                </Badge>
+                                <Badge variant="outline" className="text-[10px]">
+                                  UID: {request.profile?.game_uid || 'Not set'}
+                                </Badge>
+                              </div>
+                              {request.message && (
+                                <p className="text-xs text-muted-foreground mt-2 italic">
+                                  "{request.message}"
+                                </p>
+                              )}
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                Requested {new Date(request.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              variant="gaming"
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleApproveRequest(request)}
+                              disabled={teamMembers.length >= myTeam.max_members}
+                            >
+                              <Check className="h-4 w-4 mr-1" /> Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-destructive border-destructive/30"
+                              onClick={() => handleRejectRequest(request)}
+                            >
+                              <X className="h-4 w-4 mr-1" /> Reject
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          ) : (
+            // Player's sent requests
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Send className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">My Requests</h3>
+              </div>
+
+              {myRequests.length === 0 ? (
+                <div className="text-center py-12">
+                  <Send className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
+                  <p className="text-muted-foreground text-sm">No requests sent</p>
+                  <p className="text-xs text-muted-foreground mt-1">Browse teams and send join requests</p>
+                  <Button variant="outline" className="mt-4" onClick={() => setActiveTab('browse')}>
+                    <Search className="h-4 w-4 mr-1" /> Browse Teams
+                  </Button>
+                </div>
+              ) : (
+                <ScrollArea className="h-[calc(100vh-280px)]">
+                  <div className="space-y-3">
+                    {myRequests.map((request) => (
+                      <Card key={request.id} className="border-border">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-sm">{request.teamName}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Sent {new Date(request.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {request.status === 'pending' ? (
+                                <>
+                                  <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/30">
+                                    <Clock className="h-3 w-3 mr-1" /> Pending
+                                  </Badge>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive"
+                                    onClick={() => handleCancelRequest(request.id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              ) : request.status === 'approved' ? (
+                                <Badge className="bg-green-500/10 text-green-500 border-green-500/30">
+                                  <CheckCircle className="h-3 w-3 mr-1" /> Approved
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-destructive/10 text-destructive border-destructive/30">
+                                  <XCircle className="h-3 w-3 mr-1" /> Rejected
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          {request.message && (
+                            <p className="text-xs text-muted-foreground mt-2 italic">
+                              Your message: "{request.message}"
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
@@ -755,15 +1135,29 @@ const TeamPage = () => {
 
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
-                <p className="text-sm font-medium">Open for New Players</p>
-                <p className="text-xs text-muted-foreground">Allow players to find and join your team</p>
+                <p className="text-sm font-medium">Visible to Players</p>
+                <p className="text-xs text-muted-foreground">Show team in browse section</p>
               </div>
               <Button
                 variant={teamForm.is_open_for_players ? "gaming" : "outline"}
                 size="sm"
                 onClick={() => setTeamForm({ ...teamForm, is_open_for_players: !teamForm.is_open_for_players })}
               >
-                {teamForm.is_open_for_players ? <Globe className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                <Globe className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div>
+                <p className="text-sm font-medium">Require Approval</p>
+                <p className="text-xs text-muted-foreground">Review players before they join</p>
+              </div>
+              <Button
+                variant={teamForm.requires_approval ? "gaming" : "outline"}
+                size="sm"
+                onClick={() => setTeamForm({ ...teamForm, requires_approval: !teamForm.requires_approval })}
+              >
+                <Clock className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -780,37 +1174,48 @@ const TeamPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add Member Dialog */}
-      <Dialog open={addMemberDialogOpen} onOpenChange={setAddMemberDialogOpen}>
+      {/* Request to Join Dialog */}
+      <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" />
-              Add Team Member
+              <Send className="h-5 w-5 text-primary" />
+              Request to Join
             </DialogTitle>
           </DialogHeader>
 
           <div className="py-4 space-y-4">
+            {selectedTeamForRequest && (
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="font-semibold">{selectedTeamForRequest.name}</p>
+                {selectedTeamForRequest.slogan && (
+                  <p className="text-xs text-muted-foreground italic">"{selectedTeamForRequest.slogan}"</p>
+                )}
+              </div>
+            )}
+            
             <div className="space-y-2">
-              <Label>Player UID</Label>
-              <Input
-                placeholder="Enter player's game UID"
-                value={memberUid}
-                onChange={(e) => setMemberUid(e.target.value)}
+              <Label>Message (Optional)</Label>
+              <Textarea
+                placeholder="Introduce yourself to the team leader..."
+                value={requestMessage}
+                onChange={(e) => setRequestMessage(e.target.value)}
+                maxLength={200}
+                rows={3}
               />
               <p className="text-xs text-muted-foreground">
-                Ask your friend for their UID from their profile
+                Let them know why you want to join
               </p>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddMemberDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setRequestDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="gaming" onClick={handleAddMember} disabled={saving || !memberUid.trim()}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Add Member
+            <Button variant="gaming" onClick={handleSendRequest} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+              Send Request
             </Button>
           </DialogFooter>
         </DialogContent>

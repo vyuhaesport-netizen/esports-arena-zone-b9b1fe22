@@ -1106,6 +1106,47 @@ export type Database = {
           },
         ]
       }
+      player_team_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_team_requests_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "player_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_teams: {
         Row: {
           created_at: string
@@ -1116,6 +1157,7 @@ export type Database = {
           logo_url: string | null
           max_members: number | null
           name: string
+          requires_approval: boolean | null
           slogan: string | null
           updated_at: string
         }
@@ -1128,6 +1170,7 @@ export type Database = {
           logo_url?: string | null
           max_members?: number | null
           name: string
+          requires_approval?: boolean | null
           slogan?: string | null
           updated_at?: string
         }
@@ -1140,6 +1183,7 @@ export type Database = {
           logo_url?: string | null
           max_members?: number | null
           name?: string
+          requires_approval?: boolean | null
           slogan?: string | null
           updated_at?: string
         }
