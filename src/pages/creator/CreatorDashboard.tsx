@@ -438,7 +438,8 @@ const CreatorDashboard = () => {
   // Winner declaration: only 30 minutes AFTER tournament is ENDED (status = completed)
   const canDeclareWinner = (tournament: Tournament): { canDeclare: boolean; minutesRemaining: number; targetDate: Date | null } => {
     // Can only declare winner after tournament status is 'completed' and winner not already declared
-    if (tournament.status !== 'completed' || tournament.winner_user_id) {
+    // Use winner_declared_at instead of winner_user_id since team tournaments may not set winner_user_id
+    if (tournament.status !== 'completed' || tournament.winner_declared_at) {
       return { canDeclare: false, minutesRemaining: 0, targetDate: null };
     }
     
@@ -801,23 +802,28 @@ const CreatorDashboard = () => {
           <Plus className="h-4 w-4 mr-2" /> Create Tournament
         </Button>
 
-        {/* Tournament List */}
+        {/* Tournament List - Active */}
         <div className="space-y-3">
           <h2 className="font-gaming text-lg flex items-center gap-2">
             <Gamepad2 className="h-5 w-5 text-pink-500" />
-            My Tournaments
+            Active Tournaments
           </h2>
 
-          {tournaments.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <Trophy className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                <p className="text-muted-foreground">No tournaments yet</p>
-                <p className="text-xs text-muted-foreground mt-1">Create your first tournament!</p>
-              </CardContent>
-            </Card>
-          ) : (
-            tournaments.map((t) => {
+          {(() => {
+            const activeTournaments = tournaments.filter(t => t.status === 'upcoming' || t.status === 'ongoing' || (t.status === 'completed' && !t.winner_declared_at));
+            
+            if (activeTournaments.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-muted-foreground text-sm">No active tournaments</p>
+                  </CardContent>
+                </Card>
+              );
+            }
+            
+            return activeTournaments.map((t) => {
               const { canDeclare, minutesRemaining, targetDate } = canDeclareWinner(t);
               
               return (
@@ -908,7 +914,7 @@ const CreatorDashboard = () => {
                       )}
 
                       {/* Winner Declaration - Only after tournament is ended and 30 min passed */}
-                      {t.status === 'completed' && !t.winner_user_id && (
+                      {t.status === 'completed' && !t.winner_declared_at && (
                         <div className="mt-2">
                           {!canDeclare && targetDate && (
                             <div className="mb-2 p-2 bg-amber-500/10 rounded-lg text-center">
@@ -950,8 +956,87 @@ const CreatorDashboard = () => {
                   </CardContent>
                 </Card>
               );
-            })
-          )}
+            });
+          })()}
+        </div>
+
+        {/* Completed Tournaments Section */}
+        <div className="space-y-3">
+          <h2 className="font-gaming text-lg flex items-center gap-2">
+            <Trophy className="h-5 w-5 text-green-500" />
+            Completed Tournaments
+          </h2>
+
+          {(() => {
+            const completedTournaments = tournaments.filter(t => t.status === 'completed' && t.winner_declared_at);
+            
+            if (completedTournaments.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                    <p className="text-muted-foreground text-sm">No completed tournaments yet</p>
+                  </CardContent>
+                </Card>
+              );
+            }
+            
+            return completedTournaments.map((t) => (
+              <Card key={t.id} className="overflow-hidden opacity-80">
+                <CardContent className="p-0">
+                  <div className="p-4 border-b border-border bg-gradient-to-r from-green-500/5 to-emerald-500/5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-semibold">{t.title}</h3>
+                        <p className="text-xs text-muted-foreground">{t.game} • {t.tournament_mode}</p>
+                      </div>
+                      <Badge className="text-[10px] bg-green-500/10 text-green-600">
+                        Completed
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="p-4">
+                    <div className="grid grid-cols-4 gap-2 text-center mb-3">
+                      <div>
+                        <p className="text-sm font-bold text-pink-500">₹{Math.round(t.current_prize_pool || 0)}</p>
+                        <p className="text-[9px] text-muted-foreground">Prize</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold">₹{Math.round(t.entry_fee || 0)}</p>
+                        <p className="text-[9px] text-muted-foreground">Entry</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-blue-500">{t.joined_users?.length || 0}</p>
+                        <p className="text-[9px] text-muted-foreground">Players</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-green-500">₹{Math.round(t.organizer_earnings || 0)}</p>
+                        <p className="text-[9px] text-muted-foreground">Earned</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openViewPlayers(t)}>
+                        <Users className="h-3.5 w-3.5 mr-1" /> Players
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditRoom(t)}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> Room
+                      </Button>
+                    </div>
+
+                    {t.winner_declared_at && (
+                      <div className="mt-2 p-2 bg-green-500/10 rounded-lg text-center">
+                        <p className="text-xs text-green-600 font-medium">
+                          ✓ Winners declared on {format(new Date(t.winner_declared_at), 'MMM dd, yyyy')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ));
+          })()}
         </div>
       </div>
 
