@@ -63,6 +63,351 @@ export interface TournamentReportData {
   start_date: string;
 }
 
+// Dashboard Guide PDF for Organizers/Creators
+export const generateDashboardGuidePDF = (role: 'organizer' | 'creator') => {
+  const roleTitle = role === 'organizer' ? 'Organizer' : 'Creator';
+  
+  const content = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Vyuha Esport ${roleTitle} Dashboard Guide</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+      line-height: 1.6;
+      color: #333;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 3px solid #f97316;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: #f97316;
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+    .header p {
+      color: #666;
+      margin: 0;
+    }
+    .brand {
+      color: #f97316;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    .section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 10px;
+      border-left: 4px solid #f97316;
+    }
+    .section h2 {
+      color: #f97316;
+      margin-top: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section h3 {
+      color: #333;
+      margin-top: 15px;
+    }
+    .step {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      border: 1px solid #eee;
+    }
+    .step-number {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      background: #f97316;
+      color: white;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 28px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    .highlight {
+      background: #fff3e0;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+    .highlight.green {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+    }
+    .highlight.blue {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+    }
+    .warning {
+      background: #fff8e1;
+      border-left: 4px solid #ff9800;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+    .emoji {
+      font-size: 20px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin: 8px 0;
+    }
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+      border-top: 1px solid #ddd;
+      padding-top: 20px;
+    }
+    .commission-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    .commission-table th, .commission-table td {
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    .commission-table th {
+      background: #f97316;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <p class="brand">🎮 VYUHA ESPORT</p>
+    <h1>${roleTitle} Dashboard Guide</h1>
+    <p>Everything you need to know to start hosting tournaments</p>
+  </div>
+
+  <div class="section">
+    <h2><span class="emoji">📊</span> Understanding Your Dashboard</h2>
+    <p>Welcome to your ${roleTitle} Dashboard! This is your command center for managing tournaments, tracking earnings, and growing your esports community.</p>
+    
+    <div class="highlight">
+      <strong>Quick Navigation:</strong>
+      <ul>
+        <li><strong>Dashboard</strong> - Overview of all your tournaments and stats</li>
+        <li><strong>Wallet</strong> - View and withdraw your earnings (Dhana)</li>
+        <li><strong>Reports</strong> - Handle player reports from your tournaments</li>
+        <li><strong>Contact</strong> - Reach out to Vyuha support</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="emoji">🏆</span> How to Create a Tournament</h2>
+    
+    <div class="step">
+      <span class="step-number">1</span>
+      <strong>Click "Create Tournament"</strong>
+      <p>Find the orange "Create Tournament" button on your dashboard and click it.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">2</span>
+      <strong>Fill Tournament Details</strong>
+      <ul>
+        <li><strong>Tournament Name:</strong> Choose an exciting name</li>
+        <li><strong>Game:</strong> Select the game (Free Fire, BGMI, etc.)</li>
+        <li><strong>Mode:</strong> Solo, Duo, or Squad</li>
+        <li><strong>Entry Fee:</strong> Set between ₹10 - ₹500</li>
+        <li><strong>Max Players:</strong> Set the participant limit</li>
+        <li><strong>Date & Time:</strong> When the tournament will happen</li>
+      </ul>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">3</span>
+      <strong>Set Prize Distribution</strong>
+      <p>Define how the prize pool will be split among winners. You can set custom amounts for each position.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">4</span>
+      <strong>Submit for Approval</strong>
+      <p>Your tournament will be reviewed and approved within a few hours.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="emoji">💰</span> How Commission Works</h2>
+    
+    <table class="commission-table">
+      <tr>
+        <th>Component</th>
+        <th>Percentage</th>
+        <th>Description</th>
+      </tr>
+      <tr>
+        <td>Prize Pool</td>
+        <td>70%</td>
+        <td>Goes to winners as prize money</td>
+      </tr>
+      <tr>
+        <td>Your Commission</td>
+        <td>20%</td>
+        <td>Your earnings as ${roleTitle.toLowerCase()}</td>
+      </tr>
+      <tr>
+        <td>Platform Fee</td>
+        <td>10%</td>
+        <td>Vyuha Esport platform fee</td>
+      </tr>
+    </table>
+    
+    <div class="highlight green">
+      <strong>Example:</strong> If 10 players join with ₹50 entry fee = ₹500 total
+      <ul>
+        <li>Prize Pool: ₹350 (70%)</li>
+        <li>Your Commission: ₹100 (20%)</li>
+        <li>Platform Fee: ₹50 (10%)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="emoji">🏦</span> How to Withdraw Earnings</h2>
+    
+    <p>Your commission is credited as <strong>Dhana</strong> (virtual currency) which can be withdrawn to your bank account.</p>
+    
+    <div class="step">
+      <span class="step-number">1</span>
+      <strong>Wait for Maturation</strong>
+      <p>Dhana becomes withdrawable 15 days after the tournament ends. This is for security purposes.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">2</span>
+      <strong>Go to Wallet</strong>
+      <p>Click on the Wallet tab in your dashboard menu.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">3</span>
+      <strong>Request Withdrawal</strong>
+      <p>Enter the amount, your UPI ID, and phone number. Submit the request.</p>
+    </div>
+    
+    <div class="step">
+      <span class="step-number">4</span>
+      <strong>Wait for Processing</strong>
+      <p>Our team will process your withdrawal within 24-48 hours.</p>
+    </div>
+    
+    <div class="warning">
+      <strong>⚠️ Important:</strong> Minimum withdrawal is ₹100. Make sure your UPI ID is correct before submitting.
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="emoji">🎯</span> Managing Your Tournaments</h2>
+    
+    <h3>Before Tournament Starts:</h3>
+    <ul>
+      <li>Set Room ID and Password (for live matches)</li>
+      <li>Share tournament link with players</li>
+      <li>Monitor registrations</li>
+    </ul>
+    
+    <h3>After Tournament Ends:</h3>
+    <ul>
+      <li><strong>Declare Winners</strong> within 30 minutes of tournament end</li>
+      <li>Handle any player reports fairly</li>
+      <li>Your commission will be auto-credited as Dhana</li>
+    </ul>
+    
+    <div class="highlight blue">
+      <strong>💡 Pro Tip:</strong> Tournaments with lower entry fees (₹10-₹30) attract more players and help you build reputation!
+    </div>
+  </div>
+
+  <div class="section">
+    <h2><span class="emoji">📞</span> Need Help?</h2>
+    <p>If you face any issues or have questions:</p>
+    <ul>
+      <li>Use the <strong>Contact</strong> section in your dashboard</li>
+      <li>Check the <strong>Broadcast Channel</strong> for updates</li>
+      <li>Raise a support ticket from Help & Support</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <p><strong>Welcome to the Vyuha Esport Family! 🎮</strong></p>
+    <p>Start hosting tournaments and earn while gaming!</p>
+    <p>© ${new Date().getFullYear()} Vyuha Esport. All rights reserved.</p>
+  </div>
+</body>
+</html>
+  `;
+
+  const blob = new Blob([content], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  
+  const printWindow = window.open(url, '_blank');
+  if (printWindow) {
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  }
+};
+
+// Get dashboard guide as HTML string (for edge function use)
+export const getDashboardGuideHTML = (role: 'organizer' | 'creator'): string => {
+  const roleTitle = role === 'organizer' ? 'Organizer' : 'Creator';
+  
+  return `Welcome to Vyuha Esport ${roleTitle} Dashboard!
+
+🏆 How to Create Tournaments:
+1. Go to your Dashboard
+2. Click "Create Tournament"
+3. Fill in details (name, game, entry fee, date)
+4. Set prize distribution
+5. Submit for approval
+
+💰 Commission Structure:
+• Prize Pool: 70% (goes to winners)
+• Your Commission: 20% (your earnings)
+• Platform Fee: 10%
+
+🏦 How to Withdraw:
+1. Your commission is credited as Dhana
+2. Dhana matures after 15 days
+3. Go to Wallet → Request Withdrawal
+4. Enter UPI ID and amount
+5. Processing within 24-48 hours
+
+📌 Important Notes:
+• Declare winners within 30 minutes after tournament ends
+• Minimum withdrawal: ₹100
+• Always set room details before tournament starts
+
+Need help? Use the Contact section in your dashboard!
+
+Welcome to the family! 🎮`;
+};
+
+
 export const generatePlayersPDF = (
   tournamentName: string,
   players: Player[],

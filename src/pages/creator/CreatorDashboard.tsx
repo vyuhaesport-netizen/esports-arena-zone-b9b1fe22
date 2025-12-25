@@ -49,11 +49,13 @@ import {
   FileWarning,
   MessageCircle,
   Youtube,
-  Instagram
+  Instagram,
+  FileText
 } from 'lucide-react';
 import { format, differenceInMinutes, differenceInMilliseconds } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
 import CountdownTimer from '@/components/CountdownTimer';
+import { generateDashboardGuidePDF } from '@/utils/pdfGenerator';
 
 interface Tournament {
   id: string;
@@ -791,16 +793,25 @@ const CreatorDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Create Tournament Button */}
-        <Button 
-          className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90"
-          onClick={() => {
-            resetForm();
-            setDialogOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" /> Create Tournament
-        </Button>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Button 
+            className="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 hover:opacity-90"
+            onClick={() => {
+              resetForm();
+              setDialogOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" /> Create Tournament
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex-shrink-0"
+            onClick={() => generateDashboardGuidePDF('creator')}
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Tournament List - Active */}
         <div className="space-y-3">

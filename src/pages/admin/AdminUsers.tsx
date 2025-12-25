@@ -729,6 +729,20 @@ const AdminUsers = () => {
                                 role: 'creator' as 'admin' | 'user' | 'organizer' | 'creator',
                               });
                             if (error) throw error;
+                            
+                            // Send welcome broadcast
+                            try {
+                              await supabase.functions.invoke('send-welcome-broadcast', {
+                                body: { 
+                                  user_id: selectedUser.user_id, 
+                                  role: 'creator',
+                                  user_name: selectedUser.full_name 
+                                }
+                              });
+                            } catch (broadcastError) {
+                              console.error('Error sending welcome broadcast:', broadcastError);
+                            }
+                            
                             toast({ title: 'Success', description: 'User is now a Creator!' });
                             fetchUserRoles(selectedUser.user_id);
                           } catch (error) {
@@ -758,6 +772,20 @@ const AdminUsers = () => {
                                 role: 'organizer' as 'admin' | 'user' | 'organizer' | 'creator',
                               });
                             if (error) throw error;
+                            
+                            // Send welcome broadcast
+                            try {
+                              await supabase.functions.invoke('send-welcome-broadcast', {
+                                body: { 
+                                  user_id: selectedUser.user_id, 
+                                  role: 'organizer',
+                                  user_name: selectedUser.full_name 
+                                }
+                              });
+                            } catch (broadcastError) {
+                              console.error('Error sending welcome broadcast:', broadcastError);
+                            }
+                            
                             toast({ title: 'Success', description: 'User is now an Organizer!' });
                             fetchUserRoles(selectedUser.user_id);
                           } catch (error) {
