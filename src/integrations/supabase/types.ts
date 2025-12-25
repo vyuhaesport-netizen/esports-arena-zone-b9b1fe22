@@ -920,6 +920,65 @@ export type Database = {
           },
         ]
       }
+      payment_retry_queue: {
+        Row: {
+          amount: number
+          created_at: string
+          error_message: string | null
+          id: string
+          last_retry_at: string | null
+          max_retries: number | null
+          next_retry_at: string | null
+          order_id: string | null
+          payment_id: string | null
+          retry_count: number | null
+          status: string | null
+          transaction_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_retry_at?: string | null
+          max_retries?: number | null
+          next_retry_at?: string | null
+          order_id?: string | null
+          payment_id?: string | null
+          retry_count?: number | null
+          status?: string | null
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          last_retry_at?: string | null
+          max_retries?: number | null
+          next_retry_at?: string | null
+          order_id?: string | null
+          payment_id?: string | null
+          retry_count?: number | null
+          status?: string | null
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_retry_queue_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "payment_gateway_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -1574,6 +1633,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_to_retry_queue: {
+        Args: {
+          p_amount: number
+          p_error_message?: string
+          p_order_id?: string
+          p_payment_id?: string
+          p_transaction_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       admin_adjust_wallet: {
         Args: {
           p_action: string
@@ -1698,6 +1768,7 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: Json
       }
+      process_retry_queue_item: { Args: { p_queue_id: string }; Returns: Json }
       process_team_tournament_join:
         | {
             Args: {
@@ -1784,6 +1855,14 @@ export type Database = {
           p_organizer_id: string
           p_prize_distribution: Json
           p_tournament_id: string
+        }
+        Returns: Json
+      }
+      update_retry_status: {
+        Args: {
+          p_error_message?: string
+          p_queue_id: string
+          p_success: boolean
         }
         Returns: Json
       }
