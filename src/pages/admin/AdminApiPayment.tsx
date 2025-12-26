@@ -334,7 +334,7 @@ const AdminApiPayment = () => {
       toast({
         title: enable ? 'Gateway Enabled' : 'Gateway Disabled',
         description: enable 
-          ? `${gatewayName === 'razorpay' ? 'Razorpay' : 'Manual UPI'} is now active` 
+          ? `${gatewayName === 'razorpay' ? 'Razorpay' : gatewayName === 'zapupi' ? 'ZapUPI' : 'Manual UPI'} is now active` 
           : 'Manual UPI payment is now active',
       });
 
@@ -367,6 +367,7 @@ const AdminApiPayment = () => {
 
   const razorpayGateway = gateways.find(g => g.gateway_name === 'razorpay');
   const manualGateway = gateways.find(g => g.gateway_name === 'manual_upi');
+  const zapupiGateway = gateways.find(g => g.gateway_name === 'zapupi');
 
   if (authLoading || loading) {
     return (
@@ -441,9 +442,10 @@ const AdminApiPayment = () => {
         </div>
 
         <Tabs defaultValue="gateways" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="gateways" className="text-xs">Gateways</TabsTrigger>
             <TabsTrigger value="razorpay" className="text-xs">Razorpay</TabsTrigger>
+            <TabsTrigger value="zapupi" className="text-xs">ZapUPI</TabsTrigger>
             <TabsTrigger value="settings" className="text-xs">Settings</TabsTrigger>
             <TabsTrigger value="history" className="text-xs">History</TabsTrigger>
           </TabsList>
@@ -494,6 +496,40 @@ const AdminApiPayment = () => {
                     <Badge variant="outline" className="text-[10px]">Debit Card</Badge>
                     <Badge variant="outline" className="text-[10px]">NetBanking</Badge>
                     <Badge variant="outline" className="text-[10px]">Paytm Wallet</Badge>
+                  </div>
+                </div>
+
+                {/* ZapUPI - Active Gateway */}
+                <div className={`p-4 rounded-lg border-2 ${zapupiGateway?.is_enabled ? 'border-green-500 bg-green-500/5' : 'border-border'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-cyan-600 flex items-center justify-center text-white font-bold text-sm">
+                        Z
+                      </div>
+                      <div>
+                        <p className="font-semibold">ZapUPI</p>
+                        <p className="text-xs text-muted-foreground">Instant UPI Payments</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {zapupiGateway?.is_enabled && <Badge className="bg-green-500 text-white text-xs">Active</Badge>}
+                      <Switch
+                        checked={zapupiGateway?.is_enabled || false}
+                        onCheckedChange={(checked) => {
+                          setConfirmDialog({
+                            open: true,
+                            gateway: 'zapupi',
+                            action: checked ? 'enable' : 'disable'
+                          });
+                        }}
+                        disabled={saving}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    <Badge variant="outline" className="text-[10px]">UPI</Badge>
+                    <Badge variant="outline" className="text-[10px]">Auto Credit</Badge>
+                    <Badge variant="outline" className="text-[10px]">Webhook</Badge>
                   </div>
                 </div>
 
@@ -953,6 +989,172 @@ const AdminApiPayment = () => {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* ZapUPI Tab */}
+          <TabsContent value="zapupi" className="space-y-4">
+            {/* Enable/Disable Switch */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-cyan-500" />
+                      ZapUPI Gateway
+                    </CardTitle>
+                    <CardDescription className="text-xs mt-1">
+                      Enable to use ZapUPI for instant UPI payments
+                    </CardDescription>
+                  </div>
+                  <Switch
+                    checked={zapupiGateway?.is_enabled || false}
+                    onCheckedChange={(checked) => {
+                      setConfirmDialog({
+                        open: true,
+                        gateway: 'zapupi',
+                        action: checked ? 'enable' : 'disable'
+                      });
+                    }}
+                    disabled={saving}
+                  />
+                </div>
+              </CardHeader>
+            </Card>
+
+            {/* ZapUPI Info */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Settings2 className="h-4 w-4" />
+                  API Configuration
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  ZapUPI API credentials are stored securely in backend secrets
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <span className="font-medium text-green-700">API Keys Configured</span>
+                  </div>
+                  <p className="text-xs text-green-600">
+                    Your ZapUPI Token and Secret keys are securely stored in the backend and ready to use.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Min Amount (₹)</Label>
+                    <Input value={zapupiGateway?.min_amount || 10} disabled className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Max Amount (₹)</Label>
+                    <Input value={zapupiGateway?.max_amount || 50000} disabled className="bg-muted" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-sm">Environment</Label>
+                    <Input value="Live" disabled className="bg-muted" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">Currency</Label>
+                    <Input value="INR" disabled className="bg-muted" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Webhook URL */}
+            <Card className="border-cyan-500/50 bg-cyan-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-cyan-500" />
+                  Webhook URL (Important)
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Add this URL in your ZapUPI Dashboard → Settings → Deposit Webhook URL
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-sm">Webhook Endpoint URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      readOnly
+                      value={`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'drwxtjgtjejwegsneutq'}.supabase.co/functions/v1/zapupi-webhook`}
+                      className="bg-muted text-xs font-mono"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const url = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'drwxtjgtjejwegsneutq'}.supabase.co/functions/v1/zapupi-webhook`;
+                        navigator.clipboard.writeText(url);
+                        toast({
+                          title: 'Copied!',
+                          description: 'Webhook URL copied to clipboard',
+                        });
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="bg-background/50 rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium">Setup Instructions:</p>
+                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Go to ZapUPI Dashboard → Settings</li>
+                    <li>Find "Deposit Webhook URL" field</li>
+                    <li>Paste the above URL</li>
+                    <li>Whitelist Gateway IP: <span className="font-mono text-[10px] bg-muted px-1 rounded">148.135.143.154</span></li>
+                    <li>Save settings</li>
+                  </ol>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-xs font-medium text-yellow-700">IP Whitelisting Required</p>
+                      <p className="text-xs text-yellow-600 mt-1">
+                        Make sure to whitelist the ZapUPI Gateway IP (148.135.143.154) in your server firewall for webhooks to work correctly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Features */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">ZapUPI Features</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-sm">Auto Credit</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-sm">Instant UPI</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <span className="text-sm">Webhook Support</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                    <XCircle className="h-4 w-4 text-red-500" />
+                    <span className="text-sm">Refunds</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">

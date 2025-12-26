@@ -439,6 +439,145 @@ const Payment = () => {
     );
   }
 
+  // ZapUPI Payment UI
+  if (activeGateway?.gateway_name === 'zapupi') {
+    const handleZapupiPayment = async () => {
+      if (!user) return;
+
+      setSubmitting(true);
+      try {
+        // Get user profile for phone number
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('user_id', user.id)
+          .single();
+
+        const response = await supabase.functions.invoke('zapupi-create-order', {
+          body: {
+            amount: amount.toString(),
+            userId: user.id,
+            mobile: profileData?.phone || '',
+            redirectUrl: `${window.location.origin}/wallet`
+          }
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || 'Failed to create payment order');
+        }
+
+        if (response.data?.success && response.data?.payment_url) {
+          // Redirect to ZapUPI payment page
+          window.location.href = response.data.payment_url;
+        } else {
+          throw new Error(response.data?.error || 'Failed to get payment URL');
+        }
+      } catch (error) {
+        console.error('Error initiating ZapUPI payment:', error);
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.',
+          variant: 'destructive',
+        });
+        setSubmitting(false);
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b-2 border-border px-4 py-3">
+          <div className="flex items-center justify-between max-w-lg mx-auto">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate('/wallet')}
+                className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors border border-border"
+              >
+                <ArrowLeft className="h-5 w-5 text-foreground" />
+              </button>
+              <div>
+                <h1 className="text-lg font-bold text-foreground">Pay ₹{amount}</h1>
+                <p className="text-xs text-muted-foreground">Secure ZapUPI Payment</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="max-w-lg mx-auto p-4 space-y-6">
+          {/* ZapUPI Info Card */}
+          <div className="bg-gradient-to-br from-cyan-500/10 to-cyan-500/5 border-2 border-cyan-500/20 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                <Zap className="h-6 w-6 text-cyan-500" />
+              </div>
+              <div>
+                <h2 className="font-bold text-lg">Instant UPI Payment</h2>
+                <p className="text-sm text-muted-foreground">Powered by ZapUPI</p>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-muted-foreground">Amount</span>
+                <span className="font-bold text-xl">₹{amount}</span>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-muted-foreground">Credit Type</span>
+                <span className="text-green-600 font-medium">Instant Credit</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment Method Info */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <h3 className="font-medium mb-3">Payment via UPI</h3>
+            <div className="flex justify-center">
+              <div className="bg-muted rounded-lg p-4 text-center">
+                <span className="text-3xl">📱</span>
+                <p className="text-sm mt-2 text-muted-foreground">UPI Apps</p>
+                <p className="text-xs text-muted-foreground mt-1">GPay, PhonePe, Paytm, etc.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Security Note */}
+          <div className="bg-muted/50 border border-border rounded-lg p-3 flex items-start gap-2">
+            <Shield className="h-5 w-5 text-primary mt-0.5" />
+            <div>
+              <p className="text-sm font-medium">Secure Payment</p>
+              <p className="text-xs text-muted-foreground">
+                You'll be redirected to a secure payment page. Complete the payment using any UPI app.
+              </p>
+            </div>
+          </div>
+
+          {/* Pay Button */}
+          <Button
+            onClick={handleZapupiPayment}
+            disabled={submitting}
+            className="w-full h-14 text-lg font-bold bg-cyan-600 hover:bg-cyan-700"
+            size="lg"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Connecting to ZapUPI...
+              </>
+            ) : (
+              <>
+                <Zap className="h-5 w-5 mr-2" />
+                Pay ₹{amount} via UPI
+              </>
+            )}
+          </Button>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Your payment is secured by ZapUPI. Amount will be instantly credited to your wallet after successful payment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Manual UPI Payment UI (existing code)
 
   return (
