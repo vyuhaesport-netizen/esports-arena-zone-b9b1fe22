@@ -91,10 +91,16 @@ const AdminApiPayment = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [testingZapupi, setTestingZapupi] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<{
     status: 'idle' | 'success' | 'error';
     message?: string;
     details?: Record<string, boolean>;
+  }>({ status: 'idle' });
+  const [zapupiWebhookStatus, setZapupiWebhookStatus] = useState<{
+    status: 'idle' | 'success' | 'error';
+    message?: string;
+    timestamp?: string;
   }>({ status: 'idle' });
   const [gateways, setGateways] = useState<PaymentGatewayConfig[]>([]);
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
@@ -276,6 +282,59 @@ const AdminApiPayment = () => {
       });
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleTestZapupiWebhook = async () => {
+    setTestingZapupi(true);
+    setZapupiWebhookStatus({ status: 'idle' });
+    
+    try {
+      const webhookUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID || 'drwxtjgtjejwegsneutq'}.supabase.co/functions/v1/zapupi-webhook`;
+      
+      const response = await fetch(webhookUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.status === 'ok') {
+        setZapupiWebhookStatus({
+          status: 'success',
+          message: data.message || 'Webhook endpoint is active and responding',
+          timestamp: data.timestamp
+        });
+        toast({
+          title: 'Webhook Active',
+          description: 'ZapUPI webhook endpoint is working correctly',
+        });
+      } else {
+        setZapupiWebhookStatus({
+          status: 'error',
+          message: data.message || data.error || 'Webhook endpoint returned an error',
+        });
+        toast({
+          title: 'Webhook Error',
+          description: data.message || 'Failed to verify webhook',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error testing ZapUPI webhook:', error);
+      setZapupiWebhookStatus({
+        status: 'error',
+        message: 'Could not connect to webhook endpoint',
+      });
+      toast({
+        title: 'Connection Failed',
+        description: 'Could not reach the ZapUPI webhook endpoint',
+        variant: 'destructive',
+      });
+    } finally {
+      setTestingZapupi(false);
     }
   };
 
@@ -1145,6 +1204,54 @@ const AdminApiPayment = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Test Webhook Button */}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleTestZapupiWebhook}
+                  disabled={testingZapupi}
+                >
+                  {testingZapupi ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Test Webhook Connection
+                </Button>
+
+                {/* Webhook Test Status */}
+                {zapupiWebhookStatus.status !== 'idle' && (
+                  <div className={`rounded-lg p-3 ${
+                    zapupiWebhookStatus.status === 'success' 
+                      ? 'bg-green-500/10 border border-green-500/30' 
+                      : 'bg-red-500/10 border border-red-500/30'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {zapupiWebhookStatus.status === 'success' ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      )}
+                      <span className={`text-sm font-medium ${
+                        zapupiWebhookStatus.status === 'success' ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        {zapupiWebhookStatus.status === 'success' ? 'Webhook Active' : 'Webhook Error'}
+                      </span>
+                    </div>
+                    <p className={`text-xs ${
+                      zapupiWebhookStatus.status === 'success' ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {zapupiWebhookStatus.message}
+                    </p>
+                    {zapupiWebhookStatus.timestamp && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Last checked: {new Date(zapupiWebhookStatus.timestamp).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
