@@ -39,8 +39,8 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Generate unique order ID
-    const orderId = `VYUHA-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Generate unique order ID - ZapUPI requires alphanumeric only, max 25 chars
+    const orderId = `VYUHA${Date.now()}`;
 
     // Create transaction record
     const { data: txnData, error: txnError } = await supabase
