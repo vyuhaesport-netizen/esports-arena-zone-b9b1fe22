@@ -412,19 +412,32 @@ const AdminApiPayment = () => {
   const handleToggleGateway = async (gatewayName: string, enable: boolean) => {
     setSaving(true);
     try {
-      if (enable && gatewayName === 'razorpay') {
-        // Check if API keys are configured
-        const razorpay = gateways.find(g => g.gateway_name === 'razorpay');
-        if (!razorpay?.api_key_id) {
-          toast({
-            title: 'API Keys Required',
-            description: 'Please configure Razorpay API keys before enabling',
-            variant: 'destructive',
-          });
-          setSaving(false);
-          return;
-        }
-      }
+       if (enable && gatewayName === 'razorpay') {
+         // Check if API keys are configured
+         const razorpay = gateways.find(g => g.gateway_name === 'razorpay');
+         if (!razorpay?.api_key_id) {
+           toast({
+             title: 'API Keys Required',
+             description: 'Please configure Razorpay API keys before enabling',
+             variant: 'destructive',
+           });
+           setSaving(false);
+           return;
+         }
+       }
+
+       if (enable && gatewayName === 'zapupi') {
+         const zapupi = gateways.find(g => g.gateway_name === 'zapupi');
+         if (!zapupi?.api_key_id || !zapupi?.api_key_secret) {
+           toast({
+             title: 'API Keys Required',
+             description: 'Please configure ZapUPI API Token and Secret Key before enabling',
+             variant: 'destructive',
+           });
+           setSaving(false);
+           return;
+         }
+       }
 
       // If enabling a new gateway, disable others and set as default
       if (enable) {

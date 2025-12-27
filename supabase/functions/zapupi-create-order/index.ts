@@ -140,11 +140,14 @@ serve(async (req) => {
         })
         .eq('id', txnData.id);
 
-      console.error('ZapUPI API error:', data);
-      return new Response(
-        JSON.stringify({ success: false, error: data.message || 'Failed to create payment order' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+       console.error('ZapUPI API error:', data);
+       const friendly = data.message === 'Unauthorized'
+         ? 'ZapUPI credentials are invalid. Update API Token & Secret Key in Admin → API Payment.'
+         : (data.message || 'Failed to create payment order');
+       return new Response(
+         JSON.stringify({ success: false, error: friendly }),
+         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+       );
     }
   } catch (error: unknown) {
     console.error('Error in zapupi-create-order:', error);
