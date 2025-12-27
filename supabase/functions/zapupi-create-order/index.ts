@@ -13,18 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const ZAPUPI_TOKEN = Deno.env.get('ZAPUPI_TOKEN');
-    const ZAPUPI_SECRET = Deno.env.get('ZAPUPI_SECRET');
+    // ZapUPI API credentials
+    const ZAPUPI_TOKEN = 'e15e8420af753175d16fce4be2836ac6';
+    const ZAPUPI_SECRET = '16b8bac54e4d0de4683c200e953ebff6';
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    if (!ZAPUPI_TOKEN || !ZAPUPI_SECRET) {
-      console.error('ZapUPI credentials not configured');
-      return new Response(
-        JSON.stringify({ success: false, error: 'ZapUPI credentials not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     const { amount, userId, mobile, redirectUrl } = await req.json();
     
