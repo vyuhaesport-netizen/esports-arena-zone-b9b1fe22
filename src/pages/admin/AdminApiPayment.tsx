@@ -102,6 +102,13 @@ const AdminApiPayment = () => {
     message?: string;
     timestamp?: string;
   }>({ status: 'idle' });
+  const [zapupiDiag, setZapupiDiag] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    outboundIp?: string | null;
+    message?: string;
+    zapupiStatus?: string;
+    zapupiMessage?: string;
+  }>({ status: 'idle' });
   const [gateways, setGateways] = useState<PaymentGatewayConfig[]>([]);
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
@@ -406,6 +413,45 @@ const AdminApiPayment = () => {
       });
     } finally {
       setTestingZapupi(false);
+    }
+  };
+
+  const handleTestZapupiApi = async () => {
+    setZapupiDiag({ status: 'loading' });
+
+    try {
+      const res = await supabase.functions.invoke('zapupi-diagnostics', {
+        body: { action: 'test' }
+      });
+
+      if (res.error) {
+        throw new Error(res.error.message || 'Failed to run diagnostics');
+      }
+
+      if (!res.data?.success) {
+        throw new Error(res.data?.error || 'Diagnostics failed');
+      }
+
+      setZapupiDiag({
+        status: 'success',
+        outboundIp: res.data?.outbound_ip,
+        zapupiStatus: res.data?.zapupi_status,
+        zapupiMessage: res.data?.zapupi_message,
+        message: 'Diagnostics completed'
+      });
+
+      toast({
+        title: 'Diagnostics Complete',
+        description: res.data?.zapupi_message || 'Check results below',
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to run diagnostics';
+      setZapupiDiag({ status: 'error', message: msg });
+      toast({
+        title: 'Diagnostics Failed',
+        description: msg,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -1299,6 +1345,91 @@ const AdminApiPayment = () => {
               </CardContent>
             </Card>
 
+            {/* Connection Diagnostics */}
+            <Card className="border-cyan-500/30 bg-cyan-500/5">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-cyan-600" />
+                  Connection Diagnostics
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Check if ZapUPI is blocking API calls (invalid keys / IP whitelist)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleTestZapupiApi}
+                  disabled={zapupiDiag.status === 'loading'}
+                >
+                  {zapupiDiag.status === 'loading' ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Run Diagnostics (Test Create Order)
+                </Button>
+
+                {zapupiDiag.status !== 'idle' && (
+                  <div className={`rounded-lg p-3 border ${
+                    zapupiDiag.status === 'success'
+                      ? 'bg-green-500/10 border-green-500/30'
+                      : zapupiDiag.status === 'error'
+                        ? 'bg-red-500/10 border-red-500/30'
+                        : 'bg-muted'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      {zapupiDiag.status === 'success' ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : zapupiDiag.status === 'error' ? (
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      ) : (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      )}
+                      <p className="text-sm font-medium">
+                        {zapupiDiag.status === 'success'
+                          ? 'Diagnostics Success'
+                          : zapupiDiag.status === 'error'
+                            ? 'Diagnostics Failed'
+                            : 'Running…'}
+                      </p>
+                    </div>
+
+                    {zapupiDiag.outboundIp !== undefined && (
+                      <p className="text-xs text-muted-foreground">
+                        Server Outbound IP (for ZapUPI IP whitelist):{' '}
+                        <span className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded">
+                          {zapupiDiag.outboundIp || 'Unavailable'}
+                        </span>
+                      </p>
+                    )}
+
+                    {(zapupiDiag.zapupiStatus || zapupiDiag.zapupiMessage) && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        ZapUPI response: <span className="font-medium">{zapupiDiag.zapupiStatus || 'unknown'}</span>
+                        {zapupiDiag.zapupiMessage ? ` — ${zapupiDiag.zapupiMessage}` : ''}
+                      </p>
+                    )}
+
+                    {zapupiDiag.status === 'error' && zapupiDiag.message && (
+                      <p className="text-xs text-red-600 mt-2">{zapupiDiag.message}</p>
+                    )}
+
+                    <div className="bg-background/50 rounded-lg p-3 mt-3">
+                      <p className="text-xs font-medium">If you still see “Unauthorized”:</p>
+                      <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside mt-1">
+                        <li>In ZapUPI → IP Address Whitelist (Deposit API): keep it empty (allow all) OR add the outbound IP shown above.</li>
+                        <li>Make sure “Deposit API” is selected when generating keys.</li>
+                        <li>Regenerate keys once and update them here, then save.</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Webhook URL */}
             <Card className="border-cyan-500/50 bg-cyan-500/5">
               <CardHeader className="pb-3">
@@ -1335,28 +1466,14 @@ const AdminApiPayment = () => {
                     </Button>
                   </div>
                 </div>
-                
+
                 <div className="bg-background/50 rounded-lg p-3 space-y-2">
                   <p className="text-xs font-medium">Setup Instructions:</p>
                   <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
                     <li>Go to ZapUPI Dashboard → Settings</li>
-                    <li>Find "Deposit Webhook URL" field</li>
-                    <li>Paste the above URL</li>
-                    <li>Whitelist Gateway IP: <span className="font-mono text-[10px] bg-muted px-1 rounded">148.135.143.154</span></li>
-                    <li>Save settings</li>
+                    <li>Find “Deposit Webhook URL” field</li>
+                    <li>Paste the above URL and save</li>
                   </ol>
-                </div>
-
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-medium text-yellow-700">IP Whitelisting Required</p>
-                      <p className="text-xs text-yellow-600 mt-1">
-                        Make sure to whitelist the ZapUPI Gateway IP (148.135.143.154) in your server firewall for webhooks to work correctly.
-                      </p>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Test Webhook Button */}
@@ -1378,8 +1495,8 @@ const AdminApiPayment = () => {
                 {/* Webhook Test Status */}
                 {zapupiWebhookStatus.status !== 'idle' && (
                   <div className={`rounded-lg p-3 ${
-                    zapupiWebhookStatus.status === 'success' 
-                      ? 'bg-green-500/10 border border-green-500/30' 
+                    zapupiWebhookStatus.status === 'success'
+                      ? 'bg-green-500/10 border border-green-500/30'
                       : 'bg-red-500/10 border border-red-500/30'
                   }`}>
                     <div className="flex items-center gap-2 mb-2">
