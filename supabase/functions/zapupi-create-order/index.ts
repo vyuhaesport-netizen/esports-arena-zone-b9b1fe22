@@ -62,12 +62,26 @@ serve(async (req) => {
     }
 
     // Prepare ZapUPI API request
+    // ZapUPI parameter naming can vary by account/version; we send common aliases.
     const payload = new URLSearchParams();
+
+    // Token / Secret (aliases)
     payload.append('token_key', ZAPUPI_TOKEN);
+    payload.append('api_token', ZAPUPI_TOKEN);
+    payload.append('token', ZAPUPI_TOKEN);
+
     payload.append('secret_key', ZAPUPI_SECRET);
+    payload.append('api_secret', ZAPUPI_SECRET);
+    payload.append('secret', ZAPUPI_SECRET);
+
+    // Order info
     payload.append('amount', amount.toString());
     payload.append('order_id', orderId);
+
+    // Customer phone (aliases)
+    payload.append('customer_mobile', mobile || '');
     payload.append('custumer_mobile', mobile || '');
+
     payload.append('redirect_url', redirectUrl || `${req.headers.get('origin')}/wallet`);
     payload.append('remark', 'Vyuha Esport Payment');
 
