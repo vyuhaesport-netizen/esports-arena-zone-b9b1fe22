@@ -86,15 +86,23 @@ serve(async (req) => {
       );
     }
 
-    // Prepare ZapUPI API request - using correct parameter names
+    // Prepare ZapUPI API request - send multiple aliases for compatibility
+    const tokenKey = (ZAPUPI_TOKEN || '').trim();
+    const secretKey = (ZAPUPI_SECRET || '').trim();
+
     const payload = new URLSearchParams();
-    payload.append('token_key', ZAPUPI_TOKEN);
-    payload.append('secret_key', ZAPUPI_SECRET);
+    // Common variants seen across ZapUPI setups
+    payload.append('token_key', tokenKey);
+    payload.append('secret_key', secretKey);
+    payload.append('token', tokenKey);
+    payload.append('secret', secretKey);
     payload.append('amount', amount.toString());
     payload.append('order_id', orderId);
-    payload.append('customer_mobile', mobile || '');
+    payload.append('customer_mobile', (mobile || '').trim());
     payload.append('redirect_url', redirectUrl || `${req.headers.get('origin')}/wallet`);
     payload.append('remark', 'Vyuha Esport Payment');
+
+    console.log('ZapUPI request auth lengths:', { tokenLen: tokenKey.length, secretLen: secretKey.length });
 
     console.log('Calling ZapUPI API with order:', orderId);
 
