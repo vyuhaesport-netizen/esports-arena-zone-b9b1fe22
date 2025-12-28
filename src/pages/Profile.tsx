@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import AppLayout from '@/components/layout/AppLayout';
@@ -11,10 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Camera, RefreshCw, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2 } from 'lucide-react';
+import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ImageCropper } from '@/components/ImageCropper';
 import { AvatarGallery } from '@/components/AvatarGallery';
 interface Profile {
   id: string;
@@ -42,8 +41,6 @@ const ProfilePage = () => {
   const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
   const [organizerApplication, setOrganizerApplication] = useState<OrganizerApplication | null>(null);
   const [applyForm, setApplyForm] = useState({
     name: '',
@@ -65,8 +62,6 @@ const ProfilePage = () => {
     in_game_name: '',
     game_uid: ''
   });
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const editFileInputRef = useRef<HTMLInputElement>(null);
   const {
     user,
     isAdmin,
@@ -134,88 +129,6 @@ const ProfilePage = () => {
       console.error('Error fetching application:', error);
     }
   };
-  const handleAvatarSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Please select an image under 10MB',
-        variant: 'destructive'
-      });
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid file type',
-        description: 'Please select an image file',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Create object URL for the cropper
-    const imageUrl = URL.createObjectURL(file);
-    setSelectedImageSrc(imageUrl);
-    setCropperOpen(true);
-
-    // Reset file input
-    event.target.value = '';
-  };
-  const handleCroppedImageUpload = useCallback(async (croppedBlob: Blob) => {
-    if (!user) return;
-    setCropperOpen(false);
-    setUploadingAvatar(true);
-    try {
-      const filePath = `${user.id}/avatar.jpg`;
-      const {
-        error: uploadError
-      } = await supabase.storage.from('avatars').upload(filePath, croppedBlob, {
-        upsert: true,
-        contentType: 'image/jpeg'
-      });
-      if (uploadError) throw uploadError;
-      const {
-        data: {
-          publicUrl
-        }
-      } = supabase.storage.from('avatars').getPublicUrl(filePath);
-
-      // Add timestamp to bust cache
-      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
-      const {
-        error: updateError
-      } = await supabase.from('profiles').update({
-        avatar_url: urlWithTimestamp
-      }).eq('user_id', user.id);
-      if (updateError) throw updateError;
-      toast({
-        title: 'Avatar Updated',
-        description: 'Your profile picture has been updated.'
-      });
-      fetchProfile();
-    } catch (error) {
-      console.error('Error uploading avatar:', error);
-      toast({
-        title: 'Upload Failed',
-        description: 'Could not upload avatar. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setUploadingAvatar(false);
-      if (selectedImageSrc) {
-        URL.revokeObjectURL(selectedImageSrc);
-        setSelectedImageSrc(null);
-      }
-    }
-  }, [user, selectedImageSrc, toast]);
-  const handleCropperClose = useCallback(() => {
-    setCropperOpen(false);
-    if (selectedImageSrc) {
-      URL.revokeObjectURL(selectedImageSrc);
-      setSelectedImageSrc(null);
-    }
-  }, [selectedImageSrc]);
   const handlePresetAvatarSelect = useCallback(async (avatarSrc: string) => {
     if (!user) return;
     setUploadingAvatar(true);
@@ -619,17 +532,16 @@ const ProfilePage = () => {
             {/* Avatar Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16 border-2 border-border">
+                <Avatar className="h-16 w-16 border-2 border-primary/30 shadow-lg">
                   <AvatarImage src={profile?.avatar_url || ''} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                     {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <Button variant="outline" onClick={() => editFileInputRef.current?.click()} disabled={uploadingAvatar}>
-                  {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Camera className="h-4 w-4 mr-2" />}
-                  Upload Photo
-                </Button>
-                <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
+                <div>
+                  <p className="font-medium text-sm">Your Avatar</p>
+                  <p className="text-xs text-muted-foreground">Select from gallery below</p>
+                </div>
               </div>
               
               {/* Avatar Gallery */}
@@ -812,8 +724,6 @@ const ProfilePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Image Cropper Modal */}
-      {selectedImageSrc && <ImageCropper open={cropperOpen} onClose={handleCropperClose} imageSrc={selectedImageSrc} onCropComplete={handleCroppedImageUpload} aspectRatio={1} circularCrop={true} />}
     </AppLayout>;
 };
 export default ProfilePage;
