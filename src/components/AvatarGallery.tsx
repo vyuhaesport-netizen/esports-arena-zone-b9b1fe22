@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Loader2, Sparkles } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Import anime avatars
@@ -34,14 +34,14 @@ import localHero from '@/assets/avatars/unlockable/local-hero.png';
 
 // All avatars - quick selection (subset for profile dialog)
 export const quickAvatars = [
-  { id: 'anime-samurai', src: animeSamurai, name: 'Dark Samurai', animated: true },
-  { id: 'anime-ninja', src: animeNinja, name: 'Red Ninja', animated: true },
-  { id: 'anime-sorcerer', src: animeSorcerer, name: 'Blue Sorcerer', animated: true },
-  { id: 'anime-warrior', src: animeWarrior, name: 'Blade Warrior', animated: true },
-  { id: 'anime-firemage', src: animeFiremage, name: 'Fire Mage', animated: false },
-  { id: 'anime-icequeen', src: animeIcequeen, name: 'Ice Queen', animated: false },
-  { id: 'anime-angel', src: animeAngel, name: 'Divine Angel', animated: false },
-  { id: 'champion-gold', src: championGold, name: 'Gold Champion', animated: false },
+  { id: 'anime-samurai', src: animeSamurai, name: 'Dark Samurai' },
+  { id: 'anime-ninja', src: animeNinja, name: 'Red Ninja' },
+  { id: 'anime-sorcerer', src: animeSorcerer, name: 'Blue Sorcerer' },
+  { id: 'anime-warrior', src: animeWarrior, name: 'Blade Warrior' },
+  { id: 'anime-firemage', src: animeFiremage, name: 'Fire Mage' },
+  { id: 'anime-icequeen', src: animeIcequeen, name: 'Ice Queen' },
+  { id: 'anime-angel', src: animeAngel, name: 'Divine Angel' },
+  { id: 'champion-gold', src: championGold, name: 'Gold Champion' },
 ];
 
 // All avatars for full gallery
@@ -112,10 +112,7 @@ export const AvatarGallery = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-          <p className="text-sm font-medium">Select Avatar</p>
-        </div>
+        <p className="text-sm font-medium">Select Avatar</p>
         {onViewAll && (
           <button
             onClick={onViewAll}
@@ -127,10 +124,9 @@ export const AvatarGallery = ({
       </div>
       
       <div className="grid grid-cols-4 gap-2">
-        {quickAvatars.map((avatar, index) => {
+        {quickAvatars.map((avatar) => {
           const isSelected = isCurrentAvatar(avatar.src);
           const isSelecting = selecting === avatar.id;
-          const isAnimated = avatar.animated;
           
           return (
             <button
@@ -142,44 +138,15 @@ export const AvatarGallery = ({
                 "hover:scale-110 hover:border-primary hover:shadow-lg hover:shadow-primary/20",
                 "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                 isSelected ? "border-primary ring-2 ring-primary ring-offset-2 shadow-lg shadow-primary/30" : "border-border",
-                (disabled || selecting) && "opacity-50 cursor-not-allowed hover:scale-100",
-                isAnimated && !isSelected && "animate-[pulse_2s_ease-in-out_infinite]"
+                (disabled || selecting) && "opacity-50 cursor-not-allowed hover:scale-100"
               )}
-              style={{
-                animationDelay: isAnimated ? `${index * 0.2}s` : undefined,
-              }}
               title={avatar.name}
             >
-              {/* Animated glow ring for first 4 avatars */}
-              {isAnimated && (
-                <div 
-                  className="absolute inset-0 rounded-full bg-gradient-to-r from-primary/50 via-purple-500/50 to-pink-500/50 animate-spin opacity-0 hover:opacity-100 transition-opacity"
-                  style={{ 
-                    animationDuration: '3s',
-                    filter: 'blur(4px)',
-                    transform: 'scale(1.1)',
-                  }}
-                />
-              )}
-              
               <img
                 src={avatar.src}
                 alt={avatar.name}
-                className={cn(
-                  "w-full h-full object-cover relative z-10 transition-transform duration-300",
-                  isAnimated && "hover:scale-110"
-                )}
+                className="w-full h-full object-cover relative z-10"
               />
-              
-              {/* Sparkle indicator for animated avatars */}
-              {isAnimated && !isSelected && !isSelecting && (
-                <div className="absolute top-0 right-0 z-20">
-                  <span className="relative flex h-3 w-3">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                  </span>
-                </div>
-              )}
               
               {/* Selection overlay */}
               {isSelected && !isSelecting && (
@@ -200,10 +167,6 @@ export const AvatarGallery = ({
           );
         })}
       </div>
-      
-      <p className="text-xs text-muted-foreground text-center">
-        ✨ Featured avatars have special animations
-      </p>
     </div>
   );
 };
