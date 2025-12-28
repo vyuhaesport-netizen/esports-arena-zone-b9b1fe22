@@ -11,12 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Camera, RefreshCw, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2, Star } from 'lucide-react';
+import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Camera, RefreshCw, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ImageCropper } from '@/components/ImageCropper';
-import { PresetAvatarGallery } from '@/components/PresetAvatarGallery';
-import { UnlockableAvatarGallery } from '@/components/UnlockableAvatarGallery';
+import { AvatarGallery } from '@/components/AvatarGallery';
 interface Profile {
   id: string;
   user_id: string;
@@ -418,10 +417,6 @@ const ProfilePage = () => {
     icon: Crown,
     label: 'Leaderboard',
     onClick: () => navigate('/leaderboard')
-  }, {
-    icon: Star,
-    label: 'Achievements',
-    onClick: () => navigate('/achievements')
   }];
   const moreItems = [{
     icon: Megaphone,
@@ -637,13 +632,8 @@ const ProfilePage = () => {
                 <input ref={editFileInputRef} type="file" accept="image/*" onChange={handleAvatarSelect} className="hidden" />
               </div>
               
-              {/* Preset Avatar Gallery */}
-              <PresetAvatarGallery currentAvatarUrl={profile?.avatar_url} onSelect={handlePresetAvatarSelect} disabled={uploadingAvatar} />
-              
-              {/* Unlockable Achievement Avatars */}
-              <div className="border-t border-border pt-4">
-                <UnlockableAvatarGallery currentAvatarUrl={profile?.avatar_url} onSelect={handlePresetAvatarSelect} disabled={uploadingAvatar} />
-              </div>
+              {/* Avatar Gallery */}
+              <AvatarGallery currentAvatarUrl={profile?.avatar_url} onSelect={handlePresetAvatarSelect} disabled={uploadingAvatar} />
             </div>
 
             {/* Gaming Details Section */}

@@ -56,6 +56,9 @@ interface Registration {
   tournament_id: string;
   status: string | null;
   registered_at: string;
+  team_name: string | null;
+  team_members: string[] | null;
+  is_team_leader: boolean | null;
   tournaments: {
     title: string;
     game: string;
@@ -71,6 +74,7 @@ interface Registration {
     winner_declared_at: string | null;
     prize_distribution: { position: number; amount: number; user_id?: string }[] | null;
     current_prize_pool: number | null;
+    tournament_mode: string | null;
   };
 }
 
@@ -127,6 +131,9 @@ const MyMatch = () => {
           tournament_id,
           status,
           registered_at,
+          team_name,
+          team_members,
+          is_team_leader,
           tournaments (
             title,
             game,
@@ -141,7 +148,8 @@ const MyMatch = () => {
             winner_user_id,
             winner_declared_at,
             prize_distribution,
-            current_prize_pool
+            current_prize_pool,
+            tournament_mode
           )
         `)
         .eq('user_id', user.id)
@@ -462,6 +470,7 @@ const MyMatch = () => {
     });
 
     // Find user's winning position and amount from prize_distribution
+    // For team tournaments (duo/squad), check if user is in the winning team
     // prize_distribution can be stored in different formats:
     // 1. Object with position as key and amount as value: {"1": 60, "2": 30}
     // 2. Array with position, amount, and user_id
@@ -469,10 +478,18 @@ const MyMatch = () => {
     const getUserWinnerInfo = () => {
       const pd = registration.tournaments.prize_distribution;
       const winnerId = registration.tournaments.winner_user_id;
+      const tournamentMode = registration.tournaments.tournament_mode;
+      const teamMembers = registration.team_members || [];
+      
+      // For team tournaments (duo/squad), check if user is part of the winning team
+      const isTeamTournament = tournamentMode === 'duo' || tournamentMode === 'squad';
+      const isUserInWinningTeam = isTeamTournament && winnerId && teamMembers.includes(winnerId);
+      const isUserTheWinner = winnerId === user?.id;
+      const isWinningMember = isUserTheWinner || isUserInWinningTeam;
       
       if (!pd) {
-        // Check if user is the winner_user_id (1st place winner)
-        if (winnerId === user?.id) {
+        // Check if user is the winner or part of the winning team
+        if (isWinningMember) {
           return { position: 1, amount: registration.tournaments.current_prize_pool || 0 };
         }
         return null;
@@ -480,14 +497,20 @@ const MyMatch = () => {
       
       // Handle array format with user_id
       if (Array.isArray(pd)) {
+        // First check if user is directly in prize distribution
         const found = pd.find((p: any) => p.user_id === user?.id);
         if (found) return { position: found.position, amount: found.amount };
+        
+        // For team tournaments, check if user is in a winning team
+        if (isTeamTournament && teamMembers.length > 0) {
+          const teamWinner = pd.find((p: any) => teamMembers.includes(p.user_id));
+          if (teamWinner) return { position: teamWinner.position, amount: teamWinner.amount };
+        }
       }
       
-      // Handle object format {"1": 60, "2": 30} - check if user is winner_user_id
+      // Handle object format {"1": 60, "2": 30} - check if user is winner or in winning team
       if (typeof pd === 'object' && !Array.isArray(pd)) {
-        // If user is the declared winner, they are position 1
-        if (winnerId === user?.id) {
+        if (isWinningMember) {
           const amount = (pd as any)['1'] || (pd as any)[1] || 0;
           return { position: 1, amount };
         }
@@ -500,8 +523,14 @@ const MyMatch = () => {
           if (Array.isArray(parsed)) {
             const found = parsed.find((p: any) => p.user_id === user?.id);
             if (found) return { position: found.position, amount: found.amount };
+            
+            // For team tournaments, check if user is in a winning team
+            if (isTeamTournament && teamMembers.length > 0) {
+              const teamWinner = parsed.find((p: any) => teamMembers.includes(p.user_id));
+              if (teamWinner) return { position: teamWinner.position, amount: teamWinner.amount };
+            }
           }
-          if (winnerId === user?.id) {
+          if (isWinningMember) {
             const amount = parsed['1'] || parsed[1] || 0;
             return { position: 1, amount };
           }
