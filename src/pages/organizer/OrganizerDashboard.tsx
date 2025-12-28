@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -48,7 +49,8 @@ import {
   MessageCircle,
   Youtube,
   Instagram,
-  FileText
+  FileText,
+  Gift
 } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
@@ -118,7 +120,10 @@ const OrganizerDashboard = () => {
     prize_pool: '',
     youtube_link: '',
     instagram_link: '',
+    is_giveaway: false,
+    giveaway_prize_pool: '',
   });
+  const [organizerWalletBalance, setOrganizerWalletBalance] = useState(0);
   const [commissionSettings, setCommissionSettings] = useState({
     organizer_percent: 10,
     platform_percent: 10,
@@ -144,8 +149,19 @@ const OrganizerDashboard = () => {
     if (isOrganizer && user) {
       fetchMyTournaments();
       fetchCommissionSettings();
+      fetchOrganizerBalance();
     }
   }, [isOrganizer, user]);
+
+  const fetchOrganizerBalance = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('wallet_balance')
+      .eq('user_id', user.id)
+      .single();
+    setOrganizerWalletBalance(data?.wallet_balance || 0);
+  };
 
   const fetchCommissionSettings = async () => {
     try {
@@ -205,6 +221,8 @@ const OrganizerDashboard = () => {
       prize_pool: '',
       youtube_link: '',
       instagram_link: '',
+      is_giveaway: false,
+      giveaway_prize_pool: '',
     });
     setSelectedTournament(null);
   };
@@ -217,6 +235,23 @@ const OrganizerDashboard = () => {
     if (!formData.title || !formData.game || !formData.start_date) {
       toast({ title: 'Error', description: 'Please fill all required fields.', variant: 'destructive' });
       return;
+    }
+
+    // Validate giveaway requirements
+    if (formData.is_giveaway) {
+      const giveawayPrize = parseFloat(formData.giveaway_prize_pool) || 0;
+      if (giveawayPrize < 10) {
+        toast({ title: 'Error', description: 'Giveaway prize pool must be at least ₹10.', variant: 'destructive' });
+        return;
+      }
+      if (giveawayPrize > organizerWalletBalance) {
+        toast({ 
+          title: 'Insufficient Balance', 
+          description: `You need ₹${giveawayPrize} in your wallet for this giveaway. Current balance: ₹${organizerWalletBalance}`, 
+          variant: 'destructive' 
+        });
+        return;
+      }
     }
 
     setSaving(true);
@@ -234,9 +269,11 @@ const OrganizerDashboard = () => {
         }
       }
 
-      const entryFee = parseFloat(formData.entry_fee) || 0;
+      const entryFee = formData.is_giveaway ? 0 : (parseFloat(formData.entry_fee) || 0);
       const maxParticipants = parseInt(formData.max_participants) || 100;
-      const prizePoolValue = parseFloat(formData.prize_pool) || 0;
+      const prizePoolValue = formData.is_giveaway 
+        ? parseFloat(formData.giveaway_prize_pool) || 0 
+        : parseFloat(formData.prize_pool) || 0;
 
       const tournamentData = {
         title: formData.title,
@@ -253,6 +290,7 @@ const OrganizerDashboard = () => {
         prize_distribution: prizeDistribution,
         youtube_link: formData.youtube_link || null,
         instagram_link: formData.instagram_link || null,
+        is_giveaway: formData.is_giveaway,
       };
 
       if (selectedTournament) {
@@ -264,11 +302,37 @@ const OrganizerDashboard = () => {
         if (error) throw error;
         toast({ title: 'Updated!', description: 'Tournament updated successfully.' });
       } else {
-        const { error } = await supabase
+        // Insert tournament first
+        const { data: newTournament, error } = await supabase
           .from('tournaments')
-          .insert(tournamentData);
+          .insert(tournamentData)
+          .select('id')
+          .single();
 
         if (error) throw error;
+
+        // If giveaway, process wallet deduction
+        if (formData.is_giveaway && newTournament) {
+          const giveawayPrize = parseFloat(formData.giveaway_prize_pool) || 0;
+          const { data: giveawayResult, error: giveawayError } = await supabase.rpc('process_giveaway_tournament_creation' as any, {
+            p_organizer_id: user?.id,
+            p_prize_pool: giveawayPrize,
+            p_tournament_id: newTournament.id,
+          });
+
+          if (giveawayError) throw giveawayError;
+
+          const result = giveawayResult as { success: boolean; error?: string };
+          if (!result.success) {
+            // Delete the tournament if giveaway processing failed
+            await supabase.from('tournaments').delete().eq('id', newTournament.id);
+            toast({ title: 'Error', description: result.error || 'Failed to lock prize pool.', variant: 'destructive' });
+            setSaving(false);
+            return;
+          }
+
+          fetchOrganizerBalance();
+        }
 
         // Notify followers
         const { data: followers } = await supabase
@@ -280,14 +344,19 @@ const OrganizerDashboard = () => {
           const notifications = followers.map(f => ({
             user_id: f.follower_user_id,
             type: 'new_tournament',
-            title: 'New Tournament!',
-            message: `New tournament "${formData.title}" has been created.`,
+            title: formData.is_giveaway ? '🎁 New Giveaway Tournament!' : 'New Tournament!',
+            message: `New ${formData.is_giveaway ? 'FREE giveaway ' : ''}tournament "${formData.title}" has been created.`,
           }));
 
           await supabase.from('notifications').insert(notifications);
         }
 
-        toast({ title: 'Created!', description: 'Tournament created successfully.' });
+        toast({ 
+          title: formData.is_giveaway ? '🎁 Giveaway Created!' : 'Created!', 
+          description: formData.is_giveaway 
+            ? `₹${formData.giveaway_prize_pool} locked from your wallet. Players can join for free!`
+            : 'Tournament created successfully.' 
+        });
       }
 
       setDialogOpen(false);
@@ -851,6 +920,8 @@ const OrganizerDashboard = () => {
                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
                               youtube_link: (t as any).youtube_link || '',
                               instagram_link: (t as any).instagram_link || '',
+                              is_giveaway: (t as any).is_giveaway || false,
+                              giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
                             });
                             setDialogOpen(true);
                           }}>
@@ -1030,6 +1101,43 @@ const OrganizerDashboard = () => {
           </DialogHeader>
 
           <div className="space-y-4 pt-4">
+            {/* Giveaway Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20">
+              <div className="flex items-center gap-2">
+                <Gift className="h-5 w-5 text-pink-500" />
+                <div>
+                  <p className="font-medium text-sm">Giveaway Tournament</p>
+                  <p className="text-xs text-muted-foreground">You pay the prize pool, players join free</p>
+                </div>
+              </div>
+              <Switch
+                checked={formData.is_giveaway}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_giveaway: checked, entry_fee: checked ? '0' : formData.entry_fee })}
+              />
+            </div>
+
+            {formData.is_giveaway && (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Your Wallet Balance:</span>
+                  <span className="font-bold text-primary">₹{organizerWalletBalance}</span>
+                </div>
+                <div className="space-y-2">
+                  <Label>Prize Pool (₹) - Deducted from your wallet *</Label>
+                  <Input
+                    type="number"
+                    value={formData.giveaway_prize_pool}
+                    onChange={(e) => setFormData({ ...formData, giveaway_prize_pool: e.target.value })}
+                    placeholder="Enter prize amount"
+                    className="bg-background"
+                  />
+                </div>
+                <p className="text-xs text-amber-600">
+                  ⚠️ This amount will be deducted from your wallet when tournament is created.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label>Title *</Label>
               <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Tournament title" />
@@ -1064,21 +1172,32 @@ const OrganizerDashboard = () => {
               </div>
             </div>
 
+            {/* Entry Fee and Max Participants */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Entry Fee (₹)</Label>
-                <Input 
-                  type="number" 
-                  value={formData.entry_fee} 
-                  onChange={(e) => {
-                    const newEntryFee = e.target.value;
-                    const maxP = parseInt(formData.max_participants) || 100;
-                    const autoPool = Math.round((parseFloat(newEntryFee) || 0) * maxP * (commissionSettings.prize_pool_percent / 100));
-                    setFormData({ ...formData, entry_fee: newEntryFee, prize_pool: autoPool.toString() });
-                  }} 
-                  placeholder="0" 
-                />
-              </div>
+              {!formData.is_giveaway && (
+                <div className="space-y-2">
+                  <Label>Entry Fee (₹)</Label>
+                  <Input 
+                    type="number" 
+                    value={formData.entry_fee} 
+                    onChange={(e) => {
+                      const newEntryFee = e.target.value;
+                      const maxP = parseInt(formData.max_participants) || 100;
+                      const autoPool = Math.round((parseFloat(newEntryFee) || 0) * maxP * (commissionSettings.prize_pool_percent / 100));
+                      setFormData({ ...formData, entry_fee: newEntryFee, prize_pool: autoPool.toString() });
+                    }} 
+                    placeholder="0" 
+                  />
+                </div>
+              )}
+              {formData.is_giveaway && (
+                <div className="space-y-2">
+                  <Label>Entry Fee</Label>
+                  <div className="h-10 flex items-center px-3 rounded-md border border-input bg-green-500/10">
+                    <span className="text-green-600 font-medium">FREE (Giveaway)</span>
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Max Participants</Label>
                 <Input 
@@ -1102,18 +1221,21 @@ const OrganizerDashboard = () => {
             </div>
 
             {/* Auto-calculated Prize Pool */}
-            <div className="space-y-2">
-              <Label>Estimated Prize Pool (₹)</Label>
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-xl font-bold text-green-600">₹{parseInt(formData.prize_pool || '0').toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Auto-calculated: Entry Fee × Max Players × {commissionSettings.prize_pool_percent}%
-                </p>
-                <p className="text-xs text-amber-600 mt-1">
-                  ⚠️ Final prize pool will be recalculated based on actual players 2 min before start
-                </p>
+            {/* Prize Pool Section - Different for giveaway vs regular */}
+            {!formData.is_giveaway && (
+              <div className="space-y-2">
+                <Label>Estimated Prize Pool (₹)</Label>
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-xl font-bold text-green-600">₹{parseInt(formData.prize_pool || '0').toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Auto-calculated: Entry Fee × Max Players × {commissionSettings.prize_pool_percent}%
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    ⚠️ Final prize pool will be recalculated based on actual players 2 min before start
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <PrizeDistributionInput
               value={formData.prize_distribution}

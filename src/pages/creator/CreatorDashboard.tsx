@@ -120,7 +120,10 @@ const CreatorDashboard = () => {
     prize_pool: '',
     youtube_link: '',
     instagram_link: '',
+    is_giveaway: false,
+    giveaway_prize_pool: '',
   });
+  const [creatorWalletBalance, setCreatorWalletBalance] = useState(0);
   const [commissionSettings, setCommissionSettings] = useState({
     organizer_percent: 10,
     platform_percent: 10,
@@ -146,8 +149,15 @@ const CreatorDashboard = () => {
     if (isCreator && user) {
       fetchMyTournaments();
       fetchCommissionSettings();
+      fetchCreatorBalance();
     }
   }, [isCreator, user]);
+
+  const fetchCreatorBalance = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('profiles').select('wallet_balance').eq('user_id', user.id).single();
+    setCreatorWalletBalance(data?.wallet_balance || 0);
+  };
 
   const fetchCommissionSettings = async () => {
     try {
@@ -208,6 +218,8 @@ const CreatorDashboard = () => {
       prize_pool: '',
       youtube_link: '',
       instagram_link: '',
+      is_giveaway: false,
+      giveaway_prize_pool: '',
     });
     setSelectedTournament(null);
   };
@@ -718,6 +730,8 @@ const CreatorDashboard = () => {
       prize_pool: tournament.prize_pool?.replace(/[₹,]/g, '') || '',
       youtube_link: (tournament as any).youtube_link || '',
       instagram_link: (tournament as any).instagram_link || '',
+      is_giveaway: (tournament as any).is_giveaway || false,
+      giveaway_prize_pool: (tournament as any).giveaway_prize_pool?.toString() || '',
     });
     setDialogOpen(true);
   };

@@ -59,6 +59,7 @@ const Wallet = () => {
   const { toast } = useToast();
 
   const [balance, setBalance] = useState(0);
+  const [withdrawableBalance, setWithdrawableBalance] = useState(0);
   const [totalEarned, setTotalEarned] = useState(0);
   const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -85,14 +86,15 @@ const Wallet = () => {
     if (!user) return;
 
     try {
-      // Fetch wallet balance
+      // Fetch wallet balance and withdrawable balance
       const { data: profile } = await supabase
         .from('profiles')
-        .select('wallet_balance')
+        .select('wallet_balance, withdrawable_balance')
         .eq('user_id', user.id)
         .single();
 
       setBalance(profile?.wallet_balance || 0);
+      setWithdrawableBalance(profile?.withdrawable_balance || 0);
 
       // Fetch transactions
       const { data: txns } = await supabase
@@ -179,10 +181,10 @@ const Wallet = () => {
       return;
     }
 
-    if (amount > balance) {
+    if (amount > withdrawableBalance) {
       toast({
-        title: 'Insufficient Balance',
-        description: 'You cannot withdraw more than your available balance',
+        title: 'Insufficient Withdrawable Balance',
+        description: `Only ₹${withdrawableBalance} can be withdrawn (prize winnings only). Deposited money cannot be withdrawn.`,
         variant: 'destructive',
       });
       return;
@@ -279,16 +281,40 @@ const Wallet = () => {
   return (
     <AppLayout title="Wallet">
       <div className="p-4">
-        {/* Balance Card */}
-        <div className="bg-gradient-to-br from-primary to-orange-400 rounded-xl p-5 text-primary-foreground mb-4">
-          <div className="flex items-center gap-2 mb-1">
-            <WalletIcon className="h-4 w-4" />
-            <span className="text-xs opacity-90">Available Balance</span>
+        {/* Balance Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* Total Balance Card */}
+          <div className="bg-gradient-to-br from-primary to-orange-400 rounded-xl p-4 text-primary-foreground">
+            <div className="flex items-center gap-2 mb-1">
+              <WalletIcon className="h-4 w-4" />
+              <span className="text-[10px] opacity-90">Total Balance</span>
+            </div>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-xs">₹</span>
+              <span className="text-2xl font-gaming font-bold">{balance.toFixed(0)}</span>
+            </div>
+            <p className="text-[9px] opacity-75 mt-1">For joining tournaments</p>
           </div>
-          <div className="flex items-baseline gap-1">
-            <IndianRupee className="h-5 w-5" />
-            <span className="text-3xl font-gaming font-bold">{balance.toFixed(2)}</span>
+
+          {/* Withdrawable Balance Card */}
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white">
+            <div className="flex items-center gap-2 mb-1">
+              <ArrowUpRight className="h-4 w-4" />
+              <span className="text-[10px] opacity-90">Withdrawable</span>
+            </div>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-xs">₹</span>
+              <span className="text-2xl font-gaming font-bold">{withdrawableBalance.toFixed(0)}</span>
+            </div>
+            <p className="text-[9px] opacity-75 mt-1">Prize winnings only</p>
           </div>
+        </div>
+
+        {/* Info Banner */}
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-4">
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            <strong>Note:</strong> Deposited money can only be used to join tournaments. Only prize winnings can be withdrawn.
+          </p>
         </div>
 
         {/* Stats Cards - Total Earned & Withdrawn */}
