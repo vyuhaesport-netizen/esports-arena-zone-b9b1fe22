@@ -703,16 +703,17 @@ const LocalTournamentPage = () => {
                   <Label>Game *</Label>
                   <Select
                     value={formData.game}
-                    onValueChange={(value) => setFormData({ ...formData, game: value })}
+                    onValueChange={(value) => {
+                      const maxPlayers = value === 'BGMI' ? '100' : value === 'Free Fire' ? '50' : '100';
+                      setFormData({ ...formData, game: value, max_participants: maxPlayers });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select game" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="BGMI">BGMI</SelectItem>
-                      <SelectItem value="Free Fire">Free Fire</SelectItem>
-                      <SelectItem value="COD Mobile">COD Mobile</SelectItem>
-                      <SelectItem value="PUBG New State">PUBG New State</SelectItem>
+                      <SelectItem value="BGMI">BGMI (Max 100)</SelectItem>
+                      <SelectItem value="Free Fire">Free Fire (Max 50)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -748,10 +749,19 @@ const LocalTournamentPage = () => {
                   <Label>Total Players *</Label>
                   <Input
                     type="number"
-                    placeholder="50"
+                    placeholder={formData.game === 'Free Fire' ? '50' : '100'}
                     value={formData.max_participants}
-                    onChange={(e) => setFormData({ ...formData, max_participants: e.target.value })}
+                    onChange={(e) => {
+                      const maxLimit = formData.game === 'BGMI' ? 100 : formData.game === 'Free Fire' ? 50 : 100;
+                      let newValue = parseInt(e.target.value) || 0;
+                      if (newValue > maxLimit) newValue = maxLimit;
+                      setFormData({ ...formData, max_participants: newValue.toString() });
+                    }}
+                    max={formData.game === 'BGMI' ? 100 : formData.game === 'Free Fire' ? 50 : 100}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Max: {formData.game === 'BGMI' ? '100' : formData.game === 'Free Fire' ? '50' : '100'} players
+                  </p>
                 </div>
               </div>
 

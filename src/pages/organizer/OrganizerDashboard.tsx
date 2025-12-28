@@ -1038,11 +1038,16 @@ const OrganizerDashboard = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Game *</Label>
-                <Select value={formData.game} onValueChange={(value) => setFormData({ ...formData, game: value })}>
+                <Select value={formData.game} onValueChange={(value) => {
+                  const maxPlayers = value === 'BGMI' ? '100' : value === 'Free Fire' ? '50' : '100';
+                  const entryFee = parseFloat(formData.entry_fee) || 0;
+                  const autoPool = Math.round(entryFee * parseInt(maxPlayers) * (commissionSettings.prize_pool_percent / 100));
+                  setFormData({ ...formData, game: value, max_participants: maxPlayers, prize_pool: autoPool.toString() });
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="BGMI">BGMI</SelectItem>
-                    <SelectItem value="Free Fire">Free Fire</SelectItem>
+                    <SelectItem value="BGMI">BGMI (Max 100)</SelectItem>
+                    <SelectItem value="Free Fire">Free Fire (Max 50)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1080,13 +1085,19 @@ const OrganizerDashboard = () => {
                   type="number" 
                   value={formData.max_participants} 
                   onChange={(e) => {
-                    const newMaxP = e.target.value;
+                    const maxLimit = formData.game === 'BGMI' ? 100 : formData.game === 'Free Fire' ? 50 : 100;
+                    let newMaxP = parseInt(e.target.value) || 0;
+                    if (newMaxP > maxLimit) newMaxP = maxLimit;
                     const entryFee = parseFloat(formData.entry_fee) || 0;
-                    const autoPool = Math.round(entryFee * (parseInt(newMaxP) || 100) * (commissionSettings.prize_pool_percent / 100));
-                    setFormData({ ...formData, max_participants: newMaxP, prize_pool: autoPool.toString() });
+                    const autoPool = Math.round(entryFee * newMaxP * (commissionSettings.prize_pool_percent / 100));
+                    setFormData({ ...formData, max_participants: newMaxP.toString(), prize_pool: autoPool.toString() });
                   }} 
-                  placeholder="100" 
+                  placeholder={formData.game === 'Free Fire' ? '50' : '100'}
+                  max={formData.game === 'BGMI' ? 100 : formData.game === 'Free Fire' ? 50 : 100}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Max: {formData.game === 'BGMI' ? '100' : formData.game === 'Free Fire' ? '50' : '100'} players
+                </p>
               </div>
             </div>
 
