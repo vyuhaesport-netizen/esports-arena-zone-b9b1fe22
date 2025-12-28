@@ -26,21 +26,47 @@ const TournamentScanner = ({ onScanSuccess }: TournamentScannerProps) => {
   const navigate = useNavigate();
 
   const handleCodeDetected = async (code: string) => {
-    // Extract private code from URL or use directly
     let privateCode = code;
+    let tournamentId: string | null = null;
     
-    // Check if it's a URL with private_code parameter
+    // Check if it's a URL
     try {
       const url = new URL(code);
+      
+      // Check for tournament detail page URL (e.g., /tournament/uuid)
+      const pathMatch = url.pathname.match(/\/tournament\/([a-f0-9-]+)/i);
+      if (pathMatch) {
+        tournamentId = pathMatch[1];
+      }
+      
+      // Check for private_code parameter (local tournaments)
       const codeParam = url.searchParams.get('code') || url.searchParams.get('private_code');
       if (codeParam) {
         privateCode = codeParam;
       }
     } catch {
-      // Not a URL, use as-is (might be just the code)
+      // Not a URL, could be a private code or tournament ID
+      // Check if it looks like a UUID (tournament ID)
+      if (/^[a-f0-9-]{36}$/i.test(code.trim())) {
+        tournamentId = code.trim();
+      }
     }
     
-    // Clean up the code
+    // If we found a tournament ID, navigate to tournament details
+    if (tournamentId) {
+      navigate(`/tournament/${tournamentId}`);
+      setOpen(false);
+      setMode(null);
+      setManualCode('');
+      
+      toast({
+        title: 'Tournament Found!',
+        description: 'Opening tournament details...',
+      });
+      return;
+    }
+    
+    // Otherwise, treat as local tournament private code
     privateCode = privateCode.trim().toUpperCase();
     
     if (privateCode.length < 4) {

@@ -47,6 +47,7 @@ interface Tournament {
   created_by: string | null;
   youtube_link: string | null;
   instagram_link: string | null;
+  is_giveaway: boolean | null;
 }
 
 interface Profile {
@@ -409,6 +410,19 @@ const Creator = () => {
                   onExitClick={() => handleExitClick(tournament)}
                   onSwipeJoin={() => handleRegister(tournament)}
                   onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
+                  onShareClick={() => {
+                    const shareUrl = `${window.location.origin}/tournament/${tournament.id}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: tournament.title,
+                        text: `Join ${tournament.title} on Vyuha Esport!`,
+                        url: shareUrl,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(shareUrl);
+                      toast({ title: 'Link Copied!', description: 'Tournament link copied to clipboard.' });
+                    }
+                  }}
                   isLoading={registering === tournament.id}
                   variant="creator"
                   isFollowing={isFollowingCreator}

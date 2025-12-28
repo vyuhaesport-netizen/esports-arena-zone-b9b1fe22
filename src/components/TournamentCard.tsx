@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import FollowButton from '@/components/FollowButton';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock, Youtube, Instagram } from 'lucide-react';
+import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock, Youtube, Instagram, Gift } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -26,6 +26,7 @@ interface Tournament {
   registration_deadline?: string | null;
   youtube_link?: string | null;
   instagram_link?: string | null;
+  is_giveaway?: boolean | null;
 }
 
 interface TournamentCardProps {
@@ -168,6 +169,12 @@ const TournamentCard = ({
             </h3>
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               <span className="text-[10px] text-muted-foreground">{tournament.game}</span>
+              {tournament.is_giveaway && (
+                <Badge className="text-[8px] px-1 py-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-600 border border-pink-500/30">
+                  <Gift className="h-2.5 w-2.5 mr-0.5" />
+                  FREE
+                </Badge>
+              )}
               <Badge className={`text-[8px] px-1 py-0 capitalize ${variant === 'creator' ? 'bg-purple-500/10 text-purple-600' : 'bg-gaming-orange/10 text-gaming-orange'}`}>
                 {tournament.tournament_mode || 'Solo'}
               </Badge>
@@ -214,7 +221,7 @@ const TournamentCard = ({
           <span className="text-muted-foreground">•</span>
           <div className="flex items-center gap-1 text-emerald-600">
             <Wallet className="h-3 w-3" />
-            <span className="font-medium">{entryFee}</span>
+            <span className="font-medium">{tournament.is_giveaway ? 'FREE' : entryFee}</span>
           </div>
           <span className="text-muted-foreground">•</span>
           <div className="flex items-center gap-1 text-blue-600">
