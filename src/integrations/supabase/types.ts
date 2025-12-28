@@ -1817,6 +1817,14 @@ export type Database = {
         | { Args: { p_private_code: string; p_user_id: string }; Returns: Json }
         | { Args: { p_private_code: string; p_user_id: string }; Returns: Json }
       process_dhana_maturation: { Args: never; Returns: Json }
+      process_giveaway_tournament_creation: {
+        Args: {
+          p_organizer_id: string
+          p_prize_pool: number
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       process_local_tournament_exit: {
         Args: { p_tournament_id: string }
         Returns: Json
