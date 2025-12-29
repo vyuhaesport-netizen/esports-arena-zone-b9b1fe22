@@ -184,6 +184,11 @@ const HomePage = () => {
 
   const handleJoinClick = (tournament: Tournament) => {
     if (!user) {
+      toast({
+        title: 'Login Required',
+        description: 'Please login to join tournaments',
+        variant: 'destructive',
+      });
       navigate('/');
       return;
     }

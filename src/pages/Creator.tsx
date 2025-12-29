@@ -165,7 +165,15 @@ const Creator = () => {
   };
 
   const handleRegister = async (tournament: Tournament) => {
-    if (!user) return;
+    if (!user) {
+      toast({
+        title: 'Login Required',
+        description: 'Please login to join tournaments',
+        variant: 'destructive',
+      });
+      navigate('/');
+      return;
+    }
 
     // For duo/squad tournaments, redirect to tournament details page for team selection
     if (tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad') {
