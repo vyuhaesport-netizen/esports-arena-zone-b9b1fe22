@@ -15,7 +15,11 @@ import {
   Users, 
   ChevronRight,
   Loader2,
-  ScanLine
+  ScanLine,
+  LogIn,
+  Sparkles,
+  Gift,
+  X
 } from 'lucide-react';
 import {
   Dialog,
@@ -76,6 +80,7 @@ const HomePage = () => {
   const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
+  const [showGuestBanner, setShowGuestBanner] = useState(true);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -373,6 +378,64 @@ const HomePage = () => {
         </div>
         
       </div>
+
+      {/* Guest Login Banner */}
+      {!user && showGuestBanner && (
+        <div className="mx-4 mt-3 relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 border border-primary/30">
+          <button 
+            onClick={() => setShowGuestBanner(false)}
+            className="absolute top-2 right-2 p-1 rounded-full hover:bg-background/50 transition-colors z-10"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-primary/20 shrink-0">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-gaming font-semibold text-sm mb-1">Join the Battle!</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Sign up now to compete in tournaments, win real prizes, and become a champion!
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => navigate('/')}
+                    className="gap-1.5 text-xs h-8"
+                  >
+                    <LogIn className="h-3.5 w-3.5" />
+                    Login
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => navigate('/')}
+                    className="gap-1.5 text-xs h-8"
+                  >
+                    <Gift className="h-3.5 w-3.5" />
+                    Sign Up Free
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Trophy className="h-3.5 w-3.5 text-yellow-500" />
+                <span>Win Prizes</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5 text-blue-500" />
+                <span>Join Teams</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                <span>Free Entry</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mode Filter - Solo/Duo/Squad */}
       <div className="px-4 py-3">
