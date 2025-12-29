@@ -291,6 +291,8 @@ const OrganizerDashboard = () => {
         youtube_link: formData.youtube_link || null,
         instagram_link: formData.instagram_link || null,
         is_giveaway: formData.is_giveaway,
+        giveaway_prize_pool: formData.is_giveaway ? prizePoolValue : null,
+        current_prize_pool: formData.is_giveaway ? prizePoolValue : 0,
       };
 
       if (selectedTournament) {
@@ -311,27 +313,37 @@ const OrganizerDashboard = () => {
 
         if (error) throw error;
 
-        // If giveaway, process wallet deduction
+        // If giveaway with prize pool > 0, process wallet deduction
         if (formData.is_giveaway && newTournament) {
           const giveawayPrize = parseFloat(formData.giveaway_prize_pool) || 0;
-          const { data: giveawayResult, error: giveawayError } = await supabase.rpc('process_giveaway_tournament_creation' as any, {
-            p_organizer_id: user?.id,
-            p_prize_pool: giveawayPrize,
-            p_tournament_id: newTournament.id,
-          });
+          
+          // Only process wallet deduction if prize pool > 0
+          if (giveawayPrize > 0) {
+            const { data: giveawayResult, error: giveawayError } = await supabase.rpc('process_giveaway_tournament_creation' as any, {
+              p_organizer_id: user?.id,
+              p_prize_pool: giveawayPrize,
+              p_tournament_id: newTournament.id,
+            });
 
-          if (giveawayError) throw giveawayError;
+            if (giveawayError) {
+              // Delete the tournament if giveaway processing failed
+              await supabase.from('tournaments').delete().eq('id', newTournament.id);
+              toast({ title: 'Error', description: giveawayError.message || 'Failed to lock prize pool.', variant: 'destructive' });
+              setSaving(false);
+              return;
+            }
 
-          const result = giveawayResult as { success: boolean; error?: string };
-          if (!result.success) {
-            // Delete the tournament if giveaway processing failed
-            await supabase.from('tournaments').delete().eq('id', newTournament.id);
-            toast({ title: 'Error', description: result.error || 'Failed to lock prize pool.', variant: 'destructive' });
-            setSaving(false);
-            return;
+            const result = giveawayResult as { success: boolean; error?: string };
+            if (!result.success) {
+              // Delete the tournament if giveaway processing failed
+              await supabase.from('tournaments').delete().eq('id', newTournament.id);
+              toast({ title: 'Error', description: result.error || 'Failed to lock prize pool.', variant: 'destructive' });
+              setSaving(false);
+              return;
+            }
+
+            fetchOrganizerBalance();
           }
-
-          fetchOrganizerBalance();
         }
 
         // Notify followers

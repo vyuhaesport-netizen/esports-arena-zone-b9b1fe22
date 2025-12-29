@@ -170,7 +170,7 @@ const TournamentCard = ({
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               <span className="text-[10px] text-muted-foreground">{tournament.game}</span>
               {tournament.is_giveaway && (
-                <Badge className="text-[8px] px-1 py-0 bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-600 border border-pink-500/30">
+                <Badge className="text-[8px] px-1.5 py-0.5 bg-emerald-500 text-white border-0 font-bold shadow-sm shadow-emerald-500/30">
                   <Gift className="h-2.5 w-2.5 mr-0.5" />
                   FREE
                 </Badge>
