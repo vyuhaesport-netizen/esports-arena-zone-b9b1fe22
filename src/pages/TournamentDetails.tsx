@@ -22,7 +22,8 @@ import {
   Gamepad2,
   Clock,
   UserPlus,
-  AlertCircle
+  AlertCircle,
+  Gift
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -50,6 +51,7 @@ interface Tournament {
   tournament_mode: string | null;
   prize_distribution: any;
   created_by: string | null;
+  is_giveaway: boolean | null;
 }
 
 interface TeamMember {
@@ -426,7 +428,13 @@ const TournamentDetails = () => {
 
       {/* Tournament Banner */}
       <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-background p-6">
-        <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="flex items-center justify-center gap-2 mb-4 flex-wrap">
+          {tournament.is_giveaway && (
+            <Badge className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 text-pink-600 border border-pink-500/30">
+              <Gift className="h-3 w-3 mr-1" />
+              FREE GIVEAWAY
+            </Badge>
+          )}
           <Badge className={`capitalize ${
             tournament.tournament_type === 'creator' 
               ? 'bg-purple-500/10 text-purple-600' 
@@ -470,9 +478,12 @@ const TournamentDetails = () => {
             <Wallet className="h-4 w-4" />
             <span className="text-xs text-muted-foreground">Entry Fee</span>
           </div>
-          <p className="text-xl font-bold text-emerald-500">
-            {entryFee ? `₹${entryFee}` : 'Free'}
+          <p className={`text-xl font-bold ${tournament.is_giveaway ? 'text-pink-500' : 'text-emerald-500'}`}>
+            {tournament.is_giveaway ? 'FREE' : (entryFee ? `₹${entryFee}` : 'Free')}
           </p>
+          {tournament.is_giveaway && (
+            <p className="text-xs text-pink-500">Giveaway</p>
+          )}
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 text-blue-500 mb-1">
