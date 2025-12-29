@@ -60,6 +60,7 @@ import JoinLocalTournament from "./pages/JoinLocalTournament";
 import AdminLocalTournaments from "./pages/admin/AdminLocalTournaments";
 import AvatarSelection from "./pages/AvatarSelection";
 import NotFound from "./pages/NotFound";
+import AuthRequiredLock from "./components/AuthRequiredLock";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -185,21 +186,46 @@ const AuthRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Route that shows content to logged-in users or lock screen to guests
+const SoftProtectedRoute = ({ children, lockTitle, lockDescription }: { 
+  children: React.ReactNode; 
+  lockTitle?: string; 
+  lockDescription?: string;
+}) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthRequiredLock title={lockTitle} description={lockDescription} />;
+  }
+
+  return <>{children}</>;
+};
+
 const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<AuthRoute><Auth /></AuthRoute>} />
-      <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-      <Route path="/creator-tournaments" element={<ProtectedRoute><Creator /></ProtectedRoute>} />
-      <Route path="/my-match" element={<ProtectedRoute><MyMatch /></ProtectedRoute>} />
-      <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/avatar-selection" element={<ProtectedRoute><AvatarSelection /></ProtectedRoute>} />
-      <Route path="/team" element={<ProtectedRoute><Team /></ProtectedRoute>} />
-      <Route path="/broadcast" element={<ProtectedRoute><BroadcastChannel /></ProtectedRoute>} />
-      <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
-      <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
-      <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+      {/* Public Routes - accessible without login */}
+      <Route path="/home" element={<Home />} />
+      <Route path="/creator-tournaments" element={<Creator />} />
+      {/* Soft Protected Routes - show lock screen for guests */}
+      <Route path="/my-match" element={<SoftProtectedRoute lockTitle="My Matches" lockDescription="Login to view your tournament matches and track your progress"><MyMatch /></SoftProtectedRoute>} />
+      <Route path="/wallet" element={<SoftProtectedRoute lockTitle="Wallet" lockDescription="Login to manage your wallet, deposits, and withdrawals"><Wallet /></SoftProtectedRoute>} />
+      <Route path="/profile" element={<SoftProtectedRoute lockTitle="Profile" lockDescription="Login to view and edit your gaming profile"><Profile /></SoftProtectedRoute>} />
+      <Route path="/avatar-selection" element={<SoftProtectedRoute lockTitle="Avatar Selection" lockDescription="Login to customize your avatar"><AvatarSelection /></SoftProtectedRoute>} />
+      <Route path="/team" element={<SoftProtectedRoute lockTitle="Teams" lockDescription="Login to create or join gaming teams"><Team /></SoftProtectedRoute>} />
+      <Route path="/broadcast" element={<SoftProtectedRoute lockTitle="Broadcasts" lockDescription="Login to view broadcasts and announcements"><BroadcastChannel /></SoftProtectedRoute>} />
+      <Route path="/help-support" element={<SoftProtectedRoute lockTitle="Help & Support" lockDescription="Login to access help and support"><HelpSupport /></SoftProtectedRoute>} />
+      <Route path="/payment" element={<SoftProtectedRoute lockTitle="Payment" lockDescription="Login to make payments"><Payment /></SoftProtectedRoute>} />
+      <Route path="/leaderboard" element={<SoftProtectedRoute lockTitle="Leaderboard" lockDescription="Login to view the leaderboard and rankings"><Leaderboard /></SoftProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
