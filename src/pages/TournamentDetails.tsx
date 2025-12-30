@@ -368,19 +368,19 @@ const TournamentDetails = () => {
     const allMembers = [user?.id, ...selectedTeamMembers].filter(Boolean);
     if (allMembers.length !== requiredSize) return false;
 
-    // Check all selected members have sufficient balance
-    const entryFee = tournament.entry_fee || 0;
+    // Check all selected members have sufficient balance - giveaways require ₹1 per player
+    const effectiveFee = tournament.is_giveaway ? 1 : (tournament.entry_fee || 0);
     const teamMembersList = getAllTeamMembersList();
     
     for (const memberId of selectedTeamMembers) {
       const member = teamMembersList.find(m => m.user_id === memberId);
-      if (!member || member.wallet_balance < entryFee) {
+      if (!member || member.wallet_balance < effectiveFee) {
         return false;
       }
     }
 
     // Check self balance
-    if (walletBalance < entryFee) return false;
+    if (walletBalance < effectiveFee) return false;
 
     return teamName.trim().length > 0;
   };
@@ -470,16 +470,19 @@ const TournamentDetails = () => {
             <span className="text-xs text-muted-foreground">Prize Pool</span>
           </div>
           <p className="text-xl font-bold text-amber-500">
-            {tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`}
+            {tournament.is_giveaway 
+              ? `₹${(tournament as any).giveaway_prize_pool || tournament.current_prize_pool || 0}`
+              : (tournament.prize_pool || `₹${tournament.current_prize_pool || 0}`)
+            }
           </p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
           <div className="flex items-center gap-2 text-emerald-500 mb-1">
             <Wallet className="h-4 w-4" />
-            <span className="text-xs text-muted-foreground">Entry Fee</span>
+            <span className="text-xs text-muted-foreground">{tournament.is_giveaway ? 'Platform Fee' : 'Entry Fee'}</span>
           </div>
           <p className={`text-xl font-bold ${tournament.is_giveaway ? 'text-pink-500' : 'text-emerald-500'}`}>
-            {tournament.is_giveaway ? 'FREE' : (entryFee ? `₹${entryFee}` : 'Free')}
+            {tournament.is_giveaway ? '₹1' : (entryFee ? `₹${entryFee}` : 'Free')}
           </p>
           {tournament.is_giveaway && (
             <p className="text-xs text-pink-500">Giveaway</p>
