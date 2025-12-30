@@ -1830,25 +1830,15 @@ export type Database = {
         Returns: Json
       }
       process_retry_queue_item: { Args: { p_queue_id: string }; Returns: Json }
-      process_team_tournament_join:
-        | {
-            Args: {
-              p_leader_id: string
-              p_team_member_ids: string[]
-              p_team_name: string
-              p_tournament_id: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_leader_id: string
-              p_team_member_ids: string[]
-              p_team_name: string
-              p_tournament_id: string
-            }
-            Returns: Json
-          }
+      process_team_tournament_join: {
+        Args: {
+          p_leader_id: string
+          p_team_member_ids: string[]
+          p_team_name: string
+          p_tournament_id: string
+        }
+        Returns: Json
+      }
       process_team_winner_declaration: {
         Args: {
           p_organizer_id: string

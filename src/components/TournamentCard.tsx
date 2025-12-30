@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import FollowButton from '@/components/FollowButton';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock, Youtube, Instagram, Gift } from 'lucide-react';
+import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock, Youtube, Instagram, Gift, ScrollText } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -27,6 +27,7 @@ interface Tournament {
   youtube_link?: string | null;
   instagram_link?: string | null;
   is_giveaway?: boolean | null;
+  rules?: string | null;
 }
 
 interface TournamentCardProps {
@@ -36,6 +37,7 @@ interface TournamentCardProps {
   onShareClick?: () => void;
   onExitClick?: () => void;
   onPrizeClick?: () => void;
+  onRulesClick?: () => void;
   onSwipeJoin?: () => void;
   isLoading?: boolean;
   variant?: 'organizer' | 'creator';
@@ -73,6 +75,7 @@ const TournamentCard = ({
   onShareClick,
   onExitClick,
   onPrizeClick,
+  onRulesClick,
   onSwipeJoin,
   isLoading = false,
   variant = 'organizer',
@@ -298,7 +301,13 @@ const TournamentCard = ({
             )
           )}
           
-          <Button variant="outline" size="sm" onClick={onPrizeClick} className="h-7 px-2 text-[10px]">
+          <Button variant="outline" size="sm" onClick={onRulesClick} className="h-7 px-2 text-[10px] gap-1">
+            <ScrollText className="h-3 w-3" />
+            Rules
+          </Button>
+          
+          <Button variant="outline" size="sm" onClick={onPrizeClick} className="h-7 px-2 text-[10px] gap-1">
+            <Trophy className="h-3 w-3" />
             Prizes
           </Button>
           

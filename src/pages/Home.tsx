@@ -57,6 +57,7 @@ interface Tournament {
   youtube_link: string | null;
   instagram_link: string | null;
   is_giveaway: boolean | null;
+  rules: string | null;
 }
 
 interface Profile {
@@ -79,6 +80,7 @@ const HomePage = () => {
   const [activeMode, setActiveMode] = useState<'solo' | 'duo' | 'squad'>('solo');
   const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
+  const [rulesDrawer, setRulesDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
   const [showGuestBanner, setShowGuestBanner] = useState(true);
   
@@ -151,7 +153,7 @@ const HomePage = () => {
     try {
       const { data, error } = await supabase
         .from('tournaments')
-        .select('id, title, game, prize_pool, entry_fee, start_date, status, max_participants, tournament_type, joined_users, current_prize_pool, tournament_mode, room_id, room_password, prize_distribution, created_by, registration_deadline, youtube_link, instagram_link, is_giveaway')
+        .select('id, title, game, prize_pool, entry_fee, start_date, status, max_participants, tournament_type, joined_users, current_prize_pool, tournament_mode, room_id, room_password, prize_distribution, created_by, registration_deadline, youtube_link, instagram_link, is_giveaway, rules')
         .eq('status', 'upcoming')
         .eq('tournament_type', 'organizer')
         .order('start_date', { ascending: true });
@@ -495,6 +497,7 @@ const HomePage = () => {
                   onExitClick={() => handleExitClick(tournament)}
                   onShareClick={() => handleShare(tournament)}
                   onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
+                  onRulesClick={() => setRulesDrawer({ open: true, tournament })}
                   onSwipeJoin={() => handleJoinClick(tournament)}
                   variant="organizer"
                   isFollowing={isFollowingOrganizer}
@@ -701,6 +704,41 @@ const HomePage = () => {
                 <p className="text-xs text-muted-foreground text-center mt-3 bg-amber-500/10 p-2 rounded">
                   ⚠️ Note: Prize amounts may be adjusted if maximum players don't join. 
                   Final amounts are recalculated 2 minutes before tournament start.
+                </p>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Rules Drawer */}
+      <Drawer open={rulesDrawer.open} onOpenChange={(open) => setRulesDrawer({ open, tournament: rulesDrawer.tournament })}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Tournament Rules</DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 pb-8">
+            {rulesDrawer.tournament?.rules ? (
+              <div className="prose prose-sm max-w-none dark:prose-invert">
+                <div className="whitespace-pre-wrap text-sm text-muted-foreground">
+                  {rulesDrawer.tournament.rules}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <h4 className="font-medium text-sm">General Rules</h4>
+                  <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+                    <li>Join the room 5-10 minutes before match time</li>
+                    <li>No hacks, mods, or cheating tools allowed</li>
+                    <li>Screen recording may be required for proof</li>
+                    <li>Follow fair play guidelines</li>
+                    <li>Room ID & Password shared 10 mins before start</li>
+                    <li>Late entry may result in disqualification</li>
+                  </ul>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  Additional rules may apply. Contact organizer for details.
                 </p>
               </div>
             )}
