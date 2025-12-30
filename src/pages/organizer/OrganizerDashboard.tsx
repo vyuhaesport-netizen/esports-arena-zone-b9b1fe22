@@ -357,7 +357,7 @@ const OrganizerDashboard = () => {
             user_id: f.follower_user_id,
             type: 'new_tournament',
             title: formData.is_giveaway ? '🎁 New Giveaway Tournament!' : 'New Tournament!',
-            message: `New ${formData.is_giveaway ? 'FREE giveaway ' : ''}tournament "${formData.title}" has been created.`,
+            message: `New ${formData.is_giveaway ? 'giveaway ' : ''}tournament "${formData.title}" has been created.${formData.is_giveaway ? ' Join for just ₹1!' : ''}`,
           }));
 
           await supabase.from('notifications').insert(notifications);
@@ -366,7 +366,7 @@ const OrganizerDashboard = () => {
         toast({ 
           title: formData.is_giveaway ? '🎁 Giveaway Created!' : 'Created!', 
           description: formData.is_giveaway 
-            ? `₹${formData.giveaway_prize_pool} locked from your wallet. Players can join for free!`
+            ? `₹${formData.giveaway_prize_pool} locked from your wallet. Players pay just ₹1 to join!`
             : 'Tournament created successfully.' 
         });
       }

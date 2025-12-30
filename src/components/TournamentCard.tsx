@@ -170,9 +170,9 @@ const TournamentCard = ({
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               <span className="text-[10px] text-muted-foreground">{tournament.game}</span>
               {tournament.is_giveaway && (
-                <Badge className="text-[8px] px-1.5 py-0.5 bg-emerald-500 text-white border-0 font-bold shadow-sm shadow-emerald-500/30">
+                <Badge className="text-[8px] px-1.5 py-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 font-bold shadow-md shadow-emerald-500/40">
                   <Gift className="h-2.5 w-2.5 mr-0.5" />
-                  FREE
+                  GIVEAWAY
                 </Badge>
               )}
               <Badge className={`text-[8px] px-1 py-0 capitalize ${variant === 'creator' ? 'bg-purple-500/10 text-purple-600' : 'bg-gaming-orange/10 text-gaming-orange'}`}>
@@ -221,7 +221,7 @@ const TournamentCard = ({
           <span className="text-muted-foreground">•</span>
           <div className="flex items-center gap-1 text-emerald-600">
             <Wallet className="h-3 w-3" />
-            <span className="font-medium">{tournament.is_giveaway ? 'FREE' : entryFee}</span>
+            <span className="font-medium">{tournament.is_giveaway ? '₹1' : entryFee}</span>
           </div>
           <span className="text-muted-foreground">•</span>
           <div className="flex items-center gap-1 text-blue-600">
