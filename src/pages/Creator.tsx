@@ -230,6 +230,10 @@ const Creator = () => {
   };
 
   const canExitTournament = (tournament: Tournament) => {
+    // Exit only allowed for solo tournaments
+    if (tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad') {
+      return false;
+    }
     const matchTime = new Date(tournament.start_date);
     const now = new Date();
     const timeDiff = matchTime.getTime() - now.getTime();
@@ -237,6 +241,14 @@ const Creator = () => {
   };
 
   const handleExitClick = (tournament: Tournament) => {
+    if (tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad') {
+      toast({ 
+        title: 'Cannot Exit', 
+        description: 'Exit is not allowed for duo/squad tournaments. Entry fee is non-refundable.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
     if (!canExitTournament(tournament)) {
       toast({ 
         title: 'Cannot Exit', 
@@ -408,43 +420,45 @@ const Creator = () => {
               
               const canJoin = canJoinTournament(tournament);
               
-              return (
-                <TournamentCard
-                  key={tournament.id}
-                  tournament={tournament}
-                  isJoined={isJoined}
-                  showRoomDetails={showRoomDetails}
-                  onJoinClick={() => handleRegister(tournament)}
-                  onExitClick={() => handleExitClick(tournament)}
-                  onSwipeJoin={() => handleRegister(tournament)}
-                  onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
-                  onShareClick={() => {
-                    const shareUrl = `${window.location.origin}/tournament/${tournament.id}`;
-                    if (navigator.share) {
-                      navigator.share({
-                        title: tournament.title,
-                        text: `Join ${tournament.title} on Vyuha Esport!`,
-                        url: shareUrl,
-                      }).catch(() => {});
-                    } else {
-                      navigator.clipboard.writeText(shareUrl);
-                      toast({ title: 'Link Copied!', description: 'Tournament link copied to clipboard.' });
-                    }
-                  }}
-                  isLoading={registering === tournament.id}
-                  variant="creator"
-                  isFollowing={isFollowingCreator}
-                  onFollowChange={(following) => {
-                    if (following) {
-                      setFollowedOrganizers(prev => [...prev, tournament.created_by!]);
-                    } else {
-                      setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
-                    }
-                  }}
-                  joinDisabled={!canJoin}
-                  joinDisabledReason={!canJoin ? "Registration closed (2 min before start)" : undefined}
-                />
-              );
+                return (
+                  <TournamentCard
+                    key={tournament.id}
+                    tournament={tournament}
+                    isJoined={isJoined}
+                    showRoomDetails={showRoomDetails}
+                    onJoinClick={() => handleRegister(tournament)}
+                    onExitClick={() => handleExitClick(tournament)}
+                    onSwipeJoin={() => handleRegister(tournament)}
+                    onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
+                    onShareClick={() => {
+                      const shareUrl = `${window.location.origin}/tournament/${tournament.id}`;
+                      if (navigator.share) {
+                        navigator.share({
+                          title: tournament.title,
+                          text: `Join ${tournament.title} on Vyuha Esport!`,
+                          url: shareUrl,
+                        }).catch(() => {});
+                      } else {
+                        navigator.clipboard.writeText(shareUrl);
+                        toast({ title: 'Link Copied!', description: 'Tournament link copied to clipboard.' });
+                      }
+                    }}
+                    isLoading={registering === tournament.id}
+                    variant="creator"
+                    isFollowing={isFollowingCreator}
+                    onFollowChange={(following) => {
+                      if (following) {
+                        setFollowedOrganizers(prev => [...prev, tournament.created_by!]);
+                      } else {
+                        setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
+                      }
+                    }}
+                    joinDisabled={!canJoin}
+                    joinDisabledReason={!canJoin ? "Registration closed (2 min before start)" : undefined}
+                    exitDisabled={tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad'}
+                    exitDisabledReason="Exit not allowed for team tournaments"
+                  />
+                );
             })}
           </div>
         )}

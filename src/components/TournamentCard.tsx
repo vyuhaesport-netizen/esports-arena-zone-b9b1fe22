@@ -47,6 +47,8 @@ interface TournamentCardProps {
   onFollowChange?: (isFollowing: boolean) => void;
   joinDisabled?: boolean;
   joinDisabledReason?: string;
+  exitDisabled?: boolean; // Exit only allowed for solo tournaments
+  exitDisabledReason?: string;
 }
 
 const formatCountdown = (ms: number): string => {
@@ -84,7 +86,9 @@ const TournamentCard = ({
   isFollowing = false,
   onFollowChange,
   joinDisabled = false,
-  joinDisabledReason
+  joinDisabledReason,
+  exitDisabled = false,
+  exitDisabledReason
 }: TournamentCardProps) => {
   const [profilePreviewOpen, setProfilePreviewOpen] = useState(false);
   const [countdown, setCountdown] = useState<string>('');
@@ -280,9 +284,15 @@ const TournamentCard = ({
         {/* Action Row */}
         <div className="flex items-center gap-1.5">
           {isJoined ? (
-            <Button onClick={onExitClick} disabled={isLoading} variant="outline" size="sm" className="flex-1 h-7 text-xs text-destructive border-destructive/50 hover:bg-destructive/10">
-              {isLoading ? 'Processing...' : 'Exit'}
-            </Button>
+            exitDisabled ? (
+              <div className="flex-1 h-7 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-600 text-[10px]">
+                {exitDisabledReason || 'Exit not allowed'}
+              </div>
+            ) : (
+              <Button onClick={onExitClick} disabled={isLoading} variant="outline" size="sm" className="flex-1 h-7 text-xs text-destructive border-destructive/50 hover:bg-destructive/10">
+                {isLoading ? 'Processing...' : 'Exit'}
+              </Button>
+            )
           ) : (
             canSwipeJoin ? (
               <div className="flex-1 h-7 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center gap-1 text-emerald-600 text-[10px]">

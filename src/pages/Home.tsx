@@ -508,6 +508,8 @@ const HomePage = () => {
                       setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
                     }
                   }}
+                  exitDisabled={tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad'}
+                  exitDisabledReason="Exit not allowed for team tournaments"
                 />
               );
             })}

@@ -197,8 +197,18 @@ const MyMatch = () => {
     return data || [];
   };
 
-  const handleCancel = async (registrationId: string, tournamentId: string, startDate: string) => {
+  const handleCancel = async (registrationId: string, tournamentId: string, startDate: string, tournamentMode: string | null) => {
     if (!user) return;
+
+    // Exit only allowed for solo tournaments
+    if (tournamentMode === 'duo' || tournamentMode === 'squad') {
+      toast({
+        title: 'Cannot Exit',
+        description: 'Exit is not allowed for duo/squad tournaments. Entry fee is non-refundable.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const matchTime = new Date(startDate);
     const now = new Date();
@@ -275,6 +285,16 @@ const MyMatch = () => {
     const handleExitLocalTournament = async () => {
       if (!user) return;
 
+      // Exit only allowed for solo tournaments
+      if (tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad') {
+        toast({
+          title: 'Cannot Exit',
+          description: 'Exit is not allowed for duo/squad tournaments. Entry fee is non-refundable.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       setExiting(true);
       try {
         const { data, error } = await supabase.rpc('process_local_tournament_exit', {
@@ -327,7 +347,11 @@ const MyMatch = () => {
 
     const hasRoomDetails = tournament.room_id || tournament.room_password;
     const isOngoingOrCompleted = tournament.status === 'ongoing' || tournament.status === 'completed';
-    const canExit = tournament.status === 'upcoming' && new Date(tournament.tournament_date) > new Date();
+    // Exit only for solo and upcoming tournaments
+    const canExit = tournament.status === 'upcoming' && 
+                   new Date(tournament.tournament_date) > new Date() &&
+                   tournament.tournament_mode !== 'duo' && 
+                   tournament.tournament_mode !== 'squad';
 
     return (
       <div className="bg-card rounded-xl border border-border p-4">
@@ -426,7 +450,7 @@ const MyMatch = () => {
                 <span>{tournament.joined_users?.length || 0} players joined</span>
               </div>
               
-              {canExit && (
+              {canExit ? (
                 <Button
                   variant="destructive"
                   size="sm"
@@ -441,6 +465,8 @@ const MyMatch = () => {
                   )}
                   Exit
                 </Button>
+              ) : tournament.status === 'upcoming' && (tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad') && (
+                <span className="text-amber-600 text-[10px]">No exit for teams</span>
               )}
             </div>
           </div>
@@ -850,14 +876,17 @@ const MyMatch = () => {
             >
               {registration.tournaments.status}
             </Badge>
-            {showCancel && (
+            {showCancel && registration.tournaments.tournament_mode !== 'duo' && registration.tournaments.tournament_mode !== 'squad' && (
               <button 
-                onClick={() => handleCancel(registration.id, registration.tournament_id, registration.tournaments.start_date)}
+                onClick={() => handleCancel(registration.id, registration.tournament_id, registration.tournaments.start_date, registration.tournaments.tournament_mode)}
                 disabled={canceling === registration.id}
                 className="text-destructive text-xs flex items-center gap-1 disabled:opacity-50"
               >
                 <X className="h-3 w-3" /> {canceling === registration.id ? 'Exiting...' : 'Exit'}
               </button>
+            )}
+            {showCancel && (registration.tournaments.tournament_mode === 'duo' || registration.tournaments.tournament_mode === 'squad') && (
+              <span className="text-amber-600 text-[10px]">No exit for teams</span>
             )}
           </div>
         </div>
