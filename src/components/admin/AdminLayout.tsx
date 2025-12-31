@@ -28,6 +28,7 @@ import {
   CreditCard,
   Coins,
   Search,
+  ScrollText,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -62,6 +63,7 @@ const menuItems: MenuItem[] = [
   { icon: Megaphone, label: 'Broadcast Channel', path: '/admin/messages', permission: 'notifications:view' },
   { icon: Settings, label: 'Settings', path: '/admin/settings', permission: 'settings:view' },
   { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'tournaments:view', countKey: 'pendingLocalTournamentApps' },
+  { icon: ScrollText, label: 'Tournament Rules', path: '/admin/rules', superAdminOnly: true },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
 ];

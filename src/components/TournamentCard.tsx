@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import FollowButton from '@/components/FollowButton';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronRight, Zap, Clock, Youtube, Instagram, Gift, ScrollText } from 'lucide-react';
+import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronLeft, Zap, Clock, Youtube, Instagram, Gift, ScrollText } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -154,19 +154,17 @@ const TournamentCard = ({
     setIsSwiping(false);
   };
 
-  return <div className="relative overflow-hidden rounded-lg">
-      {/* Swipe indicator background */}
-      {canSwipeJoin && <div className={`absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-emerald-500 to-emerald-500/50 flex items-center justify-end pr-3 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="text-white text-xs font-semibold flex items-center gap-1">
-            <ChevronRight className="h-4 w-4 animate-pulse" />
-            Join
-          </div>
-        </div>}
-      
+  return <div className="relative">
+      {/* Card */}
       <div ref={cardRef} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} style={{
       transform: `translateX(${swipeX}px)`,
       transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
-    }} className="bg-card rounded-lg border border-border/50 p-3 hover:border-primary/30 transition-all relative">
+    }} className="bg-card rounded-lg border border-border/50 p-3 hover:border-primary/30 transition-all relative overflow-hidden">
+        
+        {/* Swipe indicator inside card */}
+        {canSwipeJoin && <div className={`absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-emerald-500 to-emerald-500/50 flex items-center justify-end pr-2 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
+            <span className="text-white text-xs font-semibold">Join</span>
+          </div>}
         
         {/* Header Row */}
         <div className="flex items-start justify-between gap-2 mb-2">
@@ -295,11 +293,9 @@ const TournamentCard = ({
             )
           ) : (
             canSwipeJoin ? (
-              <div className="flex-1 h-7 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center gap-1 text-emerald-600 text-[10px]">
-                <Zap className="h-3 w-3" />
-                <span>Swipe left to join</span>
-                <ChevronRight className="h-3 w-3 animate-pulse" />
-              </div>
+              <Button onClick={onJoinClick} disabled={isLoading} variant="default" size="sm" className="flex-1 h-7 text-xs bg-emerald-600 hover:bg-emerald-700">
+                {isLoading ? 'Processing...' : 'Join Now'}
+              </Button>
             ) : joinDisabled ? (
               <div className="flex-1 h-7 rounded bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-600 text-[10px]">
                 {joinDisabledReason || 'Registration Closed'}
@@ -326,6 +322,15 @@ const TournamentCard = ({
           </button>
         </div>
       </div>
+      
+      {/* Swipe indicator below card */}
+      {canSwipeJoin && (
+        <div className="flex items-center justify-center gap-2 mt-2 text-emerald-600">
+          <ChevronLeft className="h-4 w-4 animate-pulse" />
+          <span className="text-xs font-medium">Swipe to join</span>
+          <ChevronLeft className="h-4 w-4 animate-pulse" />
+        </div>
+      )}
     </div>;
 };
 export default TournamentCard;

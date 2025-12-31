@@ -38,6 +38,7 @@ import AdminDhanaWithdrawals from "./pages/admin/AdminDhanaWithdrawals";
 import AdminApiPayment from "./pages/admin/AdminApiPayment";
 import AdminSEO from "./pages/admin/AdminSEO";
 import AdminZapupiMonitor from "./pages/admin/AdminZapupiMonitor";
+import AdminRules from "./pages/admin/AdminRules";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerHub from "./pages/organizer/OrganizerHub";
 import OrganizerWallet from "./pages/organizer/OrganizerWallet";
@@ -249,6 +250,7 @@ const AppRoutes = () => {
       <Route path="/admin/api-payment" element={<ProtectedRoute><AdminApiPayment /></ProtectedRoute>} />
       <Route path="/admin/seo" element={<ProtectedRoute><AdminSEO /></ProtectedRoute>} />
       <Route path="/admin/zapupi-monitor" element={<ProtectedRoute><AdminZapupiMonitor /></ProtectedRoute>} />
+      <Route path="/admin/rules" element={<ProtectedRoute><AdminRules /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerHub /></ProtectedRoute>} />

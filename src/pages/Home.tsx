@@ -83,6 +83,7 @@ const HomePage = () => {
   const [rulesDrawer, setRulesDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
   const [showGuestBanner, setShowGuestBanner] = useState(true);
+  const [adminRules, setAdminRules] = useState<{ id: string; title: string; content: string; game: string }[]>([]);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -90,6 +91,7 @@ const HomePage = () => {
 
   useEffect(() => {
     fetchTournaments();
+    fetchAdminRules();
     if (user) {
       fetchUserProfile();
       fetchFollowedOrganizers();
@@ -146,6 +148,27 @@ const HomePage = () => {
       setFollowedOrganizers(data?.map(f => f.following_user_id) || []);
     } catch (error) {
       console.error('Error fetching follows:', error);
+    }
+  };
+
+  const fetchAdminRules = async () => {
+    try {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('setting_value')
+        .eq('setting_key', 'tournament_rules_config')
+        .single();
+      
+      if (data?.setting_value) {
+        try {
+          const parsed = JSON.parse(data.setting_value);
+          setAdminRules(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          setAdminRules([]);
+        }
+      }
+    } catch (error) {
+      // No rules configured yet
     }
   };
 
@@ -715,18 +738,36 @@ const HomePage = () => {
 
       {/* Rules Drawer */}
       <Drawer open={rulesDrawer.open} onOpenChange={(open) => setRulesDrawer({ open, tournament: rulesDrawer.tournament })}>
-        <DrawerContent>
+        <DrawerContent className="max-h-[85vh]">
           <DrawerHeader>
             <DrawerTitle>Tournament Rules</DrawerTitle>
           </DrawerHeader>
-          <div className="p-4 pb-8">
-            {rulesDrawer.tournament?.rules ? (
-              <div className="prose prose-sm max-w-none dark:prose-invert">
+          <div className="p-4 pb-8 overflow-y-auto">
+            {/* Tournament specific rules first */}
+            {rulesDrawer.tournament?.rules && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-sm mb-2 text-primary">Tournament Specific Rules</h4>
                 <div className="whitespace-pre-wrap text-sm text-muted-foreground">
                   {rulesDrawer.tournament.rules}
                 </div>
               </div>
-            ) : (
+            )}
+            
+            {/* Admin configured rules */}
+            {adminRules.length > 0 ? (
+              <div className="space-y-4">
+                {adminRules
+                  .filter(rule => !rule.game || rule.game.toLowerCase() === rulesDrawer.tournament?.game.toLowerCase())
+                  .map((rule) => (
+                    <div key={rule.id} className="bg-muted/50 rounded-lg p-4">
+                      <h4 className="font-medium text-sm mb-2">{rule.title}</h4>
+                      <div className="whitespace-pre-wrap text-sm text-muted-foreground">
+                        {rule.content}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : !rulesDrawer.tournament?.rules && (
               <div className="space-y-3">
                 <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                   <h4 className="font-medium text-sm">General Rules</h4>
