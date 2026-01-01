@@ -4,7 +4,6 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -14,6 +13,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,15 +29,14 @@ import {
   ArrowUpRight, 
   ArrowDownLeft,
   History,
-  IndianRupee,
   Loader2,
   AlertCircle,
   TrendingUp,
-  ArrowDownFromLine,
   Trophy,
   Award,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -59,16 +64,16 @@ const Wallet = () => {
   const { toast } = useToast();
 
   const [balance, setBalance] = useState(0);
-  const [withdrawableBalance, setWithdrawableBalance] = useState(0);
   const [totalEarned, setTotalEarned] = useState(0);
-  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [earningsBreakdown, setEarningsBreakdown] = useState<EarningBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState('');
   const [addMoneyDialog, setAddMoneyDialog] = useState(false);
   const [withdrawDialog, setWithdrawDialog] = useState(false);
   const [showEarningsBreakdown, setShowEarningsBreakdown] = useState(false);
+  const [transactionFilter, setTransactionFilter] = useState<string>('all');
   const [withdrawForm, setWithdrawForm] = useState({
     amount: '',
     phone: '',
@@ -82,11 +87,15 @@ const Wallet = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    filterTransactions();
+  }, [transactions, transactionFilter]);
+
   const fetchWalletData = async () => {
     if (!user) return;
 
     try {
-      // Fetch wallet balance and withdrawable balance
+      // Fetch wallet balance (deposits go here)
       const { data: profile } = await supabase
         .from('profiles')
         .select('wallet_balance, withdrawable_balance')
@@ -94,7 +103,6 @@ const Wallet = () => {
         .single();
 
       setBalance(profile?.wallet_balance || 0);
-      setWithdrawableBalance(profile?.withdrawable_balance || 0);
 
       // Fetch transactions
       const { data: txns } = await supabase
@@ -106,20 +114,24 @@ const Wallet = () => {
 
       setTransactions(txns || []);
 
-      // Calculate total earned (ONLY prize winnings - not deposits)
+      // Calculate total earned (ONLY prize winnings)
       const prizeTypes = ['winning', 'prize', 'prize_won'];
       const earningTxns = (txns || []).filter(t => prizeTypes.includes(t.type) && t.status === 'completed');
       const earned = earningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      setTotalEarned(earned);
+      
+      // Subtract completed withdrawals from total earned
+      const withdrawnFromEarnings = (txns || [])
+        .filter(t => t.type === 'withdrawal' && t.status === 'completed')
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      
+      setTotalEarned(Math.max(0, earned - withdrawnFromEarnings));
 
-      // Create earnings breakdown from prize transactions
+      // Create earnings breakdown
       const breakdown: EarningBreakdown[] = earningTxns.map(t => {
-        // Parse tournament name and position from description
         let tournamentName = 'Tournament Prize';
         let position = '';
         
         if (t.description) {
-          // Try to extract tournament name and position from description
           const match = t.description.match(/(?:Prize|Won|Winning).*?(?:for|from|in)\s+(.+?)(?:\s*-\s*Rank\s*(\d+))?$/i);
           if (match) {
             tournamentName = match[1] || t.description;
@@ -138,12 +150,6 @@ const Wallet = () => {
         };
       });
       setEarningsBreakdown(breakdown);
-
-      // Calculate total withdrawn (completed withdrawals)
-      const withdrawn = (txns || [])
-        .filter(t => t.type === 'withdrawal' && t.status === 'completed')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      setTotalWithdrawn(withdrawn);
     } catch (error) {
       console.error('Error fetching wallet data:', error);
     } finally {
@@ -151,8 +157,12 @@ const Wallet = () => {
     }
   };
 
-  const handleQuickAdd = (amount: number) => {
-    setDepositAmount(amount.toString());
+  const filterTransactions = () => {
+    if (transactionFilter === 'all') {
+      setFilteredTransactions(transactions);
+    } else {
+      setFilteredTransactions(transactions.filter(t => t.type === transactionFilter));
+    }
   };
 
   const handleAddMoney = () => {
@@ -169,7 +179,6 @@ const Wallet = () => {
     navigate(`/payment?amount=${amount}`);
   };
 
-
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawForm.amount);
     
@@ -182,10 +191,10 @@ const Wallet = () => {
       return;
     }
 
-    if (amount > withdrawableBalance) {
+    if (amount > totalEarned) {
       toast({
-        title: 'Insufficient Withdrawable Balance',
-        description: `Only ₹${withdrawableBalance} can be withdrawn (prize winnings only). Deposited money cannot be withdrawn.`,
+        title: 'Insufficient Earnings',
+        description: `You can only withdraw from Total Earned (₹${totalEarned}). Deposited money cannot be withdrawn.`,
         variant: 'destructive',
       });
       return;
@@ -199,7 +208,6 @@ const Wallet = () => {
       });
       return;
     }
-
 
     if (!withdrawForm.phone.trim() || withdrawForm.phone.length < 10) {
       toast({
@@ -215,7 +223,6 @@ const Wallet = () => {
     setProcessing(true);
 
     try {
-      // Use atomic database function for withdrawal to prevent race conditions
       const { data, error } = await supabase.rpc('process_withdrawal', {
         p_user_id: user.id,
         p_amount: amount,
@@ -238,7 +245,7 @@ const Wallet = () => {
 
       toast({
         title: 'Withdrawal Request Sent',
-        description: 'Your withdrawal is being processed. Amount has been put on hold.',
+        description: 'Your withdrawal is being processed.',
       });
 
       setWithdrawDialog(false);
@@ -270,6 +277,11 @@ const Wallet = () => {
     }
   };
 
+  const getTransactionTypes = () => {
+    const types = [...new Set(transactions.map(t => t.type))];
+    return types;
+  };
+
   if (loading) {
     return (
       <AppLayout title="Wallet">
@@ -285,81 +297,54 @@ const Wallet = () => {
       <div className="p-4">
         {/* Balance Cards */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          {/* Total Balance Card */}
-          <div className="bg-gradient-to-br from-primary to-orange-400 rounded-xl p-4 text-primary-foreground">
+          {/* Total Balance Card (Deposits) */}
+          <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
-              <WalletIcon className="h-4 w-4" />
-              <span className="text-[10px] opacity-90">Total Balance</span>
+              <WalletIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">Total Balance</span>
             </div>
             <div className="flex items-baseline gap-0.5">
-              <span className="text-xs">₹</span>
-              <span className="text-2xl font-gaming font-bold">{balance.toFixed(0)}</span>
+              <span className="text-xs text-foreground">₹</span>
+              <span className="text-2xl font-bold text-foreground">{balance.toFixed(0)}</span>
             </div>
-            <p className="text-[9px] opacity-75 mt-1">For joining tournaments</p>
+            <p className="text-[9px] text-muted-foreground mt-1">For joining tournaments</p>
           </div>
 
-          {/* Withdrawable Balance Card */}
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 text-white">
-            <div className="flex items-center gap-2 mb-1">
-              <ArrowUpRight className="h-4 w-4" />
-              <span className="text-[10px] opacity-90">Withdrawable</span>
-            </div>
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-xs">₹</span>
-              <span className="text-2xl font-gaming font-bold">{withdrawableBalance.toFixed(0)}</span>
-            </div>
-            <p className="text-[9px] opacity-75 mt-1">Prize winnings only</p>
-          </div>
-        </div>
-
-        {/* Info Banner */}
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 mb-4">
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            <strong>Note:</strong> Deposited money can only be used to join tournaments. Only prize winnings can be withdrawn.
-          </p>
-        </div>
-
-        {/* Stats Cards - Total Earned & Withdrawn */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
+          {/* Total Earned Card (Winnings) */}
           <button 
             onClick={() => setShowEarningsBreakdown(!showEarningsBreakdown)}
-            className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-3 text-white text-left relative"
+            className="bg-card border border-border rounded-xl p-4 text-left"
           >
-            <div className="flex items-center gap-1.5 mb-1">
-              <TrendingUp className="h-3.5 w-3.5" />
-              <span className="text-[10px] opacity-90">Total Earned</span>
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">Total Earned</span>
               {showEarningsBreakdown ? (
-                <ChevronUp className="h-3 w-3 ml-auto" />
+                <ChevronUp className="h-3 w-3 ml-auto text-muted-foreground" />
               ) : (
-                <ChevronDown className="h-3 w-3 ml-auto" />
+                <ChevronDown className="h-3 w-3 ml-auto text-muted-foreground" />
               )}
             </div>
             <div className="flex items-baseline gap-0.5">
-              <span className="text-xs">₹</span>
-              <span className="text-xl font-bold">{totalEarned.toFixed(0)}</span>
+              <span className="text-xs text-foreground">₹</span>
+              <span className="text-2xl font-bold text-foreground">{totalEarned.toFixed(0)}</span>
             </div>
-            {earningsBreakdown.length > 0 && (
-              <p className="text-[9px] opacity-75 mt-1">Tap to see breakdown</p>
-            )}
+            <p className="text-[9px] text-muted-foreground mt-1">Available to withdraw</p>
           </button>
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-3 text-white">
-            <div className="flex items-center gap-1.5 mb-1">
-              <ArrowDownFromLine className="h-3.5 w-3.5" />
-              <span className="text-[10px] opacity-90">Withdrawn</span>
-            </div>
-            <div className="flex items-baseline gap-0.5">
-              <span className="text-xs">₹</span>
-              <span className="text-xl font-bold">{totalWithdrawn.toFixed(0)}</span>
-            </div>
-          </div>
+        </div>
+
+        {/* Info Banner */}
+        <div className="bg-muted/50 border border-border rounded-lg p-3 mb-4">
+          <p className="text-xs text-muted-foreground">
+            <strong className="text-foreground">Note:</strong> Deposits go to Total Balance (for tournaments). Prize winnings go to Total Earned (withdrawable).
+          </p>
         </div>
 
         {/* Earnings Breakdown Section */}
         {showEarningsBreakdown && (
           <div className="bg-card rounded-xl border border-border p-4 mb-4 animate-in slide-in-from-top-2">
             <div className="flex items-center gap-2 mb-3">
-              <Trophy className="h-4 w-4 text-amber-500" />
-              <h3 className="font-semibold text-sm">Earnings Breakdown</h3>
+              <Trophy className="h-4 w-4 text-foreground" />
+              <h3 className="font-semibold text-sm text-foreground">Earnings Breakdown</h3>
               <Badge variant="secondary" className="ml-auto text-[10px]">
                 {earningsBreakdown.length} wins
               </Badge>
@@ -379,17 +364,17 @@ const Wallet = () => {
                     className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                        <Trophy className="h-4 w-4 text-amber-500" />
+                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                        <Trophy className="h-4 w-4 text-foreground" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{earning.tournamentName}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{earning.tournamentName}</p>
                         <div className="flex items-center gap-2">
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(earning.date), 'MMM dd, yyyy')}
                           </p>
                           {earning.position && (
-                            <Badge className="bg-amber-500/10 text-amber-600 text-[9px] px-1.5">
+                            <Badge variant="secondary" className="text-[9px] px-1.5">
                               {earning.position}
                             </Badge>
                           )}
@@ -413,37 +398,53 @@ const Wallet = () => {
             className="h-14 flex-col gap-1"
             onClick={() => setAddMoneyDialog(true)}
           >
-            <Plus className="h-5 w-5 text-primary" />
+            <Plus className="h-5 w-5" />
             <span className="text-xs">Add Money</span>
           </Button>
           <Button 
             variant="outline" 
             className="h-14 flex-col gap-1"
             onClick={() => setWithdrawDialog(true)}
+            disabled={totalEarned < 10}
           >
-            <ArrowUpRight className="h-5 w-5 text-primary" />
+            <ArrowUpRight className="h-5 w-5" />
             <span className="text-xs">Withdraw</span>
           </Button>
         </div>
 
         {/* Transaction History */}
         <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-2 mb-4">
-            <History className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-sm">Transaction History</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-foreground" />
+              <h3 className="font-semibold text-sm text-foreground">Transaction History</h3>
+            </div>
+            <Select value={transactionFilter} onValueChange={setTransactionFilter}>
+              <SelectTrigger className="w-32 h-8 text-xs">
+                <Filter className="h-3 w-3 mr-1" />
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {getTransactionTypes().map(type => (
+                  <SelectItem key={type} value={type} className="capitalize">
+                    {type.replace('_', ' ')}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {transactions.length === 0 ? (
+          {filteredTransactions.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
                 <ArrowDownLeft className="h-8 w-8 text-muted-foreground/50" />
               </div>
-              <p className="text-muted-foreground text-sm">No transactions yet</p>
-              <p className="text-muted-foreground text-xs mt-1">Add money to get started</p>
+              <p className="text-muted-foreground text-sm">No transactions found</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {transactions.map((txn) => {
+              {filteredTransactions.map((txn) => {
                 const isCreditType = ['deposit', 'prize', 'prize_won', 'winning', 'admin_credit', 'commission', 'refund'].includes(txn.type);
                 return (
                   <div key={txn.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
@@ -458,7 +459,7 @@ const Wallet = () => {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium capitalize">{txn.type.replace('_', ' ')}</p>
+                        <p className="text-sm font-medium text-foreground capitalize">{txn.type.replace('_', ' ')}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(txn.created_at), 'MMM dd, hh:mm a')}
                         </p>
@@ -483,7 +484,7 @@ const Wallet = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" />
+              <Plus className="h-5 w-5" />
               Add Money
             </DialogTitle>
             <DialogDescription>
@@ -500,7 +501,7 @@ const Wallet = () => {
                   className={`rounded-lg py-2.5 text-sm font-medium transition-colors ${
                     depositAmount === amt.toString()
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted hover:bg-primary/10 hover:text-primary'
+                      : 'bg-muted hover:bg-accent'
                   }`}
                 >
                   ₹{amt}
@@ -542,14 +543,14 @@ const Wallet = () => {
           <DialogHeader>
             <DialogTitle>Withdraw Funds</DialogTitle>
             <DialogDescription>
-              Enter your withdrawal details. Amount will be put on hold until approved.
+              Withdraw from your earnings. Only prize winnings can be withdrawn.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-              <WalletIcon className="h-4 w-4 text-primary" />
-              <span className="text-sm">Available: <strong>₹{balance.toFixed(2)}</strong></span>
+              <TrendingUp className="h-4 w-4 text-foreground" />
+              <span className="text-sm text-foreground">Available to withdraw: <strong>₹{totalEarned.toFixed(2)}</strong></span>
             </div>
 
             <div className="space-y-2">
@@ -559,7 +560,7 @@ const Wallet = () => {
                 placeholder="Enter amount"
                 value={withdrawForm.amount}
                 onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
-                max={balance}
+                max={totalEarned}
               />
             </div>
 
@@ -585,17 +586,17 @@ const Wallet = () => {
             </div>
 
             {/* Disclaimer */}
-            <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-              <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 dark:text-amber-400">
-                <strong>Important:</strong> Please double-check your UPI ID before submitting. If the UPI ID is incorrect, we are not responsible for any failed or misdirected payments.
+            <div className="flex items-start gap-2 p-3 bg-muted/50 border border-border rounded-lg">
+              <AlertCircle className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                <strong className="text-foreground">Important:</strong> Please double-check your UPI ID before submitting. If the UPI ID is incorrect, we are not responsible for any failed or misdirected payments.
               </p>
             </div>
 
-            {parseFloat(withdrawForm.amount) > balance && (
+            {parseFloat(withdrawForm.amount) > totalEarned && (
               <div className="flex items-center gap-2 p-3 bg-destructive/10 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-destructive" />
-                <span className="text-sm text-destructive">Insufficient balance</span>
+                <span className="text-sm text-destructive">Amount exceeds available earnings</span>
               </div>
             )}
           </div>
@@ -606,7 +607,7 @@ const Wallet = () => {
             </Button>
             <Button 
               onClick={handleWithdraw}
-              disabled={processing || parseFloat(withdrawForm.amount) > balance || !withdrawForm.upiId.trim()}
+              disabled={processing || parseFloat(withdrawForm.amount) > totalEarned || !withdrawForm.upiId.trim() || !withdrawForm.amount}
             >
               {processing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Withdraw
