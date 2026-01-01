@@ -8,8 +8,10 @@ const corsHeaders = {
 
 interface DecentroResponse {
   decentroTxnId?: string;
+  decentro_txn_id?: string;
   status?: string;
   responseCode?: string;
+  response_code?: string;
   message?: string;
   responseKey?: string;
   response_key?: string;
@@ -79,33 +81,70 @@ serve(async (req) => {
 
     console.log("Verifying UPI ID:", upiId);
 
-    // Decentro VerifyPay endpoint (production)
+    // Decentro VerifyPay endpoint (staging + production fallback)
     // Docs: https://docs.decentro.tech/reference/verify_pay
-    const response = await fetch("https://in.decentro.tech/v2/banking/verify_pay", {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "Content-Type": "application/json",
-        client_id: clientId,
-        client_secret: clientSecret,
-        module_secret: moduleSecret,
-      },
-      body: JSON.stringify({
-        // Keep reference_id strictly alphanumeric to avoid Decentro sanitization errors
-        reference_id: `upiverify${Date.now()}`,
-        upi_vpa: upiId,
-      }),
-    });
+    const baseUrlCandidates = [
+      Deno.env.get("DECENTRO_BASE_URL"),
+      "https://in.staging.decentro.tech",
+      "https://in.decentro.tech",
+    ].filter((v): v is string => Boolean(v));
 
-    const data: DecentroResponse = await response.json().catch(() => ({} as DecentroResponse));
-    console.log("Decentro response:", JSON.stringify(data));
+    const baseUrls = Array.from(new Set(baseUrlCandidates));
 
+    let data: DecentroResponse = {} as DecentroResponse;
+    let usedBaseUrl = baseUrls[0] ?? "https://in.staging.decentro.tech";
+
+    for (const baseUrl of baseUrls) {
+      usedBaseUrl = baseUrl;
+      console.log("Calling Decentro VerifyPay:", `${baseUrl}/v2/banking/verify_pay`);
+
+      const response = await fetch(`${baseUrl}/v2/banking/verify_pay`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          client_id: clientId,
+          client_secret: clientSecret,
+          module_secret: moduleSecret,
+        },
+        body: JSON.stringify({
+          // Keep reference_id strictly alphanumeric to avoid Decentro sanitization errors
+          reference_id: `upiverify${Date.now()}`,
+          upi_vpa: upiId,
+        }),
+      });
+
+      data = await response.json().catch(() => ({} as DecentroResponse));
+      console.log("Decentro response:", JSON.stringify({ usedBaseUrl, ...data }));
+
+      const msg = (data.message ?? "").toString().toLowerCase();
+      const responseCode = (data.responseCode ?? data.response_code ?? "").toString();
+      const responseKey = (data.responseKey ?? data.response_key ?? "").toString();
+
+      const isAuthFailed =
+        msg.includes("authentication failed") ||
+        msg === "unauthorized" ||
+        responseCode === "E00008" ||
+        responseKey === "E00008";
+
+      // If auth failed, try the next environment/base URL
+      if (isAuthFailed && baseUrl !== baseUrls[baseUrls.length - 1]) {
+        console.error("Decentro auth failed, trying next environment. baseUrl:", baseUrl);
+        continue;
+      }
+
+      break;
+    }
+
+    const responseCode = (data.responseCode ?? data.response_code ?? "").toString();
     const responseKey = (data.responseKey ?? data.response_key ?? "").toString();
     const msg = (data.message ?? "").toString();
 
     // Some Decentro failures still come back with HTTP 200, so we interpret the payload.
     const isUnauthorized =
+      msg.toLowerCase().includes("authentication failed") ||
       msg.toLowerCase() === "unauthorized" ||
+      responseCode === "E00008" ||
       responseKey === "E00008" ||
       responseKey === "error_unauthorized_module";
 
