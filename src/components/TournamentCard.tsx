@@ -317,7 +317,14 @@ const TournamentCard = ({
             Prizes
           </Button>
           
-          <button onClick={onShareClick} className="h-7 w-7 rounded border border-border/50 flex items-center justify-center hover:bg-accent">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              onShareClick?.();
+            }} 
+            className="h-7 w-7 rounded border border-border/50 flex items-center justify-center hover:bg-accent active:bg-accent/80 touch-manipulation"
+          >
             <Share2 className="h-3 w-3 text-muted-foreground" />
           </button>
         </div>
