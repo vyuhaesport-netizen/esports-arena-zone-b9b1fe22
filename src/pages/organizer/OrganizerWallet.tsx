@@ -67,6 +67,8 @@ const OrganizerWallet = () => {
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawRequest, setWithdrawRequest] = useState<WithdrawRequest>({ amount: 0, upi_id: '', phone: '' });
+  const [verifyingUpi, setVerifyingUpi] = useState(false);
+  const [upiVerified, setUpiVerified] = useState<{ verified: boolean; name?: string } | null>(null);
   
   const { user, isOrganizer, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -144,6 +146,38 @@ const OrganizerWallet = () => {
     }
   };
 
+  const verifyUpiId = async () => {
+    const upiId = withdrawRequest.upi_id.trim();
+    if (!upiId || upiId.length < 5) {
+      toast({ title: 'Invalid UPI ID', description: 'Please enter a valid UPI ID', variant: 'destructive' });
+      return;
+    }
+
+    setVerifyingUpi(true);
+    setUpiVerified(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-upi', {
+        body: { upi_id: upiId }
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.verified) {
+        setUpiVerified({ verified: true, name: data.name });
+        toast({ title: 'UPI Verified', description: `Account holder: ${data.name}` });
+      } else {
+        setUpiVerified({ verified: false });
+        toast({ title: 'UPI Verification Failed', description: data.error || 'UPI ID could not be verified', variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error('Error verifying UPI:', error);
+      toast({ title: 'Verification Error', description: 'Failed to verify UPI ID. Please try again.', variant: 'destructive' });
+    } finally {
+      setVerifyingUpi(false);
+    }
+  };
+
   const handleWithdraw = async () => {
     if (!user) return;
 
@@ -159,6 +193,11 @@ const OrganizerWallet = () => {
 
     if (!withdrawRequest.upi_id.trim()) {
       toast({ title: 'UPI Required', description: 'Please enter your UPI ID.', variant: 'destructive' });
+      return;
+    }
+
+    if (!upiVerified?.verified) {
+      toast({ title: 'UPI Not Verified', description: 'Please verify your UPI ID before withdrawing', variant: 'destructive' });
       return;
     }
 
@@ -181,6 +220,7 @@ const OrganizerWallet = () => {
       toast({ title: 'Withdrawal Requested', description: `${withdrawRequest.amount} Dhana (₹${withdrawRequest.amount}) withdrawal request submitted.` });
       setWithdrawDialogOpen(false);
       setWithdrawRequest({ amount: 0, upi_id: '', phone: '' });
+      setUpiVerified(null);
       fetchDhanaData();
     } catch (error: any) {
       console.error('Error withdrawing:', error);
@@ -421,11 +461,34 @@ const OrganizerWallet = () => {
             </div>
             <div className="space-y-2">
               <Label>UPI ID *</Label>
-              <Input
-                placeholder="yourname@upi"
-                value={withdrawRequest.upi_id}
-                onChange={(e) => setWithdrawRequest(prev => ({ ...prev, upi_id: e.target.value }))}
-              />
+              <div className="flex gap-2">
+                <Input
+                  placeholder="yourname@upi"
+                  value={withdrawRequest.upi_id}
+                  onChange={(e) => {
+                    setWithdrawRequest(prev => ({ ...prev, upi_id: e.target.value }));
+                    setUpiVerified(null);
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={verifyUpiId}
+                  disabled={verifyingUpi || !withdrawRequest.upi_id.trim()}
+                >
+                  {verifyingUpi ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify'}
+                </Button>
+              </div>
+              {upiVerified?.verified && (
+                <p className="text-sm text-green-600 flex items-center gap-1">
+                  <CheckCircle className="h-4 w-4" />
+                  Verified: {upiVerified.name}
+                </p>
+              )}
+              {upiVerified && !upiVerified.verified && (
+                <p className="text-sm text-red-600">UPI ID not verified</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Phone Number (Optional)</Label>
@@ -443,7 +506,7 @@ const OrganizerWallet = () => {
             <Button 
               className="bg-green-600 hover:bg-green-700"
               onClick={handleWithdraw}
-              disabled={withdrawing || withdrawRequest.amount < 50 || !withdrawRequest.upi_id.trim()}
+              disabled={withdrawing || withdrawRequest.amount < 50 || !withdrawRequest.upi_id.trim() || !upiVerified?.verified}
             >
               {withdrawing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Withdraw ₹{withdrawRequest.amount || 0}
