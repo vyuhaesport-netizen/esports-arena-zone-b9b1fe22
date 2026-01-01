@@ -61,8 +61,8 @@ serve(async (req) => {
 
     console.log('Verifying UPI ID:', upi_id);
 
-    // Call Decentro API for UPI verification
-    const response = await fetch('https://in.staging.decentro.tech/v2/payments/vpa/validate', {
+    // Call Decentro API for UPI verification (using production URL)
+    const response = await fetch('https://in.decentro.tech/v2/payments/vpa/validate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
