@@ -7,8 +7,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import TournamentCard from '@/components/TournamentCard';
-import { 
-  Trophy, 
+import {
+  buildTournamentShareText,
+  buildTournamentShareUrl,
+  copyToClipboard,
+  tryNativeShare,
+} from '@/utils/share';
+import {
+  Trophy,
   Search,
   Loader2
 } from 'lucide-react';
@@ -430,18 +436,26 @@ const Creator = () => {
                     onExitClick={() => handleExitClick(tournament)}
                     onSwipeJoin={() => handleRegister(tournament)}
                     onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
-                    onShareClick={() => {
-                      const shareUrl = `${window.location.origin}/tournament/${tournament.id}`;
-                      if (navigator.share) {
-                        navigator.share({
-                          title: tournament.title,
-                          text: `Join ${tournament.title} on Vyuha Esport!`,
-                          url: shareUrl,
-                        }).catch(() => {});
-                      } else {
-                        navigator.clipboard.writeText(shareUrl);
-                        toast({ title: 'Link Copied!', description: 'Tournament link copied to clipboard.' });
-                      }
+                    onShareClick={async () => {
+                      const url = buildTournamentShareUrl(tournament.id);
+                      const text = buildTournamentShareText({ title: tournament.title });
+
+                      const shared = await tryNativeShare({
+                        title: tournament.title,
+                        text,
+                        url,
+                      });
+
+                      if (shared) return;
+
+                      const copied = await copyToClipboard(url);
+                      toast({
+                        title: copied ? 'Link Copied!' : 'Share Failed',
+                        description: copied
+                          ? 'Tournament link copied to clipboard.'
+                          : 'Unable to share or copy the link. Please try again.',
+                        variant: copied ? undefined : 'destructive',
+                      });
                     }}
                     isLoading={registering === tournament.id}
                     variant="creator"
