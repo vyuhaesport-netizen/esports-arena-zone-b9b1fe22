@@ -604,9 +604,7 @@ const HomePage = () => {
       <TournamentShareDialog
         open={shareDialog.open}
         tournament={shareDialog.tournament}
-        onOpenChange={(open) =>
-          setShareDialog({ open, tournament: shareDialog.tournament })
-        }
+        onOpenChange={(open) => setShareDialog((prev) => ({ ...prev, open }))}
       />
       {/* Exit Confirmation Dialog */}
       <Dialog open={exitDialog.open} onOpenChange={(open) => setExitDialog({ open, tournament: exitDialog.tournament })}>

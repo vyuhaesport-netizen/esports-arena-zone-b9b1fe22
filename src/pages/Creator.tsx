@@ -501,9 +501,7 @@ const Creator = () => {
       <TournamentShareDialog
         open={shareDialog.open}
         tournament={shareDialog.tournament}
-        onOpenChange={(open) =>
-          setShareDialog({ open, tournament: shareDialog.tournament })
-        }
+        onOpenChange={(open) => setShareDialog((prev) => ({ ...prev, open }))}
       />
 
       <Drawer open={prizeDrawer.open} onOpenChange={(open) => setPrizeDrawer({ open, tournament: prizeDrawer.tournament })}>

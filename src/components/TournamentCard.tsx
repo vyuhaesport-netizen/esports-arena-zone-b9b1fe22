@@ -162,7 +162,7 @@ const TournamentCard = ({
     }} className="bg-card rounded-lg border border-border/50 p-3 hover:border-primary/30 transition-all relative overflow-hidden">
         
         {/* Swipe indicator inside card */}
-        {canSwipeJoin && <div className={`absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-emerald-500 to-emerald-500/50 flex items-center justify-end pr-2 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
+        {canSwipeJoin && <div className={`absolute inset-y-0 right-0 w-16 pointer-events-none bg-gradient-to-l from-emerald-500 to-emerald-500/50 flex items-center justify-end pr-2 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
             <span className="text-white text-xs font-semibold">Join</span>
           </div>}
         
