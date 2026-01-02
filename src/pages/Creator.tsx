@@ -7,12 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import TournamentCard from '@/components/TournamentCard';
-import {
-  buildTournamentShareText,
-  buildTournamentShareUrl,
-  copyToClipboard,
-  tryNativeShare,
-} from '@/utils/share';
+import TournamentShareDialog from '@/components/TournamentShareDialog';
 import {
   Trophy,
   Search,
@@ -70,6 +65,7 @@ const Creator = () => {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
   const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
+  const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [activeMode, setActiveMode] = useState<'solo' | 'duo' | 'squad'>('solo');
   const [exitDialog, setExitDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [exiting, setExiting] = useState(false);
@@ -436,27 +432,7 @@ const Creator = () => {
                     onExitClick={() => handleExitClick(tournament)}
                     onSwipeJoin={() => handleRegister(tournament)}
                     onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
-                    onShareClick={async () => {
-                      const url = buildTournamentShareUrl(tournament.id);
-                      const text = buildTournamentShareText({ title: tournament.title });
-
-                      const shared = await tryNativeShare({
-                        title: tournament.title,
-                        text,
-                        url,
-                      });
-
-                      if (shared) return;
-
-                      const copied = await copyToClipboard(url);
-                      toast({
-                        title: copied ? 'Link Copied!' : 'Share Failed',
-                        description: copied
-                          ? 'Tournament link copied to clipboard.'
-                          : 'Unable to share or copy the link. Please try again.',
-                        variant: copied ? undefined : 'destructive',
-                      });
-                    }}
+                    onShareClick={() => setShareDialog({ open: true, tournament })}
                     isLoading={registering === tournament.id}
                     variant="creator"
                     isFollowing={isFollowingCreator}
