@@ -63,13 +63,13 @@ const AdminSEO = () => {
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
   const [seoSettings, setSeoSettings] = useState<SEOSettings>({
-    site_title: 'Vyuha Esports - Compete & Win',
-    site_description: 'Join Vyuha Esports for thrilling gaming tournaments. Compete in BGMI, Free Fire, and more. Win real prizes!',
-    site_keywords: 'esports, gaming, tournaments, BGMI, Free Fire, online gaming, competitive gaming, India esports',
-    og_image: '',
-    twitter_handle: '@VyuhaEsports',
-    canonical_url: 'https://vyuhaesports.com',
-    robots_txt: 'User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /api/',
+    site_title: 'Vyuha Esport - India\'s Premier School & College Esports Platform',
+    site_description: 'Join Vyuha Esport for thrilling gaming tournaments in schools & colleges. Compete in BGMI, Free Fire, and more. Win real prizes with transparent 80/20 prize pools!',
+    site_keywords: 'esports, gaming, tournaments, BGMI, Free Fire, online gaming, competitive gaming, India esports, school esports, college esports, local tournaments, vyuha',
+    og_image: 'https://vyuhaesport.in/og-image.png',
+    twitter_handle: '@VyuhaEsport',
+    canonical_url: 'https://vyuhaesport.in',
+    robots_txt: 'User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: https://vyuhaesport.in/sitemap.xml',
     google_analytics_id: '',
     google_site_verification: '',
   });
@@ -335,7 +335,7 @@ const AdminSEO = () => {
             <CardContent className="pt-4 text-center">
               <Globe className="h-6 w-6 mx-auto text-primary mb-2" />
               <p className="text-xs text-muted-foreground">Domain</p>
-              <p className="font-semibold text-sm truncate">vyuhaesports.com</p>
+              <p className="font-semibold text-sm truncate">vyuhaesport.in</p>
             </CardContent>
           </Card>
           <Card>
@@ -355,6 +355,36 @@ const AdminSEO = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Sitemap Info Card */}
+        <Card className="border-green-500/30 bg-green-500/5">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
+              <div className="flex-1">
+                <h4 className="font-medium text-sm">Sitemap Ready</h4>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your sitemap is configured correctly. Submit this URL to Google Search Console:
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <code className="bg-background px-2 py-1 rounded text-xs flex-1 truncate">
+                    https://vyuhaesport.in/sitemap.xml
+                  </code>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText('https://vyuhaesport.in/sitemap.xml');
+                      toast({ title: 'Copied!' });
+                    }}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="settings" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
@@ -680,10 +710,18 @@ const AdminSEO = () => {
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => window.open(`https://www.google.com/search?q=site:${encodeURIComponent((seoSettings.canonical_url || 'https://vyuhaesport.in').replace('https://', ''))}`, '_blank')}
+                  onClick={() => window.open('https://www.google.com/search?q=site:vyuhaesport.in', '_blank')}
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   Check Indexed Pages
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => window.open('https://vyuhaesport.in/sitemap.xml', '_blank')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  View Sitemap
                 </Button>
               </CardContent>
             </Card>
@@ -698,24 +736,25 @@ const AdminSEO = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-2">
-                  <Label className="text-sm">Sitemap URL</Label>
+                  <Label className="text-sm">Sitemap URL (Use this in Google Search Console)</Label>
                   <div className="flex gap-2">
                     <Input
                       readOnly
-                      value={`${seoSettings.canonical_url || window.location.origin}/sitemap.xml`}
-                      className="bg-muted text-xs"
+                      value="https://vyuhaesport.in/sitemap.xml"
+                      className="bg-muted text-xs font-mono"
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => {
-                        navigator.clipboard.writeText(`${seoSettings.canonical_url || window.location.origin}/sitemap.xml`);
+                        navigator.clipboard.writeText('https://vyuhaesport.in/sitemap.xml');
                         toast({ title: 'Copied!' });
                       }}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
+                  <p className="text-xs text-green-600">✓ Enter exactly: sitemap.xml (without domain) in Search Console</p>
                 </div>
 
                 <div className="space-y-2">
@@ -723,14 +762,14 @@ const AdminSEO = () => {
                   <div className="flex gap-2">
                     <Input
                       readOnly
-                      value={`${seoSettings.canonical_url || window.location.origin}/robots.txt`}
-                      className="bg-muted text-xs"
+                      value="https://vyuhaesport.in/robots.txt"
+                      className="bg-muted text-xs font-mono"
                     />
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => {
-                        navigator.clipboard.writeText(`${seoSettings.canonical_url || window.location.origin}/robots.txt`);
+                        navigator.clipboard.writeText('https://vyuhaesport.in/robots.txt');
                         toast({ title: 'Copied!' });
                       }}
                     >
