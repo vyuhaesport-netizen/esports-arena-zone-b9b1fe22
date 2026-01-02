@@ -266,9 +266,9 @@ const Wallet = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500/10 text-green-600 text-[10px]">Success</Badge>;
+        return <Badge className="bg-success/10 text-success text-[10px]">Success</Badge>;
       case 'pending':
-        return <Badge className="bg-yellow-500/10 text-yellow-600 text-[10px]">Pending</Badge>;
+        return <Badge className="bg-muted/60 text-foreground text-[10px]">Pending</Badge>;
       case 'failed':
       case 'rejected':
         return <Badge variant="destructive" className="text-[10px]">Failed</Badge>;
@@ -298,25 +298,26 @@ const Wallet = () => {
         {/* Balance Cards */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           {/* Total Balance Card (Deposits) */}
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="bg-success/5 border border-success/20 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-1">
-              <WalletIcon className="h-4 w-4 text-muted-foreground" />
+              <WalletIcon className="h-4 w-4 text-success" />
               <span className="text-[10px] text-muted-foreground">Total Balance</span>
             </div>
             <div className="flex items-baseline gap-0.5">
-              <span className="text-xs text-foreground">₹</span>
-              <span className="text-2xl font-bold text-foreground">{balance.toFixed(0)}</span>
+              <span className="text-xs text-success">₹</span>
+              <span className="text-2xl font-bold text-success">{balance.toFixed(0)}</span>
             </div>
             <p className="text-[9px] text-muted-foreground mt-1">For joining tournaments</p>
           </div>
 
           {/* Total Earned Card (Winnings) */}
-          <button 
+          <button
+            type="button"
             onClick={() => setShowEarningsBreakdown(!showEarningsBreakdown)}
-            className="bg-card border border-border rounded-xl p-4 text-left"
+            className="bg-success/5 border border-success/20 rounded-xl p-4 text-left hover:bg-success/10 transition-colors"
           >
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="h-4 w-4 text-success" />
               <span className="text-[10px] text-muted-foreground">Total Earned</span>
               {showEarningsBreakdown ? (
                 <ChevronUp className="h-3 w-3 ml-auto text-muted-foreground" />
@@ -325,8 +326,8 @@ const Wallet = () => {
               )}
             </div>
             <div className="flex items-baseline gap-0.5">
-              <span className="text-xs text-foreground">₹</span>
-              <span className="text-2xl font-bold text-foreground">{totalEarned.toFixed(0)}</span>
+              <span className="text-xs text-success">₹</span>
+              <span className="text-2xl font-bold text-success">{totalEarned.toFixed(0)}</span>
             </div>
             <p className="text-[9px] text-muted-foreground mt-1">Available to withdraw</p>
           </button>
@@ -381,7 +382,7 @@ const Wallet = () => {
                         </div>
                       </div>
                     </div>
-                    <p className="text-green-600 font-bold text-sm flex-shrink-0 ml-2">
+                    <p className="text-success font-bold text-sm flex-shrink-0 ml-2">
                       +₹{earning.amount}
                     </p>
                   </div>
@@ -449,13 +450,15 @@ const Wallet = () => {
                 return (
                   <div key={txn.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isCreditType ? 'bg-green-500/10' : 'bg-red-500/10'
-                      }`}>
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isCreditType ? 'bg-success/10' : 'bg-destructive/10'
+                        }`}
+                      >
                         {isCreditType ? (
-                          <ArrowDownLeft className="h-4 w-4 text-green-500" />
+                          <ArrowDownLeft className="h-4 w-4 text-success" />
                         ) : (
-                          <ArrowUpRight className="h-4 w-4 text-red-500" />
+                          <ArrowUpRight className="h-4 w-4 text-destructive" />
                         )}
                       </div>
                       <div>
@@ -466,7 +469,11 @@ const Wallet = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-semibold text-sm ${isCreditType ? 'text-green-600' : 'text-red-600'}`}>
+                      <p
+                        className={`font-semibold text-sm ${
+                          isCreditType ? 'text-success' : 'text-destructive'
+                        }`}
+                      >
                         {isCreditType ? '+' : '-'}₹{Math.abs(txn.amount)}
                       </p>
                       {getStatusBadge(txn.status)}
