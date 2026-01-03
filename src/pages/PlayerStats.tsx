@@ -204,11 +204,14 @@ const PlayerStatsPage = () => {
     
     try {
       // Fetch user stats from user_stats table
-      const { data: userStats } = await supabase
+      const { data: userStats, error } = await supabase
         .from('user_stats')
         .select('first_place_count, second_place_count, third_place_count, tournament_wins')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      console.log('Fetching stats for user:', user.id);
+      console.log('User stats result:', userStats, 'Error:', error);
 
       // Initialize rank counts
       const rankCounts: { [key: number]: number } = {};
@@ -220,6 +223,7 @@ const PlayerStatsPage = () => {
         rankCounts[1] = userStats.first_place_count || 0;
         rankCounts[2] = userStats.second_place_count || 0;
         rankCounts[3] = userStats.third_place_count || 0;
+        console.log('Rank counts:', rankCounts);
       }
 
       // Calculate stats for each rank
@@ -244,6 +248,7 @@ const PlayerStatsPage = () => {
         });
       }
 
+      console.log('Total points calculated:', points);
       setRankStats(stats);
       setTotalPoints(points);
       setTotalWins(wins);
@@ -318,37 +323,66 @@ const PlayerStatsPage = () => {
   return (
     <AppLayout title="Player Stats" showBack>
       <div className="p-4 space-y-6 pb-24">
-        {/* Hero Stats Card */}
-        <Card className="overflow-hidden border-0 shadow-xl">
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-white p-1 mb-4 shadow-lg animate-[pulse_2s_ease-in-out_infinite]">
-                <img src={vyuhaLogo} alt="Vyuha" className="w-full h-full rounded-full object-cover" />
+        {/* Hero Stats Card with Glassmorphism */}
+        <div className="relative p-[2px] rounded-2xl overflow-hidden">
+          {/* Animated gradient border */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary via-orange-500 via-purple-500 to-primary bg-[length:400%_400%] animate-[gradient_3s_ease_infinite] rounded-2xl" 
+            style={{
+              animation: 'gradient 3s ease infinite',
+            }}
+          />
+          <Card className="relative overflow-hidden border-0 shadow-2xl rounded-2xl">
+            {/* Glassmorphism background */}
+            <div className="relative bg-gradient-to-br from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl p-8">
+              {/* Decorative elements */}
+              <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
+                <div className="absolute -top-24 -left-24 w-48 h-48 bg-primary/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl" />
               </div>
-              <h2 className="text-4xl font-bold text-white mb-1 animate-fade-in">
-                {animatedPoints}
-              </h2>
-              <p className="text-white/80 text-sm">Total Stats Points</p>
-              <Badge className="mt-3 bg-white/20 text-white border-white/30 text-sm px-4 py-1">
-                {getPlayerRank(totalPoints)}
-              </Badge>
-            </div>
-          </div>
-          <CardContent className="p-4 bg-card">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{rankProgress.current}</span>
-                <span className="text-muted-foreground">{rankProgress.next}</span>
+              
+              <div className="relative text-center z-10">
+                {/* Glowing logo container */}
+                <div className="relative inline-block mb-6">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-orange-500 rounded-full blur-lg opacity-50 animate-pulse" />
+                  <div className="relative w-28 h-28 rounded-full bg-gradient-to-br from-white to-gray-100 p-1.5 shadow-2xl">
+                    <img src={vyuhaLogo} alt="Vyuha" className="w-full h-full rounded-full object-cover" />
+                  </div>
+                </div>
+                
+                <h2 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-100 to-white mb-2 animate-fade-in drop-shadow-lg">
+                  {animatedPoints}
+                </h2>
+                <p className="text-white/70 text-sm font-medium tracking-wide">Total Stats Points</p>
+                <Badge className="mt-4 bg-white/10 backdrop-blur-sm text-white border border-white/20 text-sm px-5 py-1.5 shadow-lg">
+                  {getPlayerRank(totalPoints)}
+                </Badge>
               </div>
-              <Progress value={rankProgress.progress} className="h-2" />
-              {rankProgress.needed > 0 && (
-                <p className="text-xs text-center text-muted-foreground">
-                  {rankProgress.needed} points to {rankProgress.next}
-                </p>
-              )}
             </div>
-          </CardContent>
-        </Card>
+            
+            {/* Progress section with glass effect */}
+            <CardContent className="p-5 bg-gradient-to-b from-card/80 to-card backdrop-blur-sm border-t border-white/5">
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm font-medium">
+                  <span className="text-muted-foreground">{rankProgress.current}</span>
+                  <span className="text-primary">{rankProgress.next}</span>
+                </div>
+                <div className="relative h-3 bg-muted/50 rounded-full overflow-hidden">
+                  <div 
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary to-orange-500 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${rankProgress.progress}%` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite]" />
+                </div>
+                {rankProgress.needed > 0 && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    <span className="text-primary font-semibold">{rankProgress.needed}</span> points to {rankProgress.next}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Bonus Rewards Section */}
         <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-orange-500/5">
