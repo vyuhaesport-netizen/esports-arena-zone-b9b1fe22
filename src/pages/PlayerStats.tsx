@@ -320,10 +320,10 @@ const PlayerStatsPage = () => {
       <div className="p-4 space-y-6 pb-24">
         {/* Hero Stats Card */}
         <Card className="overflow-hidden border-0 shadow-xl">
-          <div className="bg-gradient-to-br from-primary via-primary/90 to-orange-500 p-6">
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm mb-4 animate-[pulse_2s_ease-in-out_infinite]">
-                <img src={vyuhaLogo} alt="Vyuha" className="h-12 w-12 object-contain" />
+              <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-white p-1 mb-4 shadow-lg animate-[pulse_2s_ease-in-out_infinite]">
+                <img src={vyuhaLogo} alt="Vyuha" className="w-full h-full rounded-full object-cover" />
               </div>
               <h2 className="text-4xl font-bold text-white mb-1 animate-fade-in">
                 {animatedPoints}
@@ -466,45 +466,6 @@ const PlayerStatsPage = () => {
           </Card>
         </div>
 
-        {/* Points System Info */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <img src={vyuhaLogo} alt="Vyuha" className="h-5 w-5 object-contain" />
-              Points System
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-5 gap-2">
-              {Object.entries(rankConfig).slice(0, 5).map(([rank, config]) => (
-                <div
-                  key={rank}
-                  className="text-center p-2 rounded-lg bg-muted/50 animate-fade-in"
-                  style={{ animationDelay: `${0.05 * Number(rank)}s` }}
-                >
-                  <div className={`w-8 h-8 mx-auto rounded-full bg-gradient-to-br ${config.color} flex items-center justify-center text-white mb-1`}>
-                    {rank}
-                  </div>
-                  <p className="text-xs font-medium">{config.points} pts</p>
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-5 gap-2 mt-2">
-              {Object.entries(rankConfig).slice(5, 10).map(([rank, config]) => (
-                <div
-                  key={rank}
-                  className="text-center p-2 rounded-lg bg-muted/50 animate-fade-in"
-                  style={{ animationDelay: `${0.05 * Number(rank)}s` }}
-                >
-                  <div className={`w-8 h-8 mx-auto rounded-full bg-gradient-to-br ${config.color} flex items-center justify-center text-white mb-1`}>
-                    {rank}
-                  </div>
-                  <p className="text-xs font-medium">{config.points} pts</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </AppLayout>
   );
