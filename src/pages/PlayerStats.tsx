@@ -1,0 +1,327 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AppLayout from '@/components/layout/AppLayout';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, Trophy, Medal, Award, Star, Zap, Target, Flame, Crown, TrendingUp, Sparkles } from 'lucide-react';
+
+interface RankStats {
+  rank: number;
+  count: number;
+  points: number;
+  name: string;
+  icon: React.ReactNode;
+  color: string;
+}
+
+const PlayerStatsPage = () => {
+  const [loading, setLoading] = useState(true);
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [rankStats, setRankStats] = useState<RankStats[]>([]);
+  const [totalWins, setTotalWins] = useState(0);
+  const [animatedPoints, setAnimatedPoints] = useState(0);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Rank configuration: position -> { points, name, icon, color }
+  const rankConfig: { [key: number]: { points: number; name: string; icon: React.ReactNode; color: string } } = {
+    1: { points: 10, name: 'Champion', icon: <Crown className="h-5 w-5" />, color: 'from-yellow-400 to-amber-500' },
+    2: { points: 9, name: 'Elite', icon: <Medal className="h-5 w-5" />, color: 'from-gray-300 to-gray-400' },
+    3: { points: 8, name: 'Veteran', icon: <Award className="h-5 w-5" />, color: 'from-amber-600 to-amber-700' },
+    4: { points: 7, name: 'Master', icon: <Star className="h-5 w-5" />, color: 'from-purple-400 to-purple-500' },
+    5: { points: 6, name: 'Expert', icon: <Zap className="h-5 w-5" />, color: 'from-blue-400 to-blue-500' },
+    6: { points: 5, name: 'Skilled', icon: <Target className="h-5 w-5" />, color: 'from-green-400 to-green-500' },
+    7: { points: 4, name: 'Adept', icon: <Flame className="h-5 w-5" />, color: 'from-orange-400 to-orange-500' },
+    8: { points: 3, name: 'Rising', icon: <TrendingUp className="h-5 w-5" />, color: 'from-cyan-400 to-cyan-500' },
+    9: { points: 2, name: 'Starter', icon: <Sparkles className="h-5 w-5" />, color: 'from-pink-400 to-pink-500' },
+    10: { points: 1, name: 'Rookie', icon: <Trophy className="h-5 w-5" />, color: 'from-indigo-400 to-indigo-500' },
+  };
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/');
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchPlayerStats();
+    }
+  }, [user]);
+
+  // Animate the total points counter
+  useEffect(() => {
+    if (totalPoints > 0) {
+      const duration = 1500;
+      const steps = 60;
+      const increment = totalPoints / steps;
+      let current = 0;
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= totalPoints) {
+          setAnimatedPoints(totalPoints);
+          clearInterval(timer);
+        } else {
+          setAnimatedPoints(Math.floor(current));
+        }
+      }, duration / steps);
+      return () => clearInterval(timer);
+    }
+  }, [totalPoints]);
+
+  const fetchPlayerStats = async () => {
+    if (!user) return;
+    
+    try {
+      // Fetch user stats from user_stats table
+      const { data: userStats } = await supabase
+        .from('user_stats')
+        .select('first_place_count, second_place_count, third_place_count, tournament_wins')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // Initialize rank counts
+      const rankCounts: { [key: number]: number } = {};
+      for (let i = 1; i <= 10; i++) {
+        rankCounts[i] = 0;
+      }
+
+      if (userStats) {
+        rankCounts[1] = userStats.first_place_count || 0;
+        rankCounts[2] = userStats.second_place_count || 0;
+        rankCounts[3] = userStats.third_place_count || 0;
+      }
+
+      // Calculate stats for each rank
+      const stats: RankStats[] = [];
+      let points = 0;
+      let wins = 0;
+
+      for (let rank = 1; rank <= 10; rank++) {
+        const count = rankCounts[rank];
+        const config = rankConfig[rank];
+        const rankPoints = count * config.points;
+        points += rankPoints;
+        wins += count;
+
+        stats.push({
+          rank,
+          count,
+          points: rankPoints,
+          name: config.name,
+          icon: config.icon,
+          color: config.color,
+        });
+      }
+
+      setRankStats(stats);
+      setTotalPoints(points);
+      setTotalWins(wins);
+    } catch (error) {
+      console.error('Error fetching player stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPlayerRank = (points: number): string => {
+    if (points >= 500) return 'Legendary';
+    if (points >= 300) return 'Grandmaster';
+    if (points >= 200) return 'Diamond';
+    if (points >= 100) return 'Platinum';
+    if (points >= 50) return 'Gold';
+    if (points >= 25) return 'Silver';
+    if (points >= 10) return 'Bronze';
+    return 'Unranked';
+  };
+
+  const getNextRankProgress = (points: number): { current: string; next: string; progress: number; needed: number } => {
+    const ranks = [
+      { name: 'Unranked', min: 0 },
+      { name: 'Bronze', min: 10 },
+      { name: 'Silver', min: 25 },
+      { name: 'Gold', min: 50 },
+      { name: 'Platinum', min: 100 },
+      { name: 'Diamond', min: 200 },
+      { name: 'Grandmaster', min: 300 },
+      { name: 'Legendary', min: 500 },
+    ];
+
+    for (let i = ranks.length - 1; i >= 0; i--) {
+      if (points >= ranks[i].min) {
+        if (i === ranks.length - 1) {
+          return { current: ranks[i].name, next: 'Max Rank', progress: 100, needed: 0 };
+        }
+        const nextRank = ranks[i + 1];
+        const currentMin = ranks[i].min;
+        const range = nextRank.min - currentMin;
+        const progress = ((points - currentMin) / range) * 100;
+        return {
+          current: ranks[i].name,
+          next: nextRank.name,
+          progress: Math.min(progress, 100),
+          needed: nextRank.min - points,
+        };
+      }
+    }
+    return { current: 'Unranked', next: 'Bronze', progress: (points / 10) * 100, needed: 10 - points };
+  };
+
+  if (authLoading || loading) {
+    return (
+      <AppLayout title="Player Stats">
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const rankProgress = getNextRankProgress(totalPoints);
+
+  return (
+    <AppLayout title="Player Stats" showBack>
+      <div className="p-4 space-y-6 pb-24">
+        {/* Hero Stats Card */}
+        <Card className="overflow-hidden border-0 shadow-xl">
+          <div className="bg-gradient-to-br from-primary via-primary/90 to-orange-500 p-6">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm mb-4 animate-[pulse_2s_ease-in-out_infinite]">
+                <Trophy className="h-10 w-10 text-white" />
+              </div>
+              <h2 className="text-4xl font-bold text-white mb-1 animate-fade-in">
+                {animatedPoints}
+              </h2>
+              <p className="text-white/80 text-sm">Total Stats Points</p>
+              <Badge className="mt-3 bg-white/20 text-white border-white/30 text-sm px-4 py-1">
+                {getPlayerRank(totalPoints)}
+              </Badge>
+            </div>
+          </div>
+          <CardContent className="p-4 bg-card">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{rankProgress.current}</span>
+                <span className="text-muted-foreground">{rankProgress.next}</span>
+              </div>
+              <Progress value={rankProgress.progress} className="h-2" />
+              {rankProgress.needed > 0 && (
+                <p className="text-xs text-center text-muted-foreground">
+                  {rankProgress.needed} points to {rankProgress.next}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <CardContent className="p-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                <Crown className="h-6 w-6 text-primary" />
+              </div>
+              <p className="text-2xl font-bold">{totalWins}</p>
+              <p className="text-xs text-muted-foreground">Total Podiums</p>
+            </CardContent>
+          </Card>
+          <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <CardContent className="p-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto mb-2">
+                <Medal className="h-6 w-6 text-yellow-500" />
+              </div>
+              <p className="text-2xl font-bold">{rankStats[0]?.count || 0}</p>
+              <p className="text-xs text-muted-foreground">1st Place Wins</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Points System Info */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              Points System
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs text-muted-foreground mb-4">
+              Earn stats points based on your tournament rankings!
+            </p>
+            <div className="space-y-3">
+              {rankStats.map((stat, index) => (
+                <div
+                  key={stat.rank}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 animate-fade-in hover:bg-muted transition-colors"
+                  style={{ animationDelay: `${0.1 * index}s` }}
+                >
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${stat.color} flex items-center justify-center text-white shadow-lg`}>
+                    {stat.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-sm">Rank #{stat.rank}</span>
+                      <Badge variant="outline" className="text-[10px]">{stat.name}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      +{rankConfig[stat.rank].points} points per win
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-lg">{stat.count}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {stat.points} pts
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Rank Tiers */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Star className="h-4 w-4 text-primary" />
+              Rank Tiers
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { name: 'Legendary', min: 500, color: 'from-yellow-400 to-red-500' },
+                { name: 'Grandmaster', min: 300, color: 'from-purple-500 to-pink-500' },
+                { name: 'Diamond', min: 200, color: 'from-cyan-400 to-blue-500' },
+                { name: 'Platinum', min: 100, color: 'from-gray-300 to-gray-400' },
+                { name: 'Gold', min: 50, color: 'from-yellow-400 to-amber-500' },
+                { name: 'Silver', min: 25, color: 'from-gray-400 to-gray-500' },
+                { name: 'Bronze', min: 10, color: 'from-amber-600 to-amber-700' },
+                { name: 'Unranked', min: 0, color: 'from-gray-500 to-gray-600' },
+              ].map((tier, index) => (
+                <div
+                  key={tier.name}
+                  className={`p-3 rounded-lg border ${getPlayerRank(totalPoints) === tier.name ? 'border-primary bg-primary/5' : 'border-border'} animate-scale-in`}
+                  style={{ animationDelay: `${0.05 * index}s` }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${tier.color}`} />
+                    <div>
+                      <p className="text-xs font-semibold">{tier.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{tier.min}+ pts</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </AppLayout>
+  );
+};
+
+export default PlayerStatsPage;
