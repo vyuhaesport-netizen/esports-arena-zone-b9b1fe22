@@ -3,7 +3,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Trophy, Medal, Crown, TrendingUp, Gamepad2 } from 'lucide-react';
+import { Loader2, Medal, Crown, TrendingUp, Gamepad2, Target } from 'lucide-react';
+import vyuhaLogo from '@/assets/vyuha-logo.png';
 
 interface LeaderboardUser {
   user_id: string;
@@ -13,6 +14,7 @@ interface LeaderboardUser {
   preferred_game: string | null;
   total_earnings: number;
   total_wins: number;
+  stats_points: number;
 }
 
 const Leaderboard = () => {
@@ -39,11 +41,10 @@ const Leaderboard = () => {
         .eq('type', 'prize')
         .eq('status', 'completed');
 
-      // Fetch tournament wins
-      const { data: winsData } = await supabase
-        .from('tournaments')
-        .select('winner_user_id')
-        .not('winner_user_id', 'is', null);
+      // Fetch user stats for stats points calculation
+      const { data: userStatsData } = await supabase
+        .from('user_stats')
+        .select('user_id, first_place_count, second_place_count, third_place_count, tournament_wins');
 
       // Calculate total earnings per user
       const earningsMap: Record<string, number> = {};
@@ -51,12 +52,16 @@ const Leaderboard = () => {
         earningsMap[txn.user_id] = (earningsMap[txn.user_id] || 0) + Math.abs(txn.amount);
       });
 
-      // Calculate wins per user
+      // Calculate stats points per user (1st=10, 2nd=9, 3rd=8 points)
+      const statsPointsMap: Record<string, number> = {};
       const winsMap: Record<string, number> = {};
-      winsData?.forEach((t) => {
-        if (t.winner_user_id) {
-          winsMap[t.winner_user_id] = (winsMap[t.winner_user_id] || 0) + 1;
-        }
+      userStatsData?.forEach((stats) => {
+        const first = stats.first_place_count || 0;
+        const second = stats.second_place_count || 0;
+        const third = stats.third_place_count || 0;
+        const points = (first * 10) + (second * 9) + (third * 8);
+        statsPointsMap[stats.user_id] = points;
+        winsMap[stats.user_id] = stats.tournament_wins || 0;
       });
 
       // Combine data
@@ -64,6 +69,7 @@ const Leaderboard = () => {
         ...profile,
         total_earnings: earningsMap[profile.user_id] || 0,
         total_wins: winsMap[profile.user_id] || 0,
+        stats_points: statsPointsMap[profile.user_id] || 0,
       }));
 
       // Sort by earnings
@@ -72,14 +78,14 @@ const Leaderboard = () => {
         .sort((a, b) => b.total_earnings - a.total_earnings)
         .slice(0, 50);
 
-      // Sort by wins
-      const sortedByWins = [...leaderboardData]
-        .filter(u => u.total_wins > 0)
-        .sort((a, b) => b.total_wins - a.total_wins)
+      // Sort by stats points (Best Players)
+      const sortedByStats = [...leaderboardData]
+        .filter(u => u.stats_points > 0)
+        .sort((a, b) => b.stats_points - a.stats_points)
         .slice(0, 50);
 
       setTopEarners(sortedByEarnings);
-      setTopPlayers(sortedByWins);
+      setTopPlayers(sortedByStats);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     } finally {
@@ -105,10 +111,10 @@ const Leaderboard = () => {
     if (data.length === 0) {
       return (
         <div className="text-center py-12">
-          <Trophy className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+          <img src={vyuhaLogo} alt="Vyuha" className="h-12 w-12 mx-auto opacity-50 mb-3" />
           <p className="text-muted-foreground">No data available yet</p>
           <p className="text-xs text-muted-foreground mt-1">
-            {type === 'earners' ? 'Win tournaments to appear here!' : 'Win matches to climb the ranks!'}
+            {type === 'earners' ? 'Win tournaments to appear here!' : 'Earn stats points to climb the ranks!'}
           </p>
         </div>
       );
@@ -146,8 +152,9 @@ const Leaderboard = () => {
                 <p className="font-bold text-primary">₹{user.total_earnings.toLocaleString()}</p>
               ) : (
                 <div className="flex items-center gap-1">
-                  <Trophy className="h-4 w-4 text-primary" />
-                  <span className="font-bold text-primary">{user.total_wins}</span>
+                  <Target className="h-4 w-4 text-primary" />
+                  <span className="font-bold text-primary">{user.stats_points}</span>
+                  <span className="text-xs text-muted-foreground">pts</span>
                 </div>
               )}
             </div>
@@ -162,7 +169,7 @@ const Leaderboard = () => {
       {/* Header Banner */}
       <div className="bg-gradient-to-br from-primary/20 to-orange-500/10 p-6 text-center">
         <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center mb-3">
-          <Trophy className="h-8 w-8 text-white" />
+          <img src={vyuhaLogo} alt="Vyuha" className="h-10 w-10 object-contain" />
         </div>
         <h1 className="font-gaming text-xl font-bold">Leaderboard</h1>
         <p className="text-sm text-muted-foreground mt-1">Top performers on Vyuha Esport</p>
@@ -190,7 +197,7 @@ const Leaderboard = () => {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Trophy className="h-4 w-4" />
+            <Target className="h-4 w-4" />
             Best Players
           </button>
         </div>

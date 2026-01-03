@@ -9,7 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useConfetti } from '@/hooks/useConfetti';
-import { Loader2, Trophy, Medal, Award, Star, Zap, Target, Flame, Crown, TrendingUp, Sparkles, Gift, Check, Lock, IndianRupee } from 'lucide-react';
+import { Loader2, Medal, Award, Star, Zap, Target, Flame, Crown, TrendingUp, Sparkles, Gift, Check, Lock, IndianRupee } from 'lucide-react';
+import vyuhaLogo from '@/assets/vyuha-logo.png';
 
 interface RankStats {
   rank: number;
@@ -58,7 +59,7 @@ const PlayerStatsPage = () => {
     7: { points: 4, name: 'Adept', icon: <Flame className="h-5 w-5" />, color: 'from-orange-400 to-orange-500' },
     8: { points: 3, name: 'Rising', icon: <TrendingUp className="h-5 w-5" />, color: 'from-cyan-400 to-cyan-500' },
     9: { points: 2, name: 'Starter', icon: <Sparkles className="h-5 w-5" />, color: 'from-pink-400 to-pink-500' },
-    10: { points: 1, name: 'Rookie', icon: <Trophy className="h-5 w-5" />, color: 'from-indigo-400 to-indigo-500' },
+    10: { points: 1, name: 'Rookie', icon: <img src={vyuhaLogo} alt="Vyuha" className="h-5 w-5 object-contain" />, color: 'from-indigo-400 to-indigo-500' },
   };
 
   useEffect(() => {
@@ -322,7 +323,7 @@ const PlayerStatsPage = () => {
           <div className="bg-gradient-to-br from-primary via-primary/90 to-orange-500 p-6">
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm mb-4 animate-[pulse_2s_ease-in-out_infinite]">
-                <Trophy className="h-10 w-10 text-white" />
+                <img src={vyuhaLogo} alt="Vyuha" className="h-12 w-12 object-contain" />
               </div>
               <h2 className="text-4xl font-bold text-white mb-1 animate-fade-in">
                 {animatedPoints}
@@ -456,8 +457,8 @@ const PlayerStatsPage = () => {
           </Card>
           <Card className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <CardContent className="p-4 text-center">
-              <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto mb-2">
-                <Medal className="h-6 w-6 text-yellow-500" />
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center mx-auto mb-2">
+                <Medal className="h-6 w-6 text-amber-500" />
               </div>
               <p className="text-2xl font-bold">{rankStats[0]?.count || 0}</p>
               <p className="text-xs text-muted-foreground">1st Place Wins</p>
@@ -469,77 +470,36 @@ const PlayerStatsPage = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4 text-primary" />
+              <img src={vyuhaLogo} alt="Vyuha" className="h-5 w-5 object-contain" />
               Points System
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <p className="text-xs text-muted-foreground mb-4">
-              Earn stats points based on your tournament rankings!
-            </p>
-            <div className="space-y-3">
-              {rankStats.map((stat, index) => (
+            <div className="grid grid-cols-5 gap-2">
+              {Object.entries(rankConfig).slice(0, 5).map(([rank, config]) => (
                 <div
-                  key={stat.rank}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 animate-fade-in hover:bg-muted transition-colors"
-                  style={{ animationDelay: `${0.1 * index}s` }}
+                  key={rank}
+                  className="text-center p-2 rounded-lg bg-muted/50 animate-fade-in"
+                  style={{ animationDelay: `${0.05 * Number(rank)}s` }}
                 >
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${stat.color} flex items-center justify-center text-white shadow-lg`}>
-                    {stat.icon}
+                  <div className={`w-8 h-8 mx-auto rounded-full bg-gradient-to-br ${config.color} flex items-center justify-center text-white mb-1`}>
+                    {rank}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm">Rank #{stat.rank}</span>
-                      <Badge variant="outline" className="text-[10px]">{stat.name}</Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      +{rankConfig[stat.rank].points} points per win
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">{stat.count}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {stat.points} pts
-                    </p>
-                  </div>
+                  <p className="text-xs font-medium">{config.points} pts</p>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Rank Tiers */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Star className="h-4 w-4 text-primary" />
-              Rank Tiers
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { name: 'Legendary', min: 500, color: 'from-yellow-400 to-red-500' },
-                { name: 'Grandmaster', min: 300, color: 'from-purple-500 to-pink-500' },
-                { name: 'Diamond', min: 200, color: 'from-cyan-400 to-blue-500' },
-                { name: 'Platinum', min: 100, color: 'from-gray-300 to-gray-400' },
-                { name: 'Gold', min: 50, color: 'from-yellow-400 to-amber-500' },
-                { name: 'Silver', min: 25, color: 'from-gray-400 to-gray-500' },
-                { name: 'Bronze', min: 10, color: 'from-amber-600 to-amber-700' },
-                { name: 'Unranked', min: 0, color: 'from-gray-500 to-gray-600' },
-              ].map((tier, index) => (
+            <div className="grid grid-cols-5 gap-2 mt-2">
+              {Object.entries(rankConfig).slice(5, 10).map(([rank, config]) => (
                 <div
-                  key={tier.name}
-                  className={`p-3 rounded-lg border ${getPlayerRank(totalPoints) === tier.name ? 'border-primary bg-primary/5' : 'border-border'} animate-scale-in`}
-                  style={{ animationDelay: `${0.05 * index}s` }}
+                  key={rank}
+                  className="text-center p-2 rounded-lg bg-muted/50 animate-fade-in"
+                  style={{ animationDelay: `${0.05 * Number(rank)}s` }}
                 >
-                  <div className="flex items-center gap-2">
-                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${tier.color}`} />
-                    <div>
-                      <p className="text-xs font-semibold">{tier.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{tier.min}+ pts</p>
-                    </div>
+                  <div className={`w-8 h-8 mx-auto rounded-full bg-gradient-to-br ${config.color} flex items-center justify-center text-white mb-1`}>
+                    {rank}
                   </div>
+                  <p className="text-xs font-medium">{config.points} pts</p>
                 </div>
               ))}
             </div>

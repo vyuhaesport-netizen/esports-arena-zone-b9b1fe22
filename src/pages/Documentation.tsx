@@ -8,10 +8,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Search, Trophy, Users, Wallet, Shield, Gamepad2, 
   UserCheck, CreditCard, Award, Clock, ArrowRight,
-  Database, Zap, Lock, RefreshCw, Bell, FileText,
+  Zap, Lock, RefreshCw, Bell, FileText,
   ChevronDown, ChevronUp, User, Settings, MessageSquare,
-  Scale, Building2, Star
+  Scale, Building2, Star, Target, TrendingUp, Gift
 } from 'lucide-react';
+import vyuhaLogo from '@/assets/vyuha-logo.png';
 
 interface DocSection {
   id: string;
@@ -28,6 +29,97 @@ const Documentation = () => {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const docSections: DocSection[] = [
+    // Player Stats System - NEW
+    {
+      id: 'stats-point-system',
+      title: 'Stats Point System',
+      category: 'Player Stats',
+      icon: <Target className="h-5 w-5 text-primary" />,
+      content: `**Stats Point System:**
+
+Earn Stats Points based on your tournament rank position!
+
+**Points Per Rank:**
+• **Rank 1 (Champion)**: 10 Points
+• **Rank 2 (Elite)**: 9 Points
+• **Rank 3 (Veteran)**: 8 Points
+• **Rank 4 (Master)**: 7 Points
+• **Rank 5 (Expert)**: 6 Points
+• **Rank 6 (Skilled)**: 5 Points
+• **Rank 7 (Adept)**: 4 Points
+• **Rank 8 (Rising)**: 3 Points
+• **Rank 9 (Starter)**: 2 Points
+• **Rank 10 (Rookie)**: 1 Point
+
+**How It Works:**
+1. Participate in tournaments
+2. Win or place in top 10 positions
+3. Automatically earn stats points
+4. Points accumulate over time
+5. Climb the stats leaderboard!`,
+      keywords: ['stats', 'points', 'rank', 'position', 'earn', 'champion', 'elite', 'veteran']
+    },
+    {
+      id: 'stats-milestone-bonuses',
+      title: 'Milestone Bonuses',
+      category: 'Player Stats',
+      icon: <Gift className="h-5 w-5 text-green-500" />,
+      content: `**Milestone Bonuses:**
+
+Claim cash rewards when you reach stats point milestones!
+
+**Bonus Tiers:**
+• **50 Points - Starter Bonus**: ₹10
+• **100 Points - Rising Star**: ₹25
+• **500 Points - Pro Player**: ₹100
+• **1000 Points - Legend Reward**: ₹500
+
+**Important Rules:**
+- Bonus money is added to wallet balance
+- Can ONLY be used to join tournaments
+- Cannot be withdrawn as cash
+- Each milestone can be claimed once
+- Claim button appears when eligible
+
+**How to Claim:**
+1. Go to Profile → Player Stats
+2. Check your total points
+3. Click "Claim" on available milestones
+4. Money added to wallet instantly!`,
+      keywords: ['milestone', 'bonus', 'reward', 'claim', 'money', 'wallet', 'cash']
+    },
+    {
+      id: 'stats-rank-tiers',
+      title: 'Player Rank Tiers',
+      category: 'Player Stats',
+      icon: <TrendingUp className="h-5 w-5 text-purple-500" />,
+      content: `**Player Rank Tiers:**
+
+Your overall rank based on total stats points!
+
+**Rank Progression:**
+• **Unranked**: 0-9 Points
+• **Bronze**: 10-24 Points
+• **Silver**: 25-49 Points
+• **Gold**: 50-99 Points
+• **Platinum**: 100-199 Points
+• **Diamond**: 200-299 Points
+• **Grandmaster**: 300-499 Points
+• **Legendary**: 500+ Points
+
+**Benefits of Higher Ranks:**
+- Profile badge display
+- Leaderboard recognition
+- Exclusive achievements
+- Higher milestone bonuses
+
+**Tips to Rank Up:**
+- Win more tournaments
+- Aim for top 3 positions
+- Participate consistently
+- Check progress in Player Stats`,
+      keywords: ['rank', 'tier', 'bronze', 'silver', 'gold', 'platinum', 'diamond', 'grandmaster', 'legendary']
+    },
     // Tournament System
     {
       id: 'tournament-modes',
@@ -209,17 +301,8 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
 
 • **Creator**: Special content creators with tournament privileges
   - Assigned by admin only
-  - Same abilities as Organizer
-
-• **Admin**: Platform management access
-  - Manage users, deposits, withdrawals
-  - Review applications, handle support
-
-• **Super Admin**: Full platform control
-  - Manage team members
-  - System settings
-  - All admin permissions`,
-      keywords: ['role', 'player', 'organizer', 'creator', 'admin', 'super', 'permission']
+  - Same abilities as Organizer`,
+      keywords: ['role', 'player', 'organizer', 'creator', 'permission']
     },
     {
       id: 'player-teams',
@@ -318,111 +401,22 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
       category: 'Features',
       icon: <Trophy className="h-5 w-5 text-amber-500" />,
       content: `**Leaderboard Ranking:**
-- Based on total winnings
+
+**Top Earners:**
+- Based on total prize winnings
+- Shows players who won the most money
 - Updated after each tournament
-- Separate rankings by game
+
+**Best Players:**
+- Based on Stats Points
+- Calculated from tournament rank positions
+- Higher positions = more points
 
 **Earning Rankings:**
 - Win tournaments to earn points
 - Higher positions = more points
 - Consistent performance rewards`,
-      keywords: ['leaderboard', 'ranking', 'points', 'top', 'player', 'winner']
-    },
-    // Admin Functions
-    {
-      id: 'admin-deposits',
-      title: 'Managing Deposits (Admin)',
-      category: 'Admin',
-      icon: <Database className="h-5 w-5 text-green-500" />,
-      content: `**Deposit Approval Process:**
-1. User submits deposit request with UTR
-2. Admin sees pending in Admin → Deposits
-3. Verify UTR against bank statement
-4. Approve: Credits wallet balance
-5. Reject: No balance credited, user notified
-
-**Anti-Fraud Measures:**
-- Duplicate UTR detection
-- Amount verification
-- User ban for fake UTRs`,
-      keywords: ['deposit', 'approve', 'reject', 'utr', 'admin', 'verify']
-    },
-    {
-      id: 'admin-withdrawals',
-      title: 'Managing Withdrawals (Admin)',
-      category: 'Admin',
-      icon: <CreditCard className="h-5 w-5 text-blue-500" />,
-      content: `**Withdrawal Processing:**
-1. User requests withdrawal
-2. Admin sees in Admin → Withdrawals
-3. Verify wallet balance
-4. Process payment to user's UPI
-5. Mark as completed
-
-**Types:**
-- Regular Withdrawals: From player wallet
-- Dhana Withdrawals: From organizer/creator earnings`,
-      keywords: ['withdrawal', 'process', 'admin', 'upi', 'payout']
-    },
-    {
-      id: 'admin-reports',
-      title: 'Handling Reports (Admin)',
-      category: 'Admin',
-      icon: <Shield className="h-5 w-5 text-red-500" />,
-      content: `**Report Types:**
-- Hacking/Cheating
-- Teaming
-- Inappropriate behavior
-- Other violations
-
-**Report Flow:**
-1. Player submits report (within 30 min of match end)
-2. Admin reviews evidence
-3. Take action: Warn, Ban, or Dismiss
-4. Notify reporter of outcome
-
-**Ban System:**
-- Temporary bans (hours/days)
-- Permanent bans
-- Freeze wallet option`,
-      keywords: ['report', 'hack', 'cheat', 'ban', 'violation', 'admin']
-    },
-    // Database Functions
-    {
-      id: 'db-functions',
-      title: 'Key Database Functions',
-      category: 'Technical',
-      icon: <Zap className="h-5 w-5 text-yellow-500" />,
-      content: `**Core RPC Functions:**
-
-• **process_tournament_join**: Solo player joins tournament
-• **process_team_tournament_join**: Team joins duo/squad tournament
-• **process_winner_declaration**: Declare solo winners
-• **process_team_winner_declaration**: Declare team winners
-• **process_tournament_cancellation**: Cancel with refunds
-• **admin_adjust_wallet**: Credit/debit user wallet
-• **create_notification**: Send notification to user
-• **recalculate_tournament_prizepool**: Update prize based on players`,
-      keywords: ['database', 'function', 'rpc', 'process', 'tournament', 'technical']
-    },
-    {
-      id: 'edge-functions',
-      title: 'Edge Functions (Backend)',
-      category: 'Technical',
-      icon: <Lock className="h-5 w-5 text-gray-500" />,
-      content: `**Active Edge Functions:**
-
-• **razorpay-webhook**: Handle payment gateway callbacks
-• **recalculate-prizepools**: Cron job for prize updates
-• **send-organizer-email**: Email notifications
-• **update-user-password**: Secure password change
-• **send-welcome-broadcast**: Welcome message for new roles
-• **auto-cancel-tournaments**: Auto-cancel if winner not declared in 1 hour
-
-**Cron Jobs:**
-- Prize pool recalculation (every 10 min)
-- Auto-cancel tournaments (every 10 min)`,
-      keywords: ['edge', 'function', 'backend', 'cron', 'webhook', 'api']
+      keywords: ['leaderboard', 'ranking', 'points', 'top', 'player', 'winner', 'stats']
     }
   ];
 
@@ -459,7 +453,7 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
             </div>
             <h1 className="text-2xl font-bold mb-2">Platform Documentation</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Complete guide to all features, functions, and workflows in Vyuha Esport
+              Complete guide to all features and workflows in Vyuha Esport
             </p>
           </div>
         </div>
@@ -499,52 +493,74 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
                 {group.sections.map(section => (
                   <Card 
                     key={section.id}
-                    className={`cursor-pointer transition-all ${
-                      expandedSection === section.id ? 'border-primary' : ''
+                    className={`cursor-pointer transition-all hover:shadow-md ${
+                      expandedSection === section.id ? 'ring-2 ring-primary/50' : ''
                     }`}
                     onClick={() => setExpandedSection(
                       expandedSection === section.id ? null : section.id
                     )}
                   >
                     <CardHeader className="p-4 pb-2">
-                      <CardTitle className="text-sm flex items-center justify-between">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          {section.icon}
-                          <span>{section.title}</span>
+                          <div className="p-2 rounded-lg bg-muted">
+                            {section.icon}
+                          </div>
+                          <CardTitle className="text-sm font-semibold">
+                            {section.title}
+                          </CardTitle>
                         </div>
                         {expandedSection === section.id ? (
                           <ChevronUp className="h-4 w-4 text-muted-foreground" />
                         ) : (
                           <ChevronDown className="h-4 w-4 text-muted-foreground" />
                         )}
-                      </CardTitle>
+                      </div>
                     </CardHeader>
                     
                     {expandedSection === section.id && (
-                      <CardContent className="p-4 pt-0">
-                        <div className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
-                          {section.content.split('**').map((part, i) => 
-                            i % 2 === 1 ? (
-                              <strong key={i} className="text-foreground">{part}</strong>
-                            ) : (
-                              <span key={i}>{part}</span>
-                            )
-                          )}
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-3">
-                          {section.keywords.slice(0, 5).map(kw => (
-                            <Badge 
-                              key={kw} 
-                              variant="secondary" 
-                              className="text-[10px] cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSearchQuery(kw);
-                              }}
-                            >
-                              {kw}
-                            </Badge>
-                          ))}
+                      <CardContent className="pt-0 px-4 pb-4">
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <div className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+                            {section.content.split('\n').map((line, i) => {
+                              if (line.startsWith('**') && line.endsWith('**')) {
+                                return (
+                                  <p key={i} className="font-semibold text-foreground mt-3 mb-1">
+                                    {line.replace(/\*\*/g, '')}
+                                  </p>
+                                );
+                              }
+                              if (line.startsWith('• ')) {
+                                const content = line.substring(2);
+                                if (content.includes('**')) {
+                                  const parts = content.split('**');
+                                  return (
+                                    <p key={i} className="pl-4 flex items-start gap-2">
+                                      <span className="text-primary">•</span>
+                                      <span>
+                                        <strong className="text-foreground">{parts[1]}</strong>
+                                        {parts[2]}
+                                      </span>
+                                    </p>
+                                  );
+                                }
+                                return (
+                                  <p key={i} className="pl-4 flex items-start gap-2">
+                                    <span className="text-primary">•</span>
+                                    <span>{content}</span>
+                                  </p>
+                                );
+                              }
+                              if (/^\d+\./.test(line.trim())) {
+                                return (
+                                  <p key={i} className="pl-4">
+                                    {line}
+                                  </p>
+                                );
+                              }
+                              return <p key={i}>{line}</p>;
+                            })}
+                          </div>
                         </div>
                       </CardContent>
                     )}
@@ -555,61 +571,16 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
           ))}
         </div>
 
-        {filteredSections.length === 0 && (
+        {/* Empty state */}
+        {groupedSections.length === 0 && (
           <div className="text-center py-12">
-            <Search className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-            <p className="text-muted-foreground">No documentation found for "{searchQuery}"</p>
-            <button 
-              onClick={() => setSearchQuery('')}
-              className="text-primary text-sm mt-2 hover:underline"
-            >
-              Clear search
-            </button>
+            <Search className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+            <p className="text-muted-foreground">No results found for "{searchQuery}"</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Try different keywords
+            </p>
           </div>
         )}
-
-        {/* Quick Links */}
-        <div className="pt-4 border-t border-border">
-          <h3 className="font-semibold text-sm mb-3">Quick Links</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <button 
-              onClick={() => navigate('/terms')}
-              className="flex items-center gap-2 p-3 rounded-lg bg-card border border-border text-sm hover:bg-muted/50 transition-colors"
-            >
-              <Scale className="h-4 w-4 text-primary" />
-              Terms & Conditions
-              <ArrowRight className="h-3 w-3 ml-auto" />
-            </button>
-            <button 
-              onClick={() => navigate('/about')}
-              className="flex items-center gap-2 p-3 rounded-lg bg-card border border-border text-sm hover:bg-muted/50 transition-colors"
-            >
-              <FileText className="h-4 w-4 text-primary" />
-              About Us
-              <ArrowRight className="h-3 w-3 ml-auto" />
-            </button>
-            <button 
-              onClick={() => navigate('/help-support')}
-              className="flex items-center gap-2 p-3 rounded-lg bg-card border border-border text-sm hover:bg-muted/50 transition-colors"
-            >
-              <MessageSquare className="h-4 w-4 text-primary" />
-              Help & Support
-              <ArrowRight className="h-3 w-3 ml-auto" />
-            </button>
-            <button 
-              onClick={() => navigate('/refund-policy')}
-              className="flex items-center gap-2 p-3 rounded-lg bg-card border border-border text-sm hover:bg-muted/50 transition-colors"
-            >
-              <CreditCard className="h-4 w-4 text-primary" />
-              Refund Policy
-              <ArrowRight className="h-3 w-3 ml-auto" />
-            </button>
-          </div>
-        </div>
-
-        <p className="text-center text-xs text-muted-foreground pt-4">
-          Last updated: December 2025
-        </p>
       </div>
     </AppLayout>
   );
