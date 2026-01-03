@@ -61,6 +61,7 @@ import JoinLocalTournament from "./pages/JoinLocalTournament";
 import AdminLocalTournaments from "./pages/admin/AdminLocalTournaments";
 import AvatarSelection from "./pages/AvatarSelection";
 import NotFound from "./pages/NotFound";
+import PlayerStats from "./pages/PlayerStats";
 import AuthRequiredLock from "./components/AuthRequiredLock";
 import { Loader2 } from "lucide-react";
 
@@ -227,6 +228,7 @@ const AppRoutes = () => {
       <Route path="/help-support" element={<SoftProtectedRoute lockTitle="Help & Support" lockDescription="Login to access help and support"><HelpSupport /></SoftProtectedRoute>} />
       <Route path="/payment" element={<SoftProtectedRoute lockTitle="Payment" lockDescription="Login to make payments"><Payment /></SoftProtectedRoute>} />
       <Route path="/leaderboard" element={<SoftProtectedRoute lockTitle="Leaderboard" lockDescription="Login to view the leaderboard and rankings"><Leaderboard /></SoftProtectedRoute>} />
+      <Route path="/player-stats" element={<SoftProtectedRoute lockTitle="Player Stats" lockDescription="Login to view your player stats and rankings"><PlayerStats /></SoftProtectedRoute>} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

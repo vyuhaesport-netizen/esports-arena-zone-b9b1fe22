@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2 } from 'lucide-react';
+import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarGallery } from '@/components/AvatarGallery';
@@ -318,6 +318,10 @@ const ProfilePage = () => {
     icon: Trophy,
     label: 'My Matches',
     onClick: () => navigate('/my-match')
+  }, {
+    icon: BarChart3,
+    label: 'Player Stats',
+    onClick: () => navigate('/player-stats')
   }, {
     icon: Wallet,
     label: 'Wallet',
