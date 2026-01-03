@@ -6,7 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Trophy, Medal, Award, Star, Zap, Target, Flame, Crown, TrendingUp, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useConfetti } from '@/hooks/useConfetti';
+import { Loader2, Trophy, Medal, Award, Star, Zap, Target, Flame, Crown, TrendingUp, Sparkles, Gift, Check, Lock, IndianRupee } from 'lucide-react';
 
 interface RankStats {
   rank: number;
@@ -17,14 +20,32 @@ interface RankStats {
   color: string;
 }
 
+interface BonusMilestone {
+  points: number;
+  bonus: number;
+  name: string;
+}
+
 const PlayerStatsPage = () => {
   const [loading, setLoading] = useState(true);
   const [totalPoints, setTotalPoints] = useState(0);
   const [rankStats, setRankStats] = useState<RankStats[]>([]);
   const [totalWins, setTotalWins] = useState(0);
   const [animatedPoints, setAnimatedPoints] = useState(0);
+  const [claimedBonuses, setClaimedBonuses] = useState<number[]>([]);
+  const [claimingBonus, setClaimingBonus] = useState<number | null>(null);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { triggerAchievementConfetti } = useConfetti();
+
+  // Bonus milestones configuration
+  const bonusMilestones: BonusMilestone[] = [
+    { points: 50, bonus: 10, name: 'Starter Bonus' },
+    { points: 100, bonus: 25, name: 'Rising Star' },
+    { points: 500, bonus: 100, name: 'Pro Player' },
+    { points: 1000, bonus: 500, name: 'Legend Reward' },
+  ];
 
   // Rank configuration: position -> { points, name, icon, color }
   const rankConfig: { [key: number]: { points: number; name: string; icon: React.ReactNode; color: string } } = {
@@ -49,6 +70,7 @@ const PlayerStatsPage = () => {
   useEffect(() => {
     if (user) {
       fetchPlayerStats();
+      fetchClaimedBonuses();
     }
   }, [user]);
 
@@ -71,6 +93,110 @@ const PlayerStatsPage = () => {
       return () => clearInterval(timer);
     }
   }, [totalPoints]);
+
+  const fetchClaimedBonuses = async () => {
+    if (!user) return;
+    
+    try {
+      // Check wallet_transactions for stats bonus claims
+      const { data } = await supabase
+        .from('wallet_transactions')
+        .select('description')
+        .eq('user_id', user.id)
+        .eq('type', 'bonus')
+        .like('description', 'Stats milestone bonus%');
+      
+      if (data) {
+        // Extract milestone points from descriptions
+        const claimed: number[] = [];
+        data.forEach(tx => {
+          const match = tx.description?.match(/Stats milestone bonus - (\d+) points/);
+          if (match) {
+            claimed.push(parseInt(match[1]));
+          }
+        });
+        setClaimedBonuses(claimed);
+      }
+    } catch (error) {
+      console.error('Error fetching claimed bonuses:', error);
+    }
+  };
+
+  const handleClaimBonus = async (milestone: BonusMilestone) => {
+    if (!user) return;
+    
+    // Verify user has enough points
+    if (totalPoints < milestone.points) {
+      toast({
+        title: 'Not Enough Points',
+        description: `You need ${milestone.points} stats points to claim this bonus.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Check if already claimed
+    if (claimedBonuses.includes(milestone.points)) {
+      toast({
+        title: 'Already Claimed',
+        description: 'You have already claimed this bonus.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setClaimingBonus(milestone.points);
+    
+    try {
+      // Create bonus transaction record first (for tracking claims)
+      const { error: txError } = await supabase
+        .from('wallet_transactions')
+        .insert({
+          user_id: user.id,
+          type: 'bonus',
+          amount: milestone.bonus,
+          status: 'completed',
+          description: `Stats milestone bonus - ${milestone.points} points`
+        });
+      
+      if (txError) throw txError;
+      
+      // Get current balance
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('wallet_balance')
+        .eq('user_id', user.id)
+        .single();
+      
+      const currentBalance = profile?.wallet_balance || 0;
+      
+      // Update wallet balance (not withdrawable_balance)
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          wallet_balance: currentBalance + milestone.bonus
+        })
+        .eq('user_id', user.id);
+      
+      if (updateError) throw updateError;
+      
+      triggerAchievementConfetti();
+      setClaimedBonuses(prev => [...prev, milestone.points]);
+      toast({
+        title: '🎉 Bonus Claimed!',
+        description: `₹${milestone.bonus} has been added to your wallet balance!`,
+      });
+    } catch (error: any) {
+      console.error('Error claiming bonus:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to claim bonus. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setClaimingBonus(null);
+    }
+  };
 
   const fetchPlayerStats = async () => {
     if (!user) return;
@@ -170,6 +296,12 @@ const PlayerStatsPage = () => {
     return { current: 'Unranked', next: 'Bronze', progress: (points / 10) * 100, needed: 10 - points };
   };
 
+  const getBonusStatus = (milestone: BonusMilestone): 'claimed' | 'available' | 'locked' => {
+    if (claimedBonuses.includes(milestone.points)) return 'claimed';
+    if (totalPoints >= milestone.points) return 'available';
+    return 'locked';
+  };
+
   if (authLoading || loading) {
     return (
       <AppLayout title="Player Stats">
@@ -213,6 +345,100 @@ const PlayerStatsPage = () => {
                   {rankProgress.needed} points to {rankProgress.next}
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bonus Rewards Section */}
+        <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-orange-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary animate-bounce" />
+              Milestone Bonuses
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs text-muted-foreground mb-4">
+              Claim rewards when you reach milestones! Money goes to wallet for tournaments only.
+            </p>
+            <div className="space-y-3">
+              {bonusMilestones.map((milestone, index) => {
+                const status = getBonusStatus(milestone);
+                const progressToMilestone = Math.min((totalPoints / milestone.points) * 100, 100);
+                
+                return (
+                  <div
+                    key={milestone.points}
+                    className={`p-4 rounded-xl border-2 transition-all animate-fade-in ${
+                      status === 'claimed' 
+                        ? 'bg-success/10 border-success/30' 
+                        : status === 'available'
+                        ? 'bg-primary/10 border-primary animate-pulse'
+                        : 'bg-muted/30 border-border'
+                    }`}
+                    style={{ animationDelay: `${0.1 * index}s` }}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          status === 'claimed'
+                            ? 'bg-success text-success-foreground'
+                            : status === 'available'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {status === 'claimed' ? (
+                            <Check className="h-6 w-6" />
+                          ) : status === 'available' ? (
+                            <Gift className="h-6 w-6" />
+                          ) : (
+                            <Lock className="h-5 w-5" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">{milestone.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {milestone.points} Stats Points
+                          </p>
+                          {status === 'locked' && (
+                            <div className="mt-1">
+                              <Progress value={progressToMilestone} className="h-1 w-24" />
+                              <p className="text-[10px] text-muted-foreground mt-0.5">
+                                {milestone.points - totalPoints} more needed
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 text-lg font-bold text-success">
+                          <IndianRupee className="h-4 w-4" />
+                          {milestone.bonus}
+                        </div>
+                        {status === 'available' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleClaimBonus(milestone)}
+                            disabled={claimingBonus === milestone.points}
+                            className="mt-1 h-7 text-xs bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
+                          >
+                            {claimingBonus === milestone.points ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              'Claim'
+                            )}
+                          </Button>
+                        )}
+                        {status === 'claimed' && (
+                          <Badge variant="outline" className="mt-1 text-success border-success/30 text-[10px]">
+                            Claimed
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
