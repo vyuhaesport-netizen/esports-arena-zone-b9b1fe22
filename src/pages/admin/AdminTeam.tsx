@@ -44,28 +44,135 @@ interface Permission {
   description: string;
 }
 
-const allPermissions: Permission[] = [
-  { id: 'dashboard:view', label: 'Dashboard', description: 'View dashboard metrics' },
-  { id: 'users:view', label: 'View Users', description: 'View user list' },
-  { id: 'users:manage', label: 'Manage Users', description: 'Ban/freeze users, manage wallets' },
-  { id: 'tournaments:view', label: 'View Tournaments', description: 'View tournament list' },
-  { id: 'tournaments:create', label: 'Create Tournaments', description: 'Create new tournaments' },
-  { id: 'tournaments:edit', label: 'Edit Tournaments', description: 'Edit existing tournaments' },
-  { id: 'tournaments:delete', label: 'Delete Tournaments', description: 'Delete tournaments' },
-  { id: 'deposits:view', label: 'View Deposits', description: 'View deposit transactions' },
-  { id: 'deposits:manage', label: 'Manage Deposits', description: 'Approve/reject deposits' },
-  { id: 'withdrawals:view', label: 'View Withdrawals', description: 'View withdrawal requests' },
-  { id: 'withdrawals:manage', label: 'Manage Withdrawals', description: 'Approve/reject withdrawals' },
-  { id: 'transactions:view', label: 'View Transactions', description: 'View all transactions' },
-  { id: 'support:view', label: 'View Support', description: 'View support tickets' },
-  { id: 'support:manage', label: 'Manage Support', description: 'Respond to support tickets' },
-  { id: 'notifications:view', label: 'View Notifications', description: 'View notifications' },
-  { id: 'notifications:manage', label: 'Send Notifications', description: 'Send push notifications' },
-  { id: 'organizers:view', label: 'View Organizers', description: 'View organizer verifications' },
-  { id: 'organizers:manage', label: 'Manage Organizers', description: 'Approve/reject organizers' },
-  { id: 'settings:view', label: 'View Settings', description: 'View app settings' },
-  { id: 'settings:manage', label: 'Manage Settings', description: 'Update app settings' },
+interface PagePermissionGroup {
+  page: string;
+  icon: string;
+  description: string;
+  permissions: Permission[];
+}
+
+const pagePermissionGroups: PagePermissionGroup[] = [
+  {
+    page: 'Dashboard',
+    icon: '📊',
+    description: 'Main admin dashboard with statistics',
+    permissions: [
+      { id: 'dashboard:view', label: 'View Dashboard', description: 'Access to view dashboard metrics and statistics' },
+    ],
+  },
+  {
+    page: 'Users Management',
+    icon: '👥',
+    description: 'Manage all platform users',
+    permissions: [
+      { id: 'users:view', label: 'View Users', description: 'View user list and profiles' },
+      { id: 'users:manage', label: 'Manage Users', description: 'Ban/freeze users, adjust wallets, terminate accounts' },
+    ],
+  },
+  {
+    page: 'Tournaments',
+    icon: '🏆',
+    description: 'Manage online tournaments',
+    permissions: [
+      { id: 'tournaments:view', label: 'View Tournaments', description: 'View all tournaments' },
+      { id: 'tournaments:create', label: 'Create Tournaments', description: 'Create new tournaments' },
+      { id: 'tournaments:edit', label: 'Edit Tournaments', description: 'Modify tournament details, room ID, password' },
+      { id: 'tournaments:delete', label: 'Delete Tournaments', description: 'Cancel and delete tournaments' },
+    ],
+  },
+  {
+    page: 'Local Tournaments',
+    icon: '📍',
+    description: 'Manage offline/local tournament applications',
+    permissions: [
+      { id: 'local_tournaments:view', label: 'View Applications', description: 'View local tournament applications' },
+      { id: 'local_tournaments:manage', label: 'Manage Applications', description: 'Approve/reject local tournament requests' },
+    ],
+  },
+  {
+    page: 'Organizer Management',
+    icon: '🎯',
+    description: 'Handle organizer applications and verification',
+    permissions: [
+      { id: 'organizers:view', label: 'View Organizers', description: 'View organizer applications' },
+      { id: 'organizers:manage', label: 'Manage Organizers', description: 'Approve/reject organizer applications' },
+    ],
+  },
+  {
+    page: 'Creator Management',
+    icon: '🎨',
+    description: 'Handle content creator applications',
+    permissions: [
+      { id: 'creators:view', label: 'View Creators', description: 'View creator applications' },
+      { id: 'creators:manage', label: 'Manage Creators', description: 'Approve/reject creator applications' },
+    ],
+  },
+  {
+    page: 'Deposits',
+    icon: '💰',
+    description: 'Process user deposit requests',
+    permissions: [
+      { id: 'deposits:view', label: 'View Deposits', description: 'View pending deposits' },
+      { id: 'deposits:manage', label: 'Manage Deposits', description: 'Approve/reject deposit requests' },
+    ],
+  },
+  {
+    page: 'Withdrawals',
+    icon: '💸',
+    description: 'Process user withdrawal requests',
+    permissions: [
+      { id: 'withdrawals:view', label: 'View Withdrawals', description: 'View pending withdrawals' },
+      { id: 'withdrawals:manage', label: 'Manage Withdrawals', description: 'Approve/reject withdrawal requests' },
+    ],
+  },
+  {
+    page: 'Transactions & Wallet Audit',
+    icon: '📋',
+    description: 'View all financial transactions',
+    permissions: [
+      { id: 'transactions:view', label: 'View Transactions', description: 'View all wallet transactions and audit logs' },
+    ],
+  },
+  {
+    page: 'Support Tickets',
+    icon: '🎧',
+    description: 'Handle user support requests',
+    permissions: [
+      { id: 'support:view', label: 'View Support', description: 'View support tickets' },
+      { id: 'support:manage', label: 'Manage Support', description: 'Respond to and resolve support tickets' },
+    ],
+  },
+  {
+    page: 'Notifications & Broadcasts',
+    icon: '🔔',
+    description: 'Send notifications to users',
+    permissions: [
+      { id: 'notifications:view', label: 'View Notifications', description: 'View notification history' },
+      { id: 'notifications:manage', label: 'Send Notifications', description: 'Create and send push notifications, broadcasts' },
+    ],
+  },
+  {
+    page: 'Ban Management',
+    icon: '🚫',
+    description: 'Manage player bans and reports',
+    permissions: [
+      { id: 'bans:view', label: 'View Bans', description: 'View active bans and reports' },
+      { id: 'bans:manage', label: 'Manage Bans', description: 'Issue bans, lift bans, review reports' },
+    ],
+  },
+  {
+    page: 'Settings',
+    icon: '⚙️',
+    description: 'Platform settings and configuration',
+    permissions: [
+      { id: 'settings:view', label: 'View Settings', description: 'View platform settings' },
+      { id: 'settings:manage', label: 'Manage Settings', description: 'Update platform settings' },
+    ],
+  },
 ];
+
+// Flatten for easy lookup
+const allPermissions: Permission[] = pagePermissionGroups.flatMap(g => g.permissions);
 
 const AdminTeam = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -396,18 +503,25 @@ const AdminTeam = () => {
                   </div>
                 </div>
 
-                {/* Permissions Preview */}
+                {/* Permissions Preview - Grouped by Page */}
                 <div className="mt-3 pt-3 border-t">
-                  <p className="text-xs text-muted-foreground mb-2">Permissions:</p>
+                  <p className="text-xs text-muted-foreground mb-2">Page Access:</p>
                   <div className="flex flex-wrap gap-1">
-                    {(memberPermissions[member.user_id] || []).slice(0, 5).map(p => (
-                      <Badge key={p} variant="outline" className="text-[10px]">
-                        {p.split(':')[0]}
-                      </Badge>
-                    ))}
-                    {(memberPermissions[member.user_id] || []).length > 5 && (
+                    {pagePermissionGroups
+                      .filter(group => group.permissions.some(p => (memberPermissions[member.user_id] || []).includes(p.id)))
+                      .slice(0, 6)
+                      .map(group => (
+                        <Badge key={group.page} variant="outline" className="text-[10px]">
+                          {group.icon} {group.page}
+                        </Badge>
+                      ))}
+                    {pagePermissionGroups.filter(group => 
+                      group.permissions.some(p => (memberPermissions[member.user_id] || []).includes(p.id))
+                    ).length > 6 && (
                       <Badge variant="outline" className="text-[10px]">
-                        +{(memberPermissions[member.user_id] || []).length - 5} more
+                        +{pagePermissionGroups.filter(group => 
+                          group.permissions.some(p => (memberPermissions[member.user_id] || []).includes(p.id))
+                        ).length - 6} more
                       </Badge>
                     )}
                     {(memberPermissions[member.user_id] || []).length === 0 && (
@@ -471,30 +585,115 @@ const AdminTeam = () => {
               </div>
             </div>
 
-            {/* Permissions */}
+            {/* Page-based Permissions */}
             <div className="space-y-3">
-              <Label className="text-base font-semibold">Permissions</Label>
-              <p className="text-xs text-muted-foreground">
-                Select which sections this member can access
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-base font-semibold">Page Permissions</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Assign access to specific admin pages
+                  </p>
+                </div>
+                <Badge variant="secondary">
+                  {selectedPermissions.length} selected
+                </Badge>
+              </div>
 
-              <div className="space-y-2 max-h-60 overflow-y-auto border rounded-lg p-3">
-                {allPermissions.map((perm) => (
-                  <div
-                    key={perm.id}
-                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
-                    onClick={() => togglePermission(perm.id)}
-                  >
-                    <Checkbox
-                      checked={selectedPermissions.includes(perm.id)}
-                      onCheckedChange={() => togglePermission(perm.id)}
-                    />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{perm.label}</p>
-                      <p className="text-xs text-muted-foreground">{perm.description}</p>
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto border rounded-lg p-3">
+                {pagePermissionGroups.map((group) => {
+                  const groupPerms = group.permissions.map(p => p.id);
+                  const selectedInGroup = groupPerms.filter(p => selectedPermissions.includes(p));
+                  const allSelected = selectedInGroup.length === groupPerms.length;
+                  const someSelected = selectedInGroup.length > 0 && !allSelected;
+
+                  const toggleGroup = () => {
+                    if (allSelected) {
+                      // Deselect all in group
+                      setSelectedPermissions(prev => prev.filter(p => !groupPerms.includes(p)));
+                    } else {
+                      // Select all in group
+                      setSelectedPermissions(prev => [...new Set([...prev, ...groupPerms])]);
+                    }
+                  };
+
+                  return (
+                    <div key={group.page} className="border rounded-lg overflow-hidden">
+                      {/* Group Header */}
+                      <div 
+                        className="flex items-center gap-3 p-3 bg-muted/30 cursor-pointer hover:bg-muted/50"
+                        onClick={toggleGroup}
+                      >
+                        <Checkbox
+                          checked={allSelected}
+                          ref={(el) => {
+                            if (el) (el as any).indeterminate = someSelected;
+                          }}
+                          onCheckedChange={toggleGroup}
+                        />
+                        <span className="text-lg">{group.icon}</span>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{group.page}</p>
+                          <p className="text-xs text-muted-foreground">{group.description}</p>
+                        </div>
+                        <Badge variant={allSelected ? 'default' : someSelected ? 'secondary' : 'outline'} className="text-[10px]">
+                          {selectedInGroup.length}/{groupPerms.length}
+                        </Badge>
+                      </div>
+
+                      {/* Individual Permissions */}
+                      <div className="p-2 space-y-1 bg-background">
+                        {group.permissions.map((perm) => (
+                          <div
+                            key={perm.id}
+                            className="flex items-center gap-3 p-2 rounded hover:bg-muted/30 cursor-pointer"
+                            onClick={() => togglePermission(perm.id)}
+                          >
+                            <Checkbox
+                              checked={selectedPermissions.includes(perm.id)}
+                              onCheckedChange={() => togglePermission(perm.id)}
+                              className="ml-6"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm">{perm.label}</p>
+                              <p className="text-[11px] text-muted-foreground">{perm.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex gap-2">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={() => setSelectedPermissions(allPermissions.map(p => p.id))}
+                >
+                  Select All
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={() => setSelectedPermissions([])}
+                >
+                  Clear All
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs"
+                  onClick={() => setSelectedPermissions(allPermissions.filter(p => p.id.endsWith(':view')).map(p => p.id))}
+                >
+                  View Only
+                </Button>
               </div>
             </div>
           </div>

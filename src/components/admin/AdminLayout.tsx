@@ -62,7 +62,7 @@ const menuItems: MenuItem[] = [
   { icon: Bell, label: 'Notifications', path: '/admin/notifications', permission: 'notifications:view' },
   { icon: Megaphone, label: 'Broadcast Channel', path: '/admin/messages', permission: 'notifications:view' },
   { icon: Settings, label: 'Settings', path: '/admin/settings', permission: 'settings:view' },
-  { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'tournaments:view', countKey: 'pendingLocalTournamentApps' },
+  { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'local_tournaments:view', countKey: 'pendingLocalTournamentApps' },
   { icon: ScrollText, label: 'Tournament Rules', path: '/admin/rules', superAdminOnly: true },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
