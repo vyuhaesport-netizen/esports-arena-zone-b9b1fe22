@@ -29,6 +29,7 @@ import {
   Coins,
   Search,
   ScrollText,
+  Ban,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -61,6 +62,7 @@ const menuItems: MenuItem[] = [
   { icon: HeadphonesIcon, label: 'Support', path: '/admin/support', permission: 'support:view', countKey: 'pendingSupport' },
   { icon: Bell, label: 'Notifications', path: '/admin/notifications', permission: 'notifications:view' },
   { icon: Megaphone, label: 'Broadcast Channel', path: '/admin/messages', permission: 'notifications:view' },
+  { icon: Ban, label: 'Ban Management', path: '/admin/bans', permission: 'bans:view', countKey: 'pendingReports' },
   { icon: Settings, label: 'Settings', path: '/admin/settings', permission: 'settings:view' },
   { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'local_tournaments:view', countKey: 'pendingLocalTournamentApps' },
   { icon: ScrollText, label: 'Tournament Rules', path: '/admin/rules', superAdminOnly: true },
