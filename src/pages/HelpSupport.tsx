@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Paperclip, X, Send, MessageSquare, HelpCircle, Clock, CheckCircle2, AlertCircle, Bot, Loader2, Sparkles, Ticket } from 'lucide-react';
+import { ArrowLeft, Paperclip, X, Send, MessageSquare, Clock, AlertCircle, Bot, Loader2, Ticket, ChevronDown, ChevronUp, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -18,6 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 interface Ticket {
   id: string;
@@ -33,7 +38,39 @@ interface ChatMessage {
   content: string;
 }
 
-type ViewType = 'main' | 'ticket' | 'history' | 'ai-chat';
+interface Profile {
+  full_name: string | null;
+  username: string | null;
+}
+
+type ViewType = 'main' | 'ticket' | 'history';
+
+const faqs = [
+  {
+    question: 'How do I join a tournament?',
+    answer: 'Go to the Home page, find an upcoming tournament, click on it to view details, and press the "Join Tournament" button. Make sure you have enough wallet balance for paid tournaments.'
+  },
+  {
+    question: 'How do I deposit money to my wallet?',
+    answer: 'Navigate to your Wallet page, click on "Deposit", enter the amount, and complete the payment using UPI or other available methods. Deposits are usually credited within a few minutes.'
+  },
+  {
+    question: 'How do I withdraw my winnings?',
+    answer: 'Go to Wallet > Withdraw, enter the amount and your UPI ID. Withdrawals are processed within 24-48 hours after verification.'
+  },
+  {
+    question: 'What happens if a tournament is cancelled?',
+    answer: 'If a tournament is cancelled, your entry fee will be automatically refunded to your wallet balance within 24 hours.'
+  },
+  {
+    question: 'How do I report a player?',
+    answer: 'After a tournament ends, go to the tournament details page and use the "Report Player" option. Provide details and evidence of the violation.'
+  },
+  {
+    question: 'Why is my withdrawal pending?',
+    answer: 'Withdrawals require verification. Make sure your profile is complete with valid details. If it takes more than 48 hours, raise a support ticket.'
+  }
+];
 
 const HelpSupport = () => {
   const navigate = useNavigate();
@@ -48,6 +85,8 @@ const HelpSupport = () => {
   const [submitting, setSubmitting] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   
   // AI Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -58,8 +97,26 @@ const HelpSupport = () => {
   useEffect(() => {
     if (user) {
       fetchTickets();
+      fetchProfile();
     }
   }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, username')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!error && data) {
+        setProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
 
   const fetchTickets = async () => {
     if (!user) return;
@@ -282,124 +339,11 @@ const HelpSupport = () => {
     }
   };
 
-  // AI Chat View
-  if (currentView === 'ai-chat') {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Header */}
-        <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setCurrentView('main')}
-              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
-            >
-              <ArrowLeft className="h-5 w-5 text-foreground" />
-            </button>
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-gradient-to-br from-primary to-purple-600 rounded-lg">
-                <Bot className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">Vyuha AI</h1>
-                <p className="text-[10px] text-muted-foreground">Powered by Groq</p>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Chat Messages */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4 pb-4">
-            {/* Welcome message */}
-            {chatMessages.length === 0 && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-2xl flex items-center justify-center">
-                  <Sparkles className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-2">Hi! I'm Vyuha AI 👋</h3>
-                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                  Ask me anything about tournaments, wallet, deposits, withdrawals, or how to use Vyuha Esports!
-                </p>
-                <div className="flex flex-wrap justify-center gap-2 mt-4">
-                  {['How to join a tournament?', 'Deposit not credited', 'Withdrawal process'].map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => {
-                        setChatInput(q);
-                      }}
-                      className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 rounded-full text-foreground transition-colors"
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {chatMessages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    msg.role === 'user'
-                      ? 'bg-primary text-primary-foreground rounded-br-md'
-                      : 'bg-card border border-border rounded-bl-md'
-                  }`}
-                >
-                  {msg.role === 'assistant' && (
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Bot className="h-3 w-3 text-primary" />
-                      <span className="text-[10px] font-medium text-primary">Vyuha AI</span>
-                    </div>
-                  )}
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                </div>
-              </div>
-            ))}
-
-            {isAiTyping && (
-              <div className="flex justify-start">
-                <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span className="text-sm text-muted-foreground">Vyuha AI is typing...</span>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
-        </ScrollArea>
-
-        {/* Chat Input */}
-        <div className="sticky bottom-0 bg-card border-t border-border p-4">
-          <div className="flex gap-2">
-            <Input
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAiChat()}
-              placeholder="Ask me anything about Vyuha..."
-              className="flex-1 bg-muted border-0"
-              disabled={isAiTyping}
-            />
-            <Button
-              onClick={handleAiChat}
-              disabled={!chatInput.trim() || isAiTyping}
-              size="icon"
-              className="bg-primary hover:bg-primary/90"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-[10px] text-muted-foreground text-center mt-2">
-            AI can make mistakes. For account issues, please raise a ticket.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const getUserDisplayName = () => {
+    if (profile?.full_name) return profile.full_name;
+    if (profile?.username) return profile.username;
+    return 'User';
+  };
 
   // Ticket Form View
   if (currentView === 'ticket') {
@@ -587,126 +531,173 @@ const HelpSupport = () => {
     );
   }
 
-  // Main View - Two options: AI or Raise Ticket
+  // Main View - AI Chat with FAQs
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header with user name and Raise Ticket button */}
       <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate(-1)}
+              className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 text-foreground" />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-gradient-to-br from-primary to-purple-600 rounded-lg">
+                <User className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-base font-bold text-foreground">Hi, {getUserDisplayName()}!</h1>
+                <p className="text-[10px] text-muted-foreground">How can we help you?</p>
+              </div>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setCurrentView('ticket')}
+            className="flex items-center gap-1.5"
           >
-            <ArrowLeft className="h-5 w-5 text-foreground" />
-          </button>
-          <h1 className="text-lg font-bold text-foreground">Help & Support</h1>
+            <Ticket className="h-4 w-4" />
+            Raise Ticket
+          </Button>
         </div>
       </header>
 
-      <div className="p-4 space-y-6">
-        {/* Welcome Section */}
-        <div className="text-center py-6">
-          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-2xl flex items-center justify-center">
-            <HelpCircle className="h-10 w-10 text-primary" />
+      {/* AI Chat Section */}
+      <div className="flex-1 flex flex-col">
+        {/* Chat Messages */}
+        <ScrollArea className="flex-1 p-4 min-h-[300px]">
+          <div className="space-y-4 pb-4">
+            {/* Welcome message when no messages */}
+            {chatMessages.length === 0 && (
+              <div className="text-center py-6">
+                <div className="w-14 h-14 mx-auto mb-3 bg-gradient-to-br from-primary/20 to-purple-600/20 rounded-2xl flex items-center justify-center">
+                  <Bot className="h-7 w-7 text-primary" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">Vyuha AI Assistant</h3>
+                <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-4">
+                  Ask me anything about tournaments, wallet, deposits, or how to use Vyuha!
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {['How to join tournament?', 'Deposit issue', 'Withdrawal status'].map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setChatInput(q)}
+                      className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 rounded-full text-foreground transition-colors"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {chatMessages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground rounded-br-md'
+                      : 'bg-card border border-border rounded-bl-md'
+                  }`}
+                >
+                  {msg.role === 'assistant' && (
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Bot className="h-3 w-3 text-primary" />
+                      <span className="text-[10px] font-medium text-primary">Vyuha AI</span>
+                    </div>
+                  )}
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                </div>
+              </div>
+            ))}
+
+            {isAiTyping && (
+              <div className="flex justify-start">
+                <div className="bg-card border border-border rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-sm text-muted-foreground">Vyuha AI is typing...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">How can we help you?</h2>
-          <p className="text-sm text-muted-foreground">
-            Choose an option below to get the help you need
-          </p>
+        </ScrollArea>
+
+        {/* Chat Input */}
+        <div className="bg-card border-t border-border p-4">
+          <div className="flex gap-2">
+            <Input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAiChat()}
+              placeholder="Type your problem or question..."
+              className="flex-1 bg-muted border-0"
+              disabled={isAiTyping}
+            />
+            <Button
+              onClick={handleAiChat}
+              disabled={!chatInput.trim() || isAiTyping}
+              size="icon"
+              className="bg-primary hover:bg-primary/90"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* FAQs Section */}
+      <div className="bg-card border-t border-border p-4">
+        <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-primary" />
+          Frequently Asked Questions
+        </h3>
+        <div className="space-y-2">
+          {faqs.map((faq, index) => (
+            <Collapsible
+              key={index}
+              open={openFaqIndex === index}
+              onOpenChange={(open) => setOpenFaqIndex(open ? index : null)}
+            >
+              <CollapsibleTrigger className="w-full">
+                <div className="flex items-center justify-between p-3 bg-muted/50 hover:bg-muted rounded-lg text-left transition-colors">
+                  <span className="text-sm font-medium text-foreground pr-2">{faq.question}</span>
+                  {openFaqIndex === index ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {faq.answer}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
         </div>
 
-        {/* Two Main Options */}
-        <div className="grid gap-4">
-          {/* AI Chat Option */}
-          <button
-            onClick={() => setCurrentView('ai-chat')}
-            className="relative overflow-hidden bg-gradient-to-br from-primary/10 to-purple-600/10 border border-primary/20 rounded-2xl p-6 text-left transition-all hover:scale-[1.02] hover:shadow-lg"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative">
-              <div className="flex items-center gap-4 mb-3">
-                <div className="p-3 bg-gradient-to-br from-primary to-purple-600 rounded-xl">
-                  <Bot className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-foreground">Ask Vyuha AI</h3>
-                  <p className="text-xs text-muted-foreground">Instant answers powered by AI</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Get instant help with common questions about tournaments, wallet, payments, and more. Available 24/7!
-              </p>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-primary/20 text-primary border-0">
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  Instant Response
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
-                  24/7
-                </Badge>
-              </div>
-            </div>
-          </button>
-
-          {/* Raise Ticket Option */}
-          <button
-            onClick={() => setCurrentView('ticket')}
-            className="relative overflow-hidden bg-card border border-border rounded-2xl p-6 text-left transition-all hover:scale-[1.02] hover:shadow-lg hover:border-primary/50"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-muted/50 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="relative">
-              <div className="flex items-center gap-4 mb-3">
-                <div className="p-3 bg-muted rounded-xl">
-                  <Ticket className="h-6 w-6 text-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-foreground">Raise a Ticket</h3>
-                  <p className="text-xs text-muted-foreground">Get help from our support team</p>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                For account-specific issues, payment problems, or complex queries that need human assistance.
-              </p>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  <MessageSquare className="h-3 w-3 mr-1" />
-                  Human Support
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  <Clock className="h-3 w-3 mr-1" />
-                  24-48 hours
-                </Badge>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* View Ticket History */}
+        {/* View Ticket History Link */}
         {tickets.length > 0 && (
           <Button
-            variant="outline"
-            className="w-full"
+            variant="ghost"
+            className="w-full mt-4 text-primary"
             onClick={() => setCurrentView('history')}
           >
             <Clock className="h-4 w-4 mr-2" />
             View My Tickets ({tickets.length})
           </Button>
         )}
-
-        {/* Quick Info */}
-        <div className="bg-muted/50 rounded-xl p-4">
-          <h4 className="font-medium text-foreground mb-2 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-primary" />
-            Quick Tips
-          </h4>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Try AI first for instant answers to common questions</li>
-            <li>• Raise a ticket for account-specific issues</li>
-            <li>• Include screenshots when reporting problems</li>
-            <li>• Check your ticket history for updates</li>
-          </ul>
-        </div>
       </div>
     </div>
   );
