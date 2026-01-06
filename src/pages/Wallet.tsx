@@ -446,7 +446,7 @@ const Wallet = () => {
           ) : (
             <div className="space-y-3">
               {filteredTransactions.map((txn) => {
-                const isCreditType = ['deposit', 'prize', 'prize_won', 'winning', 'admin_credit', 'commission', 'refund'].includes(txn.type);
+                const isCreditType = ['deposit', 'prize', 'prize_won', 'winning', 'admin_credit', 'commission', 'refund', 'bonus'].includes(txn.type);
                 return (
                   <div key={txn.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
                     <div className="flex items-center gap-3">
