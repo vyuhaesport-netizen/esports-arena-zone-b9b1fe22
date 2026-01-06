@@ -149,37 +149,25 @@ const PlayerStatsPage = () => {
     setClaimingBonus(milestone.points);
     
     try {
-      // Create bonus transaction record first (for tracking claims)
-      const { error: txError } = await supabase
-        .from('wallet_transactions')
-        .insert({
-          user_id: user.id,
-          type: 'bonus',
-          amount: milestone.bonus,
-          status: 'completed',
-          description: `Stats milestone bonus - ${milestone.points} points`
+      // Use secure RPC function to claim bonus
+      const { data, error } = await supabase.rpc('claim_stats_bonus', {
+        p_user_id: user.id,
+        p_milestone_points: milestone.points,
+        p_bonus_amount: milestone.bonus
+      });
+      
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string; bonus_amount?: number };
+      
+      if (!result.success) {
+        toast({
+          title: 'Cannot Claim Bonus',
+          description: result.error || 'Unable to claim bonus.',
+          variant: 'destructive',
         });
-      
-      if (txError) throw txError;
-      
-      // Get current balance
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('wallet_balance')
-        .eq('user_id', user.id)
-        .single();
-      
-      const currentBalance = profile?.wallet_balance || 0;
-      
-      // Update wallet balance (not withdrawable_balance)
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          wallet_balance: currentBalance + milestone.bonus
-        })
-        .eq('user_id', user.id);
-      
-      if (updateError) throw updateError;
+        return;
+      }
       
       triggerAchievementConfetti();
       setClaimedBonuses(prev => [...prev, milestone.points]);
@@ -191,7 +179,7 @@ const PlayerStatsPage = () => {
       console.error('Error claiming bonus:', error);
       toast({
         title: 'Error',
-        description: 'Failed to claim bonus. Please try again.',
+        description: error.message || 'Failed to claim bonus. Please try again.',
         variant: 'destructive',
       });
     } finally {

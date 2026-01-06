@@ -1819,6 +1819,14 @@ export type Database = {
         Returns: Json
       }
       check_user_ban_status: { Args: { p_user_id: string }; Returns: Json }
+      claim_stats_bonus: {
+        Args: {
+          p_bonus_amount: number
+          p_milestone_points: number
+          p_user_id: string
+        }
+        Returns: Json
+      }
       create_notification: {
         Args: {
           p_message: string

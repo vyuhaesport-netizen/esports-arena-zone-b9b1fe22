@@ -11,6 +11,148 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Function to fetch real-time platform data
+async function getPlatformContext(supabase: any, userId?: string): Promise<string> {
+  let context = '';
+  
+  try {
+    // Get active tournaments count
+    const { data: activeTournaments } = await supabase
+      .from('tournaments')
+      .select('id, title, game, entry_fee, current_prize_pool, max_participants, joined_users, status, start_date')
+      .in('status', ['active', 'upcoming', 'registration_open'])
+      .order('start_date', { ascending: true })
+      .limit(10);
+    
+    if (activeTournaments && activeTournaments.length > 0) {
+      context += `\n\n## LIVE PLATFORM DATA:\n`;
+      context += `### Active/Upcoming Tournaments (${activeTournaments.length}):\n`;
+      activeTournaments.forEach((t: any) => {
+        const joinedCount = t.joined_users?.length || 0;
+        context += `- "${t.title}" (${t.game}) - Entry: ₹${t.entry_fee || 0}, Prize Pool: ₹${t.current_prize_pool || 0}, Players: ${joinedCount}/${t.max_participants || '∞'}, Status: ${t.status}, Starts: ${t.start_date}\n`;
+      });
+    }
+    
+    // Get local tournaments
+    const { data: localTournaments } = await supabase
+      .from('local_tournaments')
+      .select('id, tournament_name, game, entry_fee, current_prize_pool, max_participants, joined_users, status, tournament_date, institution_name')
+      .in('status', ['active', 'upcoming', 'registration_open'])
+      .order('tournament_date', { ascending: true })
+      .limit(5);
+    
+    if (localTournaments && localTournaments.length > 0) {
+      context += `\n### Local Tournaments (${localTournaments.length}):\n`;
+      localTournaments.forEach((t: any) => {
+        const joinedCount = t.joined_users?.length || 0;
+        context += `- "${t.tournament_name}" at ${t.institution_name} (${t.game}) - Entry: ₹${t.entry_fee || 0}, Players: ${joinedCount}/${t.max_participants || '∞'}, Status: ${t.status}, Date: ${t.tournament_date}\n`;
+      });
+    }
+    
+    // Get total platform stats
+    const { count: totalUsers } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+    
+    const { count: totalTournaments } = await supabase
+      .from('tournaments')
+      .select('*', { count: 'exact', head: true });
+    
+    context += `\n### Platform Stats:\n`;
+    context += `- Total Registered Players: ${totalUsers || 0}\n`;
+    context += `- Total Tournaments Hosted: ${totalTournaments || 0}\n`;
+    
+    // If userId is provided, get user-specific data
+    if (userId) {
+      // Get user profile
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('username, wallet_balance, withdrawable_balance, in_game_name, preferred_game')
+        .eq('user_id', userId)
+        .single();
+      
+      if (userProfile) {
+        context += `\n### YOUR ACCOUNT INFO:\n`;
+        context += `- Username: ${userProfile.username || 'Not set'}\n`;
+        context += `- In-Game Name: ${userProfile.in_game_name || 'Not set'}\n`;
+        context += `- Wallet Balance: ₹${userProfile.wallet_balance || 0}\n`;
+        context += `- Withdrawable Balance: ₹${userProfile.withdrawable_balance || 0}\n`;
+        context += `- Preferred Game: ${userProfile.preferred_game || 'Not set'}\n`;
+      }
+      
+      // Get user's registered tournaments (My Match)
+      const { data: userRegistrations } = await supabase
+        .from('tournament_registrations')
+        .select(`
+          tournament_id,
+          status,
+          registered_at,
+          tournaments (
+            title,
+            game,
+            start_date,
+            status,
+            room_id,
+            room_password
+          )
+        `)
+        .eq('user_id', userId)
+        .order('registered_at', { ascending: false })
+        .limit(5);
+      
+      if (userRegistrations && userRegistrations.length > 0) {
+        context += `\n### YOUR REGISTERED MATCHES:\n`;
+        userRegistrations.forEach((reg: any) => {
+          const t = reg.tournaments;
+          if (t) {
+            context += `- "${t.title}" (${t.game}) - Status: ${t.status}, Match Date: ${t.start_date}`;
+            if (t.room_id && t.status === 'active') {
+              context += `, Room ID: ${t.room_id}, Password: ${t.room_password || 'N/A'}`;
+            }
+            context += `\n`;
+          }
+        });
+      }
+      
+      // Get user's Dhana balance
+      const { data: dhanaBalance } = await supabase
+        .from('dhana_balances')
+        .select('available_dhana, pending_dhana, total_earned')
+        .eq('user_id', userId)
+        .single();
+      
+      if (dhanaBalance) {
+        context += `\n### YOUR DHANA:\n`;
+        context += `- Available Dhana: ${dhanaBalance.available_dhana || 0}\n`;
+        context += `- Pending Dhana: ${dhanaBalance.pending_dhana || 0}\n`;
+        context += `- Total Earned: ${dhanaBalance.total_earned || 0}\n`;
+      }
+      
+      // Get user stats
+      const { data: userStats } = await supabase
+        .from('user_stats')
+        .select('first_place_count, second_place_count, third_place_count, tournament_wins, total_earnings')
+        .eq('user_id', userId)
+        .single();
+      
+      if (userStats) {
+        const statsPoints = (userStats.first_place_count * 10) + (userStats.second_place_count * 9) + (userStats.third_place_count * 8);
+        context += `\n### YOUR STATS:\n`;
+        context += `- 1st Place Wins: ${userStats.first_place_count || 0}\n`;
+        context += `- 2nd Place: ${userStats.second_place_count || 0}\n`;
+        context += `- 3rd Place: ${userStats.third_place_count || 0}\n`;
+        context += `- Total Tournament Wins: ${userStats.tournament_wins || 0}\n`;
+        context += `- Total Earnings: ₹${userStats.total_earnings || 0}\n`;
+        context += `- Stats Points: ${statsPoints}\n`;
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching platform context:', error);
+  }
+  
+  return context;
+}
+
 // Vyuha Platform Knowledge Base - System Prompt
 const VYUHA_SYSTEM_PROMPT = `You are Vyuha AI Assistant, the official support bot for Vyuha Esports - a premier gaming tournament platform in India.
 
@@ -72,11 +214,13 @@ const VYUHA_SYSTEM_PROMPT = `You are Vyuha AI Assistant, the official support bo
 4. Never share sensitive user data
 5. Keep responses concise but complete
 6. Use emojis sparingly to be friendly 🎮
+7. When users ask about their wallet, matches, or tournaments, use the LIVE PLATFORM DATA provided below
 
 IMPORTANT: 
 - Only answer questions related to Vyuha Esports platform
 - If asked about unrelated topics, politely redirect to Vyuha-related questions
-- If you don't know something specific about Vyuha, say so and suggest contacting support`;
+- If you don't know something specific about Vyuha, say so and suggest contacting support
+- You have access to REAL-TIME data about the platform, tournaments, and user's account - use it to give accurate answers!`;
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -181,13 +325,17 @@ Flag content that contains:
 - Inappropriate language
 - Cheating/hacking discussions
 Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"medium"|"high" }`;
+    } else {
+      // Fetch real-time platform context for support queries
+      const platformContext = await getPlatformContext(supabase, userId);
+      systemPrompt = VYUHA_SYSTEM_PROMPT + platformContext;
     }
 
     const model = config.ai_model || 'llama-3.3-70b-versatile';
     const maxTokens = parseInt(config.ai_max_tokens) || 1024;
     const temperature = parseFloat(config.ai_temperature) || 0.7;
 
-    console.log('Calling Groq API with type:', type, 'model:', model);
+    console.log('Calling Groq API with type:', type, 'model:', model, 'userId:', userId);
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
