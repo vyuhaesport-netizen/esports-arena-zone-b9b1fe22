@@ -172,7 +172,7 @@ Format: Start with an engaging title, then the update message.`;
         admin_id: adminId,
         title: `🤖 ${title}`,
         message: message,
-        broadcast_type: 'announcement',
+        broadcast_type: 'message',
         target_audience: 'all',
         is_published: true,
       })

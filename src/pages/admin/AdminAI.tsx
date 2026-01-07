@@ -30,8 +30,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Gauge
+  Gauge,
+  Radio
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface AIConfig {
   model: string;
@@ -68,6 +70,7 @@ interface UsageLog {
 }
 
 const AdminAI = () => {
+  const navigate = useNavigate();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -378,6 +381,27 @@ const AdminAI = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* AI Broadcast Quick Access */}
+        <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-purple-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Radio className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">AI Daily Broadcast</h3>
+                  <p className="text-sm text-muted-foreground">Automated daily content generation for Broadcast Channel</p>
+                </div>
+              </div>
+              <Button onClick={() => navigate('/admin/ai-broadcast')} variant="outline" className="border-primary/30">
+                <Radio className="w-4 h-4 mr-2" />
+                Manage AI Broadcast
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Token Usage Bars */}
         <div className="grid md:grid-cols-2 gap-4">

@@ -40,6 +40,7 @@ import AdminSEO from "./pages/admin/AdminSEO";
 import AdminZapupiMonitor from "./pages/admin/AdminZapupiMonitor";
 import AdminRules from "./pages/admin/AdminRules";
 import AdminAI from "./pages/admin/AdminAI";
+import AdminAIBroadcast from "./pages/admin/AdminAIBroadcast";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerHub from "./pages/organizer/OrganizerHub";
 import OrganizerWallet from "./pages/organizer/OrganizerWallet";
@@ -255,6 +256,7 @@ const AppRoutes = () => {
       <Route path="/admin/zapupi-monitor" element={<ProtectedRoute><AdminZapupiMonitor /></ProtectedRoute>} />
       <Route path="/admin/rules" element={<ProtectedRoute><AdminRules /></ProtectedRoute>} />
       <Route path="/admin/ai" element={<ProtectedRoute><AdminAI /></ProtectedRoute>} />
+      <Route path="/admin/ai-broadcast" element={<ProtectedRoute><AdminAIBroadcast /></ProtectedRoute>} />
       
       {/* Organizer Routes */}
       <Route path="/organizer" element={<ProtectedRoute><OrganizerHub /></ProtectedRoute>} />
