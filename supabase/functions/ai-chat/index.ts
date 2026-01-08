@@ -331,7 +331,8 @@ Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"me
       systemPrompt = VYUHA_SYSTEM_PROMPT + platformContext;
     }
 
-    const model = config.ai_model || 'llama-3.3-70b-versatile';
+    // Use supported Groq model - mixtral-8x7b-32768 was decommissioned
+    const model = config.ai_model || 'llama-3.1-8b-instant';
     const maxTokens = parseInt(config.ai_max_tokens) || 1024;
     const temperature = parseFloat(config.ai_temperature) || 0.7;
 
