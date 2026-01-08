@@ -28,6 +28,13 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import {
   ArrowLeft,
   Users,
   Plus,
@@ -45,7 +52,13 @@ import {
   Send,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  MoreVertical,
+  Settings,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Trash2
 } from 'lucide-react';
 
 interface PlayerTeam {
@@ -120,6 +133,7 @@ const TeamPage = () => {
   const navigate = useNavigate();
 
   const games = ['Free Fire', 'BGMI', 'Call of Duty Mobile', 'PUBG New State', 'Clash Royale'];
+  const MAX_TEAM_MEMBERS = 6;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -391,8 +405,8 @@ const TeamPage = () => {
       return;
     }
 
-    if (team.memberCount >= team.max_members) {
-      toast({ title: 'Team Full', description: 'This team has reached maximum capacity.', variant: 'destructive' });
+    if (team.memberCount >= MAX_TEAM_MEMBERS) {
+      toast({ title: 'Team Full', description: 'This team has reached maximum capacity (6 players).', variant: 'destructive' });
       return;
     }
 
@@ -431,9 +445,9 @@ const TeamPage = () => {
     if (!user || !myTeam) return;
 
     try {
-      // Check capacity
-      if (teamMembers.length >= myTeam.max_members) {
-        toast({ title: 'Team Full', description: 'Cannot approve - team is at maximum capacity.', variant: 'destructive' });
+      // Check capacity - use MAX_TEAM_MEMBERS constant
+      if (teamMembers.length >= MAX_TEAM_MEMBERS) {
+        toast({ title: 'Team Full', description: 'Cannot approve - team is at maximum capacity (6 players).', variant: 'destructive' });
         return;
       }
 
@@ -623,14 +637,17 @@ const TeamPage = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-card border-b border-border">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <button onClick={() => navigate('/profile')} className="p-2 -ml-2">
+      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
+        <div className="flex items-center gap-3 px-5 h-16">
+          <button 
+            onClick={() => navigate('/profile')} 
+            className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-full" />
+          <img src={vyuhaLogo} alt="Vyuha" className="w-9 h-9 rounded-full shadow-sm" />
           <div className="flex-1">
-            <h1 className="font-gaming font-bold">Teams</h1>
+            <h1 className="font-gaming font-bold text-lg">Teams</h1>
             <p className="text-xs text-muted-foreground">Build your squad for duo/squad matches</p>
           </div>
           {!myTeam && (
@@ -638,7 +655,7 @@ const TeamPage = () => {
               variant="gaming"
               size="sm"
               onClick={() => setCreateDialogOpen(true)}
-              className="gap-1"
+              className="gap-1.5 shadow-md hover:shadow-lg transition-all"
             >
               <Plus className="h-4 w-4" />
               Create
@@ -649,7 +666,7 @@ const TeamPage = () => {
 
       {/* Tabs - Conditional based on team membership */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <div className="px-4 pt-3">
+        <div className="px-5 pt-4">
           {/* If user has a team, show different tab layout */}
           {myTeam ? (
             isLeader ? (
@@ -699,13 +716,12 @@ const TeamPage = () => {
         </div>
 
         {/* My Team Tab */}
-        <TabsContent value="my-team" className="flex-1 mt-0 p-4">
+        <TabsContent value="my-team" className="flex-1 mt-0 px-5 py-4">
           {myTeam ? (
-            <div className="space-y-4">
+            <div className="space-y-5 animate-fade-in">
               {/* Team Card - Enhanced Design */}
-              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-orange-500/5 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
-                <CardHeader className="pb-3 relative">
+              <Card className="border border-border/60 bg-gradient-to-br from-card to-muted/20 overflow-hidden shadow-sm">
+                <CardHeader className="pb-4 relative">
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shadow-lg">
                       <Users className="h-8 w-8 text-white" />
@@ -722,107 +738,133 @@ const TeamPage = () => {
                       {myTeam.slogan && (
                         <p className="text-sm text-muted-foreground italic mt-1">"{myTeam.slogan}"</p>
                       )}
-                      <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2 mt-2.5 flex-wrap">
                         {myTeam.game && (
-                          <span className="flex items-center gap-1 bg-muted/80 px-2 py-0.5 rounded-full text-xs">
+                          <Badge variant="secondary" className="text-xs gap-1">
                             <Gamepad2 className="h-3 w-3" /> {myTeam.game}
-                          </span>
+                          </Badge>
                         )}
-                        <span className="flex items-center gap-1 bg-muted/80 px-2 py-0.5 rounded-full text-xs">
-                          <Users className="h-3 w-3" /> {teamMembers.length}/{myTeam.max_members}
-                        </span>
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Users className="h-3 w-3" /> {teamMembers.length}/{MAX_TEAM_MEMBERS}
+                        </Badge>
                       </div>
                     </div>
+                    
+                    {/* Three-dots Settings Menu - Only for Leaders */}
+                    {isLeader && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-muted">
+                            <MoreVertical className="h-5 w-5 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-52">
+                          <div className="px-2 py-1.5">
+                            <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                              <Settings className="h-3.5 w-3.5" /> Team Settings
+                            </p>
+                          </div>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={toggleTeamVisibility} className="cursor-pointer gap-2">
+                            {myTeam.is_open_for_players ? (
+                              <>
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                <span>Hide from Browse</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4 text-green-500" />
+                                <span>Show in Browse</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={toggleTeamApproval} className="cursor-pointer gap-2">
+                            {myTeam.requires_approval ? (
+                              <>
+                                <Check className="h-4 w-4 text-blue-500" />
+                                <span>Allow Direct Join</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="h-4 w-4 text-orange-500" />
+                                <span>Require Approval</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={handleLeaveTeam} 
+                            className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span>Disband Team</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
                   
                   {/* Status Badges */}
-                  <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-4 flex-wrap">
                     {myTeam.is_open_for_players ? (
-                      <Badge variant="outline" className="text-green-600 border-green-600/30 bg-green-500/10 text-xs">
-                        <Globe className="h-3 w-3 mr-1" /> Visible to Others
+                      <Badge variant="outline" className="text-green-600 border-green-600/30 bg-green-500/10 text-xs gap-1">
+                        <Eye className="h-3 w-3" /> Visible
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-muted-foreground bg-muted/50 text-xs">
-                        Hidden from Browse
+                      <Badge variant="outline" className="text-muted-foreground bg-muted/50 text-xs gap-1">
+                        <EyeOff className="h-3 w-3" /> Hidden
                       </Badge>
                     )}
                     {myTeam.requires_approval ? (
-                      <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/10 text-xs">
-                        <Clock className="h-3 w-3 mr-1" /> Approval Required
+                      <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/10 text-xs gap-1">
+                        <ShieldCheck className="h-3 w-3" /> Approval Required
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-blue-500 border-blue-500/30 bg-blue-500/10 text-xs">
-                        <Check className="h-3 w-3 mr-1" /> Direct Join
+                      <Badge variant="outline" className="text-blue-500 border-blue-500/30 bg-blue-500/10 text-xs gap-1">
+                        <Check className="h-3 w-3" /> Direct Join
                       </Badge>
                     )}
                   </div>
                 </CardHeader>
                 
                 <CardContent className="pt-0">
-                  {/* Leader Actions */}
-                  {isLeader && (
-                    <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-muted/30 rounded-xl border border-border/50">
-                      <p className="col-span-2 text-xs font-medium text-muted-foreground mb-1">Team Settings</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleTeamVisibility}
-                        className="text-xs h-9"
-                      >
-                        {myTeam.is_open_for_players ? (
-                          <><Globe className="h-3.5 w-3.5 mr-1.5" /> Hide Team</>
-                        ) : (
-                          <><Globe className="h-3.5 w-3.5 mr-1.5" /> Show Team</>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={toggleTeamApproval}
-                        className="text-xs h-9"
-                      >
-                        {myTeam.requires_approval ? (
-                          <><Check className="h-3.5 w-3.5 mr-1.5" /> Allow Direct</>
-                        ) : (
-                          <><Clock className="h-3.5 w-3.5 mr-1.5" /> Require Approval</>
-                        )}
-                      </Button>
-                    </div>
-                  )}
 
                   {/* Pending Requests Alert - Only for Leaders */}
                   {isLeader && joinRequests.length > 0 && (
                     <div 
                       onClick={() => setActiveTab('requests')}
-                      className="p-4 mb-4 bg-gradient-to-r from-primary/15 to-orange-500/10 border border-primary/30 rounded-xl cursor-pointer hover:from-primary/20 hover:to-orange-500/15 transition-all"
+                      className="p-4 mb-5 bg-gradient-to-r from-primary/10 to-orange-500/5 border border-primary/20 rounded-xl cursor-pointer hover:border-primary/40 transition-all group"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <div className="w-11 h-11 rounded-full bg-primary/15 flex items-center justify-center group-hover:scale-105 transition-transform">
                           <Inbox className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
                           <span className="text-sm font-semibold">{joinRequests.length} pending request{joinRequests.length > 1 ? 's' : ''}</span>
                           <p className="text-xs text-muted-foreground">Tap to review and approve players</p>
                         </div>
-                        <Badge className="bg-primary text-primary-foreground animate-pulse">{joinRequests.length}</Badge>
+                        <Badge className="bg-primary text-primary-foreground">{joinRequests.length}</Badge>
                       </div>
                     </div>
                   )}
 
                   {/* Team Members */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-semibold">Team Members</p>
-                      <Badge variant="secondary" className="text-xs">{teamMembers.length}/{myTeam.max_members}</Badge>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-semibold flex items-center gap-2">
+                        <Users className="h-4 w-4 text-muted-foreground" /> Team Members
+                      </p>
+                      <Badge variant="secondary" className="text-xs">{teamMembers.length}/{MAX_TEAM_MEMBERS}</Badge>
                     </div>
                     {teamMembers.map((member, index) => (
                       <div
                         key={member.id}
-                        className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                        className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 ${
                           member.role === 'leader' 
-                            ? 'bg-gradient-to-r from-primary/10 to-orange-500/5 border border-primary/20' 
-                            : 'bg-muted/50 hover:bg-muted/70'
+                            ? 'bg-gradient-to-r from-primary/8 to-orange-500/5 border border-primary/15' 
+                            : 'bg-muted/40 hover:bg-muted/60 border border-transparent'
                         }`}
+                        style={{ animationDelay: `${index * 50}ms` }}
                       >
                         <Avatar className="h-11 w-11 border-2 border-background shadow-sm">
                           <AvatarImage src={member.profile?.avatar_url || ''} />
@@ -855,7 +897,7 @@ const TeamPage = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveMember(member.id, member.user_id)}
-                            className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
+                            className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                           >
                             <UserMinus className="h-4 w-4" />
                           </Button>
@@ -864,28 +906,30 @@ const TeamPage = () => {
                     ))}
                   </div>
 
-                  {/* Leave/Disband Button */}
-                  <Button
-                    variant="outline"
-                    className="w-full mt-5 text-destructive border-destructive/30 hover:bg-destructive/10 h-11"
-                    onClick={handleLeaveTeam}
-                  >
-                    {isLeader ? 'Disband Team' : 'Leave Team'}
-                  </Button>
+                  {/* Leave Button - Only for non-leaders */}
+                  {!isLeader && (
+                    <Button
+                      variant="outline"
+                      className="w-full mt-6 text-destructive border-destructive/30 hover:bg-destructive/10 h-11 transition-colors"
+                      onClick={handleLeaveTeam}
+                    >
+                      Leave Team
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>
           ) : (
-            <div className="text-center py-16">
-              <div className="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
-                <Users className="h-12 w-12 text-primary/50" />
+            <div className="text-center py-16 animate-fade-in">
+              <div className="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/15 to-orange-500/10 flex items-center justify-center">
+                <Users className="h-12 w-12 text-primary/40" />
               </div>
               <h3 className="font-gaming text-xl font-bold mb-2">No Team Yet</h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
                 Create your own team to lead, or browse and request to join existing squads
               </p>
               <div className="flex gap-3 justify-center">
-                <Button variant="gaming" size="lg" onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                <Button variant="gaming" size="lg" onClick={() => setCreateDialogOpen(true)} className="gap-2 shadow-md">
                   <Plus className="h-5 w-5" /> Create Team
                 </Button>
                 <Button variant="outline" size="lg" onClick={() => setActiveTab('browse')} className="gap-2">
@@ -897,26 +941,26 @@ const TeamPage = () => {
         </TabsContent>
 
         {/* Browse Teams Tab - Only visible when user has no team */}
-        <TabsContent value="browse" className="flex-1 mt-0 p-4">
+        <TabsContent value="browse" className="flex-1 mt-0 px-5 py-4 animate-fade-in">
           {/* Search */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative mb-5">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search teams by name or game..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 h-11 bg-muted/30 border-border/60"
             />
           </div>
 
           {/* Create Team CTA */}
-          <Card className="mb-4 border-dashed border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-orange-500/5">
+          <Card className="mb-5 border-dashed border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-orange-500/3 hover:border-primary/30 transition-colors">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
                 <p className="font-semibold text-sm">Want to lead?</p>
                 <p className="text-xs text-muted-foreground">Create your own team and recruit players</p>
               </div>
-              <Button variant="gaming" size="sm" onClick={() => setCreateDialogOpen(true)}>
+              <Button variant="gaming" size="sm" onClick={() => setCreateDialogOpen(true)} className="shadow-sm">
                 <Plus className="h-4 w-4 mr-1" /> Create
               </Button>
             </CardContent>
@@ -926,7 +970,7 @@ const TeamPage = () => {
             Available Teams ({filteredOpenTeams.length})
           </p>
 
-          <ScrollArea className="h-[calc(100vh-380px)]">
+          <ScrollArea className="h-[calc(100vh-400px)]">
             <div className="space-y-3">
               {filteredOpenTeams.length === 0 ? (
                 <div className="text-center py-12">
@@ -935,22 +979,26 @@ const TeamPage = () => {
                   <p className="text-xs text-muted-foreground mt-1">Try creating your own team!</p>
                 </div>
               ) : (
-                filteredOpenTeams.map((team) => (
-                  <Card key={team.id} className="border-border hover:border-primary/30 transition-colors">
+                filteredOpenTeams.map((team, index) => (
+                  <Card 
+                    key={team.id} 
+                    className="border-border/60 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-orange-500/15 flex items-center justify-center">
                           <Users className="h-6 w-6 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h4 className="font-semibold text-sm truncate">{team.name}</h4>
                             {team.requires_approval ? (
-                              <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500/30">
+                              <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500/30 bg-orange-500/5">
                                 Approval
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30">
+                              <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30 bg-green-500/5">
                                 Direct
                               </Badge>
                             )}
@@ -958,22 +1006,23 @@ const TeamPage = () => {
                           {team.slogan && (
                             <p className="text-xs text-muted-foreground italic truncate">"{team.slogan}"</p>
                           )}
-                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
                             {team.game && (
                               <Badge variant="secondary" className="text-[10px] px-1.5">
                                 {team.game}
                               </Badge>
                             )}
-                            <span>{team.memberCount}/{team.max_members}</span>
+                            <span>{team.memberCount}/{MAX_TEAM_MEMBERS}</span>
                           </div>
                         </div>
                         <Button
                           variant={pendingRequestsForTeam(team.id) ? "outline" : "gaming"}
                           size="sm"
                           onClick={() => handleJoinTeam(team)}
-                          disabled={!!myTeam || team.memberCount >= team.max_members || pendingRequestsForTeam(team.id)}
+                          disabled={!!myTeam || team.memberCount >= MAX_TEAM_MEMBERS || pendingRequestsForTeam(team.id)}
+                          className="shadow-sm"
                         >
-                          {team.memberCount >= team.max_members ? (
+                          {team.memberCount >= MAX_TEAM_MEMBERS ? (
                             'Full'
                           ) : pendingRequestsForTeam(team.id) ? (
                             <><Clock className="h-3.5 w-3.5 mr-1" /> Pending</>
@@ -984,7 +1033,7 @@ const TeamPage = () => {
                           )}
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-muted-foreground mt-2.5">
                         Leader: {team.leaderName}
                       </p>
                     </CardContent>
@@ -996,7 +1045,7 @@ const TeamPage = () => {
         </TabsContent>
 
         {/* Requests Tab */}
-        <TabsContent value="requests" className="flex-1 mt-0 p-4">
+        <TabsContent value="requests" className="flex-1 mt-0 px-5 py-4 animate-fade-in">
           {isLeader && myTeam ? (
             // Leader's inbox
             <div className="space-y-4">
@@ -1053,7 +1102,7 @@ const TeamPage = () => {
                               size="sm"
                               className="flex-1"
                               onClick={() => handleApproveRequest(request)}
-                              disabled={teamMembers.length >= myTeam.max_members}
+                              disabled={teamMembers.length >= MAX_TEAM_MEMBERS}
                             >
                               <Check className="h-4 w-4 mr-1" /> Approve
                             </Button>
