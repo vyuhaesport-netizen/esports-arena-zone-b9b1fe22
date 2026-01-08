@@ -212,7 +212,7 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] min-h-[400px] bg-muted/20 rounded-xl border border-border/60 overflow-hidden">
+    <div className="fixed inset-0 top-16 bottom-16 z-30 flex flex-col bg-background">
       {/* Chat Header */}
       <div className="px-4 py-3 bg-card border-b border-border/60 flex items-center gap-2">
         <MessageCircle className="h-5 w-5 text-primary" />

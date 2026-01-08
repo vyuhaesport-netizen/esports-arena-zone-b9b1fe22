@@ -652,6 +652,22 @@ const TeamPage = () => {
             <h1 className="font-gaming font-bold text-lg">Teams</h1>
             <p className="text-xs text-muted-foreground">Build your squad for duo/squad matches</p>
           </div>
+          
+          {/* Leader Requests Icon in Header */}
+          {isLeader && myTeam && (
+            <button
+              onClick={() => setActiveTab('requests')}
+              className="relative p-2 rounded-full hover:bg-muted transition-colors"
+            >
+              <Inbox className="h-5 w-5 text-muted-foreground" />
+              {joinRequests.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-[10px] rounded-full flex items-center justify-center text-primary-foreground font-bold animate-pulse">
+                  {joinRequests.length}
+                </span>
+              )}
+            </button>
+          )}
+          
           {!myTeam && (
             <Button
               variant="gaming"
@@ -672,8 +688,8 @@ const TeamPage = () => {
           {/* If user has a team, show different tab layout */}
           {myTeam ? (
             isLeader ? (
-              // Leader: My Team + Chat + Requests
-              <TabsList className="w-full grid grid-cols-3">
+              // Leader: My Team + Chat (Requests moved to header icon)
+              <TabsList className="w-full grid grid-cols-2">
                 <TabsTrigger value="my-team" className="gap-1.5 text-xs">
                   <Shield className="h-3.5 w-3.5" />
                   Team
@@ -681,15 +697,6 @@ const TeamPage = () => {
                 <TabsTrigger value="chat" className="gap-1.5 text-xs">
                   <MessageCircle className="h-3.5 w-3.5" />
                   Chat
-                </TabsTrigger>
-                <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
-                  <Inbox className="h-3.5 w-3.5" />
-                  Requests
-                  {joinRequests.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-[10px] rounded-full flex items-center justify-center text-primary-foreground font-bold animate-pulse">
-                      {joinRequests.length}
-                    </span>
-                  )}
                 </TabsTrigger>
               </TabsList>
             ) : (
@@ -1054,8 +1061,8 @@ const TeamPage = () => {
           </ScrollArea>
         </TabsContent>
 
-        {/* Chat Tab */}
-        <TabsContent value="chat" className="flex-1 mt-0 px-5 py-4 animate-fade-in">
+        {/* Chat Tab - Full Screen */}
+        <TabsContent value="chat" className="flex-1 mt-0 animate-fade-in">
           {myTeam && (
             <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
           )}
