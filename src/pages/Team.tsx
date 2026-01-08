@@ -58,8 +58,10 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  Trash2
+  Trash2,
+  MessageCircle
 } from 'lucide-react';
+import TeamChat from '@/components/TeamChat';
 
 interface PlayerTeam {
   id: string;
@@ -670,11 +672,15 @@ const TeamPage = () => {
           {/* If user has a team, show different tab layout */}
           {myTeam ? (
             isLeader ? (
-              // Leader: My Team + Requests only
-              <TabsList className="w-full grid grid-cols-2">
+              // Leader: My Team + Chat + Requests
+              <TabsList className="w-full grid grid-cols-3">
                 <TabsTrigger value="my-team" className="gap-1.5 text-xs">
                   <Shield className="h-3.5 w-3.5" />
-                  My Team
+                  Team
+                </TabsTrigger>
+                <TabsTrigger value="chat" className="gap-1.5 text-xs">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Chat
                 </TabsTrigger>
                 <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
                   <Inbox className="h-3.5 w-3.5" />
@@ -687,11 +693,15 @@ const TeamPage = () => {
                 </TabsTrigger>
               </TabsList>
             ) : (
-              // Member (not leader): Only My Team tab
-              <TabsList className="w-full">
-                <TabsTrigger value="my-team" className="w-full gap-1.5 text-xs">
+              // Member (not leader): My Team + Chat
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="my-team" className="gap-1.5 text-xs">
                   <Shield className="h-3.5 w-3.5" />
                   My Team
+                </TabsTrigger>
+                <TabsTrigger value="chat" className="gap-1.5 text-xs">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Chat
                 </TabsTrigger>
               </TabsList>
             )
@@ -1042,6 +1052,13 @@ const TeamPage = () => {
               )}
             </div>
           </ScrollArea>
+        </TabsContent>
+
+        {/* Chat Tab */}
+        <TabsContent value="chat" className="flex-1 mt-0 px-5 py-4 animate-fade-in">
+          {myTeam && (
+            <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
+          )}
         </TabsContent>
 
         {/* Requests Tab */}
