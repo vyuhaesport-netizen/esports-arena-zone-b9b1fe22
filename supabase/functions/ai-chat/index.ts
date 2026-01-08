@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const groqApiKey = Deno.env.get('GROQ_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -10,6 +10,14 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Fallback models in order of preference
+const FALLBACK_MODELS = [
+  'google/gemini-2.5-flash',
+  'google/gemini-2.5-flash-lite',
+  'openai/gpt-5-mini',
+  'openai/gpt-5-nano',
+];
 
 // Function to fetch real-time platform data
 async function getPlatformContext(supabase: any, userId?: string): Promise<string> {
@@ -222,6 +230,74 @@ IMPORTANT:
 - If you don't know something specific about Vyuha, say so and suggest contacting support
 - You have access to REAL-TIME data about the platform, tournaments, and user's account - use it to give accurate answers!`;
 
+// Function to call AI with fallback models
+async function callAIWithFallback(
+  systemPrompt: string,
+  messages: any[],
+  supabase: any,
+  userId: string | undefined,
+  requestType: string,
+  startTime: number
+): Promise<{ response: string; usage: any; model: string }> {
+  
+  for (let i = 0; i < FALLBACK_MODELS.length; i++) {
+    const model = FALLBACK_MODELS[i];
+    console.log(`Attempting AI call with model: ${model} (attempt ${i + 1}/${FALLBACK_MODELS.length})`);
+    
+    try {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          max_tokens: 1024,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Model ${model} failed with status ${response.status}:`, errorText);
+        
+        // If rate limited (429) or payment required (402), don't try fallbacks
+        if (response.status === 429) {
+          throw { status: 429, message: 'Rate limit exceeded. Please try again in a moment.' };
+        }
+        if (response.status === 402) {
+          throw { status: 402, message: 'AI service credits exhausted. Please contact admin.' };
+        }
+        
+        // For other errors, try next model
+        continue;
+      }
+
+      const data = await response.json();
+      const generatedText = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+      const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+      
+      console.log(`Successfully got response from model: ${model}, tokens used: ${usage.total_tokens}`);
+      
+      return { response: generatedText, usage, model };
+    } catch (error: any) {
+      // If it's a rate limit or payment error, throw immediately
+      if (error.status === 429 || error.status === 402) {
+        throw error;
+      }
+      console.error(`Error with model ${model}:`, error);
+      // Continue to next model
+    }
+  }
+  
+  // All models failed
+  throw new Error('All AI models failed. Please try again later.');
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -234,8 +310,8 @@ serve(async (req) => {
   try {
     const { messages, type = 'support', userId } = await req.json();
 
-    if (!groqApiKey) {
-      console.error('GROQ_API_KEY is not configured');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY is not configured');
       return new Response(
         JSON.stringify({ error: 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -293,25 +369,6 @@ serve(async (req) => {
       );
     }
 
-    // Get AI configuration
-    const { data: configData } = await supabase
-      .from('platform_settings')
-      .select('setting_key, setting_value')
-      .in('setting_key', ['ai_model', 'ai_max_tokens', 'ai_temperature', 'ai_enabled']);
-
-    const config: Record<string, string> = {};
-    configData?.forEach(s => {
-      config[s.setting_key] = s.setting_value;
-    });
-
-    // Check if AI is globally enabled
-    if (config.ai_enabled === 'false') {
-      return new Response(
-        JSON.stringify({ error: 'AI service is currently disabled' }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     let systemPrompt = VYUHA_SYSTEM_PROMPT;
     
     // Different system prompts for different use cases
@@ -331,62 +388,19 @@ Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"me
       systemPrompt = VYUHA_SYSTEM_PROMPT + platformContext;
     }
 
-    // Use supported Groq model - mixtral-8x7b-32768 was decommissioned
-    const model = config.ai_model || 'llama-3.1-8b-instant';
-    const maxTokens = parseInt(config.ai_max_tokens) || 1024;
-    const temperature = parseFloat(config.ai_temperature) || 0.7;
+    console.log('Calling AI with type:', type, 'userId:', userId);
 
-    console.log('Calling Groq API with type:', type, 'model:', model, 'userId:', userId);
-
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${groqApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages
-        ],
-        temperature,
-        max_tokens: maxTokens,
-      }),
-    });
+    // Call AI with fallback models
+    const { response: generatedText, usage, model } = await callAIWithFallback(
+      systemPrompt,
+      messages,
+      supabase,
+      userId,
+      type,
+      startTime
+    );
 
     const responseTime = Date.now() - startTime;
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Groq API error:', response.status, errorText);
-
-      // Log failed request
-      await supabase.from('ai_usage_logs').insert({
-        user_id: userId || null,
-        request_type: type,
-        model,
-        response_time_ms: responseTime,
-        status: 'error',
-        error_message: errorText.substring(0, 500),
-      });
-      
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
-      return new Response(
-        JSON.stringify({ error: 'AI service temporarily unavailable' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const data = await response.json();
-    const generatedText = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
-    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
     // Log successful request
     await supabase.from('ai_usage_logs').insert({
@@ -400,16 +414,16 @@ Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"me
       status: 'success',
     });
 
-    console.log('Groq API response received successfully, tokens used:', usage.total_tokens);
-
     return new Response(
       JSON.stringify({ response: generatedText, usage }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error: unknown) {
+  } catch (error: any) {
     const responseTime = Date.now() - startTime;
     console.error('Error in ai-chat function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+    
+    const errorMessage = error.message || 'An unexpected error occurred';
+    const statusCode = error.status || 500;
 
     // Log error
     try {
@@ -426,7 +440,7 @@ Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"me
 
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

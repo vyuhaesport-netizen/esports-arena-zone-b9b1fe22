@@ -29,48 +29,85 @@ const Leaderboard = () => {
 
   const fetchLeaderboardData = async () => {
     try {
-      // Fetch profiles with earnings data from wallet_transactions
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, username, full_name, avatar_url, preferred_game');
+      // Fetch user stats first - this is the source of truth for stats points
+      // Using range to fetch more than 1000 if needed
+      let allUserStats: any[] = [];
+      let offset = 0;
+      const batchSize = 1000;
+      
+      while (true) {
+        const { data: statsData, error } = await supabase
+          .from('user_stats')
+          .select('user_id, first_place_count, second_place_count, third_place_count, tournament_wins, total_earnings')
+          .range(offset, offset + batchSize - 1)
+          .order('first_place_count', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching user stats:', error);
+          break;
+        }
+        
+        if (!statsData || statsData.length === 0) break;
+        
+        allUserStats = [...allUserStats, ...statsData];
+        
+        if (statsData.length < batchSize) break;
+        offset += batchSize;
+      }
 
-      // Fetch completed prize earnings
-      const { data: earningsData } = await supabase
-        .from('wallet_transactions')
-        .select('user_id, amount')
-        .eq('type', 'prize')
-        .eq('status', 'completed');
-
-      // Fetch user stats for stats points calculation
-      const { data: userStatsData } = await supabase
-        .from('user_stats')
-        .select('user_id, first_place_count, second_place_count, third_place_count, tournament_wins');
-
-      // Calculate total earnings per user
-      const earningsMap: Record<string, number> = {};
-      earningsData?.forEach((txn) => {
-        earningsMap[txn.user_id] = (earningsMap[txn.user_id] || 0) + Math.abs(txn.amount);
-      });
+      console.log(`Fetched ${allUserStats.length} user stats records`);
 
       // Calculate stats points per user (1st=10, 2nd=9, 3rd=8 points)
-      const statsPointsMap: Record<string, number> = {};
-      const winsMap: Record<string, number> = {};
-      userStatsData?.forEach((stats) => {
+      const statsPointsMap: Record<string, { points: number; wins: number; earnings: number }> = {};
+      allUserStats.forEach((stats) => {
         const first = stats.first_place_count || 0;
         const second = stats.second_place_count || 0;
         const third = stats.third_place_count || 0;
         const points = (first * 10) + (second * 9) + (third * 8);
-        statsPointsMap[stats.user_id] = points;
-        winsMap[stats.user_id] = stats.tournament_wins || 0;
+        statsPointsMap[stats.user_id] = {
+          points,
+          wins: stats.tournament_wins || 0,
+          earnings: stats.total_earnings || 0,
+        };
       });
 
-      // Combine data
-      const leaderboardData: LeaderboardUser[] = (profilesData || []).map((profile) => ({
-        ...profile,
-        total_earnings: earningsMap[profile.user_id] || 0,
-        total_wins: winsMap[profile.user_id] || 0,
-        stats_points: statsPointsMap[profile.user_id] || 0,
-      }));
+      // Get top user IDs based on stats points for profile fetching
+      const topUserIdsByPoints = Object.entries(statsPointsMap)
+        .filter(([_, data]) => data.points > 0)
+        .sort((a, b) => b[1].points - a[1].points)
+        .slice(0, 100)
+        .map(([userId]) => userId);
+
+      const topUserIdsByEarnings = Object.entries(statsPointsMap)
+        .filter(([_, data]) => data.earnings > 0)
+        .sort((a, b) => b[1].earnings - a[1].earnings)
+        .slice(0, 100)
+        .map(([userId]) => userId);
+
+      // Combine unique user IDs
+      const uniqueUserIds = [...new Set([...topUserIdsByPoints, ...topUserIdsByEarnings])];
+
+      // Fetch profiles only for top users
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, username, full_name, avatar_url, preferred_game')
+        .in('user_id', uniqueUserIds);
+
+      // Create profile map
+      const profileMap: Record<string, any> = {};
+      profilesData?.forEach((profile) => {
+        profileMap[profile.user_id] = profile;
+      });
+
+      // Build leaderboard data
+      const leaderboardData: LeaderboardUser[] = uniqueUserIds
+        .filter(userId => profileMap[userId])
+        .map((userId) => ({
+          ...profileMap[userId],
+          total_earnings: statsPointsMap[userId]?.earnings || 0,
+          total_wins: statsPointsMap[userId]?.wins || 0,
+          stats_points: statsPointsMap[userId]?.points || 0,
+        }));
 
       // Sort by earnings
       const sortedByEarnings = [...leaderboardData]
