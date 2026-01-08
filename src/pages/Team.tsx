@@ -93,7 +93,7 @@ interface JoinRequest {
 }
 
 const TeamPage = () => {
-  const [activeTab, setActiveTab] = useState('my-team');
+  const [activeTab, setActiveTab] = useState('browse'); // Default to browse for users without team
   const [loading, setLoading] = useState(true);
   const [myTeam, setMyTeam] = useState<PlayerTeam | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -134,6 +134,17 @@ const TeamPage = () => {
       fetchMyRequests();
     }
   }, [user]);
+
+  // Set correct default tab based on team membership
+  useEffect(() => {
+    if (!loading) {
+      if (myTeam) {
+        setActiveTab('my-team');
+      } else {
+        setActiveTab('browse');
+      }
+    }
+  }, [myTeam, loading]);
 
   const fetchMyTeam = async () => {
     if (!user) return;
@@ -636,147 +647,186 @@ const TeamPage = () => {
         </div>
       </header>
 
-      {/* Tabs */}
+      {/* Tabs - Conditional based on team membership */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <div className="px-4 pt-3">
-          <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="my-team" className="gap-1.5 text-xs">
-              <Shield className="h-3.5 w-3.5" />
-              My Team
-            </TabsTrigger>
-            <TabsTrigger value="browse" className="gap-1.5 text-xs">
-              <Globe className="h-3.5 w-3.5" />
-              Browse
-            </TabsTrigger>
-            <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
-              <Inbox className="h-3.5 w-3.5" />
-              Requests
-              {(joinRequests.length > 0 || myRequests.filter(r => r.status === 'pending').length > 0) && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-[10px] rounded-full flex items-center justify-center text-primary-foreground">
-                  {isLeader ? joinRequests.length : myRequests.filter(r => r.status === 'pending').length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
+          {/* If user has a team, show different tab layout */}
+          {myTeam ? (
+            isLeader ? (
+              // Leader: My Team + Requests only
+              <TabsList className="w-full grid grid-cols-2">
+                <TabsTrigger value="my-team" className="gap-1.5 text-xs">
+                  <Shield className="h-3.5 w-3.5" />
+                  My Team
+                </TabsTrigger>
+                <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
+                  <Inbox className="h-3.5 w-3.5" />
+                  Requests
+                  {joinRequests.length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-[10px] rounded-full flex items-center justify-center text-primary-foreground font-bold animate-pulse">
+                      {joinRequests.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            ) : (
+              // Member (not leader): Only My Team tab
+              <TabsList className="w-full">
+                <TabsTrigger value="my-team" className="w-full gap-1.5 text-xs">
+                  <Shield className="h-3.5 w-3.5" />
+                  My Team
+                </TabsTrigger>
+              </TabsList>
+            )
+          ) : (
+            // No team: Browse + My Requests
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="browse" className="gap-1.5 text-xs">
+                <Globe className="h-3.5 w-3.5" />
+                Browse Teams
+              </TabsTrigger>
+              <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
+                <Send className="h-3.5 w-3.5" />
+                My Requests
+                {myRequests.filter(r => r.status === 'pending').length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-[10px] rounded-full flex items-center justify-center text-white font-bold">
+                    {myRequests.filter(r => r.status === 'pending').length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          )}
         </div>
 
         {/* My Team Tab */}
         <TabsContent value="my-team" className="flex-1 mt-0 p-4">
           {myTeam ? (
             <div className="space-y-4">
-              {/* Team Card */}
-              <Card className="border-primary/20">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center">
-                        <Users className="h-7 w-7 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {myTeam.name}
-                          {isLeader && (
-                            <Badge className="bg-primary/10 text-primary text-[10px]">
-                              <Crown className="h-2.5 w-2.5 mr-0.5" /> Leader
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        {myTeam.slogan && (
-                          <p className="text-sm text-muted-foreground italic">"{myTeam.slogan}"</p>
+              {/* Team Card - Enhanced Design */}
+              <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-orange-500/5 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+                <CardHeader className="pb-3 relative">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shadow-lg">
+                      <Users className="h-8 w-8 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-xl font-gaming">{myTeam.name}</CardTitle>
+                        {isLeader && (
+                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[10px] shadow-sm">
+                            <Crown className="h-3 w-3 mr-0.5" /> Leader
+                          </Badge>
                         )}
                       </div>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      {myTeam.is_open_for_players ? (
-                        <Badge variant="outline" className="text-green-600 border-green-600/30 text-[10px]">
-                          <Globe className="h-2.5 w-2.5 mr-1" /> Visible
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground text-[10px]">
-                          Hidden
-                        </Badge>
+                      {myTeam.slogan && (
+                        <p className="text-sm text-muted-foreground italic mt-1">"{myTeam.slogan}"</p>
                       )}
-                      {myTeam.requires_approval ? (
-                        <Badge variant="outline" className="text-orange-500 border-orange-500/30 text-[10px]">
-                          <Clock className="h-2.5 w-2.5 mr-1" /> Approval
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-blue-500 border-blue-500/30 text-[10px]">
-                          <Check className="h-2.5 w-2.5 mr-1" /> Direct
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+                        {myTeam.game && (
+                          <span className="flex items-center gap-1 bg-muted/80 px-2 py-0.5 rounded-full text-xs">
+                            <Gamepad2 className="h-3 w-3" /> {myTeam.game}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1 bg-muted/80 px-2 py-0.5 rounded-full text-xs">
+                          <Users className="h-3 w-3" /> {teamMembers.length}/{myTeam.max_members}
+                        </span>
+                      </div>
                     </div>
+                  </div>
+                  
+                  {/* Status Badges */}
+                  <div className="flex gap-2 mt-3">
+                    {myTeam.is_open_for_players ? (
+                      <Badge variant="outline" className="text-green-600 border-green-600/30 bg-green-500/10 text-xs">
+                        <Globe className="h-3 w-3 mr-1" /> Visible to Others
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground bg-muted/50 text-xs">
+                        Hidden from Browse
+                      </Badge>
+                    )}
+                    {myTeam.requires_approval ? (
+                      <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/10 text-xs">
+                        <Clock className="h-3 w-3 mr-1" /> Approval Required
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-blue-500 border-blue-500/30 bg-blue-500/10 text-xs">
+                        <Check className="h-3 w-3 mr-1" /> Direct Join
+                      </Badge>
+                    )}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    {myTeam.game && (
-                      <span className="flex items-center gap-1">
-                        <Gamepad2 className="h-4 w-4" /> {myTeam.game}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Users className="h-4 w-4" /> {teamMembers.length}/{myTeam.max_members}
-                    </span>
-                  </div>
-
+                
+                <CardContent className="pt-0">
                   {/* Leader Actions */}
                   {isLeader && (
-                    <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className="grid grid-cols-2 gap-2 mb-4 p-3 bg-muted/30 rounded-xl border border-border/50">
+                      <p className="col-span-2 text-xs font-medium text-muted-foreground mb-1">Team Settings</p>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={toggleTeamVisibility}
-                        className="text-xs"
+                        className="text-xs h-9"
                       >
                         {myTeam.is_open_for_players ? (
-                          <><Globe className="h-3.5 w-3.5 mr-1" /> Hide Team</>
+                          <><Globe className="h-3.5 w-3.5 mr-1.5" /> Hide Team</>
                         ) : (
-                          <><Globe className="h-3.5 w-3.5 mr-1" /> Show Team</>
+                          <><Globe className="h-3.5 w-3.5 mr-1.5" /> Show Team</>
                         )}
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={toggleTeamApproval}
-                        className="text-xs"
+                        className="text-xs h-9"
                       >
                         {myTeam.requires_approval ? (
-                          <><Check className="h-3.5 w-3.5 mr-1" /> Direct Join</>
+                          <><Check className="h-3.5 w-3.5 mr-1.5" /> Allow Direct</>
                         ) : (
-                          <><Clock className="h-3.5 w-3.5 mr-1" /> Need Approval</>
+                          <><Clock className="h-3.5 w-3.5 mr-1.5" /> Require Approval</>
                         )}
                       </Button>
                     </div>
                   )}
 
-                  {/* Pending Requests Alert */}
+                  {/* Pending Requests Alert - Only for Leaders */}
                   {isLeader && joinRequests.length > 0 && (
                     <div 
                       onClick={() => setActiveTab('requests')}
-                      className="p-3 mb-4 bg-primary/10 border border-primary/20 rounded-lg cursor-pointer hover:bg-primary/15 transition-colors"
+                      className="p-4 mb-4 bg-gradient-to-r from-primary/15 to-orange-500/10 border border-primary/30 rounded-xl cursor-pointer hover:from-primary/20 hover:to-orange-500/15 transition-all"
                     >
-                      <div className="flex items-center gap-2">
-                        <Inbox className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium">{joinRequests.length} pending request{joinRequests.length > 1 ? 's' : ''}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Inbox className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-sm font-semibold">{joinRequests.length} pending request{joinRequests.length > 1 ? 's' : ''}</span>
+                          <p className="text-xs text-muted-foreground">Tap to review and approve players</p>
+                        </div>
+                        <Badge className="bg-primary text-primary-foreground animate-pulse">{joinRequests.length}</Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">Tap to review and approve players</p>
                     </div>
                   )}
 
                   {/* Team Members */}
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                      Team Members ({teamMembers.length})
-                    </p>
-                    {teamMembers.map((member) => (
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold">Team Members</p>
+                      <Badge variant="secondary" className="text-xs">{teamMembers.length}/{myTeam.max_members}</Badge>
+                    </div>
+                    {teamMembers.map((member, index) => (
                       <div
                         key={member.id}
-                        className="flex items-center gap-3 p-2 rounded-lg bg-muted/50"
+                        className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                          member.role === 'leader' 
+                            ? 'bg-gradient-to-r from-primary/10 to-orange-500/5 border border-primary/20' 
+                            : 'bg-muted/50 hover:bg-muted/70'
+                        }`}
                       >
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-11 w-11 border-2 border-background shadow-sm">
                           <AvatarImage src={member.profile?.avatar_url || ''} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                          <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
                             {member.profile?.username?.charAt(0).toUpperCase() || 'P'}
                           </AvatarFallback>
                         </Avatar>
@@ -786,19 +836,26 @@ const TeamPage = () => {
                               {member.profile?.full_name || member.profile?.username || 'Player'}
                             </p>
                             {member.role === 'leader' && (
-                              <Crown className="h-3.5 w-3.5 text-primary" />
+                              <Crown className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {member.profile?.in_game_name || member.profile?.game_uid || 'No IGN'}
-                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-xs text-muted-foreground truncate">
+                              {member.profile?.in_game_name || 'No IGN set'}
+                            </p>
+                            {member.profile?.game_uid && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                UID: {member.profile.game_uid}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         {isLeader && member.user_id !== user?.id && (
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveMember(member.id, member.user_id)}
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full"
                           >
                             <UserMinus className="h-4 w-4" />
                           </Button>
@@ -810,7 +867,7 @@ const TeamPage = () => {
                   {/* Leave/Disband Button */}
                   <Button
                     variant="outline"
-                    className="w-full mt-4 text-destructive border-destructive/30 hover:bg-destructive/10"
+                    className="w-full mt-5 text-destructive border-destructive/30 hover:bg-destructive/10 h-11"
                     onClick={handleLeaveTeam}
                   >
                     {isLeader ? 'Disband Team' : 'Leave Team'}
@@ -819,27 +876,27 @@ const TeamPage = () => {
               </Card>
             </div>
           ) : (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                <Users className="h-10 w-10 text-muted-foreground/50" />
+            <div className="text-center py-16">
+              <div className="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/20 to-orange-500/10 flex items-center justify-center">
+                <Users className="h-12 w-12 text-primary/50" />
               </div>
-              <h3 className="font-semibold text-lg mb-1">No Team Yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Create your own team or browse and request to join existing ones
+              <h3 className="font-gaming text-xl font-bold mb-2">No Team Yet</h3>
+              <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+                Create your own team to lead, or browse and request to join existing squads
               </p>
-              <div className="flex gap-2 justify-center">
-                <Button variant="gaming" onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-1" /> Create Team
+              <div className="flex gap-3 justify-center">
+                <Button variant="gaming" size="lg" onClick={() => setCreateDialogOpen(true)} className="gap-2">
+                  <Plus className="h-5 w-5" /> Create Team
                 </Button>
-                <Button variant="outline" onClick={() => setActiveTab('browse')}>
-                  <Search className="h-4 w-4 mr-1" /> Browse Teams
+                <Button variant="outline" size="lg" onClick={() => setActiveTab('browse')} className="gap-2">
+                  <Search className="h-5 w-5" /> Browse
                 </Button>
               </div>
             </div>
           )}
         </TabsContent>
 
-        {/* Browse Teams Tab */}
+        {/* Browse Teams Tab - Only visible when user has no team */}
         <TabsContent value="browse" className="flex-1 mt-0 p-4">
           {/* Search */}
           <div className="relative mb-4">
@@ -852,18 +909,24 @@ const TeamPage = () => {
             />
           </div>
 
-          {/* Info Box */}
-          <div className="p-3 mb-4 bg-muted/50 rounded-lg border border-border">
-            <p className="text-xs text-muted-foreground">
-              <strong>How it works:</strong> Browse teams and send a join request. Leaders will review and approve/reject your request.
-            </p>
-          </div>
+          {/* Create Team CTA */}
+          <Card className="mb-4 border-dashed border-2 border-primary/30 bg-gradient-to-r from-primary/5 to-orange-500/5">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-sm">Want to lead?</p>
+                <p className="text-xs text-muted-foreground">Create your own team and recruit players</p>
+              </div>
+              <Button variant="gaming" size="sm" onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Create
+              </Button>
+            </CardContent>
+          </Card>
 
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
             Available Teams ({filteredOpenTeams.length})
           </p>
 
-          <ScrollArea className="h-[calc(100vh-340px)]">
+          <ScrollArea className="h-[calc(100vh-380px)]">
             <div className="space-y-3">
               {filteredOpenTeams.length === 0 ? (
                 <div className="text-center py-12">
@@ -873,7 +936,7 @@ const TeamPage = () => {
                 </div>
               ) : (
                 filteredOpenTeams.map((team) => (
-                  <Card key={team.id} className="border-border">
+                  <Card key={team.id} className="border-border hover:border-primary/30 transition-colors">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-orange-500/20 flex items-center justify-center">
