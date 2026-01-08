@@ -35,6 +35,8 @@ export const useNotifications = () => {
 // Prize-related notification types that deserve special attention
 const PRIZE_NOTIFICATION_TYPES = ['prize_won', 'commission_earned'];
 const IMPORTANT_NOTIFICATION_TYPES = [...PRIZE_NOTIFICATION_TYPES, 'tournament_cancelled', 'deposit_approved', 'withdrawal_approved'];
+// Broadcast types that should NOT appear in notifications (they have their own channel)
+const BROADCAST_NOTIFICATION_TYPES = ['broadcast', 'ai_broadcast'];
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -106,7 +108,9 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
         .limit(50);
 
       if (error) throw error;
-      setNotifications(data || []);
+      // Filter out broadcast notifications - they belong in Broadcast Channel only
+      const filteredData = (data || []).filter(n => !BROADCAST_NOTIFICATION_TYPES.includes(n.type));
+      setNotifications(filteredData);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
@@ -131,6 +135,12 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
           },
           (payload) => {
             const newNotification = payload.new as Notification;
+            
+            // Skip broadcast notifications - they belong in Broadcast Channel only
+            if (BROADCAST_NOTIFICATION_TYPES.includes(newNotification.type)) {
+              return;
+            }
+            
             setNotifications((prev) => [newNotification, ...prev]);
             
             // Show toast notification for new notifications

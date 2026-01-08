@@ -52,6 +52,28 @@ const BroadcastChannel = () => {
     }
   }, [user]);
 
+  // Play notification sound for new broadcasts
+  const playBroadcastSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 700;
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.4);
+    } catch (error) {
+      console.log('Could not play broadcast sound:', error);
+    }
+  };
+
   // Realtime subscription for new broadcasts
   useEffect(() => {
     const channel = supabase
@@ -67,6 +89,13 @@ const BroadcastChannel = () => {
           const newBroadcast = payload.new as AdminBroadcast;
           if (newBroadcast.is_published !== false) {
             setBroadcasts(prev => [newBroadcast, ...prev]);
+            // Show toast and play sound for new broadcast
+            playBroadcastSound();
+            toast({
+              title: `📢 ${newBroadcast.title}`,
+              description: newBroadcast.message.length > 60 ? newBroadcast.message.slice(0, 60) + '...' : newBroadcast.message,
+              duration: 6000,
+            });
           }
         }
       )
@@ -75,7 +104,7 @@ const BroadcastChannel = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [toast]);
 
   const fetchBroadcasts = async () => {
     try {
