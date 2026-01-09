@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,12 @@ interface TeamMessage {
   };
 }
 
+interface TypingUser {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
 interface TeamChatProps {
   teamId: string;
   leaderId: string;
@@ -32,7 +38,10 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingBroadcast = useRef<number>(0);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -58,11 +67,40 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
     }
   };
 
+  // Broadcast typing status
+  const broadcastTyping = useCallback(async () => {
+    if (!user) return;
+    
+    const now = Date.now();
+    // Throttle: only broadcast every 2 seconds
+    if (now - lastTypingBroadcast.current < 2000) return;
+    lastTypingBroadcast.current = now;
+
+    const channel = supabase.channel(`typing_${teamId}`);
+    await channel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: {
+        userId: user.id,
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Someone',
+        avatar: user.user_metadata?.avatar_url,
+      },
+    });
+  }, [teamId, user]);
+
+  // Handle input change with typing broadcast
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewMessage(e.target.value);
+    if (e.target.value.trim()) {
+      broadcastTyping();
+    }
+  };
+
   useEffect(() => {
     fetchMessages();
     
-    // Set up realtime subscription
-    const channel = supabase
+    // Set up realtime subscription for messages
+    const messageChannel = supabase
       .channel(`team_chat_${teamId}`)
       .on(
         'postgres_changes',
@@ -84,6 +122,9 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
           const messageWithSender = { ...newMsg, sender: profile || undefined };
           setMessages((prev) => [...prev, messageWithSender]);
           
+          // Remove typing indicator for the user who sent the message
+          setTypingUsers((prev) => prev.filter((u) => u.id !== newMsg.sender_id));
+          
           // Show toast and play sound for messages from others
           if (newMsg.sender_id !== user?.id) {
             playMessageSound();
@@ -96,8 +137,34 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
       )
       .subscribe();
 
+    // Set up typing indicator channel
+    const typingChannel = supabase
+      .channel(`typing_${teamId}`)
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.userId === user?.id) return; // Ignore own typing
+        
+        setTypingUsers((prev) => {
+          const exists = prev.find((u) => u.id === payload.userId);
+          if (exists) return prev;
+          return [...prev, { id: payload.userId, name: payload.name, avatar: payload.avatar }];
+        });
+
+        // Clear typing indicator after 3 seconds
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        typingTimeoutRef.current = setTimeout(() => {
+          setTypingUsers((prev) => prev.filter((u) => u.id !== payload.userId));
+        }, 3000);
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messageChannel);
+      supabase.removeChannel(typingChannel);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
     };
   }, [teamId, user?.id, toast]);
 
@@ -291,13 +358,43 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
         )}
       </ScrollArea>
 
+      {/* Typing Indicator */}
+      {typingUsers.length > 0 && (
+        <div className="px-4 py-2 bg-card/50 border-t border-border/30 flex items-center gap-2 animate-fade-in">
+          <div className="flex -space-x-2">
+            {typingUsers.slice(0, 3).map((typingUser) => (
+              <Avatar key={typingUser.id} className="h-5 w-5 border-2 border-card">
+                <AvatarImage src={typingUser.avatar || ''} />
+                <AvatarFallback className="bg-primary/10 text-primary text-[8px]">
+                  {typingUser.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground">
+              {typingUsers.length === 1
+                ? `${typingUsers[0].name} is typing`
+                : typingUsers.length === 2
+                ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing`
+                : `${typingUsers.length} people are typing`}
+            </span>
+            <div className="flex gap-0.5">
+              <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Message Input - Fixed at bottom */}
       <form onSubmit={handleSendMessage} className="p-3 bg-card border-t border-border/60 shrink-0 safe-area-bottom">
         <div className="flex gap-2">
           <Input
             placeholder="Type a message..."
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={handleInputChange}
             className="flex-1 bg-muted/30 border-border/60 h-10"
             maxLength={500}
             disabled={sending}
