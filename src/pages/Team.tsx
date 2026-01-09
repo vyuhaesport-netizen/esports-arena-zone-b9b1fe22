@@ -1062,7 +1062,7 @@ const TeamPage = () => {
         </TabsContent>
 
         {/* Chat Tab - Full Screen */}
-        <TabsContent value="chat" className="flex-1 mt-0 animate-fade-in">
+        <TabsContent value="chat" className="flex-1 mt-0 px-0 animate-fade-in overflow-hidden">
           {myTeam && (
             <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
           )}
