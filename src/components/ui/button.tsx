@@ -17,6 +17,8 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         gaming: "gaming-gradient text-primary-foreground shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]",
         "gaming-outline": "border-2 border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground",
+        glass: "glass-button text-foreground hover:text-primary font-medium",
+        "glass-primary": "bg-primary/20 backdrop-blur-xl border border-primary/30 text-primary hover:bg-primary/30 hover:border-primary/50 shadow-lg shadow-primary/10 hover:shadow-primary/20 active:scale-[0.98]",
       },
       size: {
         default: "h-11 px-5 py-2",
