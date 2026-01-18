@@ -148,8 +148,8 @@ const CreatorWallet = () => {
   const handleWithdraw = async () => {
     if (!user) return;
 
-    if (withdrawRequest.amount < 50) {
-      toast({ title: 'Minimum ₹50', description: 'Minimum withdrawal amount is 50 Dhana.', variant: 'destructive' });
+    if (withdrawRequest.amount < 10) {
+      toast({ title: 'Minimum ₹10', description: 'Minimum withdrawal amount is 10 Dhana.', variant: 'destructive' });
       return;
     }
 
@@ -289,12 +289,12 @@ const CreatorWallet = () => {
         <Button 
           className="w-full bg-green-600 hover:bg-green-700 text-white h-12 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => setWithdrawDialogOpen(true)}
-          disabled={(balance?.available_dhana || 0) < 50}
+          disabled={(balance?.available_dhana || 0) < 10}
         >
           <ArrowUpRight className="h-5 w-5 mr-2" />
-          {(balance?.available_dhana || 0) < 50 
-            ? `Withdraw (Need ${50 - (balance?.available_dhana || 0)} more Dhana)` 
-            : 'Withdraw Dhana (Min ₹50)'
+          {(balance?.available_dhana || 0) < 10 
+            ? `Withdraw (Need ${10 - (balance?.available_dhana || 0)} more Dhana)` 
+            : 'Withdraw Dhana (Min ₹10)'
           }
         </Button>
       </div>
@@ -410,17 +410,17 @@ const CreatorWallet = () => {
               <p className="text-sm text-green-700 dark:text-green-400">
                 Available: <strong>{balance?.available_dhana || 0} Dhana (₹{balance?.available_dhana || 0})</strong>
               </p>
-              <p className="text-xs text-muted-foreground mt-1">Minimum withdrawal: 50 Dhana</p>
+              <p className="text-xs text-muted-foreground mt-1">Minimum withdrawal: 10 Dhana</p>
             </div>
             <div className="space-y-2">
               <Label>Withdrawal Amount (Dhana)</Label>
               <Input
                 type="number"
-                placeholder="Min 50"
+                placeholder="Min 10"
                 value={withdrawRequest.amount || ''}
                 onChange={(e) => setWithdrawRequest(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
                 max={balance?.available_dhana || 0}
-                min={50}
+                min={10}
               />
             </div>
             <div className="space-y-2">
