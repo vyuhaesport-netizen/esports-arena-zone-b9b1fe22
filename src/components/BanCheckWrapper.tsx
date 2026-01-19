@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,10 +32,41 @@ const BanCheckWrapper = ({ children }: BanCheckWrapperProps) => {
   const location = useLocation();
   const [banInfo, setBanInfo] = useState<BanInfo | null>(null);
   const [checkingBan, setCheckingBan] = useState(true);
+  const activityUpdated = useRef(false);
 
   const isAllowedPath = ALLOWED_PATHS_FOR_BANNED_USERS.some(
     path => location.pathname === path || location.pathname.startsWith(path + '/')
   );
+
+  // Update user activity when they're active
+  const updateUserActivity = useCallback(async () => {
+    if (!user || activityUpdated.current) return;
+    
+    try {
+      await supabase.rpc('update_user_activity', { p_user_id: user.id });
+      activityUpdated.current = true;
+    } catch (err) {
+      console.error('Error updating user activity:', err);
+    }
+  }, [user]);
+
+  // Check for inactivity ban on login
+  const checkInactivityBan = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const { data } = await supabase.rpc('check_and_ban_inactive_user', {
+        p_user_id: user.id
+      });
+      
+      const result = data as { is_banned?: boolean; reason?: string } | null;
+      if (result?.is_banned && result?.reason === 'inactive') {
+        console.log('User was auto-banned for inactivity');
+      }
+    } catch (err) {
+      console.error('Error checking inactivity:', err);
+    }
+  }, [user]);
 
   const checkBanStatus = useCallback(async () => {
     if (!user) {
@@ -45,6 +76,9 @@ const BanCheckWrapper = ({ children }: BanCheckWrapperProps) => {
     }
 
     try {
+      // First check if user should be banned for inactivity
+      await checkInactivityBan();
+      
       const { data, error } = await supabase.rpc('check_user_ban_status', {
         p_user_id: user.id
       });
@@ -54,6 +88,11 @@ const BanCheckWrapper = ({ children }: BanCheckWrapperProps) => {
         setBanInfo(null);
       } else if (data && typeof data === 'object' && 'is_banned' in data) {
         setBanInfo(data as unknown as BanInfo);
+        
+        // If not banned, update activity
+        if (!(data as any).is_banned) {
+          updateUserActivity();
+        }
       }
     } catch (err) {
       console.error('Error checking ban status:', err);
@@ -61,7 +100,7 @@ const BanCheckWrapper = ({ children }: BanCheckWrapperProps) => {
     } finally {
       setCheckingBan(false);
     }
-  }, [user]);
+  }, [user, checkInactivityBan, updateUserActivity]);
 
   useEffect(() => {
     if (!loading) {

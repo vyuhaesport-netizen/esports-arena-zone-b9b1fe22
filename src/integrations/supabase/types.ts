@@ -1275,6 +1275,7 @@ export type Database = {
           in_game_name: string | null
           is_banned: boolean | null
           is_frozen: boolean | null
+          last_activity_at: string | null
           location: string | null
           phone: string | null
           preferred_game: string | null
@@ -1297,6 +1298,7 @@ export type Database = {
           in_game_name?: string | null
           is_banned?: boolean | null
           is_frozen?: boolean | null
+          last_activity_at?: string | null
           location?: string | null
           phone?: string | null
           preferred_game?: string | null
@@ -1319,6 +1321,7 @@ export type Database = {
           in_game_name?: string | null
           is_banned?: boolean | null
           is_frozen?: boolean | null
+          last_activity_at?: string | null
           location?: string | null
           phone?: string | null
           preferred_game?: string | null
@@ -1834,6 +1837,15 @@ export type Database = {
         Args: { p_reason: string; p_user_id: string }
         Returns: Json
       }
+      ai_unban_user: {
+        Args: {
+          p_user_id: string
+          p_verified_email: string
+          p_verified_phone: string
+          p_verified_uid: string
+        }
+        Returns: Json
+      }
       approve_local_tournament: {
         Args: { p_admin_notes?: string; p_application_id: string }
         Returns: Json
@@ -1847,6 +1859,10 @@ export type Database = {
         Returns: Json
       }
       check_and_award_achievements: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      check_and_ban_inactive_user: {
         Args: { p_user_id: string }
         Returns: Json
       }
@@ -2029,6 +2045,7 @@ export type Database = {
         }
         Returns: Json
       }
+      update_user_activity: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user" | "organizer" | "creator"

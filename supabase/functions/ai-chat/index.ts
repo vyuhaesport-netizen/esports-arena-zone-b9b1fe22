@@ -75,17 +75,40 @@ async function getPlatformContext(supabase: any, userId?: string): Promise<strin
       // Get user profile
       const { data: userProfile } = await supabase
         .from('profiles')
-        .select('username, wallet_balance, withdrawable_balance, in_game_name, preferred_game')
+        .select('username, email, phone, game_uid, wallet_balance, withdrawable_balance, in_game_name, preferred_game, is_banned')
         .eq('user_id', userId)
         .single();
       
       if (userProfile) {
         context += `\n### YOUR ACCOUNT INFO:\n`;
         context += `- Username: ${userProfile.username || 'Not set'}\n`;
+        context += `- Email: ${userProfile.email || 'Not set'}\n`;
+        context += `- Phone: ${userProfile.phone || 'Not set'}\n`;
+        context += `- Game UID: ${userProfile.game_uid || 'Not set'}\n`;
         context += `- In-Game Name: ${userProfile.in_game_name || 'Not set'}\n`;
         context += `- Wallet Balance: ₹${userProfile.wallet_balance || 0}\n`;
         context += `- Withdrawable Balance: ₹${userProfile.withdrawable_balance || 0}\n`;
         context += `- Preferred Game: ${userProfile.preferred_game || 'Not set'}\n`;
+        context += `- Account Status: ${userProfile.is_banned ? 'BANNED' : 'Active'}\n`;
+      }
+      
+      // Check if user is banned
+      const { data: activeBan } = await supabase
+        .from('player_bans')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .order('banned_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (activeBan) {
+        context += `\n### BAN STATUS:\n`;
+        context += `- Ban Reason: ${activeBan.ban_reason}\n`;
+        context += `- Ban Type: ${activeBan.ban_type}\n`;
+        context += `- Ban Number: ${activeBan.ban_number}\n`;
+        context += `- Expires At: ${activeBan.expires_at || 'Never (Permanent)'}\n`;
+        context += `- Is Unusual Activity Ban: ${activeBan.ban_reason?.toLowerCase().includes('unusual activity') || activeBan.ban_reason?.toLowerCase().includes('inactive') ? 'YES' : 'NO'}\n`;
       }
       
       // Get user's registered tournaments (My Match)
@@ -215,6 +238,33 @@ const VYUHA_SYSTEM_PROMPT = `You are Vyuha AI Assistant, the official support bo
 - Contact support for unresolved issues
 - Response time: Within 24 hours
 
+## 🚨 ACCOUNT RESTORATION & UNBAN CAPABILITY 🚨
+You have special capabilities to help users restore their banned accounts:
+
+### Auto-Ban for Inactivity:
+- Users who haven't logged in for 7+ days may be automatically flagged for "Unusual Activity"
+- This is a security measure to protect inactive accounts
+- These bans CAN be lifted through verification
+
+### How to Handle Unban Requests:
+1. If a user asks to restore/unban their account, first check their BAN STATUS in the context
+2. If the ban is for "Unusual Activity" or "Inactive", you CAN help them
+3. Ask them to provide for verification:
+   - Their registered Email
+   - Their registered Phone Number  
+   - Their Game UID
+4. Once they provide at least 2 of these details, use the UNBAN_USER action
+5. If verification succeeds, their account will be restored immediately
+
+### Unban Action Format:
+When you need to unban a user after verification, include this EXACT format in your response:
+[UNBAN_ACTION: email="user@email.com", phone="1234567890", uid="game123"]
+
+### What You CANNOT Do:
+- You CANNOT unban users with violations like cheating, hacking, or harassment
+- You CANNOT unban permanent bans (ban_number >= 3)
+- For these cases, tell the user to wait for their ban to expire or contact admin directly
+
 ## Guidelines for responses:
 1. Be helpful, friendly, and professional
 2. Use simple language (many users prefer Hindi-English mix)
@@ -223,12 +273,27 @@ const VYUHA_SYSTEM_PROMPT = `You are Vyuha AI Assistant, the official support bo
 5. Keep responses concise but complete
 6. Use emojis sparingly to be friendly 🎮
 7. When users ask about their wallet, matches, or tournaments, use the LIVE PLATFORM DATA provided below
+8. For banned users asking about restoration, guide them through the verification process
 
 IMPORTANT: 
 - Only answer questions related to Vyuha Esports platform
 - If asked about unrelated topics, politely redirect to Vyuha-related questions
 - If you don't know something specific about Vyuha, say so and suggest contacting support
-- You have access to REAL-TIME data about the platform, tournaments, and user's account - use it to give accurate answers!`;
+- You have access to REAL-TIME data about the platform, tournaments, and user's account - use it to give accurate answers!
+- For banned users: Check if their ban is for "Unusual Activity" - you can help restore those!`;
+
+// Function to parse unban action from AI response
+function parseUnbanAction(response: string): { email: string; phone: string; uid: string } | null {
+  const match = response.match(/\[UNBAN_ACTION:\s*email="([^"]*)",\s*phone="([^"]*)",\s*uid="([^"]*)"\]/);
+  if (match) {
+    return {
+      email: match[1],
+      phone: match[2],
+      uid: match[3]
+    };
+  }
+  return null;
+}
 
 // Function to call AI with fallback models
 async function callAIWithFallback(
@@ -400,6 +465,37 @@ Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"me
       startTime
     );
 
+    // Check if AI response contains an unban action
+    let finalResponse = generatedText;
+    const unbanAction = parseUnbanAction(generatedText);
+    
+    if (unbanAction && userId) {
+      console.log('Detected unban action, attempting to restore account for user:', userId);
+      
+      // Call the ai_unban_user function
+      const { data: unbanResult, error: unbanError } = await supabase.rpc('ai_unban_user', {
+        p_user_id: userId,
+        p_verified_email: unbanAction.email,
+        p_verified_phone: unbanAction.phone,
+        p_verified_uid: unbanAction.uid
+      });
+      
+      if (unbanError) {
+        console.error('Unban error:', unbanError);
+        // Remove the action from response and add error message
+        finalResponse = generatedText.replace(/\[UNBAN_ACTION:[^\]]+\]/, '').trim();
+        finalResponse += `\n\n❌ Account restoration failed: ${unbanError.message}. Please contact admin for assistance.`;
+      } else if (unbanResult) {
+        // Remove the action from response and add result
+        finalResponse = generatedText.replace(/\[UNBAN_ACTION:[^\]]+\]/, '').trim();
+        if (unbanResult.success) {
+          finalResponse += `\n\n✅ ${unbanResult.message} 🎉\n\nPlease refresh the page or log in again to access your account.`;
+        } else {
+          finalResponse += `\n\n❌ ${unbanResult.error}`;
+        }
+      }
+    }
+
     const responseTime = Date.now() - startTime;
 
     // Log successful request
@@ -415,7 +511,7 @@ Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"me
     });
 
     return new Response(
-      JSON.stringify({ response: generatedText, usage }),
+      JSON.stringify({ response: finalResponse, usage }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {

@@ -230,7 +230,29 @@ const BanOverlay = ({ banInfo, onBanLifted }: BanOverlayProps) => {
                   Your ID is Permanently Banned
                 </p>
                 <p className="text-muted-foreground text-xs mt-1">
-                  This account cannot be recovered. Contact support if you believe this is an error.
+                  Contact Support to appeal this decision.
+                </p>
+              </div>
+            )}
+
+            {/* Unusual Activity Ban - Can be restored */}
+            {!banInfo.is_permanent && banInfo.reason?.toLowerCase().includes('unusual activity') && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-center">
+                <AlertTriangle className="h-5 w-5 text-amber-500 mx-auto mb-1" />
+                <p className="text-amber-500 font-semibold text-sm">
+                  Account Flagged for Unusual Activity
+                </p>
+                <p className="text-muted-foreground text-xs mt-1">
+                  Go to Support and chat with Vyuha AI to verify your identity and restore access instantly.
+                </p>
+              </div>
+            )}
+
+            {/* Regular temporary ban message */}
+            {!banInfo.is_permanent && !banInfo.reason?.toLowerCase().includes('unusual activity') && (
+              <div className="bg-muted/30 border border-border rounded-lg p-3 text-center">
+                <p className="text-muted-foreground text-xs">
+                  Your access will be automatically restored after the timer ends.
                 </p>
               </div>
             )}
