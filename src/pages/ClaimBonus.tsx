@@ -180,33 +180,33 @@ const ClaimBonus = () => {
 
   return (
     <AppLayout title="Claim Bonus" showBack>
-      <div className="p-4 space-y-6 pb-24">
+      <div className="px-3 py-4 space-y-4 pb-24 max-w-lg mx-auto">
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-orange-500/10 to-purple-500/10 p-6">
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-orange-500/20 rounded-full blur-3xl" />
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary/20 via-orange-500/10 to-purple-500/10 p-4">
+          <div className="absolute -top-10 -right-10 w-24 h-24 bg-primary/20 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-orange-500/20 rounded-full blur-3xl" />
           
           <div className="relative text-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-orange-500 p-0.5 mx-auto mb-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-orange-500 p-0.5 mx-auto mb-3">
               <div className="w-full h-full rounded-full bg-background flex items-center justify-center">
-                <Gift className="h-8 w-8 text-primary" />
+                <Gift className="h-6 w-6 text-primary" />
               </div>
             </div>
             
-            <h1 className="text-2xl font-bold mb-2">Milestone Bonuses</h1>
-            <p className="text-muted-foreground text-sm mb-4">
+            <h1 className="text-xl font-bold mb-1.5">Milestone Bonuses</h1>
+            <p className="text-muted-foreground text-xs mb-3">
               Earn points from tournament placements and claim rewards!
             </p>
 
-            <div className="flex items-center justify-center gap-6">
+            <div className="flex items-center justify-center gap-5">
               <div className="text-center">
-                <p className="text-3xl font-bold text-primary">{totalPoints}</p>
-                <p className="text-xs text-muted-foreground">Your Points</p>
+                <p className="text-2xl font-bold text-primary">{totalPoints}</p>
+                <p className="text-[10px] text-muted-foreground">Your Points</p>
               </div>
               {totalClaimable > 0 && (
                 <div className="text-center">
-                  <p className="text-3xl font-bold text-success">₹{totalClaimable}</p>
-                  <p className="text-xs text-muted-foreground">Ready to Claim</p>
+                  <p className="text-2xl font-bold text-success">₹{totalClaimable}</p>
+                  <p className="text-[10px] text-muted-foreground">Ready to Claim</p>
                 </div>
               )}
             </div>
@@ -215,42 +215,42 @@ const ClaimBonus = () => {
 
         {/* How it Works */}
         <Card className="border-dashed">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
+          <CardHeader className="pb-1.5 px-3 pt-3">
+            <CardTitle className="text-xs flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
               How Points Work
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                  <Trophy className="h-3 w-3 text-yellow-500" />
+          <CardContent className="px-3 pb-3 pt-0">
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground gap-1">
+              <div className="flex items-center gap-1">
+                <div className="w-5 h-5 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                  <Trophy className="h-2.5 w-2.5 text-yellow-500" />
                 </div>
-                <span>1st = 10 pts</span>
+                <span>1st=10</span>
               </div>
-              <ArrowRight className="h-3 w-3" />
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-gray-400/20 flex items-center justify-center">
-                  <Trophy className="h-3 w-3 text-gray-400" />
+              <ArrowRight className="h-2.5 w-2.5 shrink-0" />
+              <div className="flex items-center gap-1">
+                <div className="w-5 h-5 rounded-full bg-gray-400/20 flex items-center justify-center shrink-0">
+                  <Trophy className="h-2.5 w-2.5 text-gray-400" />
                 </div>
-                <span>2nd = 9 pts</span>
+                <span>2nd=9</span>
               </div>
-              <ArrowRight className="h-3 w-3" />
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-amber-600/20 flex items-center justify-center">
-                  <Trophy className="h-3 w-3 text-amber-600" />
+              <ArrowRight className="h-2.5 w-2.5 shrink-0" />
+              <div className="flex items-center gap-1">
+                <div className="w-5 h-5 rounded-full bg-amber-600/20 flex items-center justify-center shrink-0">
+                  <Trophy className="h-2.5 w-2.5 text-amber-600" />
                 </div>
-                <span>3rd = 8 pts</span>
+                <span>3rd=8</span>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Bonus Cards */}
-        <div className="space-y-4">
-          <h2 className="font-semibold text-lg flex items-center gap-2">
-            <Gift className="h-5 w-5 text-primary" />
+        <div className="space-y-3">
+          <h2 className="font-semibold text-base flex items-center gap-1.5">
+            <Gift className="h-4 w-4 text-primary" />
             Available Rewards
           </h2>
 
@@ -265,7 +265,7 @@ const ClaimBonus = () => {
                   status === 'claimed' 
                     ? 'bg-success/5 border-success/30' 
                     : status === 'available'
-                    ? 'bg-primary/5 border-primary shadow-lg shadow-primary/10'
+                    ? 'bg-primary/5 border-primary shadow-md shadow-primary/10'
                     : 'bg-muted/30'
                 }`}
               >
@@ -273,41 +273,41 @@ const ClaimBonus = () => {
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-orange-500/5 animate-pulse" />
                 )}
                 
-                <CardContent className="relative p-5">
-                  <div className="flex items-start gap-4">
+                <CardContent className="relative p-3">
+                  <div className="flex items-start gap-3">
                     {/* Icon */}
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${milestone.color} flex items-center justify-center text-white shrink-0 shadow-lg`}>
+                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${milestone.color} flex items-center justify-center text-white shrink-0 shadow-md`}>
                       {status === 'claimed' ? (
-                        <Check className="h-7 w-7" />
+                        <Check className="h-5 w-5" />
                       ) : (
-                        milestone.icon
+                        <div className="scale-90">{milestone.icon}</div>
                       )}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold">{milestone.name}</h3>
+                      <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                        <h3 className="font-bold text-sm">{milestone.name}</h3>
                         {status === 'claimed' && (
-                          <Badge variant="outline" className="text-success border-success/30 text-[10px]">
+                          <Badge variant="outline" className="text-success border-success/30 text-[9px] px-1 py-0">
                             Claimed
                           </Badge>
                         )}
                         {status === 'available' && (
-                          <Badge className="bg-primary text-[10px] animate-pulse">
+                          <Badge className="bg-primary text-[9px] px-1 py-0 animate-pulse">
                             Ready!
                           </Badge>
                         )}
                       </div>
                       
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <p className="text-[11px] text-muted-foreground mb-1.5">
                         Reach {milestone.points} stats points
                       </p>
 
                       {status === 'locked' && (
-                        <div className="space-y-1">
-                          <Progress value={progressToMilestone} className="h-2" />
-                          <p className="text-xs text-muted-foreground">
+                        <div className="space-y-0.5">
+                          <Progress value={progressToMilestone} className="h-1.5" />
+                          <p className="text-[10px] text-muted-foreground">
                             {milestone.points - totalPoints} more points needed
                           </p>
                         </div>
@@ -315,9 +315,9 @@ const ClaimBonus = () => {
                     </div>
 
                     {/* Reward & Action */}
-                    <div className="text-right shrink-0">
-                      <div className="flex items-center gap-1 text-xl font-bold mb-2">
-                        <IndianRupee className="h-5 w-5 text-success" />
+                    <div className="text-right shrink-0 flex flex-col items-end">
+                      <div className="flex items-center gap-0.5 text-lg font-bold mb-1.5">
+                        <IndianRupee className="h-4 w-4 text-success" />
                         <span className="text-success">{milestone.bonus}</span>
                       </div>
                       
@@ -326,18 +326,18 @@ const ClaimBonus = () => {
                           size="sm"
                           onClick={() => handleClaimBonus(milestone)}
                           disabled={claimingBonus === milestone.points}
-                          className="bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90"
+                          className="bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 h-7 text-xs px-2.5"
                         >
                           {claimingBonus === milestone.points ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            'Claim Now'
+                            'Claim'
                           )}
                         </Button>
                       )}
                       
                       {status === 'locked' && (
-                        <Lock className="h-5 w-5 text-muted-foreground ml-auto" />
+                        <Lock className="h-4 w-4 text-muted-foreground" />
                       )}
                     </div>
                   </div>
@@ -349,8 +349,8 @@ const ClaimBonus = () => {
 
         {/* Info */}
         <Card className="bg-muted/30">
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground text-center">
+          <CardContent className="p-3">
+            <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
               💡 Bonus money is added to your wallet and can only be used to join tournaments. 
               Win tournaments to earn withdrawable cash!
             </p>
