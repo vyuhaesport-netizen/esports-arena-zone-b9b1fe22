@@ -153,45 +153,53 @@ const TournamentScanner = ({ onScanSuccess }: TournamentScannerProps) => {
 
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ScanLine className="h-5 w-5 text-primary" />
+          <DialogHeader className="pb-1">
+            <DialogTitle className="flex items-center gap-2 text-base pr-8">
+              <ScanLine className="h-4 w-4 text-primary shrink-0" />
               Join Tournament
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs">
               Scan QR code or enter tournament code
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Mode Selection */}
             {!mode && !processing && (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
-                    className="h-20 flex-col gap-2"
+                    className="h-16 flex-col gap-1.5"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Upload className="h-6 w-6 text-primary" />
-                    <span className="text-xs">Upload Image</span>
+                    <Upload className="h-5 w-5 text-primary" />
+                    <span className="text-[11px]">Upload Image</span>
                   </Button>
                   
                   <Button
                     variant="outline"
-                    className="h-20 flex-col gap-2"
+                    className="h-16 flex-col gap-1.5"
                     onClick={() => setMode('manual')}
                   >
-                    <Keyboard className="h-6 w-6 text-primary" />
-                    <span className="text-xs">Enter Code</span>
+                    <Keyboard className="h-5 w-5 text-primary" />
+                    <span className="text-[11px]">Enter Code</span>
                   </Button>
                 </div>
 
-                <div className="bg-muted/50 rounded-lg p-3 text-center">
-                  <p className="text-xs text-muted-foreground">
+                <div className="bg-muted/50 rounded-lg p-2.5 text-center">
+                  <p className="text-[11px] text-muted-foreground">
                     Get the tournament code from your local organizer
                   </p>
                 </div>
+
+                <Button
+                  variant="ghost"
+                  onClick={handleClose}
+                  className="w-full text-muted-foreground text-xs h-9"
+                >
+                  Cancel
+                </Button>
               </>
             )}
 
