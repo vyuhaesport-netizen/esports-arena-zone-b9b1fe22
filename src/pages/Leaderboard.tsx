@@ -148,7 +148,7 @@ const Leaderboard = () => {
     if (data.length === 0) {
       return (
         <div className="text-center py-12">
-          <img src={vyuhaLogo} alt="Vyuha" className="h-12 w-12 mx-auto opacity-50 mb-3" />
+          <img src={vyuhaLogo} alt="Vyuha" className="h-12 w-12 mx-auto opacity-50 mb-3 rounded-full bg-white" />
           <p className="text-muted-foreground">No data available yet</p>
           <p className="text-xs text-muted-foreground mt-1">
             {type === 'earners' ? 'Win tournaments to appear here!' : 'Earn stats points to climb the ranks!'}
