@@ -274,143 +274,143 @@ const PlayerStatsPage = () => {
 
   return (
     <AppLayout title="Player Stats" showBack>
-      <div className="p-4 space-y-6 pb-24">
+      <div className="px-3 py-4 space-y-4 pb-24 max-w-lg mx-auto">
         {/* Profile Hero */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-6">
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
           
-          <div className="relative flex items-center gap-4">
-            <div className="relative">
+          <div className="relative flex items-center gap-3">
+            <div className="relative shrink-0">
               <div className="absolute inset-0 bg-gradient-to-r from-primary to-orange-500 rounded-full blur-md opacity-50" />
-              <Avatar className="h-20 w-20 border-2 border-white/20 relative">
+              <Avatar className="h-16 w-16 border-2 border-white/20 relative">
                 <AvatarImage src={profile?.avatar_url} />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-orange-500 text-white text-xl">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-orange-500 text-white text-lg">
                   {profile?.username?.charAt(0).toUpperCase() || 'P'}
                 </AvatarFallback>
               </Avatar>
             </div>
             
-            <div className="flex-1">
-              <h1 className="text-xl font-bold text-white">{profile?.username || 'Player'}</h1>
-              <div className="flex items-center gap-2 mt-1">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg font-bold text-white truncate">{profile?.username || 'Player'}</h1>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1">
                 {profile?.preferred_game && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Gamepad2 className="h-3 w-3 mr-1" />
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
+                    <Gamepad2 className="h-2.5 w-2.5 mr-0.5" />
                     {profile.preferred_game}
                   </Badge>
                 )}
-                <Badge className={`bg-gradient-to-r ${rank.color} text-white text-xs border-0`}>
+                <Badge className={`bg-gradient-to-r ${rank.color} text-white text-[10px] px-1.5 py-0.5 border-0`}>
                   {rank.name}
                 </Badge>
               </div>
             </div>
 
-            <div className="text-right">
-              <p className="text-3xl font-bold text-white">{totalPoints}</p>
-              <p className="text-xs text-white/60">Stats Points</p>
+            <div className="text-right shrink-0">
+              <p className="text-2xl font-bold text-white">{totalPoints}</p>
+              <p className="text-[10px] text-white/60">Stats Points</p>
             </div>
           </div>
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-4 gap-3">
-          <Card className="text-center p-3">
-            <Crown className="h-5 w-5 text-yellow-500 mx-auto mb-1" />
-            <p className="text-lg font-bold">{userStats?.first_place_count || 0}</p>
-            <p className="text-[10px] text-muted-foreground">1st Place</p>
+        <div className="grid grid-cols-4 gap-2">
+          <Card className="text-center p-2">
+            <Crown className="h-4 w-4 text-yellow-500 mx-auto mb-0.5" />
+            <p className="text-base font-bold">{userStats?.first_place_count || 0}</p>
+            <p className="text-[9px] text-muted-foreground leading-tight">1st</p>
           </Card>
-          <Card className="text-center p-3">
-            <Medal className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-            <p className="text-lg font-bold">{userStats?.second_place_count || 0}</p>
-            <p className="text-[10px] text-muted-foreground">2nd Place</p>
+          <Card className="text-center p-2">
+            <Medal className="h-4 w-4 text-gray-400 mx-auto mb-0.5" />
+            <p className="text-base font-bold">{userStats?.second_place_count || 0}</p>
+            <p className="text-[9px] text-muted-foreground leading-tight">2nd</p>
           </Card>
-          <Card className="text-center p-3">
-            <Award className="h-5 w-5 text-amber-600 mx-auto mb-1" />
-            <p className="text-lg font-bold">{userStats?.third_place_count || 0}</p>
-            <p className="text-[10px] text-muted-foreground">3rd Place</p>
+          <Card className="text-center p-2">
+            <Award className="h-4 w-4 text-amber-600 mx-auto mb-0.5" />
+            <p className="text-base font-bold">{userStats?.third_place_count || 0}</p>
+            <p className="text-[9px] text-muted-foreground leading-tight">3rd</p>
           </Card>
-          <Card className="text-center p-3">
-            <Trophy className="h-5 w-5 text-primary mx-auto mb-1" />
-            <p className="text-lg font-bold">{userStats?.tournament_participations || 0}</p>
-            <p className="text-[10px] text-muted-foreground">Played</p>
+          <Card className="text-center p-2">
+            <Trophy className="h-4 w-4 text-primary mx-auto mb-0.5" />
+            <p className="text-base font-bold">{userStats?.tournament_participations || 0}</p>
+            <p className="text-[9px] text-muted-foreground leading-tight">Played</p>
           </Card>
         </div>
 
         {/* Claim Bonus CTA */}
         <Link to="/claim-bonus">
           <Card className="bg-gradient-to-r from-primary/10 to-orange-500/10 border-primary/30 hover:border-primary/50 transition-colors cursor-pointer">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                  <Gift className="h-5 w-5 text-primary" />
+            <CardContent className="p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                  <Gift className="h-4 w-4 text-primary" />
                 </div>
-                <div>
-                  <p className="font-semibold">Claim Your Rewards</p>
-                  <p className="text-xs text-muted-foreground">Milestone bonuses available!</p>
+                <div className="min-w-0">
+                  <p className="font-semibold text-sm">Claim Your Rewards</p>
+                  <p className="text-[11px] text-muted-foreground">Milestone bonuses available!</p>
                 </div>
               </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
             </CardContent>
           </Card>
         </Link>
 
         {/* Analytics Tabs */}
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview" className="text-xs">
-              <BarChart3 className="h-3 w-3 mr-1" />
+          <TabsList className="grid w-full grid-cols-3 h-9">
+            <TabsTrigger value="overview" className="text-[11px] px-2 gap-1">
+              <BarChart3 className="h-3 w-3" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-xs">
-              <Calendar className="h-3 w-3 mr-1" />
+            <TabsTrigger value="history" className="text-[11px] px-2 gap-1">
+              <Calendar className="h-3 w-3" />
               History
             </TabsTrigger>
-            <TabsTrigger value="team" className="text-xs">
-              <Users className="h-3 w-3 mr-1" />
+            <TabsTrigger value="team" className="text-[11px] px-2 gap-1">
+              <Users className="h-3 w-3" />
               Team
             </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4 mt-4">
+          <TabsContent value="overview" className="space-y-3 mt-3">
             {/* Win Rate Card */}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" />
+              <CardHeader className="pb-1.5 px-3 pt-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <Activity className="h-3.5 w-3.5 text-primary" />
                   Win Rate
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-3xl font-bold">{winRate}%</span>
-                  <Badge variant={winRate >= 50 ? 'default' : 'secondary'}>
+              <CardContent className="px-3 pb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-2xl font-bold">{winRate}%</span>
+                  <Badge variant={winRate >= 50 ? 'default' : 'secondary'} className="text-[10px]">
                     {winRate >= 50 ? 'Above Average' : 'Keep Going!'}
                   </Badge>
                 </div>
-                <Progress value={winRate} className="h-2" />
+                <Progress value={winRate} className="h-1.5" />
               </CardContent>
             </Card>
 
             {/* Rank Distribution Pie Chart */}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <PieChart className="h-4 w-4 text-primary" />
+              <CardHeader className="pb-1.5 px-3 pt-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <PieChart className="h-3.5 w-3.5 text-primary" />
                   Rank Distribution
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-3 pb-3">
                 {pieData.length > 0 ? (
-                  <div className="h-48">
+                  <div className="h-40">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
                           data={pieData}
                           cx="50%"
-                          cy="50%"
-                          innerRadius={40}
-                          outerRadius={70}
+                          cy="45%"
+                          innerRadius={30}
+                          outerRadius={55}
                           paddingAngle={2}
                           dataKey="value"
                         >
@@ -420,18 +420,18 @@ const PlayerStatsPage = () => {
                         </Pie>
                         <Tooltip 
                           formatter={(value: number) => [`${value} times`, '']}
-                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: '11px' }}
                         />
                         <Legend 
                           verticalAlign="bottom" 
-                          height={36}
-                          formatter={(value) => <span className="text-xs">{value}</span>}
+                          height={28}
+                          formatter={(value) => <span className="text-[10px]">{value}</span>}
                         />
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-48 flex items-center justify-center text-muted-foreground text-sm">
+                  <div className="h-32 flex items-center justify-center text-muted-foreground text-xs">
                     Play tournaments to see your rank distribution!
                   </div>
                 )}
@@ -440,21 +440,21 @@ const PlayerStatsPage = () => {
 
             {/* Performance Timeline */}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
+              <CardHeader className="pb-1.5 px-3 pt-3">
+                <CardTitle className="text-xs flex items-center gap-1.5">
+                  <TrendingUp className="h-3.5 w-3.5 text-primary" />
                   Performance Timeline
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="h-48">
+              <CardContent className="px-3 pb-3">
+                <div className="h-40">
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={performanceData}>
+                    <AreaChart data={performanceData} margin={{ left: -20, right: 5, top: 5, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                      <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                      <XAxis dataKey="month" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" width={30} />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: '11px' }}
                       />
                       <Area 
                         type="monotone" 
@@ -480,38 +480,38 @@ const PlayerStatsPage = () => {
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history" className="space-y-3 mt-4">
+          <TabsContent value="history" className="space-y-2 mt-3">
             {matchHistory.length > 0 ? (
               matchHistory.map((match) => (
                 <Card key={match.id} className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
                         match.position === 1 ? 'bg-yellow-500/20' :
                         match.position === 2 ? 'bg-gray-400/20' :
                         match.position === 3 ? 'bg-amber-600/20' : 'bg-muted'
                       }`}>
-                        {match.position === 1 ? <Crown className="h-5 w-5 text-yellow-500" /> :
-                         match.position === 2 ? <Medal className="h-5 w-5 text-gray-400" /> :
-                         match.position === 3 ? <Award className="h-5 w-5 text-amber-600" /> :
-                         <Swords className="h-5 w-5 text-muted-foreground" />}
+                        {match.position === 1 ? <Crown className="h-4 w-4 text-yellow-500" /> :
+                         match.position === 2 ? <Medal className="h-4 w-4 text-gray-400" /> :
+                         match.position === 3 ? <Award className="h-4 w-4 text-amber-600" /> :
+                         <Swords className="h-4 w-4 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{match.tournament_title}</p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Gamepad2 className="h-3 w-3" />
-                          <span>{match.game}</span>
+                        <p className="font-medium text-sm truncate">{match.tournament_title}</p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <Gamepad2 className="h-2.5 w-2.5" />
+                          <span className="truncate">{match.game}</span>
                           <span>•</span>
-                          <span>{new Date(match.date).toLocaleDateString()}</span>
+                          <span className="shrink-0">{new Date(match.date).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="shrink-0">
                         {match.position ? (
-                          <Badge variant={match.position <= 3 ? 'default' : 'secondary'}>
+                          <Badge variant={match.position <= 3 ? 'default' : 'secondary'} className="text-[10px] px-1.5">
                             #{match.position}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-[10px] px-1.5">
                             {match.status}
                           </Badge>
                         )}
@@ -522,58 +522,56 @@ const PlayerStatsPage = () => {
               ))
             ) : (
               <Card>
-                <CardContent className="p-8 text-center">
-                  <Swords className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                  <p className="text-muted-foreground">No match history yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Join tournaments to build your history!</p>
+                <CardContent className="py-8 px-4 text-center">
+                  <Swords className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-sm">No match history yet</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Join tournaments to build your history!</p>
                 </CardContent>
               </Card>
             )}
           </TabsContent>
 
           {/* Team Tab */}
-          <TabsContent value="team" className="space-y-4 mt-4">
+          <TabsContent value="team" className="space-y-3 mt-3">
             {teamMembers.length > 0 ? (
-              <>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Star className="h-4 w-4 text-primary" />
-                      Best Teammates
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {teamMembers.map((member, index) => (
-                      <div key={member.user_id} className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-muted-foreground w-4">
-                          {index + 1}
-                        </span>
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={member.avatar_url || ''} />
-                          <AvatarFallback>{member.username.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-semibold text-sm">{member.username}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {member.games_together} games together
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="text-xs">
-                          <Users className="h-3 w-3 mr-1" />
-                          Teammate
-                        </Badge>
+              <Card>
+                <CardHeader className="pb-1.5 px-3 pt-3">
+                  <CardTitle className="text-xs flex items-center gap-1.5">
+                    <Star className="h-3.5 w-3.5 text-primary" />
+                    Best Teammates
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-3 pb-3 space-y-2">
+                  {teamMembers.map((member, index) => (
+                    <div key={member.user_id} className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-muted-foreground w-4 shrink-0">
+                        {index + 1}
+                      </span>
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarImage src={member.avatar_url || ''} />
+                        <AvatarFallback className="text-xs">{member.username.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{member.username}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {member.games_together} games together
+                        </p>
                       </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </>
+                      <Badge variant="outline" className="text-[10px] px-1.5 shrink-0">
+                        <Users className="h-2.5 w-2.5 mr-0.5" />
+                        Mate
+                      </Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             ) : (
               <Card>
-                <CardContent className="p-8 text-center">
-                  <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                  <p className="text-muted-foreground">No team data yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">Join or create a team to see your best teammates!</p>
-                  <Button variant="outline" size="sm" className="mt-4" asChild>
+                <CardContent className="py-8 px-4 text-center">
+                  <Users className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-sm">No team data yet</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Join or create a team to see your best teammates!</p>
+                  <Button variant="outline" size="sm" className="mt-3 text-xs h-8" asChild>
                     <Link to="/team">
                       Browse Teams
                     </Link>
@@ -586,17 +584,15 @@ const PlayerStatsPage = () => {
 
         {/* Total Earnings */}
         <Card className="bg-gradient-to-r from-success/10 to-emerald-500/10 border-success/30">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-success/20 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-success" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Earnings</p>
-                <p className="text-2xl font-bold text-success">
-                  ₹{(userStats?.total_earnings || 0).toLocaleString()}
-                </p>
-              </div>
+          <CardContent className="p-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+              <TrendingUp className="h-5 w-5 text-success" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-muted-foreground">Total Earnings</p>
+              <p className="text-xl font-bold text-success">
+                ₹{(userStats?.total_earnings || 0).toLocaleString()}
+              </p>
             </div>
           </CardContent>
         </Card>
