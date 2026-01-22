@@ -57,7 +57,8 @@ const AdminPushNotifications = () => {
 
   const fetchPushLogs = async () => {
     try {
-      const { data, error } = await supabase
+      // Using any cast since types may not be regenerated yet
+      const { data, error } = await (supabase as any)
         .from('push_notification_logs')
         .select('*')
         .order('sent_at', { ascending: false })
@@ -66,7 +67,7 @@ const AdminPushNotifications = () => {
       if (error && error.code !== '42P01') {
         console.error('Error fetching logs:', error);
       }
-      setPushLogs(data || []);
+      setPushLogs((data as PushLog[]) || []);
     } catch (error) {
       console.log('Push logs table may not exist yet');
     } finally {
@@ -111,16 +112,19 @@ const AdminPushNotifications = () => {
 
       if (error) throw error;
 
-      // Log the notification
-      await supabase.from('push_notification_logs').insert({
-        title,
-        message,
-        target_type: targetType,
-        target_count: targetType === 'all' ? userCount : (targetType === 'users' ? selectedUserIds.split(',').length : 0),
-        status: 'success',
-      }).catch(() => {
+      // Log the notification (using any cast since types may not be regenerated)
+      try {
+        await (supabase as any).from('push_notification_logs').insert({
+          title,
+          message,
+          target_type: targetType,
+          target_count: targetType === 'all' ? userCount : (targetType === 'users' ? selectedUserIds.split(',').length : 0),
+          status: 'success',
+        });
+      } catch (logError) {
         // Table might not exist, ignore error
-      });
+        console.log('Could not log push notification');
+      }
 
       toast.success('Push notification bhej diya gaya!');
       
@@ -137,13 +141,17 @@ const AdminPushNotifications = () => {
       toast.error('Push notification bhejne mein error aaya');
       
       // Log failure
-      await supabase.from('push_notification_logs').insert({
-        title,
-        message,
-        target_type: targetType,
-        target_count: 0,
-        status: 'failed',
-      }).catch(() => {});
+      try {
+        await (supabase as any).from('push_notification_logs').insert({
+          title,
+          message,
+          target_type: targetType,
+          target_count: 0,
+          status: 'failed',
+        });
+      } catch (logError) {
+        console.log('Could not log failed push notification');
+      }
     } finally {
       setSending(false);
     }

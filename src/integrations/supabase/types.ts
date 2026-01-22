@@ -1333,6 +1333,45 @@ export type Database = {
         }
         Relationships: []
       }
+      push_notification_logs: {
+        Row: {
+          data: Json | null
+          id: string
+          message: string
+          sent_at: string
+          sent_by: string | null
+          status: string
+          target_count: number | null
+          target_type: string
+          title: string
+          url: string | null
+        }
+        Insert: {
+          data?: Json | null
+          id?: string
+          message: string
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          target_count?: number | null
+          target_type?: string
+          title: string
+          url?: string | null
+        }
+        Update: {
+          data?: Json | null
+          id?: string
+          message?: string
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          target_count?: number | null
+          target_type?: string
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           admin_response: string | null

@@ -31,6 +31,7 @@ import {
   ScrollText,
   Ban,
   Bot,
+  Smartphone,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -68,6 +69,7 @@ const menuItems: MenuItem[] = [
   { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'local_tournaments:view', countKey: 'pendingLocalTournamentApps' },
   { icon: ScrollText, label: 'Tournament Rules', path: '/admin/rules', superAdminOnly: true },
   { icon: Bot, label: 'Vyuha AI', path: '/admin/ai', superAdminOnly: true },
+  { icon: Smartphone, label: 'Push Notifications', path: '/admin/push-notifications', permission: 'notifications:manage' },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
 ];
