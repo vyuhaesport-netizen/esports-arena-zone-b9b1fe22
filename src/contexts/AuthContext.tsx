@@ -13,7 +13,7 @@ interface AuthContextType {
   permissions: string[];
   hasPermission: (permission: string) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string) => Promise<{ data: { user: User | null } | null; error: Error | null }>;
+  signUp: (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null } | null; error: Error | null }>;
   signOut: () => Promise<void>;
   refreshPermissions: () => Promise<void>;
 }
@@ -184,6 +184,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         emailRedirectTo: redirectUrl,
       },
     });
+
+    // Ensure a profile row exists for newly created users.
+    // This prevents silent failures later when screens do .update().eq('user_id', ...).
+    if (!error && data?.user) {
+      const profileEmail = (data.user.email || email).toLowerCase().trim();
+
+      // Prefer upsert (idempotent). If constraints differ, fallback to insert.
+      const { error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            user_id: data.user.id,
+            email: profileEmail,
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (upsertError) {
+        // Best-effort fallback (ignore duplicate errors)
+        await supabase.from('profiles').insert({ user_id: data.user.id, email: profileEmail });
+      }
+    }
+
     return { data, error };
   };
 

@@ -117,15 +117,22 @@ const CompleteProfile = () => {
         return;
       }
 
+      // Use upsert so the profile can be created if it doesn't exist yet.
+      if (!user.email) throw new Error('Missing user email');
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          username: formData.username.toLowerCase().trim(),
-          preferred_game: formData.preferred_game,
-          in_game_name: formData.in_game_name.trim(),
-          game_uid: formData.game_uid.trim(),
-        })
-        .eq('user_id', user.id);
+        .upsert(
+          {
+            user_id: user.id,
+            email: user.email.toLowerCase().trim(),
+            username: formData.username.toLowerCase().trim(),
+            preferred_game: formData.preferred_game,
+            in_game_name: formData.in_game_name.trim(),
+            game_uid: formData.game_uid.trim(),
+          },
+          { onConflict: 'user_id' }
+        );
 
       if (error) throw error;
 
