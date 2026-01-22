@@ -493,21 +493,15 @@ const ProfilePage = () => {
         </div>
       </div>
 
+      {/* Push Notification Card */}
+      <div className="px-4 pt-4">
+        <PushNotificationSetup variant="card" />
+      </div>
+
       {/* More Section */}
       <div className="px-4 pt-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">More</h3>
         <div className="bg-card rounded-xl border border-border shadow-sm divide-y divide-border">
-          {/* Push Notifications Setting */}
-          <div className="w-full flex items-center gap-3 p-4">
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <div className="flex-1">
-              <span className="text-sm font-medium text-foreground">Push Notifications</span>
-              <div className="mt-1">
-                <PushNotificationSetup />
-              </div>
-            </div>
-          </div>
-          
           {moreItems.map(item => <button key={item.label} onClick={item.onClick} className="w-full flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors first:rounded-t-xl last:rounded-b-xl">
               <item.icon className="h-5 w-5 text-muted-foreground" />
               <span className="flex-1 text-left text-sm font-medium text-foreground">{item.label}</span>
