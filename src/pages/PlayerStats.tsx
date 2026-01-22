@@ -129,31 +129,33 @@ const PlayerStatsPage = () => {
         setProfile(profileResult.data);
       }
 
-      // Process match history
+      // Process match history - ONLY completed tournaments
       if (registrationsResult.data) {
-        const history: MatchHistory[] = registrationsResult.data.map((reg: any) => {
-          const tournament = reg.tournaments;
-          let position: number | null = null;
-          let earnings = 0;
+        const history: MatchHistory[] = registrationsResult.data
+          .filter((reg: any) => reg.tournaments?.status === 'completed')
+          .map((reg: any) => {
+            const tournament = reg.tournaments;
+            let position: number | null = null;
+            let earnings = 0;
 
-          if (tournament?.winner_user_id === user.id) {
-            position = 1;
-          } else if (tournament?.joined_users?.includes(user.id)) {
-            // Could derive position from prize_distribution if available
-            const joinedIndex = tournament.joined_users.indexOf(user.id);
-            if (joinedIndex < 3) position = joinedIndex + 1;
-          }
+            if (tournament?.winner_user_id === user.id) {
+              position = 1;
+            } else if (tournament?.joined_users?.includes(user.id)) {
+              // Could derive position from prize_distribution if available
+              const joinedIndex = tournament.joined_users.indexOf(user.id);
+              if (joinedIndex < 3) position = joinedIndex + 1;
+            }
 
-          return {
-            id: reg.id,
-            tournament_title: tournament?.title || 'Unknown Tournament',
-            game: tournament?.game || 'Unknown',
-            date: tournament?.start_date || reg.registered_at,
-            position,
-            earnings,
-            status: tournament?.status || 'unknown'
-          };
-        });
+            return {
+              id: reg.id,
+              tournament_title: tournament?.title || 'Unknown Tournament',
+              game: tournament?.game || 'Unknown',
+              date: tournament?.start_date || reg.registered_at,
+              position,
+              earnings,
+              status: tournament?.status || 'unknown'
+            };
+          });
         setMatchHistory(history);
 
         // Generate performance data (last 6 months)
