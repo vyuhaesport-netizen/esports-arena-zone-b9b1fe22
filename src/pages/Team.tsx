@@ -637,7 +637,7 @@ const TeamPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col pb-20">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
         <div className="flex items-center gap-3 px-5 h-16">
@@ -1061,8 +1061,8 @@ const TeamPage = () => {
           </ScrollArea>
         </TabsContent>
 
-        {/* Chat Tab - Full Screen with fixed height */}
-        <TabsContent value="chat" className="flex-1 mt-0 px-0 animate-fade-in overflow-hidden h-[calc(100vh-200px)]">
+        {/* Chat Tab - Full Screen */}
+        <TabsContent value="chat" className="flex-1 min-h-0 mt-0 px-0 animate-fade-in overflow-hidden">
           {myTeam && (
             <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
           )}
