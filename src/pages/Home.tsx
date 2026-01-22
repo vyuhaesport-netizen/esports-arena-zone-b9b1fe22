@@ -393,9 +393,7 @@ const HomePage = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={vyuhaLogo} alt="Vyuha" className="h-10 w-10 rounded-full object-cover" />
-            <div>
-              <h1 className="font-gaming text-lg font-bold">Vyuha eSports</h1>
-            </div>
+            <span className="text-sm font-semibold">Vyuha eSports</span>
           </div>
           <div className="flex items-center gap-1">
             <TournamentScanner />
@@ -420,7 +418,7 @@ const HomePage = () => {
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-gaming font-semibold text-sm mb-1">Join the Battle!</h3>
+                <h3 className="font-semibold text-sm mb-1">Join the Battle!</h3>
                 <p className="text-xs text-muted-foreground mb-3">
                   Sign up now to compete in tournaments, win real prizes, and become a champion!
                 </p>
@@ -486,7 +484,7 @@ const HomePage = () => {
       {/* Tournaments Section */}
       <div className="px-4 pb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-gaming font-semibold">Live Tournaments</h2>
+          <h2 className="font-semibold">Live Tournaments</h2>
           <span className="text-xs text-muted-foreground">{getFilteredTournaments().length} matches</span>
         </div>
 

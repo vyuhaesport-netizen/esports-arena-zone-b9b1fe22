@@ -593,10 +593,7 @@ const LocalTournamentPage = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div>
-            <h1 className="text-lg font-bold">Private Tournament</h1>
-            <p className="text-xs text-muted-foreground">School, College & Private Events</p>
-          </div>
+          <span className="text-base font-semibold">Private Tournament</span>
         </div>
       </header>
 
