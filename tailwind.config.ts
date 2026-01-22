@@ -15,7 +15,7 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
-  				'DM Sans',
+					'Inter',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
@@ -24,12 +24,7 @@ export default {
   				'Segoe UI Symbol',
   				'Noto Color Emoji'
   			],
-  			gaming: [
-  				'Orbitron',
-  				'sans-serif'
-  			],
   			serif: [
-  				'Crimson Pro',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
