@@ -310,7 +310,7 @@ const SchoolTournament = () => {
 
   return (
     <AppLayout>
-      <div className="pb-20">
+      <div className="pb-20 overflow-y-auto">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary/20 to-primary/5 p-4">
           <div className="flex items-center gap-2 mb-1">
