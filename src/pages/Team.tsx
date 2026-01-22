@@ -1061,8 +1061,8 @@ const TeamPage = () => {
           </ScrollArea>
         </TabsContent>
 
-        {/* Chat Tab - Full Screen */}
-        <TabsContent value="chat" className="flex-1 mt-0 px-0 animate-fade-in overflow-hidden">
+        {/* Chat Tab - Full Screen with fixed height */}
+        <TabsContent value="chat" className="flex-1 mt-0 px-0 animate-fade-in overflow-hidden h-[calc(100vh-200px)]">
           {myTeam && (
             <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
           )}
