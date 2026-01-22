@@ -733,9 +733,11 @@ const TeamPage = () => {
         </div>
 
         {/* My Team Tab */}
-        <TabsContent value="my-team" className="flex-1 mt-0 px-5 py-4">
+        <TabsContent value="my-team" className="flex-1 mt-0 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="px-5 py-4">
           {myTeam ? (
-            <div className="space-y-5 animate-fade-in">
+              <div className="space-y-5 animate-fade-in">
               {/* Team Card - Enhanced Design */}
               <Card className="border border-border/60 bg-gradient-to-br from-card to-muted/20 overflow-hidden shadow-sm">
                 <CardHeader className="pb-4 relative">
@@ -955,6 +957,8 @@ const TeamPage = () => {
               </div>
             </div>
           )}
+            </div>
+          </ScrollArea>
         </TabsContent>
 
         {/* Browse Teams Tab - Only visible when user has no team */}
