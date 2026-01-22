@@ -60,7 +60,6 @@ import RefundPolicy from "./pages/RefundPolicy";
 import AboutUs from "./pages/AboutUs";
 import Documentation from "./pages/Documentation";
 import TournamentDetails from "./pages/TournamentDetails";
-import LocalTournament from "./pages/LocalTournament";
 import JoinLocalTournament from "./pages/JoinLocalTournament";
 import AdminLocalTournaments from "./pages/admin/AdminLocalTournaments";
 import SchoolTournament from "./pages/SchoolTournament";
@@ -285,14 +284,13 @@ const AppRoutes = () => {
       {/* Profile Completion */}
       <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
       
-      {/* Local Tournaments */}
-      <Route path="/local-tournament" element={<ProtectedRoute><LocalTournament /></ProtectedRoute>} />
+      {/* Local/School Tournaments - now unified */}
+      <Route path="/local-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
       <Route path="/join-local" element={<JoinLocalTournament />} />
-      
-      {/* School/College Tournaments */}
       <Route path="/school-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
       <Route path="/school-tournament/:id" element={<ProtectedRoute><SchoolTournamentManage /></ProtectedRoute>} />
       <Route path="/join-school-tournament/:code" element={<JoinSchoolTournament />} />
+      <Route path="/admin/local-tournaments" element={<ProtectedRoute><AdminLocalTournaments /></ProtectedRoute>} />
       <Route path="/admin/school-tournaments" element={<ProtectedRoute><AdminSchoolTournaments /></ProtectedRoute>} />
       
       {/* Public Routes */}
