@@ -196,7 +196,7 @@ const OrganizerProfilePreview = ({
                 </AvatarFallback>
               </Avatar>
               
-              <h3 className="font-gaming font-bold text-lg">
+              <h3 className="font-bold text-lg">
                 {profile.full_name || profile.username || 'Organizer'}
               </h3>
               

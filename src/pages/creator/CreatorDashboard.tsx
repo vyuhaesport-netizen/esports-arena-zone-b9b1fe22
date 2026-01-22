@@ -819,7 +819,7 @@ const CreatorDashboard = () => {
           </button>
           <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-lg" />
           <div>
-            <h1 className="font-gaming font-bold">Tournament Management</h1>
+            <h1 className="font-bold">Tournament Management</h1>
             <p className="text-xs text-muted-foreground">Create and manage tournaments</p>
           </div>
         </div>
@@ -894,7 +894,7 @@ const CreatorDashboard = () => {
 
         {/* Tournament List - Active */}
         <div className="space-y-3">
-          <h2 className="font-gaming text-lg flex items-center gap-2">
+          <h2 className="text-lg font-bold flex items-center gap-2">
             <Gamepad2 className="h-5 w-5 text-pink-500" />
             Active Tournaments
           </h2>
@@ -1052,7 +1052,7 @@ const CreatorDashboard = () => {
 
         {/* Completed Tournaments Section */}
         <div className="space-y-3">
-          <h2 className="font-gaming text-lg flex items-center gap-2">
+          <h2 className="text-lg font-bold flex items-center gap-2">
             <Trophy className="h-5 w-5 text-green-500" />
             Completed Tournaments
           </h2>
@@ -1506,7 +1506,7 @@ const CreatorDashboard = () => {
           {selectedTournament && (
             <div className="bg-primary/10 rounded-lg p-4 text-center flex-shrink-0">
               <p className="text-sm text-muted-foreground">Prize Pool</p>
-              <p className="text-2xl font-gaming font-bold text-primary">
+              <p className="text-2xl font-bold text-primary">
                 ₹{Math.round(selectedTournament.current_prize_pool || 0)}
               </p>
             </div>

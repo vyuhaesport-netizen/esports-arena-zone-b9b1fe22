@@ -649,7 +649,7 @@ const TeamPage = () => {
           </button>
           <img src={vyuhaLogo} alt="Vyuha" className="w-9 h-9 rounded-full shadow-sm" />
           <div className="flex-1">
-            <h1 className="font-gaming font-bold text-lg">Teams</h1>
+            <h1 className="font-bold text-lg">Teams</h1>
             <p className="text-xs text-muted-foreground">Build your squad for duo/squad matches</p>
           </div>
           
@@ -747,7 +747,7 @@ const TeamPage = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="text-xl font-gaming">{myTeam.name}</CardTitle>
+                        <CardTitle className="text-xl font-bold">{myTeam.name}</CardTitle>
                         {isLeader && (
                           <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[10px] shadow-sm">
                             <Crown className="h-3 w-3 mr-0.5" /> Leader
@@ -943,7 +943,7 @@ const TeamPage = () => {
               <div className="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/15 to-orange-500/10 flex items-center justify-center">
                 <Users className="h-12 w-12 text-primary/40" />
               </div>
-              <h3 className="font-gaming text-xl font-bold mb-2">No Team Yet</h3>
+              <h3 className="text-xl font-bold mb-2">No Team Yet</h3>
               <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
                 Create your own team to lead, or browse and request to join existing squads
               </p>

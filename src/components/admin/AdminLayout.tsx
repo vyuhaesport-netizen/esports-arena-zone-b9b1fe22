@@ -110,7 +110,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
         <div className="flex items-center gap-3">
           <img src={vyuhaLogo} alt="Vyuha" className="w-10 h-10 rounded-lg" />
           <div>
-            <h2 className="font-gaming font-bold text-lg">Vyuha Admin</h2>
+            <h2 className="font-bold text-lg">Vyuha Admin</h2>
             <p className="text-xs text-muted-foreground">
               {isSuperAdmin ? 'Super Admin' : 'Team Member'}
             </p>
@@ -176,7 +176,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-3">
             <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-lg" />
-            <span className="font-gaming font-bold">Vyuha Admin</span>
+            <span className="font-bold">Vyuha Admin</span>
           </div>
           
           <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -195,7 +195,7 @@ const AdminLayout = ({ children, title }: AdminLayoutProps) => {
       {/* Page Title */}
       {title && (
         <div className="bg-card border-b border-border px-4 py-3">
-          <h1 className="font-gaming text-lg font-bold">{title}</h1>
+          <h1 className="text-lg font-bold">{title}</h1>
         </div>
       )}
 

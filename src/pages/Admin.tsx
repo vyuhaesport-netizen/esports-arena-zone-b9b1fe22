@@ -276,7 +276,7 @@ const Admin = () => {
         <button onClick={() => navigate('/profile')} className="p-1">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <h1 className="font-gaming text-lg font-bold">Admin Panel</h1>
+        <h1 className="text-lg font-bold">Admin Panel</h1>
       </div>
 
       {/* Stats */}
@@ -287,7 +287,7 @@ const Admin = () => {
               <Trophy className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xl font-gaming font-bold">{tournaments.length}</p>
+              <p className="text-xl font-bold">{tournaments.length}</p>
               <p className="text-xs text-muted-foreground">Tournaments</p>
             </div>
           </div>
@@ -298,7 +298,7 @@ const Admin = () => {
               <Users className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xl font-gaming font-bold">{users.length}</p>
+              <p className="text-xl font-bold">{users.length}</p>
               <p className="text-xs text-muted-foreground">Users</p>
             </div>
           </div>
@@ -326,7 +326,7 @@ const Admin = () => {
               </DialogTrigger>
               <DialogContent className="max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle className="font-gaming">
+                  <DialogTitle className="font-bold">
                     {editingTournament ? 'Edit Tournament' : 'New Tournament'}
                   </DialogTitle>
                 </DialogHeader>

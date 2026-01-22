@@ -263,7 +263,7 @@ const AdminDashboard = () => {
                   <Users className="h-5 w-5 text-blue-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-gaming font-bold">{stats.totalUsers}</p>
+                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
                   <p className="text-xs text-muted-foreground">Total Users</p>
                 </div>
               </div>
@@ -277,7 +277,7 @@ const AdminDashboard = () => {
                   <Trophy className="h-5 w-5 text-purple-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-gaming font-bold">{stats.totalTournaments}</p>
+                  <p className="text-2xl font-bold">{stats.totalTournaments}</p>
                   <p className="text-xs text-muted-foreground">Tournaments</p>
                 </div>
               </div>
@@ -291,7 +291,7 @@ const AdminDashboard = () => {
                   <UserCheck className="h-5 w-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-gaming font-bold">{stats.totalOrganizers}</p>
+                  <p className="text-2xl font-bold">{stats.totalOrganizers}</p>
                   <p className="text-xs text-muted-foreground">Organizers</p>
                 </div>
               </div>
@@ -305,7 +305,7 @@ const AdminDashboard = () => {
                   <Palette className="h-5 w-5 text-pink-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-gaming font-bold">{stats.totalCreators}</p>
+                  <p className="text-2xl font-bold">{stats.totalCreators}</p>
                   <p className="text-xs text-muted-foreground">Creators</p>
                 </div>
               </div>
@@ -319,7 +319,7 @@ const AdminDashboard = () => {
                   <MapPin className="h-5 w-5 text-cyan-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-gaming font-bold">{stats.localTournaments}</p>
+                  <p className="text-2xl font-bold">{stats.localTournaments}</p>
                   <p className="text-xs text-muted-foreground">Local Tournaments</p>
                 </div>
               </div>
@@ -333,7 +333,7 @@ const AdminDashboard = () => {
                   <IndianRupee className="h-5 w-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-2xl font-gaming font-bold">₹{stats.totalRevenue.toFixed(0)}</p>
+                  <p className="text-2xl font-bold">₹{stats.totalRevenue.toFixed(0)}</p>
                   <p className="text-xs text-muted-foreground">Total Revenue</p>
                 </div>
               </div>
@@ -347,7 +347,7 @@ const AdminDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm opacity-90">Platform Earnings</p>
-                <p className="text-3xl font-gaming font-bold mt-1">
+                <p className="text-3xl font-bold mt-1">
                   ₹{stats.platformEarnings.toFixed(0)}
                 </p>
               </div>

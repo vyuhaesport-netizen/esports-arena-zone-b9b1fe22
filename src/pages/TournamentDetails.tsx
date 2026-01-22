@@ -428,7 +428,7 @@ const TournamentDetails = () => {
           </Button>
           <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-lg" />
           <div className="flex-1">
-            <h1 className="font-gaming font-bold text-sm truncate">{tournament.title}</h1>
+            <h1 className="font-bold text-sm truncate">{tournament.title}</h1>
             <p className="text-xs text-muted-foreground">{tournament.game}</p>
           </div>
         </div>
@@ -466,7 +466,7 @@ const TournamentDetails = () => {
           )}
         </div>
 
-        <h1 className="text-2xl font-gaming font-bold text-center mb-2">{tournament.title}</h1>
+        <h1 className="text-2xl font-bold text-center mb-2">{tournament.title}</h1>
         <p className="text-center text-muted-foreground text-sm">{tournament.game}</p>
       </div>
 

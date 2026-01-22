@@ -323,7 +323,7 @@ const SchoolTournamentManage = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex-1">
-              <h1 className="font-gaming text-lg font-bold">{tournament.tournament_name}</h1>
+              <h1 className="text-lg font-bold">{tournament.tournament_name}</h1>
               <p className="text-sm text-muted-foreground flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> {tournament.school_name}
               </p>

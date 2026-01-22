@@ -206,7 +206,7 @@ const JoinSchoolTournament = () => {
 
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-xl font-gaming font-bold">{tournament.tournament_name}</h1>
+              <h1 className="text-xl font-bold">{tournament.tournament_name}</h1>
               <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                 <School className="h-4 w-4" /> {tournament.school_name}
               </p>
