@@ -1372,6 +1372,370 @@ export type Database = {
         }
         Relationships: []
       }
+      school_tournament_applications: {
+        Row: {
+          admin_notes: string | null
+          alternate_phone: string | null
+          created_at: string
+          entry_fee: number | null
+          entry_type: string
+          game: string
+          id: string
+          max_players: number
+          organizer_name: string
+          primary_phone: string
+          prize_pool: number | null
+          registration_deadline: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          school_city: string
+          school_district: string
+          school_image_url: string | null
+          school_name: string
+          school_state: string
+          status: string
+          tournament_date: string
+          tournament_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          alternate_phone?: string | null
+          created_at?: string
+          entry_fee?: number | null
+          entry_type?: string
+          game: string
+          id?: string
+          max_players: number
+          organizer_name: string
+          primary_phone: string
+          prize_pool?: number | null
+          registration_deadline: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          school_city: string
+          school_district: string
+          school_image_url?: string | null
+          school_name: string
+          school_state: string
+          status?: string
+          tournament_date: string
+          tournament_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          alternate_phone?: string | null
+          created_at?: string
+          entry_fee?: number | null
+          entry_type?: string
+          game?: string
+          id?: string
+          max_players?: number
+          organizer_name?: string
+          primary_phone?: string
+          prize_pool?: number | null
+          registration_deadline?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          school_city?: string
+          school_district?: string
+          school_image_url?: string | null
+          school_name?: string
+          school_state?: string
+          status?: string
+          tournament_date?: string
+          tournament_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      school_tournament_room_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          is_winner: boolean | null
+          match_rank: number | null
+          room_id: string
+          slot_number: number
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          match_rank?: number | null
+          room_id: string
+          slot_number: number
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          match_rank?: number | null
+          room_id?: string
+          slot_number?: number
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_tournament_room_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournament_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_tournament_room_assignments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournament_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_tournament_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          room_id: string | null
+          room_name: string
+          room_number: number
+          room_password: string | null
+          round_number: number
+          scheduled_time: string | null
+          status: string
+          tournament_id: string
+          updated_at: string
+          winner_team_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          room_id?: string | null
+          room_name: string
+          room_number: number
+          room_password?: string | null
+          round_number: number
+          scheduled_time?: string | null
+          status?: string
+          tournament_id: string
+          updated_at?: string
+          winner_team_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          room_id?: string | null
+          room_name?: string
+          room_number?: number
+          room_password?: string | null
+          round_number?: number
+          scheduled_time?: string | null
+          status?: string
+          tournament_id?: string
+          updated_at?: string
+          winner_team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_tournament_rooms_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_tournament_rooms_winner_team_id_fkey"
+            columns: ["winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournament_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_tournament_teams: {
+        Row: {
+          created_at: string
+          current_round: number | null
+          eliminated_at_round: number | null
+          final_rank: number | null
+          id: string
+          is_eliminated: boolean | null
+          leader_id: string
+          member_1_id: string | null
+          member_2_id: string | null
+          member_3_id: string | null
+          registered_at: string
+          registration_method: string
+          team_name: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_round?: number | null
+          eliminated_at_round?: number | null
+          final_rank?: number | null
+          id?: string
+          is_eliminated?: boolean | null
+          leader_id: string
+          member_1_id?: string | null
+          member_2_id?: string | null
+          member_3_id?: string | null
+          registered_at?: string
+          registration_method?: string
+          team_name: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_round?: number | null
+          eliminated_at_round?: number | null
+          final_rank?: number | null
+          id?: string
+          is_eliminated?: boolean | null
+          leader_id?: string
+          member_1_id?: string | null
+          member_2_id?: string | null
+          member_3_id?: string | null
+          registered_at?: string
+          registration_method?: string
+          team_name?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_tournament_teams_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_tournaments: {
+        Row: {
+          application_id: string
+          created_at: string
+          current_players: number | null
+          current_round: number | null
+          ended_at: string | null
+          entry_fee: number | null
+          entry_type: string
+          first_place_prize: number | null
+          game: string
+          id: string
+          max_players: number
+          organizer_id: string
+          players_per_room: number
+          private_code: string
+          prize_pool: number | null
+          qr_code_url: string | null
+          registration_deadline: string
+          school_city: string
+          school_district: string
+          school_image_url: string | null
+          school_name: string
+          school_state: string
+          second_place_prize: number | null
+          started_at: string | null
+          status: string
+          third_place_prize: number | null
+          total_collected: number | null
+          total_rooms: number
+          total_rounds: number | null
+          tournament_date: string
+          tournament_name: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          current_players?: number | null
+          current_round?: number | null
+          ended_at?: string | null
+          entry_fee?: number | null
+          entry_type?: string
+          first_place_prize?: number | null
+          game: string
+          id?: string
+          max_players: number
+          organizer_id: string
+          players_per_room?: number
+          private_code: string
+          prize_pool?: number | null
+          qr_code_url?: string | null
+          registration_deadline: string
+          school_city: string
+          school_district: string
+          school_image_url?: string | null
+          school_name: string
+          school_state: string
+          second_place_prize?: number | null
+          started_at?: string | null
+          status?: string
+          third_place_prize?: number | null
+          total_collected?: number | null
+          total_rooms?: number
+          total_rounds?: number | null
+          tournament_date: string
+          tournament_name: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          current_players?: number | null
+          current_round?: number | null
+          ended_at?: string | null
+          entry_fee?: number | null
+          entry_type?: string
+          first_place_prize?: number | null
+          game?: string
+          id?: string
+          max_players?: number
+          organizer_id?: string
+          players_per_room?: number
+          private_code?: string
+          prize_pool?: number | null
+          qr_code_url?: string | null
+          registration_deadline?: string
+          school_city?: string
+          school_district?: string
+          school_image_url?: string | null
+          school_name?: string
+          school_state?: string
+          second_place_prize?: number | null
+          started_at?: string | null
+          status?: string
+          third_place_prize?: number | null
+          total_collected?: number | null
+          total_rooms?: number
+          total_rounds?: number | null
+          tournament_date?: string
+          tournament_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_tournaments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournament_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           admin_response: string | null
@@ -1912,6 +2276,10 @@ export type Database = {
         Args: { p_ban_reason: string; p_report_id: string }
         Returns: Json
       }
+      calculate_tournament_structure: {
+        Args: { p_game: string; p_max_players: number }
+        Returns: Json
+      }
       cancel_local_tournament: {
         Args: { p_organizer_id: string; p_tournament_id: string }
         Returns: Json
@@ -1943,6 +2311,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      create_school_tournament_from_application: {
+        Args: { p_application_id: string }
+        Returns: string
+      }
       credit_dhana_commission: {
         Args: {
           p_amount: number
@@ -1970,7 +2342,15 @@ export type Database = {
             }
             Returns: Json
           }
+      declare_room_winner: {
+        Args: { p_room_id: string; p_winner_team_id: string }
+        Returns: boolean
+      }
       generate_private_code: { Args: never; Returns: string }
+      generate_tournament_round_rooms: {
+        Args: { p_round_number: number; p_tournament_id: string }
+        Returns: number
+      }
       get_active_payment_gateway: {
         Args: never
         Returns: {
@@ -2073,6 +2453,18 @@ export type Database = {
       recalculate_tournament_prizepool: {
         Args: { p_tournament_id: string }
         Returns: Json
+      }
+      register_school_tournament_team: {
+        Args: {
+          p_leader_id: string
+          p_member_1_id?: string
+          p_member_2_id?: string
+          p_member_3_id?: string
+          p_registration_method?: string
+          p_team_name: string
+          p_tournament_id: string
+        }
+        Returns: string
       }
       reject_local_tournament: {
         Args: { p_application_id: string; p_reason: string }
