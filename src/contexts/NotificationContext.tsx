@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { initOneSignal, loginOneSignal, logoutOneSignal } from '@/lib/onesignal';
 
 interface Notification {
   id: string;
@@ -117,6 +118,28 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   };
+
+  // Initialize OneSignal and handle user login/logout
+  useEffect(() => {
+    const setupOneSignal = async () => {
+      await initOneSignal();
+      
+      if (user) {
+        // Fetch user email for OneSignal tagging
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        await loginOneSignal(user.id, profile?.email);
+      } else {
+        await logoutOneSignal();
+      }
+    };
+
+    setupOneSignal();
+  }, [user]);
 
   useEffect(() => {
     fetchNotifications();
