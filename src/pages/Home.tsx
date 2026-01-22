@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import vyuhaLogo from '@/assets/vyuha-logo.png';
+import BrandLogo from '@/components/BrandLogo';
 import NotificationBell from '@/components/NotificationBell';
 import TournamentCard from '@/components/TournamentCard';
 import TournamentScanner from '@/components/TournamentScanner';
@@ -392,7 +392,7 @@ const HomePage = () => {
       <div className="bg-card border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={vyuhaLogo} alt="Vyuha" className="h-10 w-10 rounded-full object-cover" />
+            <BrandLogo className="h-10 w-10" alt="Vyuha" />
             <span className="text-sm font-semibold">Vyuha eSports</span>
           </div>
           <div className="flex items-center gap-1">
