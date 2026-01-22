@@ -317,10 +317,10 @@ const SchoolTournament = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="font-gaming text-lg font-bold">School Tournament</h1>
+            <h1 className="text-lg font-bold">Private Tournament</h1>
           </div>
           <p className="text-sm text-muted-foreground ml-10">
-            Organize large-scale tournaments for schools & colleges
+            Organize tournaments for schools, colleges & private events
           </p>
         </div>
 
