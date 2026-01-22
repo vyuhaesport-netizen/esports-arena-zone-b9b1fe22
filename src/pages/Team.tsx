@@ -637,7 +637,7 @@ const TeamPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
         <div className="flex items-center gap-3 px-5 h-16">
@@ -683,8 +683,8 @@ const TeamPage = () => {
       </header>
 
       {/* Tabs - Conditional based on team membership */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <div className="px-5 pt-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="px-5 pt-4 shrink-0">
           {/* If user has a team, show different tab layout */}
           {myTeam ? (
             isLeader ? (
@@ -1062,9 +1062,11 @@ const TeamPage = () => {
         </TabsContent>
 
         {/* Chat Tab - Full Screen */}
-        <TabsContent value="chat" className="flex-1 min-h-0 mt-0 px-0 animate-fade-in overflow-hidden">
+        <TabsContent value="chat" className="flex-1 min-h-0 mt-0 px-0 animate-fade-in overflow-hidden flex flex-col">
           {myTeam && (
-            <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
+            <div className="flex-1 min-h-0">
+              <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
+            </div>
           )}
         </TabsContent>
 
