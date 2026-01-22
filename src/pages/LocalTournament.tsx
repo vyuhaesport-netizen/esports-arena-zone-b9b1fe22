@@ -577,7 +577,7 @@ const LocalTournamentPage = () => {
 
   if (loading) {
     return (
-      <AppLayout title="Local Tournament">
+      <AppLayout title="Private Tournament">
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -594,8 +594,8 @@ const LocalTournamentPage = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-lg font-bold">Organize Local Tournament</h1>
-            <p className="text-xs text-muted-foreground">School & College Events</p>
+            <h1 className="text-lg font-bold">Private Tournament</h1>
+            <p className="text-xs text-muted-foreground">School, College & Private Events</p>
           </div>
         </div>
       </header>
