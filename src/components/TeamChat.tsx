@@ -389,8 +389,8 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
       )}
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="shrink-0 p-3 bg-card border-t border-border/60 safe-area-bottom">
-        <div className="flex gap-2">
+      <form onSubmit={handleSendMessage} className="shrink-0 bg-card border-t border-border/60">
+        <div className="flex gap-2 px-3 pt-3">
           <Input
             placeholder="Type a message..."
             value={newMessage}

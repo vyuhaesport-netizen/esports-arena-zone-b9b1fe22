@@ -637,7 +637,7 @@ const TeamPage = () => {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
         <div className="flex items-center gap-3 px-5 h-16">
