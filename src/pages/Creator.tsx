@@ -2,17 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import BrandLogo from '@/components/BrandLogo';
+import NotificationBell from '@/components/NotificationBell';
 import TournamentCard from '@/components/TournamentCard';
 import TournamentShareDialog from '@/components/TournamentShareDialog';
 import SEOHead from '@/components/SEOHead';
 import {
   Trophy,
-  Search,
-  Loader2
+  Loader2,
+  LogIn,
+  Sparkles,
+  Gift,
+  Users,
+  X
 } from 'lucide-react';
 import {
   Dialog,
@@ -60,7 +65,6 @@ interface Profile {
 const Creator = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [registering, setRegistering] = useState<string | null>(null);
   const [registeredTournaments, setRegisteredTournaments] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
@@ -70,6 +74,7 @@ const Creator = () => {
   const [activeMode, setActiveMode] = useState<'solo' | 'duo' | 'squad'>('solo');
   const [exitDialog, setExitDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [exiting, setExiting] = useState(false);
+  const [showGuestBanner, setShowGuestBanner] = useState(true);
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -352,14 +357,6 @@ const Creator = () => {
       !t.tournament_mode || t.tournament_mode === activeMode
     );
     
-    // Filter by search
-    if (searchQuery) {
-      filtered = filtered.filter(t =>
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.game.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
     return filtered;
   };
 
@@ -370,30 +367,87 @@ const Creator = () => {
         description="Browse and join creator-hosted BGMI, Free Fire, and COD Mobile tournaments. Compete for prizes and climb the leaderboards on Vyuha Esport."
         url="https://vyuhaesport.in/creator-tournaments"
       />
-      <AppLayout title="Creator Tournaments">
-      {/* Search */}
-      <div className="p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search creator tournaments..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      <AppLayout>
+      {/* Header */}
+      <div className="bg-card border-b border-border/50 px-4 py-2.5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <BrandLogo className="h-10 w-10" alt="Vyuha" />
+          </div>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+          </div>
         </div>
       </div>
 
-      {/* Mode Filter */}
-      <div className="px-4 pb-3">
-        <div className="bg-muted rounded-lg p-1 flex">
+      {/* Guest Login Banner */}
+      {!user && showGuestBanner && (
+        <div className="mx-4 mt-3 relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 border border-primary/30">
+          <button 
+            onClick={() => setShowGuestBanner(false)}
+            className="absolute top-2 right-2 p-1 rounded-full hover:bg-background/50 transition-colors z-10"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+          <div className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-primary/20 shrink-0">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm mb-1">Join the Battle!</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Sign up now to compete in tournaments, win real prizes, and become a champion!
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => navigate('/')}
+                    className="gap-1.5 text-xs h-8"
+                  >
+                    <LogIn className="h-3.5 w-3.5" />
+                    Login
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => navigate('/')}
+                    className="gap-1.5 text-xs h-8"
+                  >
+                    <Gift className="h-3.5 w-3.5" />
+                    Sign Up Free
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Trophy className="h-3.5 w-3.5 text-yellow-500" />
+                <span>Win Prizes</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Users className="h-3.5 w-3.5 text-blue-500" />
+                <span>Join Teams</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5 text-purple-500" />
+                <span>Free Entry</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mode Filter - Solo/Duo/Squad */}
+      <div className="px-4 py-2.5">
+        <div className="bg-muted/60 rounded-lg p-0.5 flex">
           {(['solo', 'duo', 'squad'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setActiveMode(mode)}
-              className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
+              className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors capitalize ${
                 activeMode === mode 
-                  ? 'bg-purple-500 text-white shadow-sm' 
+                  ? 'bg-primary text-primary-foreground shadow-sm' 
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -403,20 +457,24 @@ const Creator = () => {
         </div>
       </div>
 
+      {/* Tournaments Section */}
+      <div className="px-4 pb-6">
+        <div className="flex items-center justify-between mb-2.5">
+          <h2 className="font-medium text-sm">Creator Tournaments</h2>
+          <span className="text-[10px] text-muted-foreground">{getFilteredTournaments().length} matches</span>
+        </div>
 
-      {/* Tournaments List */}
-      <div className="px-4 pb-4">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : getFilteredTournaments().length === 0 ? (
-          <div className="text-center py-12">
-            <Trophy className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">No creator tournaments found</p>
-            <p className="text-xs text-muted-foreground mt-1">
+          <div className="bg-card rounded-xl border border-border/60 p-5 text-center">
+            <Trophy className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-muted-foreground text-xs">No creator tournaments available</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">
               {userProfile?.preferred_game 
-                ? `No ${userProfile.preferred_game} ${activeMode} tournaments available`
+                ? `No ${userProfile.preferred_game} ${activeMode} tournaments`
                 : 'Check back later for new matches!'}
             </p>
           </div>
