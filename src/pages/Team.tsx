@@ -58,10 +58,8 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  Trash2,
-  MessageCircle
+  Trash2
 } from 'lucide-react';
-import TeamChat from '@/components/TeamChat';
 
 interface PlayerTeam {
   id: string;
@@ -682,25 +680,17 @@ const TeamPage = () => {
         <div className="px-4 pt-4 shrink-0">
           {myTeam ? (
             isLeader ? (
-              <TabsList className="w-full grid grid-cols-2 h-11 rounded-xl bg-muted/50 p-1">
-                <TabsTrigger value="my-team" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
-                  <Shield className="h-4 w-4" />
-                  Team
-                </TabsTrigger>
-                <TabsTrigger value="chat" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
-                  <MessageCircle className="h-4 w-4" />
-                  Chat
-                </TabsTrigger>
-              </TabsList>
-            ) : (
-              <TabsList className="w-full grid grid-cols-2 h-11 rounded-xl bg-muted/50 p-1">
+              <TabsList className="w-full grid grid-cols-1 h-11 rounded-xl bg-muted/50 p-1">
                 <TabsTrigger value="my-team" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
                   <Shield className="h-4 w-4" />
                   My Team
                 </TabsTrigger>
-                <TabsTrigger value="chat" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
-                  <MessageCircle className="h-4 w-4" />
-                  Chat
+              </TabsList>
+            ) : (
+              <TabsList className="w-full grid grid-cols-1 h-11 rounded-xl bg-muted/50 p-1">
+                <TabsTrigger value="my-team" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
+                  <Shield className="h-4 w-4" />
+                  My Team
                 </TabsTrigger>
               </TabsList>
             )
@@ -988,12 +978,6 @@ const TeamPage = () => {
           </div>
         </TabsContent>
 
-      {/* Chat Tab */}
-        <TabsContent value="chat" className="flex-1 mt-0 flex flex-col min-h-0">
-          {myTeam && (
-            <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
-          )}
-        </TabsContent>
 
         {/* Requests Tab */}
         <TabsContent value="requests" className="flex-1 mt-0 overflow-auto px-4 py-4 pb-20">
