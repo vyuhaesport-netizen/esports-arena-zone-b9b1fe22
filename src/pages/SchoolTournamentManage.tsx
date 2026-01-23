@@ -618,12 +618,25 @@ const SchoolTournamentManage = () => {
             <DialogDescription>Scan to join the tournament</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center py-4">
-            <div className="bg-white p-4 rounded-lg">
+            <div className="bg-white p-4 rounded-lg relative">
               <QRCodeCanvas
                 value={`${window.location.origin}/join-school-tournament/${tournament?.private_code}`}
                 size={200}
                 level="H"
               />
+              {/* School Image in Center */}
+              {tournament?.school_image_url && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-white rounded-lg scale-125" />
+                    <img 
+                      src={tournament.school_image_url} 
+                      alt={tournament.school_name}
+                      className="relative w-12 h-12 object-cover rounded-lg ring-2 ring-primary"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
             <p className="text-2xl font-mono font-bold mt-4 tracking-widest">
               {tournament?.private_code}
