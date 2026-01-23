@@ -65,6 +65,14 @@ interface Tournament {
   players_per_room: number;
 }
 
+interface PlayerProfile {
+  user_id: string;
+  username?: string;
+  full_name?: string;
+  in_game_name?: string;
+  game_uid?: string;
+}
+
 interface Team {
   id: string;
   team_name: string;
@@ -77,7 +85,6 @@ interface Team {
   final_rank?: number;
   registration_method: string;
   registered_at: string;
-  leader_profile?: { username: string; full_name: string };
 }
 
 interface Room {
@@ -111,6 +118,8 @@ const SchoolTournamentManage = () => {
   const [roomDialogOpen, setRoomDialogOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [declareWinnerDialogOpen, setDeclareWinnerDialogOpen] = useState(false);
+  const [viewTeamsDialogOpen, setViewTeamsDialogOpen] = useState(false);
+  const [playerProfiles, setPlayerProfiles] = useState<Record<string, PlayerProfile>>({});
   
   // Form states
   const [manualTeam, setManualTeam] = useState({ teamName: '', leaderName: '' });
@@ -190,6 +199,46 @@ const SchoolTournamentManage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch player profiles for a room when viewing teams
+  const fetchRoomPlayerProfiles = async (room: Room) => {
+    if (!room) return;
+    
+    const teamIds = roomAssignments[room.id] || [];
+    const roomTeams = teams.filter(t => teamIds.includes(t.id));
+    
+    // Collect all player IDs
+    const playerIds: string[] = [];
+    roomTeams.forEach(team => {
+      if (team.leader_id) playerIds.push(team.leader_id);
+      if (team.member_1_id) playerIds.push(team.member_1_id);
+      if (team.member_2_id) playerIds.push(team.member_2_id);
+      if (team.member_3_id) playerIds.push(team.member_3_id);
+    });
+
+    if (playerIds.length === 0) return;
+
+    // Fetch profiles (only unique IDs)
+    const uniqueIds = [...new Set(playerIds)];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('user_id, username, full_name, in_game_name, game_uid')
+      .in('user_id', uniqueIds);
+
+    if (profiles) {
+      const profileMap: Record<string, PlayerProfile> = {};
+      profiles.forEach(p => {
+        profileMap[p.user_id] = p;
+      });
+      setPlayerProfiles(prev => ({ ...prev, ...profileMap }));
+    }
+  };
+
+  const handleViewRoomTeams = (room: Room) => {
+    setSelectedRoom(room);
+    setViewTeamsDialogOpen(true);
+    fetchRoomPlayerProfiles(room);
   };
 
   const handleAddManualTeam = async () => {
@@ -683,7 +732,16 @@ const SchoolTournamentManage = () => {
                           </div>
                         )}
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          {/* View Teams Button - always visible */}
+                          <Button 
+                            size="sm" 
+                            variant="secondary" 
+                            onClick={() => handleViewRoomTeams(room)}
+                          >
+                            <Eye className="h-3 w-3 mr-1" /> View Teams ({(roomAssignments[room.id] || []).length})
+                          </Button>
+                          
                           {room.status === 'waiting' && (
                             <Button 
                               size="sm" 
@@ -909,6 +967,87 @@ const SchoolTournamentManage = () => {
               Confirm Winner
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Teams Dialog - Shows teams in a room with player details */}
+      <Dialog open={viewTeamsDialogOpen} onOpenChange={setViewTeamsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              {selectedRoom?.room_name}
+            </DialogTitle>
+            <DialogDescription>
+              {(roomAssignments[selectedRoom?.id || ''] || []).length} teams assigned
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[400px] mt-4">
+            <div className="space-y-3">
+              {selectedRoom && roomAssignments[selectedRoom.id] ? (
+                teams
+                  .filter(t => roomAssignments[selectedRoom.id]?.includes(t.id))
+                  .map((team, idx) => {
+                    // Get player IDs for this team
+                    const playerIds = [
+                      team.leader_id,
+                      team.member_1_id,
+                      team.member_2_id,
+                      team.member_3_id
+                    ].filter(Boolean);
+
+                    return (
+                      <Card key={team.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
+                                {idx + 1}
+                              </div>
+                              <span className="font-medium">{team.team_name}</span>
+                            </div>
+                            {team.is_eliminated && (
+                              <Badge variant="destructive" className="text-xs">Eliminated</Badge>
+                            )}
+                          </div>
+                          {/* Player Details */}
+                          <div className="space-y-1 text-xs">
+                            {playerIds.map((pid, pIdx) => {
+                              const profile = playerProfiles[pid as string];
+                              return (
+                                <div key={pid} className="flex items-center gap-2 p-1.5 bg-muted/50 rounded">
+                                  <span className="text-muted-foreground w-6">P{pIdx + 1}</span>
+                                  <div className="flex-1">
+                                    <span className="font-medium">
+                                      {profile?.in_game_name || profile?.username || 'Player ' + (pIdx + 1)}
+                                    </span>
+                                    {profile?.game_uid && (
+                                      <span className="text-muted-foreground ml-2">
+                                        UID: {profile.game_uid}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {pIdx === 0 && (
+                                    <Badge variant="secondary" className="text-xs py-0">Leader</Badge>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {playerIds.length === 0 && (
+                              <p className="text-muted-foreground italic">No players registered yet</p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  No teams in this room
+                </p>
+              )}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </AppLayout>
