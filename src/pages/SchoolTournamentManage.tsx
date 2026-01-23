@@ -35,8 +35,10 @@ import {
   IndianRupee,
   RefreshCw,
   Lock,
-  UserPlus
+  UserPlus,
+  Timer
 } from 'lucide-react';
+import RoundProgressionChart from '@/components/RoundProgressionChart';
 
 interface Tournament {
   id: string;
@@ -111,9 +113,12 @@ const SchoolTournamentManage = () => {
   
   // Form states
   const [manualTeam, setManualTeam] = useState({ teamName: '', leaderName: '' });
-  const [roomCredentials, setRoomCredentials] = useState({ roomId: '', password: '' });
+  const [roomCredentials, setRoomCredentials] = useState({ roomId: '', password: '', scheduledTime: '' });
   const [selectedWinnerTeam, setSelectedWinnerTeam] = useState<string>('');
   const [processing, setProcessing] = useState(false);
+  const [tournamentStats, setTournamentStats] = useState<{
+    roomsByRound: Record<number, { total: number; completed: number }>;
+  }>({ roomsByRound: {} });
 
   useEffect(() => {
     if (id) {
@@ -140,7 +145,21 @@ const SchoolTournamentManage = () => {
 
       if (tournamentRes.data) setTournament(tournamentRes.data);
       if (teamsRes.data) setTeams(teamsRes.data);
-      if (roomsRes.data) setRooms(roomsRes.data);
+      if (roomsRes.data) {
+        setRooms(roomsRes.data);
+        // Calculate rooms by round stats
+        const roomStats: Record<number, { total: number; completed: number }> = {};
+        roomsRes.data.forEach((room: any) => {
+          if (!roomStats[room.round_number]) {
+            roomStats[room.round_number] = { total: 0, completed: 0 };
+          }
+          roomStats[room.round_number].total++;
+          if (room.status === 'completed') {
+            roomStats[room.round_number].completed++;
+          }
+        });
+        setTournamentStats({ roomsByRound: roomStats });
+      }
     } catch (error) {
       console.error('Error fetching tournament:', error);
       toast.error('Failed to load tournament');
@@ -222,20 +241,27 @@ const SchoolTournamentManage = () => {
 
     setProcessing(true);
     try {
+      const updateData: any = {
+        room_id: roomCredentials.roomId,
+        room_password: roomCredentials.password,
+        status: 'credentials_set'
+      };
+      
+      // Add scheduled time if provided
+      if (roomCredentials.scheduledTime) {
+        updateData.scheduled_time = new Date(roomCredentials.scheduledTime).toISOString();
+      }
+      
       const { error } = await supabase
         .from('school_tournament_rooms')
-        .update({
-          room_id: roomCredentials.roomId,
-          room_password: roomCredentials.password,
-          status: 'credentials_set'
-        })
+        .update(updateData)
         .eq('id', selectedRoom.id);
 
       if (error) throw error;
 
       toast.success('Room credentials saved!');
       setRoomDialogOpen(false);
-      setRoomCredentials({ roomId: '', password: '' });
+      setRoomCredentials({ roomId: '', password: '', scheduledTime: '' });
       fetchTournamentData();
     } catch (error: any) {
       toast.error(error.message || 'Failed to save credentials');
@@ -437,6 +463,15 @@ const SchoolTournamentManage = () => {
               </CardContent>
             </Card>
 
+            {/* Round Progression Chart */}
+            <RoundProgressionChart
+              game={tournament.game}
+              totalTeams={teams.length}
+              currentRound={tournament.current_round}
+              status={tournament.status}
+              roomsByRound={tournamentStats.roomsByRound}
+            />
+
             {/* Round Control */}
             <Card>
               <CardHeader className="pb-2">
@@ -546,9 +581,15 @@ const SchoolTournamentManage = () => {
                         <div className="flex items-center justify-between mb-2">
                           <div>
                             <p className="font-medium">{room.room_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Round {room.round_number} • Room {room.room_number}
-                            </p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>Round {room.round_number} • Room {room.room_number}</span>
+                              {room.scheduled_time && (
+                                <span className="flex items-center gap-1 text-primary">
+                                  <Timer className="h-3 w-3" />
+                                  {new Date(room.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <Badge variant={
                             room.status === 'completed' ? 'default' :
@@ -707,6 +748,20 @@ const SchoolTournamentManage = () => {
                 value={roomCredentials.password}
                 onChange={(e) => setRoomCredentials(prev => ({ ...prev, password: e.target.value }))}
               />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2">
+                <Timer className="h-4 w-4" />
+                Start Time (Optional)
+              </Label>
+              <Input
+                type="datetime-local"
+                value={roomCredentials.scheduledTime}
+                onChange={(e) => setRoomCredentials(prev => ({ ...prev, scheduledTime: e.target.value }))}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Each room can have its own start time
+              </p>
             </div>
             <Button 
               className="w-full" 
