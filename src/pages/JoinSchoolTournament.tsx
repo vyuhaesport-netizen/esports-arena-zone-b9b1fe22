@@ -303,7 +303,7 @@ const JoinSchoolTournament = () => {
 
   return (
     <AppLayout>
-      <div className="pb-20">
+      <div className="pb-40">
         {/* Header Image */}
         {tournament.school_image_url && (
           <div className="relative h-40">
@@ -541,8 +541,8 @@ const JoinSchoolTournament = () => {
           )}
         </div>
 
-        {/* Fixed Bottom Button */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-50">
+        {/* Fixed Bottom Button - Above bottom nav */}
+        <div className="fixed bottom-16 left-0 right-0 p-4 bg-background border-t z-40">
           {alreadyJoined ? (
             <Button className="w-full" variant="secondary" disabled>
               <CheckCircle className="h-4 w-4 mr-2" /> Already Joined - Check "My Room" tab
