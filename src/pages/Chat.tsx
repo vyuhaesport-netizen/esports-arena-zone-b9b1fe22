@@ -506,19 +506,19 @@ const ChatPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
-        <header className="sticky top-0 z-40 glass-card px-4 py-3 border-b border-border/50 flex items-center gap-3">
+        <header className="sticky top-0 z-40 bg-card border-b border-border px-3 py-2 flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0"
+            className="h-7 w-7 shrink-0"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold">Team Chat</h1>
+          <h1 className="text-sm font-semibold">Team Chat</h1>
         </header>
         <div className="flex items-center justify-center flex-1">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
         </div>
       </div>
     );
@@ -528,27 +528,27 @@ const ChatPage = () => {
   if (!myTeam) {
     return (
       <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
-        <header className="sticky top-0 z-40 glass-card px-4 py-3 border-b border-border/50 flex items-center gap-3">
+        <header className="sticky top-0 z-40 bg-card border-b border-border px-3 py-2 flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 shrink-0"
+            className="h-7 w-7 shrink-0"
             onClick={() => navigate(-1)}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold">Team Chat</h1>
+          <h1 className="text-sm font-semibold">Team Chat</h1>
         </header>
-        <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
-          <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-            <Users className="h-10 w-10 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center flex-1 p-4 text-center">
+          <div className="w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mb-3">
+            <Users className="h-7 w-7 text-muted-foreground" />
           </div>
-          <h2 className="text-xl font-semibold mb-2">No Team Yet</h2>
-          <p className="text-muted-foreground mb-6">
+          <h2 className="text-base font-semibold mb-1">No Team Yet</h2>
+          <p className="text-xs text-muted-foreground mb-4">
             Join or create a team to start chatting with your teammates.
           </p>
-          <Button onClick={() => navigate('/team')}>
-            <Users className="h-4 w-4 mr-2" />
+          <Button size="sm" onClick={() => navigate('/team')}>
+            <Users className="h-3 w-3 mr-1" />
             Go to Teams
           </Button>
         </div>
@@ -560,43 +560,43 @@ const ChatPage = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
-      {/* Header with back button */}
-      <header className="sticky top-0 z-40 glass-card px-4 py-3 border-b border-border/50 flex items-center gap-3">
+      {/* Header with back button - themed properly */}
+      <header className="sticky top-0 z-40 bg-card border-b border-border px-3 py-2 flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0"
+          className="h-7 w-7 shrink-0"
           onClick={() => navigate(-1)}
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="flex-1">
-          <h1 className="text-lg font-semibold">{myTeam.name}</h1>
-          <p className="text-xs text-muted-foreground">{teamMembers.length} members</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-sm font-semibold truncate">{myTeam.name}</h1>
+          <p className="text-[10px] text-muted-foreground">{teamMembers.length} members</p>
         </div>
-        <MessageCircle className="h-5 w-5 text-primary" />
+        <MessageCircle className="h-4 w-4 text-primary" />
       </header>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 min-h-0 px-3 py-3" ref={scrollRef}>
+      <ScrollArea className="flex-1 min-h-0 px-2 py-2" ref={scrollRef}>
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center py-12">
-            <MessageCircle className="h-12 w-12 text-muted-foreground/30 mb-3" />
-            <p className="text-muted-foreground text-sm">No messages yet</p>
-            <p className="text-xs text-muted-foreground mt-1">Start the conversation with your team!</p>
+          <div className="flex flex-col items-center justify-center h-full text-center py-8">
+            <MessageCircle className="h-8 w-8 text-muted-foreground/30 mb-2" />
+            <p className="text-muted-foreground text-xs">No messages yet</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Start the conversation with your team!</p>
           </div>
         ) : (
-          <div className="space-y-4 pb-32">
+          <div className="space-y-3 pb-28">
             {groupedMessages.map((group) => (
               <div key={group.date}>
-                <div className="flex items-center gap-3 my-4">
+                <div className="flex items-center gap-2 my-3">
                   <div className="flex-1 h-px bg-border/60" />
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-wide font-medium">
                     {getDateLabel(group.date)}
                   </span>
                   <div className="flex-1 h-px bg-border/60" />
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {group.messages.map((msg) => {
                   const isOwnMessage = msg.sender_id === user?.id;
                   const canModify = canModifyMessage(msg);
@@ -607,12 +607,12 @@ const ChatPage = () => {
                   return (
                     <div
                       key={msg.id}
-                      className={`flex gap-2.5 group ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                      className={`flex gap-2 group ${isOwnMessage ? 'flex-row-reverse' : ''}`}
                     >
                       {!isOwnMessage && (
-                        <Avatar className="h-8 w-8 flex-shrink-0 mt-1">
+                        <Avatar className="h-6 w-6 flex-shrink-0 mt-0.5">
                           <AvatarImage src={msg.sender?.avatar_url || ''} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                          <AvatarFallback className="bg-primary/10 text-primary text-[10px]">
                             {msg.sender?.username?.charAt(0).toUpperCase() || 'P'}
                           </AvatarFallback>
                         </Avatar>
@@ -620,8 +620,8 @@ const ChatPage = () => {
 
                       <div className={`max-w-[75%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                         {!isOwnMessage && (
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-xs font-medium text-foreground">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className="text-[10px] font-medium text-foreground">
                               {msg.sender?.full_name || msg.sender?.username || 'Player'}
                             </span>
                           </div>
@@ -629,37 +629,37 @@ const ChatPage = () => {
 
                         {/* Reply Preview */}
                         {repliedMessage && (
-                          <div className={`flex items-center gap-1.5 mb-1 text-xs text-muted-foreground ${isOwnMessage ? 'justify-end' : ''}`}>
-                            <CornerDownRight className="h-3 w-3" />
-                            <span className="truncate max-w-[150px]">
+                          <div className={`flex items-center gap-1 mb-0.5 text-[10px] text-muted-foreground ${isOwnMessage ? 'justify-end' : ''}`}>
+                            <CornerDownRight className="h-2.5 w-2.5" />
+                            <span className="truncate max-w-[120px]">
                               {repliedMessage.sender?.full_name || repliedMessage.sender?.username}: {repliedMessage.content}
                             </span>
                           </div>
                         )}
 
-                        <div className={`relative ${isOwnMessage ? 'flex flex-row-reverse items-start gap-1' : 'flex items-start gap-1'}`}>
+                        <div className={`relative ${isOwnMessage ? 'flex flex-row-reverse items-start gap-0.5' : 'flex items-start gap-0.5'}`}>
                           {isEditing ? (
-                            <div className="flex items-center gap-2 w-full">
+                            <div className="flex items-center gap-1 w-full">
                               <Input
                                 value={editContent}
                                 onChange={(e) => setEditContent(e.target.value)}
-                                className="flex-1 h-8 text-sm"
+                                className="flex-1 h-7 text-xs"
                                 autoFocus
                               />
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSaveEdit(msg.id)}>
-                                <Check className="h-4 w-4 text-green-500" />
+                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleSaveEdit(msg.id)}>
+                                <Check className="h-3 w-3 text-green-500" />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancelEdit}>
-                                <X className="h-4 w-4 text-red-500" />
+                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleCancelEdit}>
+                                <X className="h-3 w-3 text-red-500" />
                               </Button>
                             </div>
                           ) : (
                             <>
                               <div
-                                className={`px-3 py-2 rounded-2xl text-sm break-words ${
+                                className={`px-2.5 py-1.5 rounded-xl text-xs break-words ${
                                   isOwnMessage
-                                    ? 'bg-primary text-primary-foreground rounded-br-md'
-                                    : 'bg-muted/80 text-foreground rounded-bl-md'
+                                    ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                    : 'bg-muted/80 text-foreground rounded-bl-sm'
                                 }`}
                               >
                                 {msg.content}
@@ -670,28 +670,28 @@ const ChatPage = () => {
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-6 w-6"
+                                  className="h-5 w-5"
                                   onClick={() => handleReply(msg)}
                                 >
-                                  <Reply className="h-3.5 w-3.5" />
+                                  <Reply className="h-3 w-3" />
                                 </Button>
 
                                 {canModify && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button size="icon" variant="ghost" className="h-6 w-6">
-                                        <MoreVertical className="h-3.5 w-3.5" />
+                                      <Button size="icon" variant="ghost" className="h-5 w-5">
+                                        <MoreVertical className="h-3 w-3" />
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align={isOwnMessage ? 'end' : 'start'}>
                                       <DropdownMenuItem onClick={() => handleStartEdit(msg)}>
-                                        <Pencil className="h-3.5 w-3.5 mr-2" /> Edit
+                                        <Pencil className="h-3 w-3 mr-1.5" /> Edit
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() => handleDeleteMessage(msg.id)}
                                         className="text-destructive"
                                       >
-                                        <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                        <Trash2 className="h-3 w-3 mr-1.5" /> Delete
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
@@ -701,15 +701,15 @@ const ChatPage = () => {
                           )}
                         </div>
 
-                        <div className={`flex items-center gap-1.5 mt-0.5 ${isOwnMessage ? 'justify-end' : ''}`}>
-                          <p className="text-[10px] text-muted-foreground">
+                        <div className={`flex items-center gap-1 mt-0.5 ${isOwnMessage ? 'justify-end' : ''}`}>
+                          <p className="text-[9px] text-muted-foreground">
                             {formatMessageTime(msg.created_at)}
-                            {msg.is_edited && <span className="ml-1">(edited)</span>}
+                            {msg.is_edited && <span className="ml-0.5">(edited)</span>}
                           </p>
                           {/* Seen count - only for own messages */}
                           {isOwnMessage && seenCount > 0 && (
-                            <span className="flex items-center gap-0.5 text-[10px] text-primary">
-                              <Eye className="h-3 w-3" />
+                            <span className="flex items-center gap-0.5 text-[9px] text-primary">
+                              <Eye className="h-2.5 w-2.5" />
                               {seenCount}
                             </span>
                           )}
@@ -726,15 +726,15 @@ const ChatPage = () => {
       </ScrollArea>
 
       {/* Fixed Composer */}
-      <div className="fixed left-0 right-0 bottom-0 bg-card border-t border-border/60 px-3 py-2 z-40 max-w-lg mx-auto">
+      <div className="fixed left-0 right-0 bottom-14 bg-card border-t border-border px-2 py-1.5 z-40 max-w-lg mx-auto">
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
-          <div className="flex items-center gap-1.5 mb-1.5 text-xs text-muted-foreground">
-            <div className="flex -space-x-2">
+          <div className="flex items-center gap-1 mb-1 text-[10px] text-muted-foreground">
+            <div className="flex -space-x-1.5">
               {typingUsers.slice(0, 3).map((u) => (
-                <Avatar key={u.id} className="h-5 w-5 border border-background">
+                <Avatar key={u.id} className="h-4 w-4 border border-background">
                   <AvatarImage src={u.avatar} />
-                  <AvatarFallback className="text-[8px]">{u.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-[7px]">{u.name.charAt(0)}</AvatarFallback>
                 </Avatar>
               ))}
             </div>
@@ -748,35 +748,35 @@ const ChatPage = () => {
 
         {/* Reply Preview */}
         {replyingTo && (
-          <div className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-1.5 mb-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
-              <Reply className="h-3.5 w-3.5 shrink-0" />
+          <div className="flex items-center justify-between bg-muted/60 rounded-lg px-2 py-1 mb-1.5">
+            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground truncate">
+              <Reply className="h-3 w-3 shrink-0" />
               <span className="truncate">
                 Replying to {replyingTo.sender?.full_name || replyingTo.sender?.username}
               </span>
             </div>
-            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={cancelReply}>
-              <X className="h-3.5 w-3.5" />
+            <Button size="icon" variant="ghost" className="h-4 w-4" onClick={cancelReply}>
+              <X className="h-3 w-3" />
             </Button>
           </div>
         )}
 
-        <form onSubmit={handleSendMessage} className="flex items-center gap-2 pb-safe">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-1.5 pb-safe">
           <Input
             ref={inputRef}
             value={newMessage}
             onChange={handleInputChange}
             placeholder="Type a message..."
-            className="flex-1 h-10 bg-muted/50 border-border/60 rounded-full px-4"
+            className="flex-1 h-8 bg-muted/50 border-border/60 rounded-full px-3 text-xs"
             disabled={sending}
           />
           <Button
             type="submit"
             size="icon"
-            className="h-10 w-10 rounded-full shrink-0"
+            className="h-8 w-8 rounded-full shrink-0"
             disabled={sending || !newMessage.trim()}
           >
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
           </Button>
         </form>
       </div>
