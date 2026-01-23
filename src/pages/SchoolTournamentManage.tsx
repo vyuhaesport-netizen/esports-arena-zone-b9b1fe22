@@ -336,14 +336,23 @@ const SchoolTournamentManage = () => {
     
     setProcessing(true);
     try {
-      const nextRound = (tournament.current_round || 1) + 1;
+      // Determine which round to process based on room state
+      const currentRoundRoomsCheck = rooms.filter(r => r.round_number === tournament.current_round);
+      const previousRoundRoomsCheck = rooms.filter(r => r.round_number === (tournament.current_round - 1));
+      
+      // If current round has no rooms but previous round rooms exist, we need to create current round rooms
+      const needsCurrentRoundRooms = currentRoundRoomsCheck.length === 0 && previousRoundRoomsCheck.length > 0;
+      
+      const roundToProcess = needsCurrentRoundRooms 
+        ? tournament.current_round - 1 // Process from previous round
+        : tournament.current_round;      // Normal - process from current round
       
       // Call backend function to generate next round (it will delete old rooms + create new ones)
       const { data: result, error } = await supabase.functions.invoke('school-tournament-engine', {
         body: {
           action: 'start_next_round',
           tournamentId: id,
-          currentRound: tournament.current_round,
+          currentRound: roundToProcess,
         }
       });
 
@@ -353,7 +362,8 @@ const SchoolTournamentManage = () => {
         throw new Error(result.error || 'Failed to start next round');
       }
       
-      toast.success(`Round ${nextRound} started with ${result.newRoomsCreated} rooms!`);
+      const targetRound = needsCurrentRoundRooms ? tournament.current_round : (tournament.current_round || 1) + 1;
+      toast.success(`Round ${targetRound} started with ${result.newRoomsCreated} rooms!`);
       
       fetchTournamentData();
     } catch (error: any) {
@@ -446,6 +456,18 @@ const SchoolTournamentManage = () => {
   const teamsPerRoom = tournament?.game === 'BGMI' ? 25 : 12;
   const activeTeams = teams.filter(t => !t.is_eliminated);
   const currentRoundRooms = rooms.filter(r => r.round_number === tournament?.current_round);
+  
+  // Check if previous round rooms need to be cleaned up and new round rooms created
+  const previousRoundRooms = rooms.filter(r => r.round_number === (tournament?.current_round || 1) - 1);
+  const hasPreviousRoundRoomsOnly = currentRoundRooms.length === 0 && previousRoundRooms.length > 0;
+  const allPreviousRoomsCompleted = previousRoundRooms.every(r => r.status === 'completed');
+  const allCurrentRoomsCompleted = currentRoundRooms.length > 0 && currentRoundRooms.every(r => r.status === 'completed');
+  
+  // Show "Start Round X" button when:
+  // 1. Current round has no rooms but previous round rooms are all completed (need to create new round rooms)
+  // 2. Current round rooms exist and are all completed (ready for next round)
+  const shouldShowStartNextRound = (hasPreviousRoundRoomsOnly && allPreviousRoomsCompleted) || allCurrentRoomsCompleted;
+  const nextRoundNumber = (tournament?.current_round || 1) + (hasPreviousRoundRoomsOnly ? 0 : 1);
 
   if (loading) {
     return (
@@ -633,13 +655,15 @@ const SchoolTournamentManage = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">Rooms Completed</span>
                       <span className="font-bold">
-                        {currentRoundRooms.filter(r => r.status === 'completed').length} / {currentRoundRooms.length}
+                        {currentRoundRooms.length > 0 
+                          ? `${currentRoundRooms.filter(r => r.status === 'completed').length} / ${currentRoundRooms.length}`
+                          : `${previousRoundRooms.filter(r => r.status === 'completed').length} / ${previousRoundRooms.length}`
+                        }
                       </span>
                     </div>
                     
-                    {/* Show Start Next Round button when all rooms are completed */}
-                    {currentRoundRooms.length > 0 && 
-                     currentRoundRooms.every(r => r.status === 'completed') ? (
+                    {/* Show Start Next Round button when ready */}
+                    {shouldShowStartNextRound ? (
                       <Button 
                         className="w-full" 
                         onClick={() => handleStartNextRound()}
@@ -650,7 +674,10 @@ const SchoolTournamentManage = () => {
                         ) : (
                           <Play className="h-4 w-4 mr-2" />
                         )}
-                        Start Round {(tournament.current_round || 1) + 1}
+                        {hasPreviousRoundRoomsOnly 
+                          ? `Create Round ${tournament.current_round} Rooms`
+                          : `Start Round ${nextRoundNumber}`
+                        }
                       </Button>
                     ) : (
                       <p className="text-xs text-center text-muted-foreground">
@@ -660,13 +687,13 @@ const SchoolTournamentManage = () => {
                   </div>
                 ) : tournament.status === 'finale' ? (
                   <div className="text-center py-4">
-                    <Trophy className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
+                    <Trophy className="h-8 w-8 mx-auto text-warning mb-2" />
                     <p className="font-semibold">Grand Finale!</p>
                     <p className="text-sm text-muted-foreground">{activeTeams.length} teams competing</p>
                   </div>
                 ) : (
                   <div className="text-center py-4">
-                    <CheckCircle className="h-8 w-8 mx-auto text-green-500 mb-2" />
+                    <CheckCircle className="h-8 w-8 mx-auto text-success mb-2" />
                     <p className="font-semibold">Tournament Completed!</p>
                   </div>
                 )}
