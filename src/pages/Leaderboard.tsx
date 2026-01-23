@@ -252,25 +252,25 @@ const Leaderboard = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="font-semibold text-sm truncate">{team.team_name}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {team.member_count} members
+                    <p className="font-semibold text-xs truncate">{team.team_name}</p>
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                      <span className="flex items-center gap-0.5">
+                        <Users className="h-2.5 w-2.5" />
+                        {team.member_count}
                       </span>
                       {team.game && (
-                        <Badge variant="secondary" className="text-[10px] py-0">
+                        <Badge variant="secondary" className="text-[8px] py-0 px-1 h-4">
                           {team.game}
                         </Badge>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     <div className="text-right">
-                      <div className="flex items-center gap-1">
-                        <Target className="h-4 w-4 text-primary" />
-                        <span className="font-bold text-primary">{team.total_points}</span>
-                        <span className="text-xs text-muted-foreground">pts</span>
+                      <div className="flex items-center gap-0.5">
+                        <Target className="h-3 w-3 text-primary" />
+                        <span className="font-bold text-xs text-primary">{team.total_points}</span>
+                        <span className="text-[9px] text-muted-foreground">pts</span>
                       </div>
                     </div>
                     {expandedTeams.has(team.team_id) ? (

@@ -445,10 +445,11 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-background">
       {/* Chat Header */}
-      <div className="px-4 py-2.5 bg-card border-b border-border/60 flex items-center gap-2 shrink-0">
-        <MessageCircle className="h-5 w-5 text-primary" />
-        <span className="font-semibold text-sm">Team Chat</span>
-        <span className="text-xs text-muted-foreground">({messages.length} messages)</span>
+      <div className="px-4 py-2.5 bg-card border-b border-border/60 shrink-0">
+        <div className="flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-primary" />
+          <span className="font-semibold text-sm">Team Chat</span>
+        </div>
       </div>
 
       {/* Messages Area */}
