@@ -693,7 +693,7 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
       )}
 
       {/* Message Input - Fixed at bottom */}
-      <form onSubmit={handleSendMessage} className="shrink-0 bg-card border-t border-border/60 pb-16">
+      <form onSubmit={handleSendMessage} className="shrink-0 bg-card border-t border-border/60 pb-20">
         <div className="flex gap-2 px-3 py-2.5">
           <Input
             ref={inputRef}
