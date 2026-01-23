@@ -385,8 +385,9 @@ const Leaderboard = () => {
     <AppLayout title="Leaderboard" showBack>
       {/* Header Banner */}
       <div className="bg-gradient-to-br from-primary/20 to-primary/5 p-6 text-center">
-        <img src={vyuhaLogo} alt="Vyuha" className="h-16 w-16 mx-auto object-contain mb-3" />
-        <h1 className="text-xl font-bold">Leaderboard</h1>
+        <div className="w-20 h-20 mx-auto mb-3 rounded-full overflow-hidden">
+          <img src={vyuhaLogo} alt="Vyuha" className="w-full h-full object-cover scale-150" />
+        </div>
         <p className="text-sm text-muted-foreground mt-1">Top performers on Vyuha Esport</p>
       </div>
 
