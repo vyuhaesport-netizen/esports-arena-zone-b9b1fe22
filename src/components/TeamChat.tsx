@@ -651,7 +651,7 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
       </ScrollArea>
 
       {/* Composer (fixed above BottomNav) */}
-      <div className="fixed left-0 right-0 bottom-16 z-50">
+      <div className="fixed left-0 right-0 bottom-14 z-50">
         <div className="max-w-lg mx-auto px-3">
           <div className="rounded-2xl glass-card border border-border/30 shadow-xl overflow-hidden">
             {/* Typing Indicator */}
