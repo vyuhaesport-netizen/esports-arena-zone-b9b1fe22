@@ -693,14 +693,14 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
       )}
 
       {/* Message Input */}
-      <form onSubmit={handleSendMessage} className="shrink-0 bg-card border-t border-border/60">
-        <div className="flex gap-2 px-3 pt-3 pb-3">
+      <form onSubmit={handleSendMessage} className="shrink-0 bg-card border-t border-border/60 pb-safe">
+        <div className="flex gap-2 px-3 py-3">
           <Input
             ref={inputRef}
             placeholder={replyingTo ? "Type your reply..." : "Type a message..."}
             value={newMessage}
             onChange={handleInputChange}
-            className="flex-1 bg-muted/30 border-border/60 h-10"
+            className="flex-1 bg-muted/30 border-border/60 h-11"
             maxLength={500}
             disabled={sending}
           />
@@ -708,7 +708,7 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
             type="submit"
             variant="gaming"
             size="icon"
-            className="h-10 w-10 rounded-full shadow-sm"
+            className="h-11 w-11 rounded-full shadow-md shrink-0"
             disabled={!newMessage.trim() || sending}
           >
             {sending ? (
