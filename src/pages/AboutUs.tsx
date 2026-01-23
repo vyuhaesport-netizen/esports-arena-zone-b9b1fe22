@@ -66,112 +66,6 @@ const AboutUs = () => {
           </div>
         </div>
 
-        {/* Founder Section */}
-        <div className="bg-gradient-to-br from-purple-500/10 via-primary/5 to-transparent rounded-xl border border-border overflow-hidden shadow-sm">
-          <div className="flex items-center gap-2 p-3 border-b border-border bg-purple-500/5">
-            <div className="p-1.5 rounded-lg bg-purple-500/10">
-              <Sparkles className="h-4 w-4 text-purple-600" />
-            </div>
-            <div>
-              <h2 className="font-bold text-sm">Meet The Creator</h2>
-              <p className="text-[10px] text-muted-foreground">The Mind Behind Vyuha</p>
-            </div>
-          </div>
-          <div className="p-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16 border-2 border-purple-500/30 shadow-lg">
-                <AvatarImage src="/placeholder.svg" />
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-primary text-white text-lg font-bold">AS</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="font-bold text-base">Abhishek Shukla</h3>
-                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Founder & Creator of Vyuha Esport</p>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
-                    🎓 Engineering Student
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">
-                    18 Years Old
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-                    🧠 Tech Genius
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Built this entire platform <strong className="text-foreground">from scratch in record time</strong> with a vision to revolutionize Indian esports. Created specifically for <strong className="text-foreground">esport players</strong> who deserve a fair, transparent, and professional platform to compete.
-              </p>
-            </div>
-            <div className="mt-3 flex items-center justify-center">
-              <a
-                href="https://www.instagram.com/abhishek.shhh?igsh=dmozNHE1dzl3dTN4"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:from-pink-500/30 hover:to-purple-500/30 transition-colors"
-              >
-                <Instagram className="h-4 w-4 text-pink-500" />
-                <span className="text-xs font-medium text-pink-600 dark:text-pink-400">Follow @abhishek.shhh</span>
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Social Links Section */}
-        {(socialLinks.discord || socialLinks.instagram || socialLinks.youtube) && (
-          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-            <div className="flex items-center gap-2 p-3 border-b border-border bg-primary/5">
-              <div className="p-1.5 rounded-lg bg-primary/10">
-                <ExternalLink className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <h2 className="font-bold text-sm">Connect With Us</h2>
-                <p className="text-[10px] text-muted-foreground">Follow us on social media</p>
-              </div>
-            </div>
-            <div className="p-3">
-              <div className="flex justify-center gap-3">
-                {socialLinks.discord && (
-                  <a
-                    href={socialLinks.discord}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors min-w-[60px]"
-                  >
-                    <svg className="h-6 w-6 text-indigo-500" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
-                    </svg>
-                    <span className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400">Discord</span>
-                  </a>
-                )}
-                {socialLinks.instagram && (
-                  <a
-                    href={socialLinks.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-pink-500/10 border border-pink-500/20 hover:bg-pink-500/20 transition-colors min-w-[60px]"
-                  >
-                    <Instagram className="h-6 w-6 text-pink-500" />
-                    <span className="text-[10px] font-medium text-pink-600 dark:text-pink-400">Instagram</span>
-                  </a>
-                )}
-                {socialLinks.youtube && (
-                  <a
-                    href={socialLinks.youtube}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors min-w-[60px]"
-                  >
-                    <Youtube className="h-6 w-6 text-red-500" />
-                    <span className="text-[10px] font-medium text-red-600 dark:text-red-400">YouTube</span>
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* The Meaning of Vyuha */}
         <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
           <div className="flex items-center gap-2 p-3 border-b border-border bg-primary/5">
@@ -418,12 +312,118 @@ const AboutUs = () => {
           </div>
         </div>
 
+        {/* Social Links Section */}
+        {(socialLinks.discord || socialLinks.instagram || socialLinks.youtube) && (
+          <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
+            <div className="flex items-center gap-2 p-3 border-b border-border bg-primary/5">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <ExternalLink className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-bold text-sm">Connect With Us</h2>
+                <p className="text-[10px] text-muted-foreground">Follow us on social media</p>
+              </div>
+            </div>
+            <div className="p-3">
+              <div className="flex justify-center gap-3">
+                {socialLinks.discord && (
+                  <a
+                    href={socialLinks.discord}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-colors min-w-[60px]"
+                  >
+                    <svg className="h-6 w-6 text-indigo-500" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                    </svg>
+                    <span className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400">Discord</span>
+                  </a>
+                )}
+                {socialLinks.instagram && (
+                  <a
+                    href={socialLinks.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-pink-500/10 border border-pink-500/20 hover:bg-pink-500/20 transition-colors min-w-[60px]"
+                  >
+                    <Instagram className="h-6 w-6 text-pink-500" />
+                    <span className="text-[10px] font-medium text-pink-600 dark:text-pink-400">Instagram</span>
+                  </a>
+                )}
+                {socialLinks.youtube && (
+                  <a
+                    href={socialLinks.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors min-w-[60px]"
+                  >
+                    <Youtube className="h-6 w-6 text-red-500" />
+                    <span className="text-[10px] font-medium text-red-600 dark:text-red-400">YouTube</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Founder Section - Moved to bottom */}
+        <div className="bg-gradient-to-br from-purple-500/10 via-primary/5 to-transparent rounded-xl border border-border overflow-hidden shadow-sm">
+          <div className="flex items-center gap-2 p-3 border-b border-border bg-purple-500/5">
+            <div className="p-1.5 rounded-lg bg-purple-500/10">
+              <Sparkles className="h-4 w-4 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="font-bold text-sm">Meet The Creator</h2>
+              <p className="text-[10px] text-muted-foreground">The Mind Behind Vyuha</p>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16 border-2 border-purple-500/30 shadow-lg">
+                <AvatarImage src="/placeholder.svg" />
+                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-primary text-white text-lg font-bold">AS</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <h3 className="font-bold text-base">Abhishek Shukla</h3>
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Founder & Creator of Vyuha Esport</p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                    🎓 Engineering Student
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20">
+                    18 Years Old
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                    🧠 Tech Genius
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Built this entire platform <strong className="text-foreground">from scratch in record time</strong> with a vision to revolutionize Indian esports. Created specifically for <strong className="text-foreground">esport players</strong> who deserve a fair, transparent, and professional platform to compete.
+              </p>
+            </div>
+            <div className="mt-3 flex items-center justify-center">
+              <a
+                href="https://www.instagram.com/abhishek.shhh?igsh=dmozNHE1dzl3dTN4"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/30 hover:from-pink-500/30 hover:to-purple-500/30 transition-colors"
+              >
+                <Instagram className="h-4 w-4 text-pink-500" />
+                <span className="text-xs font-medium text-pink-600 dark:text-pink-400">Follow @abhishek.shhh</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
         <p className="text-center text-[10px] text-muted-foreground pt-1">
           Join thousands of gamers. Compete. Win. Rise. 🎮
         </p>
         
         <p className="text-center text-[10px] text-muted-foreground">
-          © 2025 Vyuha Esport. All rights reserved.
+          © 2026 Vyuha Esport. All rights reserved.
         </p>
       </div>
     </AppLayout>
