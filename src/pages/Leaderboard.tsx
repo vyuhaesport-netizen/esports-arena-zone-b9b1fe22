@@ -252,25 +252,25 @@ const Leaderboard = () => {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="font-semibold text-xs truncate">{team.team_name}</p>
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <p className="font-semibold text-sm truncate">{team.team_name}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <span className="flex items-center gap-0.5">
-                        <Users className="h-2.5 w-2.5" />
+                        <Users className="h-3 w-3" />
                         {team.member_count}
                       </span>
                       {team.game && (
-                        <Badge variant="secondary" className="text-[8px] py-0 px-1 h-4">
+                        <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-5">
                           {team.game}
                         </Badge>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <div className="text-right">
-                      <div className="flex items-center gap-0.5">
-                        <Target className="h-3 w-3 text-primary" />
-                        <span className="font-bold text-xs text-primary">{team.total_points}</span>
-                        <span className="text-[9px] text-muted-foreground">pts</span>
+                      <div className="flex items-center gap-1">
+                        <Target className="h-3.5 w-3.5 text-primary" />
+                        <span className="font-bold text-sm text-primary">{team.total_points}</span>
+                        <span className="text-xs text-muted-foreground">pts</span>
                       </div>
                     </div>
                     {expandedTeams.has(team.team_id) ? (
@@ -284,33 +284,33 @@ const Leaderboard = () => {
               
               <CollapsibleContent>
                 <div className="px-3 pb-3 border-t border-border/50 pt-2">
-                  <p className="text-[10px] text-muted-foreground mb-1.5 font-medium">Team Members</p>
-                  <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium">Team Members</p>
+                  <div className="space-y-1.5">
                     {team.members.map((member) => (
                       <div 
                         key={member.user_id} 
-                        className="flex items-center gap-2 p-1.5 rounded-lg bg-background/50"
+                        className="flex items-center gap-2 p-2 rounded-lg bg-background/50"
                       >
-                        <Avatar className="h-6 w-6">
+                        <Avatar className="h-7 w-7">
                           <AvatarImage src={member.avatar_url || ''} />
-                          <AvatarFallback className="bg-muted text-[10px]">
+                          <AvatarFallback className="bg-muted text-xs">
                             {member.username?.charAt(0).toUpperCase() || '?'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            <p className="text-[11px] font-medium truncate">
+                            <p className="text-xs font-medium truncate">
                               {member.in_game_name || member.username || 'Unknown'}
                             </p>
                             {member.role === 'leader' && (
-                              <Crown className="h-2.5 w-2.5 text-yellow-500 flex-shrink-0" />
+                              <Crown className="h-3 w-3 text-yellow-500 flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-[9px] text-muted-foreground truncate">
+                          <p className="text-[10px] text-muted-foreground truncate">
                             {member.game_uid ? `UID: ${member.game_uid}` : ''}{member.game_uid && member.username ? ' • ' : ''}{member.username ? `@${member.username}` : ''}
                           </p>
                         </div>
-                        <span className="text-[10px] font-medium text-primary">{member.stats_points}pts</span>
+                        <span className="text-xs font-medium text-primary">{member.stats_points}pts</span>
                       </div>
                     ))}
                   </div>
@@ -363,8 +363,8 @@ const Leaderboard = () => {
             </div>
             <div className="text-right">
               <div className="flex items-center gap-1">
-                <Target className="h-4 w-4 text-primary" />
-                <span className="font-bold text-primary">{user.stats_points}</span>
+                <Target className="h-3.5 w-3.5 text-primary" />
+                <span className="font-bold text-sm text-primary">{user.stats_points}</span>
                 <span className="text-xs text-muted-foreground">pts</span>
               </div>
             </div>
