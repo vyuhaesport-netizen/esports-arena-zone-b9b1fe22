@@ -100,6 +100,7 @@ const MyMatch = () => {
   const [schoolTournaments, setSchoolTournaments] = useState<{ tournament: SchoolTournament; team: SchoolTeam }[]>([]);
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('upcoming');
   
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -737,66 +738,173 @@ const MyMatch = () => {
     );
   }
 
+  // Apple Glass Tab Component
+  const GlassTab = ({ value, label, count, isActive, onClick, icon: Icon, accentColor }: {
+    value: string;
+    label: string;
+    count: number;
+    isActive: boolean;
+    onClick: () => void;
+    icon: React.ComponentType<{ className?: string }>;
+    accentColor: string;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`
+        relative flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl transition-all duration-300 ease-out min-w-0
+        ${isActive 
+          ? `bg-white/20 backdrop-blur-xl shadow-lg shadow-${accentColor}/20 border border-white/30 scale-105` 
+          : 'bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20'
+        }
+      `}
+      style={{
+        boxShadow: isActive ? `0 8px 32px -4px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.2)` : 'none',
+      }}
+    >
+      {/* Glow effect for active tab */}
+      {isActive && (
+        <div 
+          className="absolute inset-0 rounded-xl opacity-40 blur-sm"
+          style={{ background: `linear-gradient(135deg, ${accentColor}40, transparent 60%)` }}
+        />
+      )}
+      
+      {/* Icon */}
+      <div className={`relative z-10 p-1.5 rounded-lg transition-all duration-300 ${isActive ? 'bg-white/20' : 'bg-white/5'}`}>
+        <Icon className={`h-3.5 w-3.5 transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+      </div>
+      
+      {/* Label */}
+      <span className={`relative z-10 text-[9px] font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`}>
+        {label}
+      </span>
+      
+      {/* Count Badge */}
+      <div className={`
+        relative z-10 min-w-[18px] h-4 px-1.5 rounded-full flex items-center justify-center text-[8px] font-bold transition-all duration-300
+        ${isActive 
+          ? 'bg-white/30 text-white shadow-inner' 
+          : 'bg-white/10 text-muted-foreground'
+        }
+      `}>
+        {count}
+      </div>
+      
+      {/* Active indicator dot */}
+      {isActive && (
+        <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white shadow-lg" />
+      )}
+    </button>
+  );
+
+  const tabs = [
+    { value: 'upcoming', label: 'Upcoming', count: upcomingMatches.length, icon: Clock, accentColor: '#3b82f6' },
+    { value: 'live', label: 'Live', count: liveMatches.length, icon: Gamepad2, accentColor: '#22c55e' },
+    { value: 'completed', label: 'Done', count: completedMatches.length, icon: Trophy, accentColor: '#f59e0b' },
+    { value: 'local', label: 'Local', count: localTournaments.length + schoolTournaments.length, icon: MapPin, accentColor: '#f97316' },
+  ];
+
   return (
     <AppLayout title="My Matches" showBack>
       <div className="p-3">
-        <Tabs defaultValue="upcoming" className="w-full">
-          <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="upcoming" className="text-[10px]">Upcoming ({upcomingMatches.length})</TabsTrigger>
-            <TabsTrigger value="live" className="text-[10px]">Live ({liveMatches.length})</TabsTrigger>
-            <TabsTrigger value="completed" className="text-[10px]">Done ({completedMatches.length})</TabsTrigger>
-            <TabsTrigger value="local" className="text-[10px]">Local ({localTournaments.length})</TabsTrigger>
-          </TabsList>
+        {/* Apple Glass Effect Tabs Container */}
+        <div className="relative mb-4">
+          {/* Glass background container */}
+          <div 
+            className="relative p-1.5 rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.15)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+            }}
+          >
+            {/* Inner glass reflection */}
+            <div 
+              className="absolute top-0 left-0 right-0 h-1/2 rounded-t-xl pointer-events-none"
+              style={{
+                background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)',
+              }}
+            />
+            
+            {/* Tabs Grid */}
+            <div className="relative z-10 grid grid-cols-4 gap-1">
+              {tabs.map((tab) => (
+                <GlassTab
+                  key={tab.value}
+                  value={tab.value}
+                  label={tab.label}
+                  count={tab.count}
+                  isActive={activeTab === tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  icon={tab.icon}
+                  accentColor={tab.accentColor}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
 
-          <TabsContent value="upcoming" className="mt-3">
-            {upcomingMatches.length === 0 ? (
-              <div className="text-center py-10">
-                <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-muted-foreground text-xs">No upcoming matches</p>
-                <Button variant="gaming" size="sm" className="mt-3 h-7 text-xs" onClick={() => navigate('/creator')}>Browse</Button>
-              </div>
-            ) : (
-              <div className="space-y-2">{upcomingMatches.map((reg) => <MatchCard key={reg.id} registration={reg} showCancel />)}</div>
-            )}
-          </TabsContent>
+        {/* Tab Contents */}
+        <div className="animate-fade-in">
+          {activeTab === 'upcoming' && (
+            <>
+              {upcomingMatches.length === 0 ? (
+                <div className="text-center py-10">
+                  <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-xs">No upcoming matches</p>
+                  <Button variant="gaming" size="sm" className="mt-3 h-7 text-xs" onClick={() => navigate('/creator')}>Browse</Button>
+                </div>
+              ) : (
+                <div className="space-y-2">{upcomingMatches.map((reg) => <MatchCard key={reg.id} registration={reg} showCancel />)}</div>
+              )}
+            </>
+          )}
 
-          <TabsContent value="live" className="mt-3">
-            {liveMatches.length === 0 ? (
-              <div className="text-center py-10">
-                <Gamepad2 className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-muted-foreground text-xs">No live matches</p>
-              </div>
-            ) : (
-              <div className="space-y-2">{liveMatches.map((reg) => <MatchCard key={reg.id} registration={reg} />)}</div>
-            )}
-          </TabsContent>
+          {activeTab === 'live' && (
+            <>
+              {liveMatches.length === 0 ? (
+                <div className="text-center py-10">
+                  <Gamepad2 className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-xs">No live matches</p>
+                </div>
+              ) : (
+                <div className="space-y-2">{liveMatches.map((reg) => <MatchCard key={reg.id} registration={reg} />)}</div>
+              )}
+            </>
+          )}
 
-          <TabsContent value="completed" className="mt-3">
-            {completedMatches.length === 0 ? (
-              <div className="text-center py-10">
-                <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-muted-foreground text-xs">No completed matches</p>
-              </div>
-            ) : (
-              <div className="space-y-2">{completedMatches.map((reg) => <MatchCard key={reg.id} registration={reg} isCompleted />)}</div>
-            )}
-          </TabsContent>
+          {activeTab === 'completed' && (
+            <>
+              {completedMatches.length === 0 ? (
+                <div className="text-center py-10">
+                  <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-xs">No completed matches</p>
+                </div>
+              ) : (
+                <div className="space-y-2">{completedMatches.map((reg) => <MatchCard key={reg.id} registration={reg} isCompleted />)}</div>
+              )}
+            </>
+          )}
 
-          <TabsContent value="local" className="mt-3">
-            {localTournaments.length === 0 && schoolTournaments.length === 0 ? (
-              <div className="text-center py-10">
-                <QrCode className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                <p className="text-muted-foreground text-xs">No local tournaments</p>
-                <p className="text-muted-foreground text-[10px] mt-0.5">Scan QR to join</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {schoolTournaments.map((st) => <SchoolTournamentPlayerCard key={st.team.id} tournament={st.tournament} team={st.team} userId={user?.id || ''} />)}
-                {localTournaments.map((lt) => <LocalTournamentCard key={lt.id} tournament={lt} />)}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          {activeTab === 'local' && (
+            <>
+              {localTournaments.length === 0 && schoolTournaments.length === 0 ? (
+                <div className="text-center py-10">
+                  <QrCode className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-xs">No local tournaments</p>
+                  <p className="text-muted-foreground text-[10px] mt-0.5">Scan QR to join</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {schoolTournaments.map((st) => <SchoolTournamentPlayerCard key={st.team.id} tournament={st.tournament} team={st.team} userId={user?.id || ''} />)}
+                  {localTournaments.map((lt) => <LocalTournamentCard key={lt.id} tournament={lt} />)}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </AppLayout>
   );
