@@ -1826,6 +1826,7 @@ export type Database = {
           is_edited: boolean | null
           reactions: Json | null
           reply_to: string | null
+          seen_by: string[] | null
           sender_id: string
           team_id: string
         }
@@ -1837,6 +1838,7 @@ export type Database = {
           is_edited?: boolean | null
           reactions?: Json | null
           reply_to?: string | null
+          seen_by?: string[] | null
           sender_id: string
           team_id: string
         }
@@ -1848,6 +1850,7 @@ export type Database = {
           is_edited?: boolean | null
           reactions?: Json | null
           reply_to?: string | null
+          seen_by?: string[] | null
           sender_id?: string
           team_id?: string
         }
