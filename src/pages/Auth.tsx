@@ -445,36 +445,36 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200 p-4 relative overflow-hidden">
-      {/* Background Gaming Stickers - Esports Theme with Full Opacity */}
+      {/* Background Gaming Stickers - Esports Theme */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Controllers & Gaming */}
-        <div className="absolute top-8 left-6 text-5xl opacity-90 animate-float" style={{ animationDelay: '0s' }}>🎮</div>
-        <div className="absolute top-16 right-10 text-4xl opacity-85 animate-float" style={{ animationDelay: '0.5s' }}>🕹️</div>
-        <div className="absolute top-28 left-1/4 text-4xl opacity-80 animate-float" style={{ animationDelay: '1.2s' }}>🎮</div>
+        <div className="absolute top-8 left-6 text-4xl opacity-50 animate-float" style={{ animationDelay: '0s' }}>🎮</div>
+        <div className="absolute top-16 right-10 text-3xl opacity-45 animate-float" style={{ animationDelay: '0.5s' }}>🕹️</div>
+        <div className="absolute top-28 left-1/4 text-3xl opacity-40 animate-float" style={{ animationDelay: '1.2s' }}>🎮</div>
         
         {/* Trophies & Medals */}
-        <div className="absolute bottom-28 right-8 text-5xl opacity-90 animate-float" style={{ animationDelay: '1.5s' }}>🏆</div>
-        <div className="absolute top-1/4 right-1/4 text-4xl opacity-85 animate-float" style={{ animationDelay: '0.7s' }}>🥇</div>
-        <div className="absolute bottom-1/4 left-8 text-4xl opacity-80 animate-float" style={{ animationDelay: '2.2s' }}>🏅</div>
+        <div className="absolute bottom-28 right-8 text-4xl opacity-50 animate-float" style={{ animationDelay: '1.5s' }}>🏆</div>
+        <div className="absolute top-1/4 right-1/4 text-3xl opacity-45 animate-float" style={{ animationDelay: '0.7s' }}>🥇</div>
+        <div className="absolute bottom-1/4 left-8 text-3xl opacity-40 animate-float" style={{ animationDelay: '2.2s' }}>🏅</div>
         
         {/* Gaming Icons */}
-        <div className="absolute bottom-40 left-4 text-4xl opacity-85 animate-float" style={{ animationDelay: '1s' }}>🎯</div>
-        <div className="absolute top-1/3 left-3 text-3xl opacity-80 animate-float" style={{ animationDelay: '2s' }}>⭐</div>
-        <div className="absolute top-1/2 right-4 text-4xl opacity-85 animate-float" style={{ animationDelay: '0.3s' }}>👾</div>
-        <div className="absolute bottom-1/3 left-10 text-4xl opacity-80 animate-float" style={{ animationDelay: '0.8s' }}>🔥</div>
+        <div className="absolute bottom-40 left-4 text-3xl opacity-50 animate-float" style={{ animationDelay: '1s' }}>🎯</div>
+        <div className="absolute top-1/3 left-3 text-2xl opacity-40 animate-float" style={{ animationDelay: '2s' }}>⭐</div>
+        <div className="absolute top-1/2 right-4 text-3xl opacity-45 animate-float" style={{ animationDelay: '0.3s' }}>👾</div>
+        <div className="absolute bottom-1/3 left-10 text-3xl opacity-40 animate-float" style={{ animationDelay: '0.8s' }}>🔥</div>
         
         {/* Esports Specific */}
-        <div className="absolute top-12 left-1/3 text-4xl opacity-85 animate-float" style={{ animationDelay: '1.8s' }}>⚔️</div>
-        <div className="absolute bottom-16 right-1/4 text-4xl opacity-90 animate-float" style={{ animationDelay: '0.2s' }}>🎖️</div>
-        <div className="absolute top-2/3 right-8 text-3xl opacity-85 animate-float" style={{ animationDelay: '1.3s' }}>💎</div>
-        <div className="absolute bottom-12 left-1/3 text-4xl opacity-80 animate-float" style={{ animationDelay: '2.5s' }}>🚀</div>
-        <div className="absolute top-3/4 left-6 text-3xl opacity-85 animate-float" style={{ animationDelay: '0.9s' }}>⚡</div>
-        <div className="absolute top-1/4 left-12 text-4xl opacity-80 animate-float" style={{ animationDelay: '1.6s' }}>🎪</div>
-        <div className="absolute bottom-2/3 right-12 text-3xl opacity-85 animate-float" style={{ animationDelay: '2.1s' }}>🎭</div>
-        <div className="absolute top-40 right-1/3 text-4xl opacity-90 animate-float" style={{ animationDelay: '0.4s' }}>🏹</div>
-        <div className="absolute top-16 left-1/3 text-3xl opacity-75 animate-float" style={{ animationDelay: '1.2s' }}>🔥</div>
-        <div className="absolute bottom-24 right-1/4 text-3xl opacity-80 animate-float" style={{ animationDelay: '0.7s' }}>💎</div>
-        <div className="absolute top-2/3 right-1/3 text-3xl opacity-75 animate-float" style={{ animationDelay: '1.8s' }}>🎪</div>
+        <div className="absolute top-12 left-1/3 text-3xl opacity-45 animate-float" style={{ animationDelay: '1.8s' }}>⚔️</div>
+        <div className="absolute bottom-16 right-1/4 text-3xl opacity-50 animate-float" style={{ animationDelay: '0.2s' }}>🎖️</div>
+        <div className="absolute top-2/3 right-8 text-2xl opacity-45 animate-float" style={{ animationDelay: '1.3s' }}>💎</div>
+        <div className="absolute bottom-12 left-1/3 text-3xl opacity-40 animate-float" style={{ animationDelay: '2.5s' }}>🚀</div>
+        <div className="absolute top-3/4 left-6 text-2xl opacity-45 animate-float" style={{ animationDelay: '0.9s' }}>⚡</div>
+        <div className="absolute top-1/4 left-12 text-3xl opacity-40 animate-float" style={{ animationDelay: '1.6s' }}>🎪</div>
+        <div className="absolute bottom-2/3 right-12 text-2xl opacity-45 animate-float" style={{ animationDelay: '2.1s' }}>🎭</div>
+        <div className="absolute top-40 right-1/3 text-3xl opacity-50 animate-float" style={{ animationDelay: '0.4s' }}>🏹</div>
+        <div className="absolute top-16 left-1/3 text-2xl opacity-35 animate-float" style={{ animationDelay: '1.2s' }}>🔥</div>
+        <div className="absolute bottom-24 right-1/4 text-2xl opacity-40 animate-float" style={{ animationDelay: '0.7s' }}>💎</div>
+        <div className="absolute top-2/3 right-1/3 text-2xl opacity-35 animate-float" style={{ animationDelay: '1.8s' }}>🎪</div>
       </div>
       
       <div className="w-full max-w-sm relative z-10">
