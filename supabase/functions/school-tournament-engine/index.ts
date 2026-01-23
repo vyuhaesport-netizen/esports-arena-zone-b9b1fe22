@@ -295,7 +295,7 @@ Deno.serve(async (req) => {
           })
           .eq("id", winnerTeamId);
         
-        // Eliminate all other teams in this room
+        // Mark and delete all other teams in this room (eliminated)
         const { data: otherTeams } = await supabase
           .from("school_tournament_room_assignments")
           .select("team_id")
@@ -304,13 +304,12 @@ Deno.serve(async (req) => {
         
         if (otherTeams && otherTeams.length > 0) {
           const eliminatedIds = otherTeams.map(t => t.team_id);
+          
+          // Delete eliminated teams immediately (only keep winner data)
+          console.log(`Deleting ${eliminatedIds.length} eliminated teams from room ${roomId}`);
           await supabase
             .from("school_tournament_teams")
-            .update({ 
-              is_eliminated: true, 
-              eliminated_at_round: room.round_number,
-              updated_at: new Date().toISOString()
-            })
+            .delete()
             .in("id", eliminatedIds);
         }
         
@@ -348,7 +347,7 @@ Deno.serve(async (req) => {
             isFinalRound = true;
             console.log("Finale round reached!");
             
-            // Delete old round rooms and assignments
+            // Delete old round rooms and assignments immediately
             const { data: oldRooms } = await supabase
               .from("school_tournament_rooms")
               .select("id")
@@ -370,7 +369,7 @@ Deno.serve(async (req) => {
                 .delete()
                 .in("id", oldRoomIds);
               
-              console.log(`Deleted ${oldRooms.length} rooms from round ${room.round_number}`);
+              console.log(`Auto-deleted ${oldRooms.length} rooms from round ${room.round_number} on finale transition`);
             }
             
             // Create single finale room
@@ -421,7 +420,7 @@ Deno.serve(async (req) => {
             // More rounds needed - create next round rooms
             console.log(`Creating next round with ${winnerCount} teams...`);
             
-            // Delete old round rooms and assignments
+            // Delete old round rooms and assignments immediately
             const { data: oldRooms } = await supabase
               .from("school_tournament_rooms")
               .select("id")
@@ -443,7 +442,7 @@ Deno.serve(async (req) => {
                 .delete()
                 .in("id", oldRoomIds);
               
-              console.log(`Deleted ${oldRooms.length} rooms from round ${room.round_number}`);
+              console.log(`Auto-deleted ${oldRooms.length} rooms from round ${room.round_number} on round transition`);
             }
             
             // Distribute winners into new rooms
@@ -562,12 +561,13 @@ Deno.serve(async (req) => {
         
         console.log(`Starting round ${nextRound} with ${winnerCount} teams`);
         
-        // Delete old round rooms and assignments
+        // Delete old round rooms and assignments (cleanup previous round data)
+        const prevRoundNumber = currentRound || tournament.current_round;
         const { data: oldRooms } = await supabase
           .from("school_tournament_rooms")
           .select("id")
           .eq("tournament_id", tournamentId)
-          .eq("round_number", currentRound || tournament.current_round);
+          .eq("round_number", prevRoundNumber);
         
         if (oldRooms && oldRooms.length > 0) {
           const oldRoomIds = oldRooms.map(r => r.id);
@@ -584,7 +584,23 @@ Deno.serve(async (req) => {
             .delete()
             .in("id", oldRoomIds);
           
-          console.log(`Deleted ${oldRooms.length} rooms from round ${currentRound || tournament.current_round}`);
+          console.log(`Deleted ${oldRooms.length} rooms from round ${prevRoundNumber}`);
+        }
+        
+        // Delete eliminated teams data from previous round to free up storage
+        const { data: eliminatedTeams } = await supabase
+          .from("school_tournament_teams")
+          .select("id")
+          .eq("tournament_id", tournamentId)
+          .eq("is_eliminated", true);
+        
+        if (eliminatedTeams && eliminatedTeams.length > 0) {
+          const eliminatedIds = eliminatedTeams.map(t => t.id);
+          await supabase
+            .from("school_tournament_teams")
+            .delete()
+            .in("id", eliminatedIds);
+          console.log(`Cleaned up ${eliminatedIds.length} eliminated teams from previous rounds`);
         }
         
         let newRoomsCreated = 0;
