@@ -129,7 +129,7 @@ const SchoolTournamentManage = () => {
 
   const fetchTournamentData = async () => {
     try {
-      const [tournamentRes, teamsRes, roomsRes, assignmentsRes] = await Promise.all([
+      const [tournamentRes, teamsRes, roomsRes] = await Promise.all([
         supabase.from('school_tournaments').select('*').eq('id', id).single(),
         supabase
           .from('school_tournament_teams')
@@ -142,9 +142,6 @@ const SchoolTournamentManage = () => {
           .eq('tournament_id', id)
           .order('round_number', { ascending: true })
           .order('room_number', { ascending: true }),
-        supabase
-          .from('school_tournament_room_assignments')
-          .select('room_id, team_id')
       ]);
 
       if (tournamentRes.data) setTournament(tournamentRes.data);
@@ -165,14 +162,27 @@ const SchoolTournamentManage = () => {
         setTournamentStats({ roomsByRound: roomStats });
       }
       
-      // Build room -> team_ids mapping
-      if (assignmentsRes.data) {
+      // Build room -> team_ids mapping (IMPORTANT: filter to this tournament rooms + fetch >1000 safely)
+      const roomIds = (roomsRes.data || []).map((r: any) => r.id);
+      if (roomIds.length > 0) {
+        const { data: assignments, error: assignmentsError } = await supabase
+          .from('school_tournament_room_assignments')
+          .select('room_id, team_id')
+          .in('room_id', roomIds)
+          .range(0, 5000);
+
+        if (assignmentsError) {
+          console.warn('Failed to fetch room assignments:', assignmentsError);
+        }
+
         const mapping: Record<string, string[]> = {};
-        assignmentsRes.data.forEach((a: any) => {
+        (assignments || []).forEach((a: any) => {
           if (!mapping[a.room_id]) mapping[a.room_id] = [];
           mapping[a.room_id].push(a.team_id);
         });
         setRoomAssignments(mapping);
+      } else {
+        setRoomAssignments({});
       }
     } catch (error) {
       console.error('Error fetching tournament:', error);
@@ -254,34 +264,22 @@ const SchoolTournamentManage = () => {
     try {
       const nextRound = (tournament.current_round || 1) + 1;
       
-      // Call edge function to generate next round (it will delete old rooms + create new ones)
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/school-tournament-engine`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
-          },
-          body: JSON.stringify({
-            action: 'start_next_round',
-            tournamentId: id,
-            currentRound: tournament.current_round
-          })
+      // Call backend function to generate next round (it will delete old rooms + create new ones)
+      const { data: result, error } = await supabase.functions.invoke('school-tournament-engine', {
+        body: {
+          action: 'start_next_round',
+          tournamentId: id,
+          currentRound: tournament.current_round,
         }
-      );
-      
-      const result = await response.json();
+      });
+
+      if (error) throw error;
       
       if (!result.success) {
         throw new Error(result.error || 'Failed to start next round');
       }
       
-      if (result.isFinalRound) {
-        toast.success('🏆 Finale Room Created! Final battle begins!');
-      } else {
-        toast.success(`Round ${nextRound} started with ${result.newRoomsCreated} rooms!`);
-      }
+      toast.success(`Round ${nextRound} started with ${result.newRoomsCreated} rooms!`);
       
       fetchTournamentData();
     } catch (error: any) {
