@@ -610,6 +610,55 @@ const TeamPage = () => {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !myTeam || myTeam.leader_id !== user.id) return;
+    
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Invalid File', description: 'Please select an image file.', variant: 'destructive' });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'File Too Large', description: 'Image must be less than 2MB.', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `team-logos/${myTeam.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('branding')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('branding')
+        .getPublicUrl(fileName);
+
+      const { error: updateError } = await supabase
+        .from('player_teams')
+        .update({ logo_url: publicUrl })
+        .eq('id', myTeam.id);
+
+      if (updateError) throw updateError;
+
+      toast({ title: 'Logo Updated!', description: 'Your team logo has been updated.' });
+      fetchMyTeam();
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast({ title: 'Error', description: 'Failed to upload logo.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const filteredOpenTeams = openTeams.filter(team =>
     team.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (team.game && team.game.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -721,8 +770,30 @@ const TeamPage = () => {
               <Card variant="premium" className="overflow-hidden">
                 <CardHeader className="pb-3 relative bg-gradient-to-br from-primary/10 via-transparent to-transparent">
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-gaming-purple flex items-center justify-center shadow-xl shadow-primary/30">
-                      <Users className="h-8 w-8 text-primary-foreground" />
+                    <div className="relative group">
+                      {myTeam.logo_url ? (
+                        <Avatar className="w-16 h-16 rounded-2xl shadow-xl shadow-primary/30">
+                          <AvatarImage src={myTeam.logo_url} className="object-cover" />
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-gaming-purple rounded-2xl">
+                            <Users className="h-8 w-8 text-primary-foreground" />
+                          </AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-gaming-purple flex items-center justify-center shadow-xl shadow-primary/30">
+                          <Users className="h-8 w-8 text-primary-foreground" />
+                        </div>
+                      )}
+                      {isLeader && (
+                        <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleLogoUpload}
+                          />
+                          <Plus className="h-6 w-6 text-white" />
+                        </label>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
