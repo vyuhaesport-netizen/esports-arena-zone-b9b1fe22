@@ -68,7 +68,6 @@ const Creator = () => {
   const [registering, setRegistering] = useState<string | null>(null);
   const [registeredTournaments, setRegisteredTournaments] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
-  const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
   const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [activeMode, setActiveMode] = useState<'solo' | 'duo' | 'squad'>('solo');
@@ -85,7 +84,6 @@ const Creator = () => {
     if (user) {
       fetchUserRegistrations();
       fetchUserProfile();
-      fetchFollowedOrganizers();
     }
 
     // Subscribe to real-time updates for tournaments
@@ -123,19 +121,6 @@ const Creator = () => {
       setUserProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
-    }
-  };
-
-  const fetchFollowedOrganizers = async () => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from('follows')
-        .select('following_user_id')
-        .eq('follower_user_id', user.id);
-      setFollowedOrganizers(data?.map(f => f.following_user_id) || []);
-    } catch (error) {
-      console.error('Error fetching follows:', error);
     }
   };
 
@@ -483,7 +468,6 @@ const Creator = () => {
             {getFilteredTournaments().map((tournament) => {
               const isJoined = tournament.joined_users?.includes(user?.id || '');
               const showRoomDetails = canSeeRoomDetails(tournament);
-              const isFollowingCreator = tournament.created_by ? followedOrganizers.includes(tournament.created_by) : false;
               
               const canJoin = canJoinTournament(tournament);
               
@@ -500,14 +484,6 @@ const Creator = () => {
                     onShareClick={() => setShareDialog({ open: true, tournament })}
                     isLoading={registering === tournament.id}
                     variant="creator"
-                    isFollowing={isFollowingCreator}
-                    onFollowChange={(following) => {
-                      if (following) {
-                        setFollowedOrganizers(prev => [...prev, tournament.created_by!]);
-                      } else {
-                        setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
-                      }
-                    }}
                     joinDisabled={!canJoin}
                     joinDisabledReason={!canJoin ? "Registration closed (2 min before start)" : undefined}
                     exitDisabled={tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad'}

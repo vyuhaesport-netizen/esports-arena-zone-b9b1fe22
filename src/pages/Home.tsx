@@ -83,7 +83,6 @@ const HomePage = () => {
   const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [rulesDrawer, setRulesDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
-  const [followedOrganizers, setFollowedOrganizers] = useState<string[]>([]);
   const [showGuestBanner, setShowGuestBanner] = useState(true);
   const [adminRules, setAdminRules] = useState<{ id: string; title: string; content: string; game: string }[]>([]);
   
@@ -96,7 +95,6 @@ const HomePage = () => {
     fetchAdminRules();
     if (user) {
       fetchUserProfile();
-      fetchFollowedOrganizers();
     }
 
     // Subscribe to real-time updates for tournaments
@@ -136,20 +134,6 @@ const HomePage = () => {
       setWalletBalance(data?.wallet_balance || 0);
     } catch (error) {
       console.error('Error fetching profile:', error);
-    }
-  };
-
-  const fetchFollowedOrganizers = async () => {
-    if (!user) return;
-    try {
-      const { data } = await supabase
-        .from('follows')
-        .select('following_user_id')
-        .eq('follower_user_id', user.id);
-      
-      setFollowedOrganizers(data?.map(f => f.following_user_id) || []);
-    } catch (error) {
-      console.error('Error fetching follows:', error);
     }
   };
 
@@ -507,7 +491,6 @@ const HomePage = () => {
             {getFilteredTournaments().map((tournament) => {
               const joined = isUserJoined(tournament);
               const showRoomDetails = canSeeRoomDetails(tournament);
-              const isFollowingOrganizer = tournament.created_by ? followedOrganizers.includes(tournament.created_by) : false;
               
               return (
                 <TournamentCard
@@ -522,14 +505,6 @@ const HomePage = () => {
                   onRulesClick={() => setRulesDrawer({ open: true, tournament })}
                   onSwipeJoin={() => handleJoinClick(tournament)}
                   variant="organizer"
-                  isFollowing={isFollowingOrganizer}
-                  onFollowChange={(following) => {
-                    if (following) {
-                      setFollowedOrganizers(prev => [...prev, tournament.created_by!]);
-                    } else {
-                      setFollowedOrganizers(prev => prev.filter(id => id !== tournament.created_by));
-                    }
-                  }}
                   exitDisabled={tournament.tournament_mode === 'duo' || tournament.tournament_mode === 'squad'}
                   exitDisabledReason="Exit not allowed for team tournaments"
                 />

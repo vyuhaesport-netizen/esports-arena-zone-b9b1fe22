@@ -35,7 +35,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import FollowButton from './FollowButton';
 
 interface UserProfile {
   user_id: string;
