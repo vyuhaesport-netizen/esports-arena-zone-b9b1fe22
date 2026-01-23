@@ -28,6 +28,7 @@ const TournamentScanner = ({ onScanSuccess }: TournamentScannerProps) => {
   const handleCodeDetected = async (code: string) => {
     let privateCode = code;
     let tournamentId: string | null = null;
+    let isSchoolTournament = false;
     
     // Check if it's a URL
     try {
@@ -37,6 +38,13 @@ const TournamentScanner = ({ onScanSuccess }: TournamentScannerProps) => {
       const pathMatch = url.pathname.match(/\/tournament\/([a-f0-9-]+)/i);
       if (pathMatch) {
         tournamentId = pathMatch[1];
+      }
+      
+      // Check for school tournament URL (e.g., /join-school-tournament/CODE)
+      const schoolMatch = url.pathname.match(/\/join-school-tournament\/([A-Z0-9]+)/i);
+      if (schoolMatch) {
+        privateCode = schoolMatch[1];
+        isSchoolTournament = true;
       }
       
       // Check for private_code parameter (local tournaments)
@@ -66,7 +74,7 @@ const TournamentScanner = ({ onScanSuccess }: TournamentScannerProps) => {
       return;
     }
     
-    // Otherwise, treat as local tournament private code
+    // Treat as private code
     privateCode = privateCode.trim().toUpperCase();
     
     if (privateCode.length < 4) {
@@ -82,16 +90,60 @@ const TournamentScanner = ({ onScanSuccess }: TournamentScannerProps) => {
       onScanSuccess(privateCode);
     }
     
-    // Navigate to join page with the code
-    navigate(`/join-local?code=${privateCode}`);
-    setOpen(false);
-    setMode(null);
-    setManualCode('');
-    
-    toast({
-      title: 'Tournament Found!',
-      description: `Joining with code: ${privateCode}`,
-    });
+    // Check both school_tournaments and local_tournaments to determine type
+    setProcessing(true);
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // First check school tournaments
+      const { data: schoolData } = await supabase
+        .from('school_tournaments')
+        .select('id')
+        .eq('private_code', privateCode)
+        .maybeSingle();
+      
+      if (schoolData) {
+        navigate(`/join-school-tournament/${privateCode}`);
+        toast({
+          title: 'School Tournament Found!',
+          description: `Joining with code: ${privateCode}`,
+        });
+      } else {
+        // Try local tournaments
+        const { data: localData } = await supabase
+          .from('local_tournaments')
+          .select('id')
+          .eq('private_code', privateCode)
+          .maybeSingle();
+        
+        if (localData) {
+          navigate(`/join-local?code=${privateCode}`);
+          toast({
+            title: 'Tournament Found!',
+            description: `Joining with code: ${privateCode}`,
+          });
+        } else {
+          toast({
+            title: 'Tournament Not Found',
+            description: 'No tournament found with this code.',
+            variant: 'destructive'
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking tournament:', error);
+      // Fallback: try local first
+      navigate(`/join-local?code=${privateCode}`);
+      toast({
+        title: 'Checking Tournament...',
+        description: `Looking for code: ${privateCode}`,
+      });
+    } finally {
+      setProcessing(false);
+      setOpen(false);
+      setMode(null);
+      setManualCode('');
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

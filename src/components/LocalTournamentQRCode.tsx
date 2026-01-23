@@ -2,8 +2,7 @@ import { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
-import { Download, Share2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Download } from 'lucide-react';
 
 interface LocalTournamentQRCodeProps {
   tournamentId: string;
@@ -14,7 +13,6 @@ interface LocalTournamentQRCodeProps {
 
 const LocalTournamentQRCode = ({ tournamentId, tournamentTitle, privateCode, onDownload }: LocalTournamentQRCodeProps) => {
   const qrContainerRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
   
   // QR code points to join page with code
   const joinUrl = `${window.location.origin}/join-local?code=${privateCode}`;
@@ -105,27 +103,6 @@ const LocalTournamentQRCode = ({ tournamentId, tournamentTitle, privateCode, onD
     }
   };
 
-  const handleShare = async () => {
-    const shareData = {
-      title: tournamentTitle,
-      text: `Join my local tournament: ${tournamentTitle}! Use code: ${privateCode}`,
-      url: joinUrl,
-    };
-
-    try {
-      if (navigator.share && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(joinUrl);
-        toast({ title: 'Link Copied!', description: 'Tournament link copied to clipboard.' });
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        await navigator.clipboard.writeText(joinUrl);
-        toast({ title: 'Link Copied!', description: 'Tournament link copied to clipboard.' });
-      }
-    }
-  };
 
   return (
     <div className="flex flex-col items-center space-y-4">
@@ -160,23 +137,13 @@ const LocalTournamentQRCode = ({ tournamentId, tournamentTitle, privateCode, onD
         Scan to join this tournament
       </p>
 
-      <div className="flex gap-2 w-full">
-        <Button 
-          onClick={downloadQR}
-          variant="outline"
-          className="flex-1 gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Download
-        </Button>
-        <Button 
-          onClick={handleShare}
-          className="flex-1 gap-2 bg-gradient-to-r from-primary to-primary/80"
-        >
-          <Share2 className="h-4 w-4" />
-          Share
-        </Button>
-      </div>
+      <Button 
+        onClick={downloadQR}
+        className="w-full gap-2 bg-gradient-to-r from-primary to-primary/80"
+      >
+        <Download className="h-4 w-4" />
+        Download QR Code
+      </Button>
     </div>
   );
 };
