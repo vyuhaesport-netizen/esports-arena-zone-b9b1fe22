@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ArrowLeft,
   Users,
@@ -23,7 +25,10 @@ import {
   Loader2,
   AlertCircle,
   School,
-  UserPlus
+  UserPlus,
+  Crown,
+  Lock,
+  Timer
 } from 'lucide-react';
 
 interface Tournament {
@@ -36,12 +41,54 @@ interface Tournament {
   game: string;
   max_players: number;
   current_players: number;
+  current_round: number;
+  total_rounds: number;
   status: string;
   tournament_date: string;
   registration_deadline: string;
   entry_type: string;
   entry_fee: number;
   prize_pool: number;
+  total_rooms: number;
+}
+
+interface MyTeam {
+  id: string;
+  team_name: string;
+  leader_id: string;
+  member_1_id?: string;
+  member_2_id?: string;
+  member_3_id?: string;
+  current_round: number;
+  is_eliminated: boolean;
+  final_rank?: number;
+}
+
+interface RoomTeam {
+  id: string;
+  team_name: string;
+  leader_id: string;
+  member_1_id?: string;
+  member_2_id?: string;
+  member_3_id?: string;
+}
+
+interface MyRoom {
+  id: string;
+  room_name: string;
+  room_number: number;
+  round_number: number;
+  room_id?: string;
+  room_password?: string;
+  status: string;
+  scheduled_time?: string;
+}
+
+interface PlayerProfile {
+  user_id: string;
+  username?: string;
+  in_game_name?: string;
+  game_uid?: string;
 }
 
 const JoinSchoolTournament = () => {
@@ -53,11 +100,16 @@ const JoinSchoolTournament = () => {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [walletBalance, setWalletBalance] = useState(0);
   const [alreadyJoined, setAlreadyJoined] = useState(false);
+  const [myTeam, setMyTeam] = useState<MyTeam | null>(null);
+  const [myRoom, setMyRoom] = useState<MyRoom | null>(null);
+  const [roomTeams, setRoomTeams] = useState<RoomTeam[]>([]);
+  const [playerProfiles, setPlayerProfiles] = useState<Record<string, PlayerProfile>>({});
   
   // Join dialog
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const [teamName, setTeamName] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [activeTab, setActiveTab] = useState('info');
 
   useEffect(() => {
     if (code) {
@@ -92,14 +144,82 @@ const JoinSchoolTournament = () => {
   const checkIfJoined = async () => {
     if (!user || !tournament) return;
     
-    const { data } = await supabase
+    const { data: teamData } = await supabase
       .from('school_tournament_teams')
-      .select('id')
+      .select('*')
       .eq('tournament_id', tournament.id)
       .or(`leader_id.eq.${user.id},member_1_id.eq.${user.id},member_2_id.eq.${user.id},member_3_id.eq.${user.id}`)
       .single();
 
-    setAlreadyJoined(!!data);
+    if (teamData) {
+      setAlreadyJoined(true);
+      setMyTeam(teamData);
+      setActiveTab('my-room');
+      
+      // Fetch my room assignment
+      const { data: assignmentData } = await supabase
+        .from('school_tournament_room_assignments')
+        .select('room_id')
+        .eq('team_id', teamData.id)
+        .single();
+
+      if (assignmentData) {
+        // Fetch room details
+        const { data: roomData } = await supabase
+          .from('school_tournament_rooms')
+          .select('*')
+          .eq('id', assignmentData.room_id)
+          .single();
+
+        if (roomData) {
+          setMyRoom(roomData);
+          
+          // Fetch all teams in this room
+          const { data: roomAssignments } = await supabase
+            .from('school_tournament_room_assignments')
+            .select('team_id')
+            .eq('room_id', roomData.id);
+
+          if (roomAssignments && roomAssignments.length > 0) {
+            const teamIds = roomAssignments.map(a => a.team_id);
+            
+            const { data: teamsData } = await supabase
+              .from('school_tournament_teams')
+              .select('id, team_name, leader_id, member_1_id, member_2_id, member_3_id')
+              .in('id', teamIds);
+
+            if (teamsData) {
+              setRoomTeams(teamsData);
+              
+              // Fetch player profiles for all teams
+              const allPlayerIds: string[] = [];
+              teamsData.forEach(team => {
+                if (team.leader_id) allPlayerIds.push(team.leader_id);
+                if (team.member_1_id) allPlayerIds.push(team.member_1_id);
+                if (team.member_2_id) allPlayerIds.push(team.member_2_id);
+                if (team.member_3_id) allPlayerIds.push(team.member_3_id);
+              });
+
+              const uniqueIds = [...new Set(allPlayerIds)];
+              if (uniqueIds.length > 0) {
+                const { data: profiles } = await supabase
+                  .from('profiles')
+                  .select('user_id, username, in_game_name, game_uid')
+                  .in('user_id', uniqueIds);
+
+                if (profiles) {
+                  const profileMap: Record<string, PlayerProfile> = {};
+                  profiles.forEach(p => { profileMap[p.user_id] = p; });
+                  setPlayerProfiles(profileMap);
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      setAlreadyJoined(false);
+    }
   };
 
   const fetchWalletBalance = async () => {
@@ -140,6 +260,7 @@ const JoinSchoolTournament = () => {
       setJoinDialogOpen(false);
       setAlreadyJoined(true);
       fetchTournament();
+      checkIfJoined();
     } catch (error: any) {
       toast.error(error.message || 'Failed to join tournament');
     } finally {
@@ -151,7 +272,9 @@ const JoinSchoolTournament = () => {
     tournament.status === 'registration' && 
     new Date(tournament.registration_deadline) > new Date();
 
+  const isFull = tournament && tournament.current_players >= tournament.max_players;
   const canAfford = tournament?.entry_type === 'free' || walletBalance >= (tournament?.entry_fee || 0);
+  const teamsPerRoom = tournament?.game === 'BGMI' ? 25 : 12;
 
   if (loading || authLoading) {
     return (
@@ -214,119 +337,222 @@ const JoinSchoolTournament = () => {
                 <MapPin className="h-3 w-3" /> {tournament.school_city}, {tournament.school_state}
               </p>
             </div>
-            <Badge variant={tournament.status === 'registration' ? 'secondary' : 'default'}>
-              {tournament.status}
-            </Badge>
+            <div className="flex flex-col items-end gap-1">
+              <Badge variant={tournament.status === 'registration' ? 'secondary' : 'default'}>
+                {tournament.status}
+              </Badge>
+              {isFull && (
+                <Badge variant="destructive">FULL</Badge>
+              )}
+            </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 gap-3 mt-6">
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <Gamepad2 className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Game</p>
-                  <p className="font-bold">{tournament.game}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <Users className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Players</p>
-                  <p className="font-bold">{tournament.current_players}/{tournament.max_players}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                <Calendar className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Date</p>
-                  <p className="font-bold text-sm">
-                    {new Date(tournament.tournament_date).toLocaleDateString()}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-3">
-                {tournament.entry_type === 'free' ? (
-                  <CheckCircle className="h-8 w-8 text-green-500" />
+          {/* Tabs for Joined Users */}
+          {alreadyJoined ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="my-room">My Room</TabsTrigger>
+                <TabsTrigger value="info">Tournament Info</TabsTrigger>
+              </TabsList>
+
+              {/* My Room Tab */}
+              <TabsContent value="my-room" className="mt-4 space-y-4">
+                {myRoom ? (
+                  <>
+                    {/* Room Info Card */}
+                    <Card className="border-primary/30 bg-primary/5">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{myRoom.room_name}</CardTitle>
+                          <Badge variant={myRoom.status === 'completed' ? 'default' : 'secondary'}>
+                            {myRoom.status}
+                          </Badge>
+                        </div>
+                        <CardDescription>
+                          Round {myRoom.round_number} • Room {myRoom.room_number}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {/* My Team Highlight */}
+                        {myTeam && (
+                          <div className="p-3 bg-primary/10 rounded-lg border border-primary/30">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Crown className="h-4 w-4 text-yellow-500" />
+                              <span className="font-medium">Your Team: {myTeam.team_name}</span>
+                            </div>
+                            {myTeam.is_eliminated && (
+                              <Badge variant="destructive">Eliminated</Badge>
+                            )}
+                            {myTeam.final_rank && (
+                              <Badge className="bg-yellow-500">Rank #{myTeam.final_rank}</Badge>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Room Credentials (if set) */}
+                        {myRoom.room_id && (
+                          <div className="p-3 bg-muted rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Lock className="h-4 w-4" />
+                              <span className="font-medium">Room Credentials</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Room ID:</span>
+                                <span className="ml-2 font-mono font-bold">{myRoom.room_id}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Password:</span>
+                                <span className="ml-2 font-mono font-bold">{myRoom.room_password}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Scheduled Time */}
+                        {myRoom.scheduled_time && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Timer className="h-4 w-4 text-primary" />
+                            <span>Match Time: {new Date(myRoom.scheduled_time).toLocaleString()}</span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    {/* Teams in My Room */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Teams in Your Room ({roomTeams.length}/{teamsPerRoom})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ScrollArea className="h-[300px]">
+                          <div className="space-y-2">
+                            {roomTeams.map((team, idx) => {
+                              const isMyTeam = team.id === myTeam?.id;
+                              const playerIds = [
+                                team.leader_id,
+                                team.member_1_id,
+                                team.member_2_id,
+                                team.member_3_id
+                              ].filter(Boolean);
+
+                              return (
+                                <Card 
+                                  key={team.id} 
+                                  className={isMyTeam ? 'border-primary bg-primary/5' : ''}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
+                                        {idx + 1}
+                                      </div>
+                                      <span className="font-medium flex-1">{team.team_name}</span>
+                                      {isMyTeam && (
+                                        <Badge variant="secondary" className="text-xs">You</Badge>
+                                      )}
+                                    </div>
+                                    <div className="space-y-1 text-xs">
+                                      {playerIds.map((pid, pIdx) => {
+                                        const profile = playerProfiles[pid as string];
+                                        return (
+                                          <div key={pid} className="flex items-center gap-2 p-1.5 bg-muted/50 rounded">
+                                            <span className="text-muted-foreground w-6">P{pIdx + 1}</span>
+                                            <div className="flex-1 flex items-center gap-2">
+                                              <span className="font-medium">
+                                                {profile?.in_game_name || profile?.username || `Player ${pIdx + 1}`}
+                                              </span>
+                                              {profile?.game_uid && (
+                                                <span className="text-muted-foreground">
+                                                  UID: {profile.game_uid}
+                                                </span>
+                                              )}
+                                            </div>
+                                            {pIdx === 0 && (
+                                              <Badge variant="outline" className="text-xs py-0">Leader</Badge>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+
+                    {/* Tournament Format */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Tournament Format</CardTitle>
+                      </CardHeader>
+                      <CardContent className="text-sm space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Game</span>
+                          <span className="font-medium">{tournament.game}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Mode</span>
+                          <span className="font-medium">Squad (4 Players)</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Teams/Room</span>
+                          <span className="font-medium">{teamsPerRoom}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Rooms</span>
+                          <span className="font-medium">{tournament.total_rooms}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Current Round</span>
+                          <span className="font-medium">Round {tournament.current_round || 1}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Progression</span>
+                          <span className="font-medium">Top 1 per room advances</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </>
                 ) : (
-                  <IndianRupee className="h-8 w-8 text-primary" />
+                  <Card className="text-center py-8">
+                    <CardContent>
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground">Loading your room...</p>
+                    </CardContent>
+                  </Card>
                 )}
-                <div>
-                  <p className="text-sm text-muted-foreground">Entry</p>
-                  <p className="font-bold">
-                    {tournament.entry_type === 'free' ? 'FREE' : `₹${tournament.entry_fee}`}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </TabsContent>
 
-          {/* Prize Pool */}
-          {tournament.prize_pool > 0 && (
-            <Card className="mt-4 border-yellow-500/30 bg-yellow-500/5">
-              <CardContent className="p-4 flex items-center justify-center gap-3">
-                <Trophy className="h-8 w-8 text-yellow-500" />
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Prize Pool</p>
-                  <p className="text-2xl font-bold text-yellow-500">₹{tournament.prize_pool}</p>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Tournament Info Tab */}
+              <TabsContent value="info" className="mt-4 space-y-4">
+                {renderTournamentInfo()}
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {renderTournamentInfo()}
+            </div>
           )}
-
-          {/* Registration Deadline */}
-          <Card className="mt-4">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Registration Deadline:</span>
-                <span className="font-medium">
-                  {new Date(tournament.registration_deadline).toLocaleString()}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tournament Mode Info */}
-          <Card className="mt-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Tournament Format</CardTitle>
-            </CardHeader>
-            <CardContent className="text-sm space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Mode</span>
-                <span className="font-medium">Squad (4 Players)</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Teams/Room</span>
-                <span className="font-medium">{tournament.game === 'BGMI' ? 25 : 12}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Progression</span>
-                <span className="font-medium">Top 1 per room advances</span>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Fixed Bottom Button */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-50">
           {alreadyJoined ? (
-            <Button className="w-full" disabled>
-              <CheckCircle className="h-4 w-4 mr-2" /> Already Joined
+            <Button className="w-full" variant="secondary" disabled>
+              <CheckCircle className="h-4 w-4 mr-2" /> Already Joined - Check "My Room" tab
             </Button>
           ) : !isRegistrationOpen ? (
             <Button className="w-full" disabled>
               Registration Closed
             </Button>
-          ) : tournament.current_players >= tournament.max_players ? (
-            <Button className="w-full" disabled>
+          ) : isFull ? (
+            <Button className="w-full" disabled variant="destructive">
               Tournament Full
             </Button>
           ) : !user ? (
@@ -414,6 +640,107 @@ const JoinSchoolTournament = () => {
       </Dialog>
     </AppLayout>
   );
+
+  function renderTournamentInfo() {
+    return (
+      <>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <Gamepad2 className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Game</p>
+                <p className="font-bold">{tournament!.game}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <Users className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Players</p>
+                <p className="font-bold">{tournament!.current_players}/{tournament!.max_players}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <Calendar className="h-8 w-8 text-primary" />
+              <div>
+                <p className="text-sm text-muted-foreground">Date</p>
+                <p className="font-bold text-sm">
+                  {new Date(tournament!.tournament_date).toLocaleDateString()}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              {tournament!.entry_type === 'free' ? (
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              ) : (
+                <IndianRupee className="h-8 w-8 text-primary" />
+              )}
+              <div>
+                <p className="text-sm text-muted-foreground">Entry</p>
+                <p className="font-bold">
+                  {tournament!.entry_type === 'free' ? 'FREE' : `₹${tournament!.entry_fee}`}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Prize Pool */}
+        {tournament!.prize_pool > 0 && (
+          <Card className="border-yellow-500/30 bg-yellow-500/5">
+            <CardContent className="p-4 flex items-center justify-center gap-3">
+              <Trophy className="h-8 w-8 text-yellow-500" />
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground">Prize Pool</p>
+                <p className="text-2xl font-bold text-yellow-500">₹{tournament!.prize_pool}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Registration Deadline */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Registration Deadline:</span>
+              <span className="font-medium">
+                {new Date(tournament!.registration_deadline).toLocaleString()}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tournament Mode Info */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Tournament Format</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Mode</span>
+              <span className="font-medium">Squad (4 Players)</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Teams/Room</span>
+              <span className="font-medium">{teamsPerRoom}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Progression</span>
+              <span className="font-medium">Top 1 per room advances</span>
+            </div>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
 };
 
 export default JoinSchoolTournament;
