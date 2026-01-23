@@ -988,12 +988,10 @@ const TeamPage = () => {
           </div>
         </TabsContent>
 
-        {/* Chat Tab */}
-        <TabsContent value="chat" className="flex-1 mt-0 overflow-hidden flex flex-col pb-16">
+      {/* Chat Tab */}
+        <TabsContent value="chat" className="flex-1 mt-0 flex flex-col min-h-0">
           {myTeam && (
-            <div className="flex-1 overflow-hidden flex flex-col">
-              <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
-            </div>
+            <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
           )}
         </TabsContent>
 
