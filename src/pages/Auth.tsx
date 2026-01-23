@@ -24,6 +24,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(searchParams.get('mode') !== 'signup');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [gameUid, setGameUid] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,6 +41,7 @@ const Auth = () => {
     password?: string;
     terms?: string;
     gameUid?: string;
+    fullName?: string;
   }>({});
   const {
     signIn,
@@ -131,6 +133,7 @@ const Auth = () => {
       password?: string;
       terms?: string;
       gameUid?: string;
+      fullName?: string;
     } = {};
     try {
       emailSchema.parse(email);
@@ -149,8 +152,13 @@ const Auth = () => {
       }
     }
     
-    // Signup-specific validations - only terms acceptance
+    // Signup-specific validations
     if (!isLogin && !isForgotPassword) {
+      if (!fullName.trim()) {
+        newErrors.fullName = 'Please enter your name';
+      } else if (fullName.trim().length < 2) {
+        newErrors.fullName = 'Name must be at least 2 characters';
+      }
       if (!acceptedTerms) {
         newErrors.terms = 'You must accept the Terms & Conditions';
       }
@@ -257,6 +265,13 @@ const Auth = () => {
             });
           }
         } else if (authData?.user) {
+          // Store full name in profile
+          await supabase.from('profiles').upsert({
+            user_id: authData.user.id,
+            email: email.toLowerCase().trim(),
+            full_name: fullName.trim(),
+          }, { onConflict: 'user_id' });
+          
           toast({
             title: 'Account Created!',
             description: 'Please complete your gaming profile.'
@@ -430,100 +445,118 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200 p-4 relative overflow-hidden">
       {/* Background Gaming Stickers */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Controller icons */}
-        <div className="absolute top-10 left-8 text-4xl opacity-20 animate-float" style={{ animationDelay: '0s' }}>🎮</div>
-        <div className="absolute top-20 right-12 text-3xl opacity-15 animate-float" style={{ animationDelay: '0.5s' }}>🕹️</div>
-        <div className="absolute bottom-32 left-6 text-3xl opacity-20 animate-float" style={{ animationDelay: '1s' }}>🎯</div>
-        <div className="absolute bottom-20 right-8 text-4xl opacity-15 animate-float" style={{ animationDelay: '1.5s' }}>🏆</div>
-        <div className="absolute top-1/3 left-4 text-2xl opacity-15 animate-float" style={{ animationDelay: '2s' }}>⭐</div>
-        <div className="absolute top-1/2 right-6 text-2xl opacity-20 animate-float" style={{ animationDelay: '0.3s' }}>🎲</div>
-        <div className="absolute bottom-1/3 left-12 text-3xl opacity-15 animate-float" style={{ animationDelay: '0.8s' }}>👾</div>
-        <div className="absolute top-16 left-1/3 text-2xl opacity-15 animate-float" style={{ animationDelay: '1.2s' }}>🔥</div>
-        <div className="absolute bottom-24 right-1/4 text-2xl opacity-20 animate-float" style={{ animationDelay: '0.7s' }}>💎</div>
-        <div className="absolute top-2/3 right-1/3 text-3xl opacity-15 animate-float" style={{ animationDelay: '1.8s' }}>🎪</div>
+        <div className="absolute top-10 left-8 text-3xl opacity-20 animate-float" style={{ animationDelay: '0s' }}>🎮</div>
+        <div className="absolute top-20 right-12 text-2xl opacity-15 animate-float" style={{ animationDelay: '0.5s' }}>🕹️</div>
+        <div className="absolute bottom-32 left-6 text-2xl opacity-20 animate-float" style={{ animationDelay: '1s' }}>🎯</div>
+        <div className="absolute bottom-20 right-8 text-3xl opacity-15 animate-float" style={{ animationDelay: '1.5s' }}>🏆</div>
+        <div className="absolute top-1/3 left-4 text-xl opacity-15 animate-float" style={{ animationDelay: '2s' }}>⭐</div>
+        <div className="absolute top-1/2 right-6 text-xl opacity-20 animate-float" style={{ animationDelay: '0.3s' }}>🎲</div>
+        <div className="absolute bottom-1/3 left-12 text-2xl opacity-15 animate-float" style={{ animationDelay: '0.8s' }}>👾</div>
+        <div className="absolute top-16 left-1/3 text-xl opacity-15 animate-float" style={{ animationDelay: '1.2s' }}>🔥</div>
+        <div className="absolute bottom-24 right-1/4 text-xl opacity-20 animate-float" style={{ animationDelay: '0.7s' }}>💎</div>
+        <div className="absolute top-2/3 right-1/3 text-2xl opacity-15 animate-float" style={{ animationDelay: '1.8s' }}>🎪</div>
       </div>
       
-      <div className="w-full max-w-md relative z-10">
-        <div className="bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/20 p-8 animate-scale-in border border-border/50">
+      <div className="w-full max-w-sm relative z-10">
+        <div className="bg-card/95 backdrop-blur-xl rounded-xl shadow-2xl shadow-black/20 p-5 animate-scale-in border border-border/50">
           {/* Logo */}
-          <div className="flex flex-col items-center mb-6">
+          <div className="flex flex-col items-center mb-4">
             <div className="relative">
               <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl scale-150" />
-              <img src={vyuhaLogo} alt="Vyuha Esport" className="h-28 w-28 rounded-full object-cover mb-4 border-4 border-primary/30 shadow-xl relative z-10" />
+              <img src={vyuhaLogo} alt="Vyuha Esport" className="h-20 w-20 rounded-full object-cover mb-2 border-3 border-primary/30 shadow-xl relative z-10" />
             </div>
-            <h1 className="text-center mb-6 text-foreground font-semibold text-lg mt-2">
+            <h1 className="text-center text-foreground font-semibold text-base mt-1">
               {isLogin ? 'Your Gaming Journey Starts Here' : 'Create Your Account'}
             </h1>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {/* Full Name - Only for Signup */}
+            {!isLogin && (
+              <div className="space-y-1">
+                <Label htmlFor="fullName" className="text-xs font-medium text-foreground">
+                  Full Name
+                </Label>
+                <Input 
+                  id="fullName" 
+                  type="text" 
+                  placeholder="Enter your name" 
+                  value={fullName} 
+                  onChange={e => {
+                    setFullName(e.target.value);
+                    setErrors(prev => ({ ...prev, fullName: undefined }));
+                  }} 
+                  className={`bg-background/50 border-border rounded-lg h-9 text-sm focus:ring-2 focus:ring-primary focus:border-primary ${errors.fullName ? 'border-destructive' : ''}`} 
+                />
+                {errors.fullName && <p className="text-destructive text-[10px]">{errors.fullName}</p>}
+              </div>
+            )}
+            
+            <div className="space-y-1">
+              <Label htmlFor="email" className="text-xs font-medium text-foreground">
                 Email address
               </Label>
-              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => {
-              setEmail(e.target.value);
-              setErrors(prev => ({
-                ...prev,
-                email: undefined
-              }));
-            }} className={`bg-background/50 border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${errors.email ? 'border-destructive' : ''}`} />
-              {errors.email && <p className="text-destructive text-xs">{errors.email}</p>}
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="you@example.com" 
+                value={email} 
+                onChange={e => {
+                  setEmail(e.target.value);
+                  setErrors(prev => ({ ...prev, email: undefined }));
+                }} 
+                className={`bg-background/50 border-border rounded-lg h-9 text-sm focus:ring-2 focus:ring-primary focus:border-primary ${errors.email ? 'border-destructive' : ''}`} 
+              />
+              {errors.email && <p className="text-destructive text-[10px]">{errors.email}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-foreground">
+            <div className="space-y-1">
+              <Label htmlFor="password" className="text-xs font-medium text-foreground">
                 Password
               </Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="••••••••" value={password} onChange={e => {
-                setPassword(e.target.value);
-                setErrors(prev => ({
-                  ...prev,
-                  password: undefined
-                }));
-              }} className={`bg-background/50 border-border rounded-lg pr-10 focus:ring-2 focus:ring-primary focus:border-primary ${errors.password ? 'border-destructive' : ''}`} />
+                <Input 
+                  id="password" 
+                  type={showPassword ? 'text' : 'password'} 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={e => {
+                    setPassword(e.target.value);
+                    setErrors(prev => ({ ...prev, password: undefined }));
+                  }} 
+                  className={`bg-background/50 border-border rounded-lg h-9 text-sm pr-10 focus:ring-2 focus:ring-primary focus:border-primary ${errors.password ? 'border-destructive' : ''}`} 
+                />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.password && <p className="text-destructive text-xs">{errors.password}</p>}
+              {errors.password && <p className="text-destructive text-[10px]">{errors.password}</p>}
             </div>
 
-            {/* Signup-only fields - just terms */}
+            {/* Signup-only fields - terms */}
             {!isLogin && (
-              <>
-
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <Checkbox 
-                      id="terms" 
-                      checked={acceptedTerms} 
-                      onCheckedChange={checked => {
-                        setAcceptedTerms(checked as boolean);
-                        setErrors(prev => ({ ...prev, terms: undefined }));
-                      }} 
-                      className="mt-0.5" 
-                    />
-                    <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
-                      I agree to the{' '}
-                      <Link to="/terms" className="text-primary hover:underline">
-                        Terms & Conditions
-                      </Link>
-                      ,{' '}
-                      <Link to="/refund-policy" className="text-primary hover:underline">
-                        Refund Policy
-                      </Link>
-                      {' '}and{' '}
-                      <Link to="/about" className="text-primary hover:underline">
-                        Privacy Policy
-                      </Link>
-                    </label>
-                  </div>
-                  {errors.terms && <p className="text-destructive text-xs">{errors.terms}</p>}
+              <div className="space-y-1">
+                <div className="flex items-start gap-2">
+                  <Checkbox 
+                    id="terms" 
+                    checked={acceptedTerms} 
+                    onCheckedChange={checked => {
+                      setAcceptedTerms(checked as boolean);
+                      setErrors(prev => ({ ...prev, terms: undefined }));
+                    }} 
+                    className="mt-0.5 h-3.5 w-3.5" 
+                  />
+                  <label htmlFor="terms" className="text-[10px] text-muted-foreground leading-relaxed">
+                    I agree to the{' '}
+                    <Link to="/terms" className="text-primary hover:underline">Terms</Link>,{' '}
+                    <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>
+                    {' '}and{' '}
+                    <Link to="/about" className="text-primary hover:underline">Privacy Policy</Link>
+                  </label>
                 </div>
-              </>
+                {errors.terms && <p className="text-destructive text-[10px]">{errors.terms}</p>}
+              </div>
             )}
 
             {/* Forgot Password - Login Only */}
@@ -532,7 +565,7 @@ const Auth = () => {
                 <button 
                   type="button" 
                   onClick={() => setIsForgotPassword(true)}
-                  className="text-sm text-orange-600 hover:underline"
+                  className="text-xs text-orange-600 hover:underline"
                 >
                   Forgot password?
                 </button>
@@ -540,7 +573,7 @@ const Auth = () => {
             )}
 
             {/* Submit Button */}
-            <button type="submit" disabled={loading} className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+            <button type="submit" disabled={loading} className="w-full bg-black text-white font-semibold py-2.5 rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm">
               {loading ? <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {isLogin ? 'Logging in...' : 'Creating account...'}
@@ -549,7 +582,7 @@ const Auth = () => {
           </form>
 
           {/* Footer */}
-          <p className="text-center text-sm text-muted-foreground mt-6">
+          <p className="text-center text-xs text-muted-foreground mt-4">
               {isLogin ? <>
                 Don't have an account?{' '}
                 <button onClick={() => setIsLogin(false)} className="text-primary font-semibold hover:underline">
