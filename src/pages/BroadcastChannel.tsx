@@ -166,10 +166,10 @@ const BroadcastChannel = () => {
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <p className="font-bold text-lg">Broadcast Channel</p>
-              <Badge variant="secondary" className="text-[10px] bg-primary/20 text-primary">Official</Badge>
+              <p className="font-semibold text-sm">Broadcast Channel</p>
+              <Badge variant="secondary" className="text-[9px] bg-primary/20 text-primary">Official</Badge>
             </div>
-            <p className="text-xs text-muted-foreground">Vyuha Esport • Official Announcements</p>
+            <p className="text-[10px] text-muted-foreground">Vyuha Esport • Official</p>
           </div>
           <Megaphone className="h-5 w-5 text-primary" />
         </div>
