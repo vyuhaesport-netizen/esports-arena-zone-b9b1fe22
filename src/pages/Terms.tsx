@@ -7,7 +7,7 @@ import {
 
 const Terms = () => {
   return (
-    <AppLayout title="Terms & Conditions">
+    <AppLayout title="Terms & Conditions" showBack>
       <div className="p-4 pb-8 space-y-6">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-2xl border-2 border-border p-6 overflow-hidden">

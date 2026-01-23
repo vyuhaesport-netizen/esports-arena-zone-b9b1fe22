@@ -6,7 +6,7 @@ import {
 
 const RefundPolicy = () => {
   return (
-    <AppLayout title="Refund Policy">
+    <AppLayout title="Refund Policy" showBack>
       <div className="p-4 pb-8 space-y-6">
         {/* Header Section */}
         <div className="relative bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-2xl border-2 border-border p-6 overflow-hidden">

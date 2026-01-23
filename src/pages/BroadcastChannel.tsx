@@ -15,6 +15,7 @@ import {
   ExternalLink,
   Megaphone
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 
 interface AdminBroadcast {
@@ -151,7 +152,15 @@ const BroadcastChannel = () => {
       {/* Header */}
       <header className="shrink-0 bg-gradient-to-r from-primary/20 to-primary/5 border-b border-primary/20">
         <div className="flex items-center gap-3 px-4 h-16">
-          <Avatar className="h-12 w-12 ring-2 ring-primary/50">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <Avatar className="h-10 w-10 ring-2 ring-primary/50">
             <AvatarImage src={vyuhaLogo} />
             <AvatarFallback className="bg-primary text-primary-foreground">V</AvatarFallback>
           </Avatar>

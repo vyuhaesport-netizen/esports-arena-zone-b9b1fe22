@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import AppLayout from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Send, Loader2, MessageCircle, MoreVertical, 
-  Pencil, Trash2, SmilePlus, X, Check, Reply, CornerDownRight
+  Pencil, Trash2, X, Check, Reply, CornerDownRight, ArrowLeft, Users, Eye
 } from 'lucide-react';
 import { format, isToday, isYesterday, differenceInMinutes } from 'date-fns';
 import {
@@ -18,14 +18,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 
-interface ChatMessage {
+interface TeamMessage {
   id: string;
+  team_id: string;
   sender_id: string;
   content: string;
   created_at: string;
@@ -33,6 +29,7 @@ interface ChatMessage {
   is_edited?: boolean;
   edited_at?: string;
   reply_to?: string | null;
+  seen_by?: string[];
   sender?: {
     username: string | null;
     full_name: string | null;
@@ -46,8 +43,18 @@ interface TypingUser {
   avatar?: string;
 }
 
-const EMOJI_REACTIONS = ['👍', '❤️', '😂', '🔥', '👏', '😮'];
-const GLOBAL_CHAT_CHANNEL = 'global_chat';
+interface PlayerTeam {
+  id: string;
+  name: string;
+  leader_id: string;
+}
+
+interface TeamMember {
+  user_id: string;
+  username: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+}
 
 // Helper to safely parse reactions from database JSON
 const parseReactions = (reactions: unknown): Record<string, string[]> => {
@@ -55,21 +62,107 @@ const parseReactions = (reactions: unknown): Record<string, string[]> => {
   return reactions as Record<string, string[]>;
 };
 
+const parseSeenBy = (seen_by: unknown): string[] => {
+  if (!seen_by || !Array.isArray(seen_by)) return [];
+  return seen_by as string[];
+};
+
 const ChatPage = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<TeamMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
-  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [replyingTo, setReplyingTo] = useState<TeamMessage | null>(null);
+  const [myTeam, setMyTeam] = useState<PlayerTeam | null>(null);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingBroadcast = useRef<number>(0);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Fetch user's team
+  useEffect(() => {
+    const fetchTeam = async () => {
+      if (!user) return;
+
+      // Check if user is a team leader
+      const { data: leaderTeam } = await supabase
+        .from('player_teams')
+        .select('id, name, leader_id')
+        .eq('leader_id', user.id)
+        .maybeSingle();
+
+      if (leaderTeam) {
+        setMyTeam(leaderTeam);
+        return;
+      }
+
+      // Check if user is a team member
+      const { data: membership } = await supabase
+        .from('player_team_members')
+        .select('team_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (membership) {
+        const { data: team } = await supabase
+          .from('player_teams')
+          .select('id, name, leader_id')
+          .eq('id', membership.team_id)
+          .single();
+
+        if (team) {
+          setMyTeam(team);
+        }
+      }
+
+      setLoading(false);
+    };
+
+    fetchTeam();
+  }, [user]);
+
+  // Fetch team members
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      if (!myTeam) return;
+
+      // Get leader profile
+      const { data: leaderProfile } = await supabase
+        .from('profiles')
+        .select('user_id, username, full_name, avatar_url')
+        .eq('user_id', myTeam.leader_id)
+        .single();
+
+      // Get member profiles
+      const { data: members } = await supabase
+        .from('player_team_members')
+        .select('user_id')
+        .eq('team_id', myTeam.id);
+
+      const memberIds = members?.map(m => m.user_id) || [];
+      
+      let memberProfiles: TeamMember[] = [];
+      if (memberIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, username, full_name, avatar_url')
+          .in('user_id', memberIds);
+        memberProfiles = profiles || [];
+      }
+
+      const allMembers = leaderProfile ? [leaderProfile, ...memberProfiles] : memberProfiles;
+      setTeamMembers(allMembers);
+    };
+
+    fetchTeamMembers();
+  }, [myTeam]);
 
   // Play notification sound
   const playMessageSound = () => {
@@ -95,13 +188,13 @@ const ChatPage = () => {
 
   // Broadcast typing status
   const broadcastTyping = useCallback(async () => {
-    if (!user) return;
+    if (!user || !myTeam) return;
     
     const now = Date.now();
     if (now - lastTypingBroadcast.current < 2000) return;
     lastTypingBroadcast.current = now;
 
-    const channel = supabase.channel(`typing_${GLOBAL_CHAT_CHANNEL}`);
+    const channel = supabase.channel(`typing_team_${myTeam.id}`);
     await channel.send({
       type: 'broadcast',
       event: 'typing',
@@ -111,7 +204,7 @@ const ChatPage = () => {
         avatar: user.user_metadata?.avatar_url,
       },
     });
-  }, [user]);
+  }, [myTeam, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
@@ -120,18 +213,41 @@ const ChatPage = () => {
     }
   };
 
+  // Mark messages as seen
+  const markMessagesAsSeen = useCallback(async () => {
+    if (!user || !myTeam || messages.length === 0) return;
+
+    const unseenMessages = messages.filter(
+      msg => msg.sender_id !== user.id && !msg.seen_by?.includes(user.id)
+    );
+
+    for (const msg of unseenMessages) {
+      const newSeenBy = [...(msg.seen_by || []), user.id];
+      await supabase
+        .from('team_messages')
+        .update({ seen_by: newSeenBy } as any)
+        .eq('id', msg.id);
+    }
+  }, [messages, myTeam, user]);
+
   useEffect(() => {
+    markMessagesAsSeen();
+  }, [markMessagesAsSeen]);
+
+  useEffect(() => {
+    if (!myTeam) return;
+
     fetchMessages();
     
     const messageChannel = supabase
-      .channel(`chat_${GLOBAL_CHAT_CHANNEL}`)
+      .channel(`team_chat_${myTeam.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'group_messages',
-          filter: `group_id=eq.${GLOBAL_CHAT_CHANNEL}`,
+          table: 'team_messages',
+          filter: `team_id=eq.${myTeam.id}`,
         },
         async (payload) => {
           if (payload.eventType === 'INSERT') {
@@ -142,9 +258,10 @@ const ChatPage = () => {
               .eq('user_id', newMsg.sender_id)
               .single();
             
-            const messageWithSender: ChatMessage = {
+            const messageWithSender: TeamMessage = {
               ...newMsg,
               reactions: parseReactions(newMsg.reactions),
+              seen_by: parseSeenBy(newMsg.seen_by),
               sender: profile || undefined,
             };
             setMessages((prev) => [...prev, messageWithSender]);
@@ -158,7 +275,7 @@ const ChatPage = () => {
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === updatedMsg.id
-                  ? { ...msg, ...updatedMsg, reactions: parseReactions(updatedMsg.reactions) }
+                  ? { ...msg, ...updatedMsg, reactions: parseReactions(updatedMsg.reactions), seen_by: parseSeenBy(updatedMsg.seen_by) }
                   : msg
               )
             );
@@ -171,7 +288,7 @@ const ChatPage = () => {
       .subscribe();
 
     const typingChannel = supabase
-      .channel(`typing_${GLOBAL_CHAT_CHANNEL}`)
+      .channel(`typing_team_${myTeam.id}`)
       .on('broadcast', { event: 'typing' }, ({ payload }) => {
         if (payload.userId === user?.id) return;
         
@@ -197,7 +314,7 @@ const ChatPage = () => {
         clearTimeout(typingTimeoutRef.current);
       }
     };
-  }, [user?.id]);
+  }, [myTeam?.id, user?.id]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -206,11 +323,13 @@ const ChatPage = () => {
   }, [messages]);
 
   const fetchMessages = async () => {
+    if (!myTeam) return;
+    
     try {
       const { data, error } = await supabase
-        .from('group_messages')
+        .from('team_messages')
         .select('*')
-        .eq('group_id', GLOBAL_CHAT_CHANNEL)
+        .eq('team_id', myTeam.id)
         .order('created_at', { ascending: true })
         .limit(100);
 
@@ -227,9 +346,10 @@ const ChatPage = () => {
           profiles?.map((p) => [p.user_id, { username: p.username, full_name: p.full_name, avatar_url: p.avatar_url }])
         );
 
-        const messagesWithSenders: ChatMessage[] = data.map((msg: any) => ({
+        const messagesWithSenders: TeamMessage[] = data.map((msg: any) => ({
           ...msg,
           reactions: parseReactions(msg.reactions),
+          seen_by: parseSeenBy(msg.seen_by),
           sender: profileMap.get(msg.sender_id),
         }));
 
@@ -244,22 +364,22 @@ const ChatPage = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newMessage.trim()) return;
+    if (!user || !newMessage.trim() || !myTeam) return;
 
     setSending(true);
     try {
       const insertData: any = {
-        group_id: GLOBAL_CHAT_CHANNEL,
+        team_id: myTeam.id,
         sender_id: user.id,
         content: newMessage.trim(),
-        message_type: 'text',
+        seen_by: [user.id],
       };
       
       if (replyingTo) {
         insertData.reply_to = replyingTo.id;
       }
 
-      const { error } = await supabase.from('group_messages').insert(insertData);
+      const { error } = await supabase.from('team_messages').insert(insertData);
 
       if (error) throw error;
       setNewMessage('');
@@ -272,13 +392,13 @@ const ChatPage = () => {
     }
   };
 
-  const canModifyMessage = (msg: ChatMessage) => {
+  const canModifyMessage = (msg: TeamMessage) => {
     if (msg.sender_id !== user?.id) return false;
     const minutesDiff = differenceInMinutes(new Date(), new Date(msg.created_at));
     return minutesDiff <= 5;
   };
 
-  const handleStartEdit = (msg: ChatMessage) => {
+  const handleStartEdit = (msg: TeamMessage) => {
     setEditingMessageId(msg.id);
     setEditContent(msg.content);
   };
@@ -293,9 +413,11 @@ const ChatPage = () => {
 
     try {
       const { error } = await supabase
-        .from('group_messages')
+        .from('team_messages')
         .update({
           content: editContent.trim(),
+          is_edited: true,
+          edited_at: new Date().toISOString(),
         } as any)
         .eq('id', msgId)
         .eq('sender_id', user?.id);
@@ -314,7 +436,7 @@ const ChatPage = () => {
   const handleDeleteMessage = async (msgId: string) => {
     try {
       const { error } = await supabase
-        .from('group_messages')
+        .from('team_messages')
         .delete()
         .eq('id', msgId)
         .eq('sender_id', user?.id);
@@ -327,7 +449,7 @@ const ChatPage = () => {
     }
   };
 
-  const handleReply = (msg: ChatMessage) => {
+  const handleReply = (msg: TeamMessage) => {
     setReplyingTo(msg);
     inputRef.current?.focus();
   };
@@ -346,8 +468,8 @@ const ChatPage = () => {
     return format(date, 'MMM d, h:mm a');
   };
 
-  const groupMessagesByDate = (msgs: ChatMessage[]) => {
-    const groups: { date: string; messages: ChatMessage[] }[] = [];
+  const groupMessagesByDate = (msgs: TeamMessage[]) => {
+    const groups: { date: string; messages: TeamMessage[] }[] = [];
     let currentDate = '';
 
     msgs.forEach((msg) => {
@@ -375,222 +497,290 @@ const ChatPage = () => {
     return messages.find((m) => m.id === replyToId);
   };
 
+  const getSeenCount = (msg: TeamMessage) => {
+    if (!msg.seen_by) return 0;
+    // Don't count the sender
+    return msg.seen_by.filter(id => id !== msg.sender_id).length;
+  };
+
   if (loading) {
     return (
-      <AppLayout title="Chat">
-        <div className="flex items-center justify-center h-64">
+      <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
+        <header className="sticky top-0 z-40 glass-card px-4 py-3 border-b border-border/50 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-semibold">Team Chat</h1>
+        </header>
+        <div className="flex items-center justify-center flex-1">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
-      </AppLayout>
+      </div>
+    );
+  }
+
+  // No team - show message to join a team
+  if (!myTeam) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
+        <header className="sticky top-0 z-40 glass-card px-4 py-3 border-b border-border/50 flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-semibold">Team Chat</h1>
+        </header>
+        <div className="flex flex-col items-center justify-center flex-1 p-6 text-center">
+          <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+            <Users className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">No Team Yet</h2>
+          <p className="text-muted-foreground mb-6">
+            Join or create a team to start chatting with your teammates.
+          </p>
+          <Button onClick={() => navigate('/team')}>
+            <Users className="h-4 w-4 mr-2" />
+            Go to Teams
+          </Button>
+        </div>
+      </div>
     );
   }
 
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <AppLayout title="Chat">
-      <div className="flex flex-col h-[calc(100vh-120px)] bg-background">
-        {/* Chat Header */}
-        <div className="px-4 py-2.5 bg-card border-b border-border/60 flex items-center gap-2 shrink-0">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-sm">Global Chat</span>
-          <span className="text-xs text-muted-foreground">({messages.length} messages)</span>
+    <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
+      {/* Header with back button */}
+      <header className="sticky top-0 z-40 glass-card px-4 py-3 border-b border-border/50 flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-lg font-semibold">{myTeam.name}</h1>
+          <p className="text-xs text-muted-foreground">{teamMembers.length} members</p>
         </div>
+        <MessageCircle className="h-5 w-5 text-primary" />
+      </header>
 
-        {/* Messages Area */}
-        <ScrollArea className="flex-1 min-h-0 px-3 py-3" ref={scrollRef}>
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <MessageCircle className="h-12 w-12 text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground text-sm">No messages yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Start the conversation!</p>
-            </div>
-          ) : (
-            <div className="space-y-4 pb-32">
-              {groupedMessages.map((group) => (
-                <div key={group.date}>
-                  <div className="flex items-center gap-3 my-4">
-                    <div className="flex-1 h-px bg-border/60" />
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
-                      {getDateLabel(group.date)}
-                    </span>
-                    <div className="flex-1 h-px bg-border/60" />
-                  </div>
-                  <div className="space-y-3">
-                    {group.messages.map((msg) => {
-                    const isOwnMessage = msg.sender_id === user?.id;
-                    const canModify = canModifyMessage(msg);
-                    const isEditing = editingMessageId === msg.id;
-                    const repliedMessage = getReplyMessage(msg.reply_to);
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 min-h-0 px-3 py-3" ref={scrollRef}>
+        {messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center py-12">
+            <MessageCircle className="h-12 w-12 text-muted-foreground/30 mb-3" />
+            <p className="text-muted-foreground text-sm">No messages yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Start the conversation with your team!</p>
+          </div>
+        ) : (
+          <div className="space-y-4 pb-32">
+            {groupedMessages.map((group) => (
+              <div key={group.date}>
+                <div className="flex items-center gap-3 my-4">
+                  <div className="flex-1 h-px bg-border/60" />
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
+                    {getDateLabel(group.date)}
+                  </span>
+                  <div className="flex-1 h-px bg-border/60" />
+                </div>
+                <div className="space-y-3">
+                  {group.messages.map((msg) => {
+                  const isOwnMessage = msg.sender_id === user?.id;
+                  const canModify = canModifyMessage(msg);
+                  const isEditing = editingMessageId === msg.id;
+                  const repliedMessage = getReplyMessage(msg.reply_to);
+                  const seenCount = getSeenCount(msg);
 
-                    return (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-2.5 group ${isOwnMessage ? 'flex-row-reverse' : ''}`}
-                      >
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex gap-2.5 group ${isOwnMessage ? 'flex-row-reverse' : ''}`}
+                    >
+                      {!isOwnMessage && (
+                        <Avatar className="h-8 w-8 flex-shrink-0 mt-1">
+                          <AvatarImage src={msg.sender?.avatar_url || ''} />
+                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                            {msg.sender?.username?.charAt(0).toUpperCase() || 'P'}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+
+                      <div className={`max-w-[75%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
                         {!isOwnMessage && (
-                          <Avatar className="h-8 w-8 flex-shrink-0 mt-1">
-                            <AvatarImage src={msg.sender?.avatar_url || ''} />
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {msg.sender?.username?.charAt(0).toUpperCase() || 'P'}
-                            </AvatarFallback>
-                          </Avatar>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-xs font-medium text-foreground">
+                              {msg.sender?.full_name || msg.sender?.username || 'Player'}
+                            </span>
+                          </div>
                         )}
 
-                        <div className={`max-w-[75%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
-                          {!isOwnMessage && (
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="text-xs font-medium text-foreground">
-                                {msg.sender?.full_name || msg.sender?.username || 'Player'}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Reply Preview */}
-                          {repliedMessage && (
-                            <div className={`flex items-center gap-1.5 mb-1 text-xs text-muted-foreground ${isOwnMessage ? 'justify-end' : ''}`}>
-                              <CornerDownRight className="h-3 w-3" />
-                              <span className="truncate max-w-[150px]">
-                                {repliedMessage.sender?.full_name || repliedMessage.sender?.username}: {repliedMessage.content}
-                              </span>
-                            </div>
-                          )}
-
-                          <div className={`relative ${isOwnMessage ? 'flex flex-row-reverse items-start gap-1' : 'flex items-start gap-1'}`}>
-                            {isEditing ? (
-                              <div className="flex items-center gap-2 w-full">
-                                <Input
-                                  value={editContent}
-                                  onChange={(e) => setEditContent(e.target.value)}
-                                  className="flex-1 h-8 text-sm"
-                                  autoFocus
-                                />
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSaveEdit(msg.id)}>
-                                  <Check className="h-4 w-4 text-green-500" />
-                                </Button>
-                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancelEdit}>
-                                  <X className="h-4 w-4 text-red-500" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                <div
-                                  className={`px-3 py-2 rounded-2xl text-sm break-words ${
-                                    isOwnMessage
-                                      ? 'bg-primary text-primary-foreground rounded-br-md'
-                                      : 'bg-muted/80 text-foreground rounded-bl-md'
-                                  }`}
-                                >
-                                  {msg.content}
-                                </div>
-
-                                {/* Message Actions */}
-                                <div className={`opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-6 w-6"
-                                    onClick={() => handleReply(msg)}
-                                  >
-                                    <Reply className="h-3.5 w-3.5" />
-                                  </Button>
-
-                                  {canModify && (
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-6 w-6">
-                                          <MoreVertical className="h-3.5 w-3.5" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align={isOwnMessage ? 'end' : 'start'}>
-                                        <DropdownMenuItem onClick={() => handleStartEdit(msg)}>
-                                          <Pencil className="h-3.5 w-3.5 mr-2" /> Edit
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() => handleDeleteMessage(msg.id)}
-                                          className="text-destructive"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  )}
-                                </div>
-                              </>
-                            )}
+                        {/* Reply Preview */}
+                        {repliedMessage && (
+                          <div className={`flex items-center gap-1.5 mb-1 text-xs text-muted-foreground ${isOwnMessage ? 'justify-end' : ''}`}>
+                            <CornerDownRight className="h-3 w-3" />
+                            <span className="truncate max-w-[150px]">
+                              {repliedMessage.sender?.full_name || repliedMessage.sender?.username}: {repliedMessage.content}
+                            </span>
                           </div>
+                        )}
 
-                          <p className={`text-[10px] text-muted-foreground mt-0.5 ${isOwnMessage ? 'text-right' : ''}`}>
+                        <div className={`relative ${isOwnMessage ? 'flex flex-row-reverse items-start gap-1' : 'flex items-start gap-1'}`}>
+                          {isEditing ? (
+                            <div className="flex items-center gap-2 w-full">
+                              <Input
+                                value={editContent}
+                                onChange={(e) => setEditContent(e.target.value)}
+                                className="flex-1 h-8 text-sm"
+                                autoFocus
+                              />
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleSaveEdit(msg.id)}>
+                                <Check className="h-4 w-4 text-green-500" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleCancelEdit}>
+                                <X className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <div
+                                className={`px-3 py-2 rounded-2xl text-sm break-words ${
+                                  isOwnMessage
+                                    ? 'bg-primary text-primary-foreground rounded-br-md'
+                                    : 'bg-muted/80 text-foreground rounded-bl-md'
+                                }`}
+                              >
+                                {msg.content}
+                              </div>
+
+                              {/* Message Actions */}
+                              <div className={`opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={() => handleReply(msg)}
+                                >
+                                  <Reply className="h-3.5 w-3.5" />
+                                </Button>
+
+                                {canModify && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button size="icon" variant="ghost" className="h-6 w-6">
+                                        <MoreVertical className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align={isOwnMessage ? 'end' : 'start'}>
+                                      <DropdownMenuItem onClick={() => handleStartEdit(msg)}>
+                                        <Pencil className="h-3.5 w-3.5 mr-2" /> Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() => handleDeleteMessage(msg.id)}
+                                        className="text-destructive"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className={`flex items-center gap-1.5 mt-0.5 ${isOwnMessage ? 'justify-end' : ''}`}>
+                          <p className="text-[10px] text-muted-foreground">
                             {formatMessageTime(msg.created_at)}
+                            {msg.is_edited && <span className="ml-1">(edited)</span>}
                           </p>
+                          {/* Seen count - only for own messages */}
+                          {isOwnMessage && seenCount > 0 && (
+                            <span className="flex items-center gap-0.5 text-[10px] text-primary">
+                              <Eye className="h-3 w-3" />
+                              {seenCount}
+                            </span>
+                          )}
                         </div>
                       </div>
-                    );
-                    })}
-                  </div>
+                    </div>
+                  );
+                  })}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+
+      {/* Fixed Composer */}
+      <div className="fixed left-0 right-0 bottom-0 bg-card border-t border-border/60 px-3 py-2 z-40 max-w-lg mx-auto">
+        {/* Typing Indicator */}
+        {typingUsers.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-1.5 text-xs text-muted-foreground">
+            <div className="flex -space-x-2">
+              {typingUsers.slice(0, 3).map((u) => (
+                <Avatar key={u.id} className="h-5 w-5 border border-background">
+                  <AvatarImage src={u.avatar} />
+                  <AvatarFallback className="text-[8px]">{u.name.charAt(0)}</AvatarFallback>
+                </Avatar>
               ))}
             </div>
-          )}
-        </ScrollArea>
+            <span>
+              {typingUsers.length === 1
+                ? `${typingUsers[0].name} is typing...`
+                : `${typingUsers.length} people are typing...`}
+            </span>
+          </div>
+        )}
 
-        {/* Fixed Composer */}
-        <div className="fixed left-0 right-0 bottom-[72px] bg-card border-t border-border/60 px-3 py-2 z-40">
-          {/* Typing Indicator */}
-          {typingUsers.length > 0 && (
-            <div className="flex items-center gap-1.5 mb-1.5 text-xs text-muted-foreground">
-              <div className="flex -space-x-2">
-                {typingUsers.slice(0, 3).map((u) => (
-                  <Avatar key={u.id} className="h-5 w-5 border border-background">
-                    <AvatarImage src={u.avatar} />
-                    <AvatarFallback className="text-[8px]">{u.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                ))}
-              </div>
-              <span>
-                {typingUsers.length === 1
-                  ? `${typingUsers[0].name} is typing...`
-                  : `${typingUsers.length} people are typing...`}
+        {/* Reply Preview */}
+        {replyingTo && (
+          <div className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-1.5 mb-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+              <Reply className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                Replying to {replyingTo.sender?.full_name || replyingTo.sender?.username}
               </span>
             </div>
-          )}
-
-          {/* Reply Preview */}
-          {replyingTo && (
-            <div className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-1.5 mb-2">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
-                <Reply className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">
-                  Replying to {replyingTo.sender?.full_name || replyingTo.sender?.username}
-                </span>
-              </div>
-              <Button size="icon" variant="ghost" className="h-5 w-5" onClick={cancelReply}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
-
-          <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-            <Input
-              ref={inputRef}
-              value={newMessage}
-              onChange={handleInputChange}
-              placeholder="Type a message..."
-              className="flex-1 h-10 bg-muted/50 border-border/60 rounded-full px-4"
-              disabled={sending}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              className="h-10 w-10 rounded-full shrink-0"
-              disabled={sending || !newMessage.trim()}
-            >
-              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={cancelReply}>
+              <X className="h-3.5 w-3.5" />
             </Button>
-          </form>
-        </div>
+          </div>
+        )}
+
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2 pb-safe">
+          <Input
+            ref={inputRef}
+            value={newMessage}
+            onChange={handleInputChange}
+            placeholder="Type a message..."
+            className="flex-1 h-10 bg-muted/50 border-border/60 rounded-full px-4"
+            disabled={sending}
+          />
+          <Button
+            type="submit"
+            size="icon"
+            className="h-10 w-10 rounded-full shrink-0"
+            disabled={sending || !newMessage.trim()}
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
+        </form>
       </div>
-    </AppLayout>
+    </div>
   );
 };
 

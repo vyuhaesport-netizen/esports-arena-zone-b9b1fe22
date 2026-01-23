@@ -47,7 +47,7 @@ const AboutUs = () => {
         description="Learn about Vyuha Esport - India's mobile-first competitive gaming platform. Discover our mission, values, and commitment to the esports community."
         url="https://vyuhaesport.in/about"
       />
-      <AppLayout title="About Us">
+      <AppLayout title="About Us" showBack>
       <div className="p-4 pb-8 space-y-6">
         {/* Hero Section */}
         <div className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-2xl border-2 border-border p-6 overflow-hidden">

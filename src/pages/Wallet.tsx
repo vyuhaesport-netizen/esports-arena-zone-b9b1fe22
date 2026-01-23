@@ -284,7 +284,7 @@ const Wallet = () => {
 
   if (loading) {
     return (
-      <AppLayout title="Wallet">
+      <AppLayout title="Wallet" showBack>
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -293,7 +293,7 @@ const Wallet = () => {
   }
 
   return (
-    <AppLayout title="Wallet">
+    <AppLayout title="Wallet" showBack>
       <div className="p-4">
         {/* Balance Cards */}
         <div className="grid grid-cols-2 gap-3 mb-4">

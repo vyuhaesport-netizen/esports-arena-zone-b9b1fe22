@@ -1261,7 +1261,7 @@ const MyMatch = () => {
 
   if (authLoading || loading) {
     return (
-      <AppLayout title="My Matches">
+      <AppLayout title="My Matches" showBack>
         <div className="flex justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -1270,7 +1270,7 @@ const MyMatch = () => {
   }
 
   return (
-    <AppLayout title="My Matches">
+    <AppLayout title="My Matches" showBack>
       <div className="p-4">
         <Tabs defaultValue="upcoming" className="w-full">
           <TabsList className="w-full grid grid-cols-4">

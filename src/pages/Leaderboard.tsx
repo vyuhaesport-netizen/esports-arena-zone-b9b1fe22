@@ -202,7 +202,7 @@ const Leaderboard = () => {
   };
 
   return (
-    <AppLayout title="Leaderboard">
+    <AppLayout title="Leaderboard" showBack>
       {/* Header Banner */}
       <div className="bg-gradient-to-br from-primary/20 to-orange-500/10 p-6 text-center">
         <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center mb-3">

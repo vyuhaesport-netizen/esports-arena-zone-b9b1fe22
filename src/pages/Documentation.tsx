@@ -441,7 +441,7 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
   }, [filteredSections]);
 
   return (
-    <AppLayout title="Documentation">
+    <AppLayout title="Documentation" showBack>
       <div className="p-4 pb-8 space-y-4">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-2xl border-2 border-border p-6 overflow-hidden">
