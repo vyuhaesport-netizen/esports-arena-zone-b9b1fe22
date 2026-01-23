@@ -460,18 +460,23 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
             <p className="text-xs text-muted-foreground mt-1">Start the conversation with your team!</p>
           </div>
         ) : (
-          <div className="space-y-4 pb-2">
-            {groupedMessages.map((group) => (
-              <div key={group.date}>
-                <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 h-px bg-border/60" />
-                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
-                    {getDateLabel(group.date)}
-                  </span>
-                  <div className="flex-1 h-px bg-border/60" />
-                </div>
-                <div className="space-y-3">
-                  {group.messages.map((msg) => {
+          <>
+            {/*
+              IMPORTANT (mobile): composer is fixed above BottomNav (bottom-16),
+              so messages need generous bottom padding to never hide behind it.
+            */}
+            <div className="space-y-4 pb-44">
+              {groupedMessages.map((group) => (
+                <div key={group.date}>
+                  <div className="flex items-center gap-3 my-4">
+                    <div className="flex-1 h-px bg-border/60" />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
+                      {getDateLabel(group.date)}
+                    </span>
+                    <div className="flex-1 h-px bg-border/60" />
+                  </div>
+                  <div className="space-y-3">
+                    {group.messages.map((msg) => {
                     const isOwnMessage = msg.sender_id === user?.id;
                     const isLeaderMessage = msg.sender_id === leaderId;
                     const canModify = canModifyMessage(msg);
@@ -500,7 +505,7 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
                                 {msg.sender?.full_name || msg.sender?.username || 'Player'}
                               </span>
                               {isLeaderMessage && (
-                                <Crown className="h-3 w-3 text-yellow-500" />
+                                <Crown className="h-3 w-3 text-warning" />
                               )}
                             </div>
                           )}
@@ -527,7 +532,7 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
                                   autoFocus
                                 />
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleSaveEdit(msg.id)}>
-                                  <Check className="h-4 w-4 text-green-500" />
+                                  <Check className="h-4 w-4 text-success" />
                                 </Button>
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCancelEdit}>
                                   <X className="h-4 w-4 text-destructive" />
@@ -636,89 +641,95 @@ const TeamChat = ({ teamId, leaderId }: TeamChatProps) => {
                         </div>
                       </div>
                     );
-                  })}
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </ScrollArea>
 
-      {/* Typing Indicator */}
-      {typingUsers.length > 0 && (
-        <div className="px-4 py-2 bg-card/50 border-t border-border/30 flex items-center gap-2 animate-fade-in">
-          <div className="flex -space-x-2">
-            {typingUsers.slice(0, 3).map((typingUser) => (
-              <Avatar key={typingUser.id} className="h-5 w-5 border-2 border-card">
-                <AvatarImage src={typingUser.avatar || ''} />
-                <AvatarFallback className="bg-primary/10 text-primary text-[8px]">
-                  {typingUser.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground">
-              {typingUsers.length === 1
-                ? `${typingUsers[0].name} is typing`
-                : typingUsers.length === 2
-                ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing`
-                : `${typingUsers.length} people are typing`}
-            </span>
-            <div className="flex gap-0.5">
-              <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reply Preview */}
-      {replyingTo && (
-        <div className="px-3 py-2 bg-muted/50 border-t border-border/60 flex items-center gap-2 animate-fade-in">
-          <Reply className="h-4 w-4 text-primary shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-primary">
-              Replying to {replyingTo.sender?.full_name || replyingTo.sender?.username || 'Player'}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {replyingTo.content}
-            </p>
-          </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={cancelReply}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
-      {/* Message Input - Fixed at bottom */}
-      <form onSubmit={handleSendMessage} className="shrink-0 bg-card border-t border-border/60 pb-20">
-        <div className="flex gap-2 px-3 py-2.5">
-          <Input
-            ref={inputRef}
-            placeholder={replyingTo ? "Type your reply..." : "Type a message..."}
-            value={newMessage}
-            onChange={handleInputChange}
-            className="flex-1 bg-muted/30 border-border/60 h-10"
-            maxLength={500}
-            disabled={sending}
-          />
-          <Button
-            type="submit"
-            variant="gaming"
-            size="icon"
-            className="h-10 w-10 rounded-full shadow-md shrink-0"
-            disabled={!newMessage.trim() || sending}
-          >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
+      {/* Composer (fixed above BottomNav) */}
+      <div className="fixed left-0 right-0 bottom-16 z-50">
+        <div className="max-w-lg mx-auto px-3">
+          <div className="rounded-2xl glass-card border border-border/30 shadow-xl overflow-hidden">
+            {/* Typing Indicator */}
+            {typingUsers.length > 0 && (
+              <div className="px-3 py-2 bg-card/60 border-b border-border/30 flex items-center gap-2 animate-fade-in">
+                <div className="flex -space-x-2">
+                  {typingUsers.slice(0, 3).map((typingUser) => (
+                    <Avatar key={typingUser.id} className="h-5 w-5 border-2 border-card">
+                      <AvatarImage src={typingUser.avatar || ''} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-[8px]">
+                        {typingUser.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">
+                    {typingUsers.length === 1
+                      ? `${typingUsers[0].name} is typing`
+                      : typingUsers.length === 2
+                      ? `${typingUsers[0].name} and ${typingUsers[1].name} are typing`
+                      : `${typingUsers.length} people are typing`}
+                  </span>
+                  <div className="flex gap-0.5">
+                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1 h-1 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
             )}
-          </Button>
+
+            {/* Reply Preview */}
+            {replyingTo && (
+              <div className="px-3 py-2 bg-muted/40 border-b border-border/30 flex items-center gap-2 animate-fade-in">
+                <Reply className="h-4 w-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-primary">
+                    Replying to {replyingTo.sender?.full_name || replyingTo.sender?.username || 'Player'}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{replyingTo.content}</p>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={cancelReply}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Message Input */}
+            <form onSubmit={handleSendMessage} className="bg-card/80">
+              <div className="flex gap-2 px-3 py-2.5">
+                <Input
+                  ref={inputRef}
+                  placeholder={replyingTo ? 'Type your reply...' : 'Type a message...'}
+                  value={newMessage}
+                  onChange={handleInputChange}
+                  className="flex-1 bg-muted/30 border-border/60 h-10"
+                  maxLength={500}
+                  disabled={sending}
+                />
+                <Button
+                  type="submit"
+                  variant="gaming"
+                  size="icon"
+                  className="h-10 w-10 rounded-full shadow-md shrink-0"
+                  disabled={!newMessage.trim() || sending}
+                >
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
