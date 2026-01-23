@@ -215,11 +215,6 @@ const TournamentCard = ({
               </button>
             )}
           </div>
-          {/* Live Button */}
-          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-medium">
-            <Radio className="h-3 w-3 animate-pulse" />
-            <span>Live</span>
-          </div>
         </div>
 
         {tournament.created_by && (
