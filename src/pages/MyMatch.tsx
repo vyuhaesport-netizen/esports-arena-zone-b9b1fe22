@@ -97,9 +97,32 @@ interface LocalTournament {
   ended_at: string | null;
 }
 
+interface SchoolTournament {
+  id: string;
+  tournament_name: string;
+  school_name: string;
+  school_city: string;
+  game: string;
+  status: string;
+  tournament_date: string;
+  entry_fee: number;
+  prize_pool: number;
+  current_round: number;
+  private_code: string;
+}
+
+interface SchoolTeam {
+  id: string;
+  team_name: string;
+  is_eliminated: boolean;
+  current_round: number;
+  tournament_id: string;
+}
+
 const MyMatch = () => {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [localTournaments, setLocalTournaments] = useState<LocalTournament[]>([]);
+  const [schoolTournaments, setSchoolTournaments] = useState<{ tournament: SchoolTournament; team: SchoolTeam }[]>([]);
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState<string | null>(null);
   
@@ -117,6 +140,7 @@ const MyMatch = () => {
     if (user) {
       fetchRegistrations();
       fetchLocalTournaments();
+      fetchSchoolTournaments();
     }
   }, [user]);
 
@@ -178,6 +202,43 @@ const MyMatch = () => {
       setLocalTournaments(data || []);
     } catch (error) {
       console.error('Error fetching local tournaments:', error);
+    }
+  };
+
+  const fetchSchoolTournaments = async () => {
+    if (!user) return;
+
+    try {
+      // Get teams where user is a member
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('school_tournament_teams')
+        .select('id, team_name, is_eliminated, current_round, tournament_id')
+        .or(`leader_id.eq.${user.id},member_1_id.eq.${user.id},member_2_id.eq.${user.id},member_3_id.eq.${user.id}`);
+
+      if (teamsError) throw teamsError;
+      if (!teamsData || teamsData.length === 0) {
+        setSchoolTournaments([]);
+        return;
+      }
+
+      const tournamentIds = teamsData.map(t => t.tournament_id);
+      
+      // Get tournament details
+      const { data: tournamentsData, error: tournamentsError } = await supabase
+        .from('school_tournaments')
+        .select('id, tournament_name, school_name, school_city, game, status, tournament_date, entry_fee, prize_pool, current_round, private_code')
+        .in('id', tournamentIds);
+
+      if (tournamentsError) throw tournamentsError;
+
+      const combined = teamsData.map(team => {
+        const tournament = tournamentsData?.find(t => t.id === team.tournament_id);
+        return tournament ? { tournament, team } : null;
+      }).filter(Boolean) as { tournament: SchoolTournament; team: SchoolTeam }[];
+
+      setSchoolTournaments(combined);
+    } catch (error) {
+      console.error('Error fetching school tournaments:', error);
     }
   };
 
@@ -469,6 +530,76 @@ const MyMatch = () => {
                 <span className="text-amber-600 text-[10px]">No exit for teams</span>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // School Tournament Card Component
+  const SchoolTournamentCard = ({ tournament, team }: { tournament: SchoolTournament; team: SchoolTeam }) => {
+    const getStatusBadge = () => {
+      switch (tournament.status) {
+        case 'registration':
+          return <Badge variant="outline" className="text-blue-500 border-blue-500/50">Registration</Badge>;
+        case 'ongoing':
+          return <Badge variant="outline" className="text-green-500 border-green-500/50 animate-pulse">Live</Badge>;
+        case 'completed':
+          return <Badge variant="outline" className="text-muted-foreground">Completed</Badge>;
+        case 'finale':
+          return <Badge variant="outline" className="text-yellow-500 border-yellow-500/50">Finale</Badge>;
+        default:
+          return <Badge variant="outline">{tournament.status}</Badge>;
+      }
+    };
+
+    return (
+      <div 
+        className="bg-card border rounded-lg overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+        onClick={() => navigate(`/join-school-tournament/${tournament.private_code}`)}
+      >
+        <div className="p-4">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+              <h3 className="font-semibold text-sm line-clamp-1">{tournament.tournament_name}</h3>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <MapPin className="h-3 w-3" /> {tournament.school_name}, {tournament.school_city}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              {getStatusBadge()}
+              {team.is_eliminated && (
+                <Badge variant="destructive" className="text-[10px]">Eliminated</Badge>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs mt-3">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <Gamepad2 className="h-3 w-3 text-primary" /> {tournament.game}
+              </span>
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" /> {format(new Date(tournament.tournament_date), 'dd MMM')}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {tournament.prize_pool > 0 && (
+                <span className="flex items-center gap-1 text-yellow-500">
+                  <Trophy className="h-3 w-3" /> ₹{tournament.prize_pool}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-3 pt-3 border-t flex items-center justify-between">
+            <div className="text-xs">
+              <span className="text-muted-foreground">Your Team: </span>
+              <span className="font-medium">{team.team_name}</span>
+            </div>
+            <Badge variant="secondary" className="text-[10px]">
+              Round {team.current_round || 1}
+            </Badge>
           </div>
         </div>
       </div>
@@ -1205,7 +1336,7 @@ const MyMatch = () => {
           </TabsContent>
 
           <TabsContent value="local" className="mt-4">
-            {localTournaments.length === 0 ? (
+            {localTournaments.length === 0 && schoolTournaments.length === 0 ? (
               <div className="text-center py-12">
                 <QrCode className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
                 <p className="text-muted-foreground text-sm">No local tournaments joined</p>
@@ -1213,6 +1344,9 @@ const MyMatch = () => {
               </div>
             ) : (
               <div className="space-y-3">
+                {schoolTournaments.map((st) => (
+                  <SchoolTournamentCard key={st.team.id} tournament={st.tournament} team={st.team} />
+                ))}
                 {localTournaments.map((lt) => (
                   <LocalTournamentCard key={lt.id} tournament={lt} />
                 ))}
