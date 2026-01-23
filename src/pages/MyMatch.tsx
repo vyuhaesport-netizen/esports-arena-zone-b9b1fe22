@@ -468,17 +468,17 @@ const MyMatch = () => {
                     <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2 space-y-2 p-3 bg-muted/50 rounded-lg">
+                <CollapsibleContent className="mt-2 space-y-3 p-3 bg-muted/50 rounded-lg overflow-hidden">
                   {tournament.room_id && (
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs text-muted-foreground">Room ID</p>
-                        <p className="font-mono text-sm font-medium">{tournament.room_id}</p>
+                        <p className="font-mono text-sm font-medium truncate">{tournament.room_id}</p>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 flex-shrink-0"
                         onClick={() => copyToClipboard(tournament.room_id!, 'Room ID')}
                       >
                         {copiedField === 'Room ID' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -486,15 +486,15 @@ const MyMatch = () => {
                     </div>
                   )}
                   {tournament.room_password && (
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs text-muted-foreground">Password</p>
-                        <p className="font-mono text-sm font-medium">{tournament.room_password}</p>
+                        <p className="font-mono text-sm font-medium truncate">{tournament.room_password}</p>
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-8 w-8 flex-shrink-0"
                         onClick={() => copyToClipboard(tournament.room_password!, 'Password')}
                       >
                         {copiedField === 'Password' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -1057,40 +1057,40 @@ const MyMatch = () => {
             {/* Room Details Content */}
             <Collapsible open={roomOpen} onOpenChange={setRoomOpen}>
               <CollapsibleContent className="mt-2">
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg overflow-hidden">
                   {hasRoomDetails ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {registration.tournaments.room_id && (
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Room ID:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_id}</span>
+                        <div className="flex items-center justify-between text-xs gap-2">
+                          <span className="text-muted-foreground flex-shrink-0">Room ID:</span>
+                          <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
+                            <span className="font-mono font-medium text-emerald-600 truncate max-w-[140px]">{registration.tournaments.room_id}</span>
                             <button
                               onClick={() => copyToClipboard(registration.tournaments.room_id!, 'Room ID')}
-                              className="p-1 hover:bg-emerald-500/20 rounded transition-colors"
+                              className="p-1.5 hover:bg-emerald-500/20 rounded transition-colors flex-shrink-0"
                             >
                               {copiedField === 'Room ID' ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                <Check className="h-4 w-4 text-emerald-600" />
                               ) : (
-                                <Copy className="h-3.5 w-3.5 text-emerald-600" />
+                                <Copy className="h-4 w-4 text-emerald-600" />
                               )}
                             </button>
                           </div>
                         </div>
                       )}
                       {registration.tournaments.room_password && (
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Password:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-medium text-emerald-600">{registration.tournaments.room_password}</span>
+                        <div className="flex items-center justify-between text-xs gap-2">
+                          <span className="text-muted-foreground flex-shrink-0">Password:</span>
+                          <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
+                            <span className="font-mono font-medium text-emerald-600 truncate max-w-[140px]">{registration.tournaments.room_password}</span>
                             <button
                               onClick={() => copyToClipboard(registration.tournaments.room_password!, 'Password')}
-                              className="p-1 hover:bg-emerald-500/20 rounded transition-colors"
+                              className="p-1.5 hover:bg-emerald-500/20 rounded transition-colors flex-shrink-0"
                             >
                               {copiedField === 'Password' ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                <Check className="h-4 w-4 text-emerald-600" />
                               ) : (
-                                <Copy className="h-3.5 w-3.5 text-emerald-600" />
+                                <Copy className="h-4 w-4 text-emerald-600" />
                               )}
                             </button>
                           </div>

@@ -345,25 +345,36 @@ const Auth = () => {
   // Forgot Password View
   if (isForgotPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 border-gray-300">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-lg p-8 animate-scale-in">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200 p-4 relative overflow-hidden">
+        {/* Background Gaming Stickers */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-10 left-8 text-4xl opacity-20 animate-float" style={{ animationDelay: '0s' }}>🎮</div>
+          <div className="absolute top-20 right-12 text-3xl opacity-15 animate-float" style={{ animationDelay: '0.5s' }}>🕹️</div>
+          <div className="absolute bottom-32 left-6 text-3xl opacity-20 animate-float" style={{ animationDelay: '1s' }}>🎯</div>
+          <div className="absolute bottom-20 right-8 text-4xl opacity-15 animate-float" style={{ animationDelay: '1.5s' }}>🏆</div>
+        </div>
+        
+        <div className="w-full max-w-md relative z-10">
+          <div className="bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/20 p-8 animate-scale-in border border-border/50">
             <button 
               onClick={() => setIsForgotPassword(false)} 
-              className="flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
+              className="flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-1" /> Back to Login
             </button>
             
             <div className="flex flex-col items-center mb-6">
-              <img src={vyuhaLogo} alt="Vyuha Esport" className="h-20 w-20 rounded-full object-cover mb-4 border-slate-400" />
-              <h1 className="text-center mb-2 text-slate-950 font-semibold text-xl">Reset Password</h1>
-              <p className="text-center text-sm text-gray-600">Verify your identity to reset password</p>
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl scale-150" />
+                <img src={vyuhaLogo} alt="Vyuha Esport" className="h-24 w-24 rounded-full object-cover mb-4 border-4 border-primary/30 shadow-xl relative z-10" />
+              </div>
+              <h1 className="text-center mb-2 text-foreground font-semibold text-xl">Reset Password</h1>
+              <p className="text-center text-sm text-muted-foreground">Verify your identity to reset password</p>
             </div>
 
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="reset-email" className="text-sm font-medium text-gray-700">Email address</Label>
+                <Label htmlFor="reset-email" className="text-sm font-medium text-foreground">Email address</Label>
                 <Input 
                   id="reset-email" 
                   type="email" 
@@ -373,13 +384,13 @@ const Auth = () => {
                     setEmail(e.target.value);
                     setErrors(prev => ({ ...prev, email: undefined }));
                   }} 
-                  className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.email ? 'border-red-500' : ''}`} 
+                  className={`bg-background/50 border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${errors.email ? 'border-destructive' : ''}`} 
                 />
-                {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+                {errors.email && <p className="text-destructive text-xs">{errors.email}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="game-uid" className="text-sm font-medium text-gray-700">Game UID</Label>
+                <Label htmlFor="game-uid" className="text-sm font-medium text-foreground">Game UID</Label>
                 <Input 
                   id="game-uid" 
                   type="text" 
@@ -389,17 +400,17 @@ const Auth = () => {
                     setGameUid(e.target.value);
                     setErrors(prev => ({ ...prev, gameUid: undefined }));
                   }} 
-                  className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.gameUid ? 'border-red-500' : ''}`} 
+                  className={`bg-background/50 border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${errors.gameUid ? 'border-destructive' : ''}`} 
                 />
-                {errors.gameUid && <p className="text-red-500 text-xs">{errors.gameUid}</p>}
-                <p className="text-xs text-gray-500">Enter the Game UID from your profile</p>
+                {errors.gameUid && <p className="text-destructive text-xs">{errors.gameUid}</p>}
+                <p className="text-xs text-muted-foreground">Enter the Game UID from your profile</p>
               </div>
 
               <button 
                 type="button"
                 onClick={handleForgotPassword}
                 disabled={loading} 
-                className="w-full bg-black text-white font-bold py-3 rounded-lg hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="w-full bg-gradient-to-r from-primary to-gaming-purple text-primary-foreground font-bold py-3 rounded-lg hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center shadow-lg shadow-primary/25"
               >
                 {loading ? (
                   <>
@@ -416,13 +427,31 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 border-gray-300">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-lg p-8 animate-scale-in">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-gray-100 to-slate-200 p-4 relative overflow-hidden">
+      {/* Background Gaming Stickers */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Controller icons */}
+        <div className="absolute top-10 left-8 text-4xl opacity-20 animate-float" style={{ animationDelay: '0s' }}>🎮</div>
+        <div className="absolute top-20 right-12 text-3xl opacity-15 animate-float" style={{ animationDelay: '0.5s' }}>🕹️</div>
+        <div className="absolute bottom-32 left-6 text-3xl opacity-20 animate-float" style={{ animationDelay: '1s' }}>🎯</div>
+        <div className="absolute bottom-20 right-8 text-4xl opacity-15 animate-float" style={{ animationDelay: '1.5s' }}>🏆</div>
+        <div className="absolute top-1/3 left-4 text-2xl opacity-15 animate-float" style={{ animationDelay: '2s' }}>⭐</div>
+        <div className="absolute top-1/2 right-6 text-2xl opacity-20 animate-float" style={{ animationDelay: '0.3s' }}>🎲</div>
+        <div className="absolute bottom-1/3 left-12 text-3xl opacity-15 animate-float" style={{ animationDelay: '0.8s' }}>👾</div>
+        <div className="absolute top-16 left-1/3 text-2xl opacity-15 animate-float" style={{ animationDelay: '1.2s' }}>🔥</div>
+        <div className="absolute bottom-24 right-1/4 text-2xl opacity-20 animate-float" style={{ animationDelay: '0.7s' }}>💎</div>
+        <div className="absolute top-2/3 right-1/3 text-3xl opacity-15 animate-float" style={{ animationDelay: '1.8s' }}>🎪</div>
+      </div>
+      
+      <div className="w-full max-w-md relative z-10">
+        <div className="bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl shadow-black/20 p-8 animate-scale-in border border-border/50">
           {/* Logo */}
           <div className="flex flex-col items-center mb-6">
-            <img src={vyuhaLogo} alt="Vyuha Esport" className="h-20 w-20 rounded-full object-cover mb-4 border-slate-400" />
-            <h1 className="text-center mb-8 text-slate-950 font-normal text-base">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl scale-150" />
+              <img src={vyuhaLogo} alt="Vyuha Esport" className="h-28 w-28 rounded-full object-cover mb-4 border-4 border-primary/30 shadow-xl relative z-10" />
+            </div>
+            <h1 className="text-center mb-6 text-foreground font-semibold text-lg mt-2">
               {isLogin ? 'Your Gaming Journey Starts Here' : 'Create Your Account'}
             </h1>
           </div>
@@ -430,7 +459,7 @@ const Auth = () => {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 Email address
               </Label>
               <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => {
@@ -439,12 +468,12 @@ const Auth = () => {
                 ...prev,
                 email: undefined
               }));
-            }} className={`border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.email ? 'border-red-500' : ''}`} />
-              {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+            }} className={`bg-background/50 border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary ${errors.email ? 'border-destructive' : ''}`} />
+              {errors.email && <p className="text-destructive text-xs">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
                 Password
               </Label>
               <div className="relative">
@@ -454,12 +483,12 @@ const Auth = () => {
                   ...prev,
                   password: undefined
                 }));
-              }} className={`border border-gray-300 rounded-lg pr-10 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${errors.password ? 'border-red-500' : ''}`} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+              }} className={`bg-background/50 border-border rounded-lg pr-10 focus:ring-2 focus:ring-primary focus:border-primary ${errors.password ? 'border-destructive' : ''}`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
+              {errors.password && <p className="text-destructive text-xs">{errors.password}</p>}
             </div>
 
             {/* Signup-only fields - just terms */}
@@ -477,22 +506,22 @@ const Auth = () => {
                       }} 
                       className="mt-0.5" 
                     />
-                    <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed">
+                    <label htmlFor="terms" className="text-xs text-muted-foreground leading-relaxed">
                       I agree to the{' '}
-                      <Link to="/terms" className="text-orange-600 hover:underline">
+                      <Link to="/terms" className="text-primary hover:underline">
                         Terms & Conditions
                       </Link>
                       ,{' '}
-                      <Link to="/refund-policy" className="text-orange-600 hover:underline">
+                      <Link to="/refund-policy" className="text-primary hover:underline">
                         Refund Policy
                       </Link>
                       {' '}and{' '}
-                      <Link to="/about" className="text-orange-600 hover:underline">
+                      <Link to="/about" className="text-primary hover:underline">
                         Privacy Policy
                       </Link>
                     </label>
                   </div>
-                  {errors.terms && <p className="text-red-500 text-xs">{errors.terms}</p>}
+                  {errors.terms && <p className="text-destructive text-xs">{errors.terms}</p>}
                 </div>
               </>
             )}
@@ -520,15 +549,15 @@ const Auth = () => {
           </form>
 
           {/* Footer */}
-          <p className="text-center text-sm text-gray-600 mt-6">
-            {isLogin ? <>
+          <p className="text-center text-sm text-muted-foreground mt-6">
+              {isLogin ? <>
                 Don't have an account?{' '}
-                <button onClick={() => setIsLogin(false)} className="text-orange-600 font-semibold hover:underline">
+                <button onClick={() => setIsLogin(false)} className="text-primary font-semibold hover:underline">
                   Sign Up
                 </button>
               </> : <>
                 Already have an account?{' '}
-                <button onClick={() => setIsLogin(true)} className="text-orange-600 font-semibold hover:underline">
+                <button onClick={() => setIsLogin(true)} className="text-primary font-semibold hover:underline">
                   Log in
                 </button>
               </>}

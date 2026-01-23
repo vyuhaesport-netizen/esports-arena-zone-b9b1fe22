@@ -108,7 +108,7 @@ interface JoinRequest {
 }
 
 const TeamPage = () => {
-  const [activeTab, setActiveTab] = useState('browse'); // Default to browse for users without team
+  const [activeTab, setActiveTab] = useState('browse');
   const [loading, setLoading] = useState(true);
   const [myTeam, setMyTeam] = useState<PlayerTeam | null>(null);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -151,7 +151,6 @@ const TeamPage = () => {
     }
   }, [user]);
 
-  // Set correct default tab based on team membership
   useEffect(() => {
     if (!loading) {
       if (myTeam) {
@@ -412,14 +411,12 @@ const TeamPage = () => {
       return;
     }
 
-    // If requires approval, open request dialog
     if (team.requires_approval) {
       setSelectedTeamForRequest(team);
       setRequestDialogOpen(true);
       return;
     }
 
-    // Direct join
     try {
       const { error } = await supabase
         .from('player_team_members')
@@ -447,13 +444,11 @@ const TeamPage = () => {
     if (!user || !myTeam) return;
 
     try {
-      // Check capacity - use MAX_TEAM_MEMBERS constant
       if (teamMembers.length >= MAX_TEAM_MEMBERS) {
         toast({ title: 'Team Full', description: 'Cannot approve - team is at maximum capacity (6 players).', variant: 'destructive' });
         return;
       }
 
-      // Add member
       const { error: memberError } = await supabase
         .from('player_team_members')
         .insert({
@@ -464,7 +459,6 @@ const TeamPage = () => {
 
       if (memberError) throw memberError;
 
-      // Update request status
       const { error: updateError } = await supabase
         .from('player_team_requests')
         .update({ status: 'approved', reviewed_at: new Date().toISOString(), reviewed_by: user.id })
@@ -637,31 +631,33 @@ const TeamPage = () => {
   }
 
   return (
-    <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card border-b border-border shadow-md shadow-black/20">
-        <div className="flex items-center gap-3 px-4 h-14">
+    <div className="min-h-[100dvh] bg-background flex flex-col">
+      {/* Premium Header */}
+      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border/50 shadow-lg shadow-black/10">
+        <div className="flex items-center gap-3 px-4 h-16">
           <button 
             onClick={() => navigate('/profile')} 
             className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-full shadow-sm" />
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg scale-150" />
+            <img src={vyuhaLogo} alt="Vyuha" className="w-10 h-10 rounded-full shadow-lg relative z-10 border-2 border-primary/30" />
+          </div>
           <div className="flex-1">
-            <h1 className="font-bold text-base">Teams</h1>
-            <p className="text-[10px] text-muted-foreground">Build your squad for duo/squad matches</p>
+            <h1 className="font-bold text-lg">Teams</h1>
+            <p className="text-[11px] text-muted-foreground">Build your squad for duo/squad matches</p>
           </div>
           
-          {/* Leader Requests Icon in Header */}
           {isLeader && myTeam && (
             <button
               onClick={() => setActiveTab('requests')}
-              className="relative p-2 rounded-full hover:bg-muted transition-colors"
+              className="relative p-2.5 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
             >
-              <Inbox className="h-5 w-5 text-muted-foreground" />
+              <Inbox className="h-5 w-5 text-primary" />
               {joinRequests.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-[9px] rounded-full flex items-center justify-center text-primary-foreground font-bold animate-pulse">
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-[10px] rounded-full flex items-center justify-center text-destructive-foreground font-bold animate-pulse">
                   {joinRequests.length}
                 </span>
               )}
@@ -672,54 +668,50 @@ const TeamPage = () => {
             <Button
               size="sm"
               onClick={() => setCreateDialogOpen(true)}
-              className="gap-1.5 shadow-md hover:shadow-lg transition-all h-8 text-xs"
+              className="gap-1.5 shadow-lg hover:shadow-xl transition-all h-9 rounded-xl bg-gradient-to-r from-primary to-gaming-purple"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               Create
             </Button>
           )}
         </div>
       </header>
 
-      {/* Tabs - Conditional based on team membership */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div className="px-4 pt-3 shrink-0">
-          {/* If user has a team, show different tab layout */}
+      {/* Premium Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <div className="px-4 pt-4 shrink-0">
           {myTeam ? (
             isLeader ? (
-              // Leader: My Team + Chat (Requests moved to header icon)
-              <TabsList className="w-full grid grid-cols-2 h-9">
-                <TabsTrigger value="my-team" className="gap-1.5 text-[11px] h-7">
-                  <Shield className="h-3 w-3" />
+              <TabsList className="w-full grid grid-cols-2 h-11 rounded-xl bg-muted/50 p-1">
+                <TabsTrigger value="my-team" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
+                  <Shield className="h-4 w-4" />
                   Team
                 </TabsTrigger>
-                <TabsTrigger value="chat" className="gap-1.5 text-[11px] h-7">
-                  <MessageCircle className="h-3 w-3" />
+                <TabsTrigger value="chat" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
+                  <MessageCircle className="h-4 w-4" />
                   Chat
                 </TabsTrigger>
               </TabsList>
             ) : (
-              // Member (not leader): My Team + Chat
-              <TabsList className="w-full grid grid-cols-2 h-9">
-                <TabsTrigger value="my-team" className="gap-1.5 text-[11px] h-7">
-                  <Shield className="h-3 w-3" />
+              <TabsList className="w-full grid grid-cols-2 h-11 rounded-xl bg-muted/50 p-1">
+                <TabsTrigger value="my-team" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
+                  <Shield className="h-4 w-4" />
                   My Team
                 </TabsTrigger>
-                <TabsTrigger value="chat" className="gap-1.5 text-[11px] h-7">
-                  <MessageCircle className="h-3 w-3" />
+                <TabsTrigger value="chat" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
+                  <MessageCircle className="h-4 w-4" />
                   Chat
                 </TabsTrigger>
               </TabsList>
             )
           ) : (
-            // No team: Browse + My Requests
-            <TabsList className="w-full grid grid-cols-2 h-9">
-              <TabsTrigger value="browse" className="gap-1.5 text-[11px] h-7">
-                <Globe className="h-3 w-3" />
+            <TabsList className="w-full grid grid-cols-2 h-11 rounded-xl bg-muted/50 p-1">
+              <TabsTrigger value="browse" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-md">
+                <Globe className="h-4 w-4" />
                 Browse Teams
               </TabsTrigger>
-              <TabsTrigger value="requests" className="gap-1.5 text-[11px] h-7 relative">
-                <Send className="h-3 w-3" />
+              <TabsTrigger value="requests" className="gap-1.5 text-xs rounded-lg relative data-[state=active]:bg-card data-[state=active]:shadow-md">
+                <Send className="h-4 w-4" />
                 My Requests
                 {myRequests.filter(r => r.status === 'pending').length > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-[9px] rounded-full flex items-center justify-center text-primary-foreground font-bold">
@@ -732,47 +724,44 @@ const TeamPage = () => {
         </div>
 
         {/* My Team Tab */}
-        <TabsContent value="my-team" className="flex-1 mt-0 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="px-4 py-3">
-          {myTeam ? (
-              <div className="space-y-4 animate-fade-in">
-              {/* Team Card - Enhanced Design */}
-              <Card className="border border-border bg-card overflow-hidden shadow-lg shadow-black/25">
-                <CardHeader className="pb-3 relative">
-                  <div className="flex items-start gap-3">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
-                      <Users className="h-7 w-7 text-white" />
+        <TabsContent value="my-team" className="flex-1 mt-0 overflow-auto px-4 py-4 pb-20">
+          {myTeam && (
+            <div className="space-y-4 animate-fade-in">
+              {/* Team Card */}
+              <Card variant="premium" className="overflow-hidden">
+                <CardHeader className="pb-3 relative bg-gradient-to-br from-primary/10 via-transparent to-transparent">
+                  <div className="flex items-start gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-gaming-purple flex items-center justify-center shadow-xl shadow-primary/30">
+                      <Users className="h-8 w-8 text-primary-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="text-lg font-bold">{myTeam.name}</CardTitle>
+                        <CardTitle className="text-xl font-bold">{myTeam.name}</CardTitle>
                         {isLeader && (
-                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[9px] shadow-sm px-1.5 py-0">
-                            <Crown className="h-2.5 w-2.5 mr-0.5" /> Leader
+                          <Badge className="bg-gradient-to-r from-warning to-gaming-orange text-warning-foreground text-[10px] shadow-sm">
+                            <Crown className="h-3 w-3 mr-1" /> Leader
                           </Badge>
                         )}
                       </div>
                       {myTeam.slogan && (
-                        <p className="text-xs text-muted-foreground italic mt-0.5">"{myTeam.slogan}"</p>
+                        <p className="text-sm text-muted-foreground italic mt-1">"{myTeam.slogan}"</p>
                       )}
-                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
                         {myTeam.game && (
-                          <Badge variant="secondary" className="text-[10px] gap-1 h-5">
-                            <Gamepad2 className="h-2.5 w-2.5" /> {myTeam.game}
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <Gamepad2 className="h-3 w-3" /> {myTeam.game}
                           </Badge>
                         )}
-                        <Badge variant="outline" className="text-[10px] gap-1 h-5">
-                          <Users className="h-2.5 w-2.5" /> {teamMembers.length}/{MAX_TEAM_MEMBERS}
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Users className="h-3 w-3" /> {teamMembers.length}/{MAX_TEAM_MEMBERS}
                         </Badge>
                       </div>
                     </div>
                     
-                    {/* Three-dots Settings Menu - Only for Leaders */}
                     {isLeader && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-muted">
+                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-muted">
                             <MoreVertical className="h-5 w-5 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -785,47 +774,30 @@ const TeamPage = () => {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={toggleTeamVisibility} className="cursor-pointer gap-2">
                             {myTeam.is_open_for_players ? (
-                              <>
-                                <EyeOff className="h-4 w-4 text-muted-foreground" />
-                                <span>Hide from Browse</span>
-                              </>
+                              <><EyeOff className="h-4 w-4 text-muted-foreground" /><span>Hide from Browse</span></>
                             ) : (
-                              <>
-                                <Eye className="h-4 w-4 text-green-500" />
-                                <span>Show in Browse</span>
-                              </>
+                              <><Eye className="h-4 w-4 text-success" /><span>Show in Browse</span></>
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={toggleTeamApproval} className="cursor-pointer gap-2">
                             {myTeam.requires_approval ? (
-                              <>
-                                <Check className="h-4 w-4 text-blue-500" />
-                                <span>Allow Direct Join</span>
-                              </>
+                              <><Check className="h-4 w-4 text-primary" /><span>Allow Direct Join</span></>
                             ) : (
-                              <>
-                                <ShieldCheck className="h-4 w-4 text-orange-500" />
-                                <span>Require Approval</span>
-                              </>
+                              <><ShieldCheck className="h-4 w-4 text-warning" /><span>Require Approval</span></>
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
-                            onClick={handleLeaveTeam} 
-                            className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            <span>Disband Team</span>
+                          <DropdownMenuItem onClick={handleLeaveTeam} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
+                            <Trash2 className="h-4 w-4" /><span>Disband Team</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
                   </div>
                   
-                  {/* Status Badges */}
                   <div className="flex gap-2 mt-4 flex-wrap">
                     {myTeam.is_open_for_players ? (
-                      <Badge variant="outline" className="text-green-600 border-green-600/30 bg-green-500/10 text-xs gap-1">
+                      <Badge variant="outline" className="text-success border-success/30 bg-success/10 text-xs gap-1">
                         <Eye className="h-3 w-3" /> Visible
                       </Badge>
                     ) : (
@@ -834,11 +806,11 @@ const TeamPage = () => {
                       </Badge>
                     )}
                     {myTeam.requires_approval ? (
-                      <Badge variant="outline" className="text-orange-500 border-orange-500/30 bg-orange-500/10 text-xs gap-1">
+                      <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10 text-xs gap-1">
                         <ShieldCheck className="h-3 w-3" /> Approval Required
                       </Badge>
                     ) : (
-                      <Badge variant="outline" className="text-blue-500 border-blue-500/30 bg-blue-500/10 text-xs gap-1">
+                      <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10 text-xs gap-1">
                         <Check className="h-3 w-3" /> Direct Join
                       </Badge>
                     )}
@@ -846,15 +818,13 @@ const TeamPage = () => {
                 </CardHeader>
                 
                 <CardContent className="pt-0">
-
-                  {/* Pending Requests Alert - Only for Leaders */}
                   {isLeader && joinRequests.length > 0 && (
                     <div 
                       onClick={() => setActiveTab('requests')}
-                      className="p-4 mb-5 bg-gradient-to-r from-primary/10 to-orange-500/5 border border-primary/20 rounded-xl cursor-pointer hover:border-primary/40 transition-all group"
+                      className="p-4 mb-5 bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-xl cursor-pointer hover:border-primary/40 transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-primary/15 flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center">
                           <Inbox className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1">
@@ -866,7 +836,6 @@ const TeamPage = () => {
                     </div>
                   )}
 
-                  {/* Team Members */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-semibold flex items-center gap-2">
@@ -874,17 +843,16 @@ const TeamPage = () => {
                       </p>
                       <Badge variant="secondary" className="text-xs">{teamMembers.length}/{MAX_TEAM_MEMBERS}</Badge>
                     </div>
-                    {teamMembers.map((member, index) => (
+                    {teamMembers.map((member) => (
                       <div
                         key={member.id}
-                        className={`flex items-center gap-3 p-3.5 rounded-xl transition-all duration-200 ${
+                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${
                           member.role === 'leader' 
-                            ? 'bg-gradient-to-r from-primary/8 to-orange-500/5 border border-primary/15' 
-                            : 'bg-muted/40 hover:bg-muted/60 border border-transparent'
+                            ? 'bg-gradient-to-r from-primary/10 to-transparent border border-primary/20' 
+                            : 'bg-muted/50 hover:bg-muted/80 border border-transparent'
                         }`}
-                        style={{ animationDelay: `${index * 50}ms` }}
                       >
-                        <Avatar className="h-11 w-11 border-2 border-background shadow-sm">
+                        <Avatar className="h-12 w-12 border-2 border-background shadow-lg">
                           <AvatarImage src={member.profile?.avatar_url || ''} />
                           <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
                             {member.profile?.username?.charAt(0).toUpperCase() || 'P'}
@@ -896,26 +864,24 @@ const TeamPage = () => {
                               {member.profile?.full_name || member.profile?.username || 'Player'}
                             </p>
                             {member.role === 'leader' && (
-                              <Crown className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                              <Crown className="h-4 w-4 text-warning" />
                             )}
                           </div>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-xs text-muted-foreground truncate">
-                              {member.profile?.in_game_name || 'No IGN set'}
-                            </p>
-                            {member.profile?.game_uid && (
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                UID: {member.profile.game_uid}
-                              </Badge>
-                            )}
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <Badge variant="secondary" className="text-[10px]">
+                              IGN: {member.profile?.in_game_name || 'Not set'}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              UID: {member.profile?.game_uid || 'Not set'}
+                            </Badge>
                           </div>
                         </div>
                         {isLeader && member.user_id !== user?.id && (
                           <Button
                             variant="ghost"
                             size="icon"
+                            className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
                             onClick={() => handleRemoveMember(member.id, member.user_id)}
-                            className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
                           >
                             <UserMinus className="h-4 w-4" />
                           </Button>
@@ -924,299 +890,248 @@ const TeamPage = () => {
                     ))}
                   </div>
 
-                  {/* Leave Button - Only for non-leaders */}
                   {!isLeader && (
                     <Button
                       variant="outline"
-                      className="w-full mt-6 text-destructive border-destructive/30 hover:bg-destructive/10 h-11 transition-colors"
+                      className="w-full mt-6 text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl h-11"
                       onClick={handleLeaveTeam}
                     >
-                      Leave Team
+                      <UserMinus className="h-4 w-4 mr-2" /> Leave Team
                     </Button>
                   )}
                 </CardContent>
               </Card>
             </div>
-          ) : (
-            <div className="text-center py-16 animate-fade-in">
-              <div className="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-br from-primary/15 to-orange-500/10 flex items-center justify-center">
-                <Users className="h-12 w-12 text-primary/40" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">No Team Yet</h3>
-              <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-                Create your own team to lead, or browse and request to join existing squads
-              </p>
-              <div className="flex gap-3 justify-center">
-                <Button variant="gaming" size="lg" onClick={() => setCreateDialogOpen(true)} className="gap-2 shadow-md">
-                  <Plus className="h-5 w-5" /> Create Team
-                </Button>
-                <Button variant="outline" size="lg" onClick={() => setActiveTab('browse')} className="gap-2">
-                  <Search className="h-5 w-5" /> Browse
-                </Button>
-              </div>
-            </div>
           )}
-            </div>
-          </ScrollArea>
         </TabsContent>
 
-        {/* Browse Teams Tab - Only visible when user has no team */}
-        <TabsContent value="browse" className="flex-1 mt-0 px-5 py-4 animate-fade-in">
-          {/* Search */}
-          <div className="relative mb-5">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Browse Tab */}
+        <TabsContent value="browse" className="flex-1 mt-0 overflow-auto px-4 py-4 pb-20">
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search teams by name or game..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 bg-muted/30 border-border/60"
+              className="pl-10 rounded-xl h-11 bg-card border-border/50"
             />
           </div>
 
-          {/* Create Team CTA */}
-          <Card className="mb-5 border-dashed border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-orange-500/3 hover:border-primary/30 transition-colors">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-sm">Want to lead?</p>
-                <p className="text-xs text-muted-foreground">Create your own team and recruit players</p>
+          <div className="space-y-3">
+            {filteredOpenTeams.length === 0 ? (
+              <div className="text-center py-16">
+                <Users className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                <p className="text-muted-foreground font-medium">No teams found</p>
+                <p className="text-xs text-muted-foreground mt-1">Create your own team to get started</p>
+                <Button
+                  variant="outline"
+                  className="mt-4 rounded-xl"
+                  onClick={() => setCreateDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" /> Create Team
+                </Button>
               </div>
-              <Button variant="gaming" size="sm" onClick={() => setCreateDialogOpen(true)} className="shadow-sm">
-                <Plus className="h-4 w-4 mr-1" /> Create
-              </Button>
-            </CardContent>
-          </Card>
-
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Available Teams ({filteredOpenTeams.length})
-          </p>
-
-          <ScrollArea className="h-[calc(100vh-400px)]">
-            <div className="space-y-3">
-              {filteredOpenTeams.length === 0 ? (
-                <div className="text-center py-12">
-                  <Globe className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm">No open teams found</p>
-                  <p className="text-xs text-muted-foreground mt-1">Try creating your own team!</p>
-                </div>
-              ) : (
-                filteredOpenTeams.map((team, index) => (
-                  <Card 
-                    key={team.id} 
-                    className="border-border/60 hover:border-primary/30 hover:shadow-sm transition-all duration-200"
-                    style={{ animationDelay: `${index * 30}ms` }}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-orange-500/15 flex items-center justify-center">
-                          <Users className="h-6 w-6 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-sm truncate">{team.name}</h4>
-                            {team.requires_approval ? (
-                              <Badge variant="outline" className="text-[10px] text-orange-500 border-orange-500/30 bg-orange-500/5">
-                                Approval
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30 bg-green-500/5">
-                                Direct
-                              </Badge>
-                            )}
-                          </div>
-                          {team.slogan && (
-                            <p className="text-xs text-muted-foreground italic truncate">"{team.slogan}"</p>
-                          )}
-                          <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
-                            {team.game && (
-                              <Badge variant="secondary" className="text-[10px] px-1.5">
-                                {team.game}
-                              </Badge>
-                            )}
-                            <span>{team.memberCount}/{MAX_TEAM_MEMBERS}</span>
-                          </div>
-                        </div>
-                        <Button
-                          variant={pendingRequestsForTeam(team.id) ? "outline" : "gaming"}
-                          size="sm"
-                          onClick={() => handleJoinTeam(team)}
-                          disabled={!!myTeam || team.memberCount >= MAX_TEAM_MEMBERS || pendingRequestsForTeam(team.id)}
-                          className="shadow-sm"
-                        >
-                          {team.memberCount >= MAX_TEAM_MEMBERS ? (
-                            'Full'
-                          ) : pendingRequestsForTeam(team.id) ? (
-                            <><Clock className="h-3.5 w-3.5 mr-1" /> Pending</>
-                          ) : team.requires_approval ? (
-                            <><Send className="h-3.5 w-3.5 mr-1" /> Request</>
-                          ) : (
-                            <><UserPlus className="h-3.5 w-3.5 mr-1" /> Join</>
-                          )}
-                        </Button>
+            ) : (
+              filteredOpenTeams.map((team) => (
+                <Card key={team.id} variant="premium" className="hover:border-primary/30 transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-gaming-purple/20 flex items-center justify-center">
+                        <Users className="h-7 w-7 text-primary" />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-2.5">
-                        Leader: {team.leaderName}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </div>
-          </ScrollArea>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold truncate">{team.name}</h4>
+                          {team.requires_approval ? (
+                            <Badge variant="outline" className="text-[10px] text-warning border-warning/30 bg-warning/10">
+                              Approval
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] text-success border-success/30 bg-success/10">
+                              Direct
+                            </Badge>
+                          )}
+                        </div>
+                        {team.slogan && (
+                          <p className="text-xs text-muted-foreground italic truncate mt-0.5">"{team.slogan}"</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                          {team.game && (
+                            <Badge variant="secondary" className="text-[10px]">{team.game}</Badge>
+                          )}
+                          <span>{team.memberCount}/{MAX_TEAM_MEMBERS} members</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Leader: {team.leaderName}</p>
+                      </div>
+                      <Button
+                        variant={pendingRequestsForTeam(team.id) ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => handleJoinTeam(team)}
+                        disabled={!!myTeam || team.memberCount >= MAX_TEAM_MEMBERS || pendingRequestsForTeam(team.id)}
+                        className="rounded-xl h-10 shadow-md"
+                      >
+                        {team.memberCount >= MAX_TEAM_MEMBERS ? (
+                          'Full'
+                        ) : pendingRequestsForTeam(team.id) ? (
+                          <><Clock className="h-4 w-4 mr-1" /> Pending</>
+                        ) : team.requires_approval ? (
+                          <><Send className="h-4 w-4 mr-1" /> Request</>
+                        ) : (
+                          <><UserPlus className="h-4 w-4 mr-1" /> Join</>
+                        )}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
         </TabsContent>
 
-        {/* Chat Tab - Full Screen */}
-        <TabsContent value="chat" className="flex-1 min-h-0 mt-0 px-0 animate-fade-in overflow-hidden flex flex-col">
+        {/* Chat Tab */}
+        <TabsContent value="chat" className="flex-1 mt-0 overflow-hidden flex flex-col">
           {myTeam && (
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 overflow-hidden">
               <TeamChat teamId={myTeam.id} leaderId={myTeam.leader_id} />
             </div>
           )}
         </TabsContent>
 
         {/* Requests Tab */}
-        <TabsContent value="requests" className="flex-1 mt-0 px-5 py-4 animate-fade-in">
+        <TabsContent value="requests" className="flex-1 mt-0 overflow-auto px-4 py-4 pb-20">
           {isLeader && myTeam ? (
-            // Leader's inbox
             <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-4">
                 <Inbox className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">Join Requests</h3>
+                <h3 className="font-semibold text-lg">Join Requests</h3>
                 <Badge variant="secondary">{joinRequests.length}</Badge>
               </div>
 
               {joinRequests.length === 0 ? (
-                <div className="text-center py-12">
-                  <Inbox className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm">No pending requests</p>
+                <div className="text-center py-16">
+                  <Inbox className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground font-medium">No pending requests</p>
                   <p className="text-xs text-muted-foreground mt-1">New requests will appear here</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[calc(100vh-280px)]">
-                  <div className="space-y-3">
-                    {joinRequests.map((request) => (
-                      <Card key={request.id} className="border-primary/20">
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-3">
-                            <Avatar className="h-12 w-12">
-                              <AvatarImage src={request.profile?.avatar_url || ''} />
-                              <AvatarFallback className="bg-primary/10 text-primary">
-                                {request.profile?.username?.charAt(0).toUpperCase() || 'P'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm">
-                                {request.profile?.full_name || request.profile?.username || 'Player'}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="secondary" className="text-[10px]">
-                                  IGN: {request.profile?.in_game_name || 'Not set'}
-                                </Badge>
-                                <Badge variant="outline" className="text-[10px]">
-                                  UID: {request.profile?.game_uid || 'Not set'}
-                                </Badge>
-                              </div>
-                              {request.message && (
-                                <p className="text-xs text-muted-foreground mt-2 italic">
-                                  "{request.message}"
-                                </p>
-                              )}
-                              <p className="text-[10px] text-muted-foreground mt-1">
-                                Requested {new Date(request.created_at).toLocaleDateString()}
-                              </p>
+                <div className="space-y-3">
+                  {joinRequests.map((request) => (
+                    <Card key={request.id} variant="premium" className="border-primary/20">
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-14 w-14 border-2 border-primary/30">
+                            <AvatarImage src={request.profile?.avatar_url || ''} />
+                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                              {request.profile?.username?.charAt(0).toUpperCase() || 'P'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold">
+                              {request.profile?.full_name || request.profile?.username || 'Player'}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <Badge variant="secondary" className="text-[10px]">
+                                IGN: {request.profile?.in_game_name || 'Not set'}
+                              </Badge>
+                              <Badge variant="outline" className="text-[10px]">
+                                UID: {request.profile?.game_uid || 'Not set'}
+                              </Badge>
                             </div>
+                            {request.message && (
+                              <p className="text-xs text-muted-foreground mt-2 italic">"{request.message}"</p>
+                            )}
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Requested {new Date(request.created_at).toLocaleDateString()}
+                            </p>
                           </div>
-                          <div className="flex gap-2 mt-3">
-                            <Button
-                              variant="gaming"
-                              size="sm"
-                              className="flex-1"
-                              onClick={() => handleApproveRequest(request)}
-                              disabled={teamMembers.length >= MAX_TEAM_MEMBERS}
-                            >
-                              <Check className="h-4 w-4 mr-1" /> Approve
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 text-destructive border-destructive/30"
-                              onClick={() => handleRejectRequest(request)}
-                            >
-                              <X className="h-4 w-4 mr-1" /> Reject
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            className="flex-1 rounded-xl h-10 bg-gradient-to-r from-success to-gaming-green"
+                            onClick={() => handleApproveRequest(request)}
+                            disabled={teamMembers.length >= MAX_TEAM_MEMBERS}
+                          >
+                            <Check className="h-4 w-4 mr-1" /> Approve
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 rounded-xl h-10 text-destructive border-destructive/30"
+                            onClick={() => handleRejectRequest(request)}
+                          >
+                            <X className="h-4 w-4 mr-1" /> Reject
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
           ) : (
-            // Player's sent requests
             <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-4">
                 <Send className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold">My Requests</h3>
+                <h3 className="font-semibold text-lg">My Requests</h3>
               </div>
 
               {myRequests.length === 0 ? (
-                <div className="text-center py-12">
-                  <Send className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-muted-foreground text-sm">No requests sent</p>
+                <div className="text-center py-16">
+                  <Send className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground font-medium">No requests sent</p>
                   <p className="text-xs text-muted-foreground mt-1">Browse teams and send join requests</p>
-                  <Button variant="outline" className="mt-4" onClick={() => setActiveTab('browse')}>
+                  <Button variant="outline" className="mt-4 rounded-xl" onClick={() => setActiveTab('browse')}>
                     <Search className="h-4 w-4 mr-1" /> Browse Teams
                   </Button>
                 </div>
               ) : (
-                <ScrollArea className="h-[calc(100vh-280px)]">
-                  <div className="space-y-3">
-                    {myRequests.map((request) => (
-                      <Card key={request.id} className="border-border">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-semibold text-sm">{request.teamName}</p>
-                              <p className="text-xs text-muted-foreground">
-                                Sent {new Date(request.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {request.status === 'pending' ? (
-                                <>
-                                  <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/30">
-                                    <Clock className="h-3 w-3 mr-1" /> Pending
-                                  </Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive"
-                                    onClick={() => handleCancelRequest(request.id)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              ) : request.status === 'approved' ? (
-                                <Badge className="bg-green-500/10 text-green-500 border-green-500/30">
-                                  <CheckCircle className="h-3 w-3 mr-1" /> Approved
-                                </Badge>
-                              ) : (
-                                <Badge className="bg-destructive/10 text-destructive border-destructive/30">
-                                  <XCircle className="h-3 w-3 mr-1" /> Rejected
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          {request.message && (
-                            <p className="text-xs text-muted-foreground mt-2 italic">
-                              Your message: "{request.message}"
+                <div className="space-y-3">
+                  {myRequests.map((request) => (
+                    <Card key={request.id} variant="premium">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-semibold">{request.teamName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Sent {new Date(request.created_at).toLocaleDateString()}
                             </p>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {request.status === 'pending' ? (
+                              <>
+                                <Badge className="bg-warning/10 text-warning border-warning/30">
+                                  <Clock className="h-3 w-3 mr-1" /> Pending
+                                </Badge>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive rounded-lg"
+                                  onClick={() => handleCancelRequest(request.id)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : request.status === 'approved' ? (
+                              <Badge className="bg-success/10 text-success border-success/30">
+                                <CheckCircle className="h-3 w-3 mr-1" /> Approved
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-destructive/10 text-destructive border-destructive/30">
+                                <XCircle className="h-3 w-3 mr-1" /> Rejected
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {request.message && (
+                          <p className="text-xs text-muted-foreground mt-2 italic">
+                            Your message: "{request.message}"
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -1225,7 +1140,7 @@ const TeamPage = () => {
 
       {/* Create Team Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
@@ -1241,6 +1156,7 @@ const TeamPage = () => {
                 value={teamForm.name}
                 onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
                 maxLength={30}
+                className="rounded-xl"
               />
             </div>
 
@@ -1252,6 +1168,7 @@ const TeamPage = () => {
                 onChange={(e) => setTeamForm({ ...teamForm, slogan: e.target.value })}
                 maxLength={100}
                 rows={2}
+                className="rounded-xl"
               />
             </div>
 
@@ -1261,42 +1178,42 @@ const TeamPage = () => {
                 value={teamForm.game}
                 onValueChange={(value) => setTeamForm({ ...teamForm, game: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="rounded-xl">
                   <SelectValue placeholder="Select game" />
                 </SelectTrigger>
                 <SelectContent>
                   {games.map((game) => (
-                    <SelectItem key={game} value={game}>
-                      {game}
-                    </SelectItem>
+                    <SelectItem key={game} value={game}>{game}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
               <div>
                 <p className="text-sm font-medium">Visible to Players</p>
                 <p className="text-xs text-muted-foreground">Show team in browse section</p>
               </div>
               <Button
-                variant={teamForm.is_open_for_players ? "gaming" : "outline"}
+                variant={teamForm.is_open_for_players ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTeamForm({ ...teamForm, is_open_for_players: !teamForm.is_open_for_players })}
+                className="rounded-xl"
               >
                 <Globe className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
               <div>
                 <p className="text-sm font-medium">Require Approval</p>
                 <p className="text-xs text-muted-foreground">Review players before they join</p>
               </div>
               <Button
-                variant={teamForm.requires_approval ? "gaming" : "outline"}
+                variant={teamForm.requires_approval ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTeamForm({ ...teamForm, requires_approval: !teamForm.requires_approval })}
+                className="rounded-xl"
               >
                 <Clock className="h-4 w-4" />
               </Button>
@@ -1304,10 +1221,14 @@ const TeamPage = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)} className="rounded-xl">
               Cancel
             </Button>
-            <Button variant="gaming" onClick={handleCreateTeam} disabled={saving || !teamForm.name.trim()}>
+            <Button 
+              onClick={handleCreateTeam} 
+              disabled={saving || !teamForm.name.trim()}
+              className="rounded-xl bg-gradient-to-r from-primary to-gaming-purple"
+            >
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
               Create Team
             </Button>
@@ -1327,10 +1248,10 @@ const TeamPage = () => {
 
           <div className="py-4 space-y-4">
             {selectedTeamForRequest && (
-              <div className="p-3 bg-muted rounded-lg">
+              <div className="p-4 bg-muted/50 rounded-xl">
                 <p className="font-semibold">{selectedTeamForRequest.name}</p>
                 {selectedTeamForRequest.slogan && (
-                  <p className="text-xs text-muted-foreground italic">"{selectedTeamForRequest.slogan}"</p>
+                  <p className="text-xs text-muted-foreground italic mt-1">"{selectedTeamForRequest.slogan}"</p>
                 )}
               </div>
             )}
@@ -1343,18 +1264,21 @@ const TeamPage = () => {
                 onChange={(e) => setRequestMessage(e.target.value)}
                 maxLength={200}
                 rows={3}
+                className="rounded-xl"
               />
-              <p className="text-xs text-muted-foreground">
-                Let them know why you want to join
-              </p>
+              <p className="text-xs text-muted-foreground">Let them know why you want to join</p>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRequestDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setRequestDialogOpen(false)} className="rounded-xl">
               Cancel
             </Button>
-            <Button variant="gaming" onClick={handleSendRequest} disabled={saving}>
+            <Button 
+              onClick={handleSendRequest} 
+              disabled={saving}
+              className="rounded-xl bg-gradient-to-r from-primary to-gaming-purple"
+            >
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
               Send Request
             </Button>
