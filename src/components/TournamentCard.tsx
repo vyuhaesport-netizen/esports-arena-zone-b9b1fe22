@@ -2,9 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import FollowButton from '@/components/FollowButton';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronLeft, Clock, Youtube, Instagram, Gift, ScrollText, Gamepad2 } from 'lucide-react';
+import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronLeft, Clock, Youtube, Instagram, Gift, ScrollText, Gamepad2, Radio } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -43,8 +42,6 @@ interface TournamentCardProps {
   variant?: 'organizer' | 'creator';
   showRoomDetails?: boolean;
   organizerName?: string;
-  isFollowing?: boolean;
-  onFollowChange?: (isFollowing: boolean) => void;
   joinDisabled?: boolean;
   joinDisabledReason?: string;
   exitDisabled?: boolean;
@@ -83,8 +80,6 @@ const TournamentCard = ({
   variant = 'organizer',
   showRoomDetails = false,
   organizerName,
-  isFollowing = false,
-  onFollowChange,
   joinDisabled = false,
   joinDisabledReason,
   exitDisabled = false,
@@ -220,23 +215,18 @@ const TournamentCard = ({
               </button>
             )}
           </div>
-          {tournament.created_by && onFollowChange && (
-            <FollowButton 
-              organizerId={tournament.created_by} 
-              isFollowing={isFollowing} 
-              onFollowChange={onFollowChange} 
-              organizerName={organizerName} 
-            />
-          )}
+          {/* Live Button */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-[10px] font-medium">
+            <Radio className="h-3 w-3 animate-pulse" />
+            <span>Live</span>
+          </div>
         </div>
 
         {tournament.created_by && (
           <OrganizerProfilePreview 
             organizerId={tournament.created_by} 
             open={profilePreviewOpen} 
-            onOpenChange={setProfilePreviewOpen} 
-            isFollowing={isFollowing} 
-            onFollowChange={onFollowChange} 
+            onOpenChange={setProfilePreviewOpen}
           />
         )}
 

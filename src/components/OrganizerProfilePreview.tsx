@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,13 +9,9 @@ import {
   IndianRupee, 
   Calendar,
   Loader2,
-  UserPlus,
-  UserMinus,
   Star
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 
 interface OrganizerProfile {
   user_id: string;
@@ -39,26 +34,18 @@ interface OrganizerProfilePreviewProps {
   organizerId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isFollowing?: boolean;
-  onFollowChange?: (isFollowing: boolean) => void;
 }
 
 const OrganizerProfilePreview = ({
   organizerId,
   open,
   onOpenChange,
-  isFollowing = false,
-  onFollowChange,
 }: OrganizerProfilePreviewProps) => {
   const [profile, setProfile] = useState<OrganizerProfile | null>(null);
   const [stats, setStats] = useState<OrganizerStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [followLoading, setFollowLoading] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
   const [role, setRole] = useState<'organizer' | 'creator' | null>(null);
-
-  const { user } = useAuth();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (open && organizerId) {
@@ -130,48 +117,6 @@ const OrganizerProfilePreview = ({
     }
   };
 
-  const handleFollowToggle = async () => {
-    if (!user) {
-      toast({ title: 'Login Required', description: 'Please login to follow organizers.', variant: 'destructive' });
-      return;
-    }
-
-    setFollowLoading(true);
-    try {
-      if (isFollowing) {
-        // Unfollow
-        const { error } = await supabase
-          .from('follows')
-          .delete()
-          .eq('follower_user_id', user.id)
-          .eq('following_user_id', organizerId);
-
-        if (error) throw error;
-        onFollowChange?.(false);
-        setFollowerCount(prev => Math.max(0, prev - 1));
-        toast({ title: 'Unfollowed', description: 'You will no longer receive notifications from this organizer.' });
-      } else {
-        // Follow
-        const { error } = await supabase
-          .from('follows')
-          .insert({
-            follower_user_id: user.id,
-            following_user_id: organizerId,
-          });
-
-        if (error) throw error;
-        onFollowChange?.(true);
-        setFollowerCount(prev => prev + 1);
-        toast({ title: 'Following!', description: 'You will be notified of new tournaments.' });
-      }
-    } catch (error) {
-      console.error('Error toggling follow:', error);
-      toast({ title: 'Error', description: 'Failed to update follow status.', variant: 'destructive' });
-    } finally {
-      setFollowLoading(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
@@ -191,7 +136,7 @@ const OrganizerProfilePreview = ({
             <div className="text-center">
               <Avatar className="w-20 h-20 mx-auto mb-3 ring-2 ring-primary/20">
                 <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback className="text-xl bg-gradient-to-br from-primary to-gaming-orange text-white">
+                <AvatarFallback className="text-xl bg-gradient-to-br from-primary to-primary/70 text-white">
                   {profile.username?.charAt(0).toUpperCase() || profile.full_name?.charAt(0).toUpperCase() || 'O'}
                 </AvatarFallback>
               </Avatar>
@@ -213,7 +158,7 @@ const OrganizerProfilePreview = ({
                   {role === 'creator' ? 'Creator' : 'Organizer'}
                 </Badge>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Star className="h-3 w-3 text-amber-500" />
+                  <Star className="h-3 w-3 text-warning" />
                   <span>{followerCount} followers</span>
                 </div>
               </div>
@@ -232,12 +177,12 @@ const OrganizerProfilePreview = ({
                   <p className="text-[10px] text-muted-foreground">Tournaments</p>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <Users className="h-4 w-4 mx-auto text-blue-500 mb-1" />
+                  <Users className="h-4 w-4 mx-auto text-primary mb-1" />
                   <p className="text-lg font-bold">{stats.total_participants}</p>
                   <p className="text-[10px] text-muted-foreground">Players</p>
                 </div>
                 <div className="text-center p-3 bg-muted/50 rounded-lg">
-                  <IndianRupee className="h-4 w-4 mx-auto text-green-500 mb-1" />
+                  <IndianRupee className="h-4 w-4 mx-auto text-success mb-1" />
                   <p className="text-lg font-bold">₹{(stats.total_prize_distributed / 1000).toFixed(0)}k</p>
                   <p className="text-[10px] text-muted-foreground">Distributed</p>
                 </div>
@@ -249,30 +194,6 @@ const OrganizerProfilePreview = ({
               <Calendar className="h-3.5 w-3.5" />
               <span>Member since {format(new Date(profile.created_at), 'MMM yyyy')}</span>
             </div>
-
-            {/* Follow Button */}
-            {user?.id !== organizerId && (
-              <Button
-                className="w-full"
-                variant={isFollowing ? 'outline' : 'default'}
-                onClick={handleFollowToggle}
-                disabled={followLoading}
-              >
-                {followLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isFollowing ? (
-                  <>
-                    <UserMinus className="h-4 w-4 mr-2" />
-                    Unfollow
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Follow
-                  </>
-                )}
-              </Button>
-            )}
           </div>
         ) : (
           <div className="text-center py-8">
