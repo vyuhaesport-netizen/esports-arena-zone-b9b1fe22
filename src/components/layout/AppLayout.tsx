@@ -23,7 +23,7 @@ const AppLayout = ({ children, title, showBack = false, hideBottomNav = false }:
       </div>
       
       {(title || showBack) && (
-        <header className="sticky top-0 z-40 glass-card px-4 py-3 border-b border-border/50 flex items-center gap-3">
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md px-4 py-3 border-b border-border/30 flex items-center gap-3">
           {showBack && (
             <Button
               variant="ghost"
