@@ -277,8 +277,33 @@ const SchoolTournamentManage = () => {
   };
 
   const handleStartRound = async (roundNumber: number) => {
+    if (!id) return;
     setProcessing(true);
     try {
+      // Prevent duplicate start: if rooms already exist for this round, don't call the RPC again
+      const { data: existingRooms, error: existingRoomsError } = await supabase
+        .from('school_tournament_rooms')
+        .select('id')
+        .eq('tournament_id', id)
+        .eq('round_number', roundNumber)
+        .limit(1);
+
+      if (existingRoomsError) throw existingRoomsError;
+
+      if (existingRooms && existingRooms.length > 0) {
+        await supabase
+          .from('school_tournaments')
+          .update({
+            status: roundNumber === tournament?.total_rounds ? 'finale' : `round_${roundNumber}`,
+            current_round: roundNumber,
+          })
+          .eq('id', id);
+
+        toast.success(`Round ${roundNumber} already started`);
+        fetchTournamentData();
+        return;
+      }
+
       // Generate rooms for this round
       const { data, error } = await supabase.rpc('generate_tournament_round_rooms', {
         p_tournament_id: id,
