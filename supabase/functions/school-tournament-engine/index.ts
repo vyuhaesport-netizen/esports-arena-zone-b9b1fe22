@@ -530,15 +530,28 @@ Deno.serve(async (req) => {
           throw new Error("Tournament not found");
         }
         
+        // CRITICAL: Check if tournament is already in finale or completed - no more rounds allowed
+        if (tournament.status === "completed") {
+          throw new Error("Tournament is already completed");
+        }
+        
+        // Check if we've already reached total_rounds - if so, this should be finale
+        const effectiveCurrentRound = currentRound || tournament.current_round || 1;
+        
+        if (effectiveCurrentRound >= tournament.total_rounds) {
+          console.log(`Already at round ${effectiveCurrentRound} which is >= total_rounds ${tournament.total_rounds}. This is finale, no more rounds.`);
+          throw new Error("Tournament has reached finale. No more rounds can be created.");
+        }
+        
         const teamsPerRoom = tournament.game === "BGMI" ? 25 : 12;
-        const nextRound = (currentRound || tournament.current_round || 1) + 1;
+        const nextRound = effectiveCurrentRound + 1;
         
         // Verify all rooms in current round are completed
         const { data: incompleteRooms } = await supabase
           .from("school_tournament_rooms")
           .select("id")
           .eq("tournament_id", tournamentId)
-          .eq("round_number", currentRound || tournament.current_round)
+          .eq("round_number", effectiveCurrentRound)
           .neq("status", "completed");
         
         if (incompleteRooms && incompleteRooms.length > 0) {
@@ -559,18 +572,17 @@ Deno.serve(async (req) => {
           throw new Error("No teams advanced to next round");
         }
         
-        console.log(`Starting round ${nextRound} with ${winnerCount} teams`);
+        console.log(`Starting round ${nextRound} with ${winnerCount} teams (total_rounds: ${tournament.total_rounds})`);
         
-        // Delete old round rooms and assignments (cleanup previous round data)
-        const prevRoundNumber = currentRound || tournament.current_round;
-        const { data: oldRooms } = await supabase
+        // Delete ALL previous round rooms and assignments (cleanup all old data)
+        const { data: allOldRooms } = await supabase
           .from("school_tournament_rooms")
-          .select("id")
+          .select("id, round_number")
           .eq("tournament_id", tournamentId)
-          .eq("round_number", prevRoundNumber);
+          .lt("round_number", nextRound);
         
-        if (oldRooms && oldRooms.length > 0) {
-          const oldRoomIds = oldRooms.map(r => r.id);
+        if (allOldRooms && allOldRooms.length > 0) {
+          const oldRoomIds = allOldRooms.map(r => r.id);
           
           // Delete assignments first (foreign key constraint)
           await supabase
@@ -584,10 +596,10 @@ Deno.serve(async (req) => {
             .delete()
             .in("id", oldRoomIds);
           
-          console.log(`Deleted ${oldRooms.length} rooms from round ${prevRoundNumber}`);
+          console.log(`Deleted ${allOldRooms.length} rooms from previous rounds`);
         }
         
-        // Delete eliminated teams data from previous round to free up storage
+        // Delete eliminated teams data from previous rounds to free up storage
         const { data: eliminatedTeams } = await supabase
           .from("school_tournament_teams")
           .select("id")
@@ -606,8 +618,10 @@ Deno.serve(async (req) => {
         let newRoomsCreated = 0;
         let isFinalRound = false;
         
-        // Check if this is the finale (<=teams_per_room teams remaining)
-        if (winnerCount <= teamsPerRoom) {
+        // Check if this is the finale: either we've reached total_rounds OR teams fit in one room
+        const isFinale = nextRound >= tournament.total_rounds || winnerCount <= teamsPerRoom;
+        
+        if (isFinale) {
           // This is the finale round
           isFinalRound = true;
           console.log("Finale round reached!");

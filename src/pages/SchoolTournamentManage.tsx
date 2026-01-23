@@ -334,6 +334,12 @@ const SchoolTournamentManage = () => {
   const handleStartNextRound = async () => {
     if (!tournament) return;
     
+    // CRITICAL: Prevent creating rounds beyond total_rounds
+    if (tournament.current_round >= tournament.total_rounds) {
+      toast.error('Tournament has reached finale. No more rounds can be created.');
+      return;
+    }
+    
     setProcessing(true);
     try {
       // Determine which round to process based on room state
@@ -463,10 +469,14 @@ const SchoolTournamentManage = () => {
   const allPreviousRoomsCompleted = previousRoundRooms.every(r => r.status === 'completed');
   const allCurrentRoomsCompleted = currentRoundRooms.length > 0 && currentRoundRooms.every(r => r.status === 'completed');
   
+  // CRITICAL: Don't allow next round if we're already at total_rounds (finale)
+  const isAtFinale = (tournament?.current_round || 0) >= (tournament?.total_rounds || 999);
+  
   // Show "Start Round X" button when:
-  // 1. Current round has no rooms but previous round rooms are all completed (need to create new round rooms)
-  // 2. Current round rooms exist and are all completed (ready for next round)
-  const shouldShowStartNextRound = (hasPreviousRoundRoomsOnly && allPreviousRoomsCompleted) || allCurrentRoomsCompleted;
+  // 1. NOT at finale already
+  // 2. Current round has no rooms but previous round rooms are all completed (need to create new round rooms)
+  // 3. OR Current round rooms exist and are all completed (ready for next round)
+  const shouldShowStartNextRound = !isAtFinale && ((hasPreviousRoundRoomsOnly && allPreviousRoomsCompleted) || allCurrentRoomsCompleted);
   const nextRoundNumber = (tournament?.current_round || 1) + (hasPreviousRoundRoomsOnly ? 0 : 1);
 
   if (loading) {
