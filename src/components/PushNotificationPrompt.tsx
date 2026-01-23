@@ -83,8 +83,8 @@ export const PushNotificationPrompt: React.FC = () => {
   if (!showPrompt || !user) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-24 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-sm max-h-[80vh] overflow-hidden bg-card border border-border rounded-2xl shadow-2xl animate-scale-in">
         {/* Header with gradient */}
         <div className="bg-gradient-to-r from-primary via-orange-500 to-yellow-500 p-4 relative">
           <button 
@@ -108,7 +108,7 @@ export const PushNotificationPrompt: React.FC = () => {
         </div>
         
         {/* Content */}
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(80vh-96px)]">
           <div className="space-y-2">
             <p className="text-foreground text-sm font-medium">Get notified for:</p>
             <ul className="space-y-1.5 text-muted-foreground text-sm">
