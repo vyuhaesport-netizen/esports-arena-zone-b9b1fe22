@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
         }
         
         const tournament = room.tournament;
-        const finaleTeams = tournament.game === "BGMI" ? 25 : 12;
+        const teamsPerRoom = tournament.game === "BGMI" ? 25 : 12;
         
         // Verify winner is in this room
         const { data: assignment } = await supabase
@@ -304,35 +304,193 @@ Deno.serve(async (req) => {
           .neq("status", "completed");
         
         let roundComplete = !incompleteRooms || incompleteRooms.length === 0;
-        let nextRoundReady = false;
+        let nextRoundGenerated = false;
         let isFinalRound = false;
+        let newRoomsCreated = 0;
         
         if (roundComplete) {
-          // Count remaining teams
-          const { count: remainingTeams } = await supabase
-            .from("school_tournament_teams")
-            .select("id", { count: "exact", head: true })
-            .eq("tournament_id", tournament.id)
-            .eq("is_eliminated", false);
+          // All rooms in this round are done - automatically progress to next round
+          console.log(`Round ${room.round_number} complete! Processing automatic progression...`);
           
-          if (remainingTeams && remainingTeams <= finaleTeams) {
-            // Ready for finale or completed
-            if (room.round_number === tournament.total_rounds - 1) {
-              isFinalRound = true;
+          // Get all winners from this round (teams that advanced)
+          const { data: advancedTeams } = await supabase
+            .from("school_tournament_teams")
+            .select("id")
+            .eq("tournament_id", tournament.id)
+            .eq("is_eliminated", false)
+            .eq("current_round", room.round_number + 1);
+          
+          const winnerCount = advancedTeams?.length || 0;
+          console.log(`${winnerCount} teams advanced to round ${room.round_number + 1}`);
+          
+          // Check if this is the finale (<=12 teams for Free Fire, <=25 for BGMI)
+          if (winnerCount <= teamsPerRoom) {
+            // This is the finale round
+            isFinalRound = true;
+            console.log("Finale round reached!");
+            
+            // Delete old round rooms and assignments
+            const { data: oldRooms } = await supabase
+              .from("school_tournament_rooms")
+              .select("id")
+              .eq("tournament_id", tournament.id)
+              .eq("round_number", room.round_number);
+            
+            if (oldRooms && oldRooms.length > 0) {
+              const oldRoomIds = oldRooms.map(r => r.id);
+              
+              // Delete assignments first (foreign key constraint)
               await supabase
-                .from("school_tournaments")
-                .update({ status: "finale", current_round: room.round_number + 1 })
-                .eq("id", tournament.id);
+                .from("school_tournament_room_assignments")
+                .delete()
+                .in("room_id", oldRoomIds);
+              
+              // Delete old rooms
+              await supabase
+                .from("school_tournament_rooms")
+                .delete()
+                .in("id", oldRoomIds);
+              
+              console.log(`Deleted ${oldRooms.length} rooms from round ${room.round_number}`);
             }
+            
+            // Create single finale room
+            const finaleRoomNumber = 1;
+            const { data: finaleRoom, error: finaleError } = await supabase
+              .from("school_tournament_rooms")
+              .insert({
+                tournament_id: tournament.id,
+                round_number: room.round_number + 1,
+                room_number: finaleRoomNumber,
+                room_name: `Finale - Grand Final`,
+                status: "waiting"
+              })
+              .select()
+              .single();
+            
+            if (finaleError) {
+              throw new Error("Failed to create finale room: " + finaleError.message);
+            }
+            
+            // Assign all winners to finale room
+            if (advancedTeams && advancedTeams.length > 0) {
+              const finaleAssignments = advancedTeams.map((team, idx) => ({
+                room_id: finaleRoom.id,
+                team_id: team.id,
+                slot_number: idx + 1
+              }));
+              
+              await supabase
+                .from("school_tournament_room_assignments")
+                .insert(finaleAssignments);
+            }
+            
+            // Update tournament status to finale
+            await supabase
+              .from("school_tournaments")
+              .update({ 
+                status: "finale", 
+                current_round: room.round_number + 1,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", tournament.id);
+            
+            newRoomsCreated = 1;
+            nextRoundGenerated = true;
+            
           } else {
-            nextRoundReady = true;
+            // More rounds needed - create next round rooms
+            console.log(`Creating next round with ${winnerCount} teams...`);
+            
+            // Delete old round rooms and assignments
+            const { data: oldRooms } = await supabase
+              .from("school_tournament_rooms")
+              .select("id")
+              .eq("tournament_id", tournament.id)
+              .eq("round_number", room.round_number);
+            
+            if (oldRooms && oldRooms.length > 0) {
+              const oldRoomIds = oldRooms.map(r => r.id);
+              
+              // Delete assignments first (foreign key constraint)
+              await supabase
+                .from("school_tournament_room_assignments")
+                .delete()
+                .in("room_id", oldRoomIds);
+              
+              // Delete old rooms
+              await supabase
+                .from("school_tournament_rooms")
+                .delete()
+                .in("id", oldRoomIds);
+              
+              console.log(`Deleted ${oldRooms.length} rooms from round ${room.round_number}`);
+            }
+            
+            // Distribute winners into new rooms
+            const winnerIds = advancedTeams?.map(t => t.id) || [];
+            const newRooms = distributeTeamsToRooms(winnerIds, teamsPerRoom);
+            
+            // Create new rooms
+            const roomInserts = newRooms.map(r => ({
+              tournament_id: tournament.id,
+              round_number: room.round_number + 1,
+              room_number: r.roomNumber,
+              room_name: `Round ${room.round_number + 1} - Room ${r.roomNumber}`,
+              status: "waiting"
+            }));
+            
+            const { data: createdRooms, error: roomsError } = await supabase
+              .from("school_tournament_rooms")
+              .insert(roomInserts)
+              .select();
+            
+            if (roomsError) {
+              throw new Error("Failed to create next round rooms: " + roomsError.message);
+            }
+            
+            // Create room assignments
+            const assignments: { room_id: string; team_id: string; slot_number: number }[] = [];
+            
+            for (let i = 0; i < newRooms.length; i++) {
+              const roomData = newRooms[i];
+              const createdRoom = createdRooms[i];
+              
+              roomData.teams.forEach((teamId, slotIndex) => {
+                assignments.push({
+                  room_id: createdRoom.id,
+                  team_id: teamId,
+                  slot_number: slotIndex + 1
+                });
+              });
+            }
+            
+            await supabase
+              .from("school_tournament_room_assignments")
+              .insert(assignments);
+            
+            // Update tournament current round
+            await supabase
+              .from("school_tournaments")
+              .update({ 
+                current_round: room.round_number + 1,
+                status: `round_${room.round_number + 1}`,
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", tournament.id);
+            
+            newRoomsCreated = createdRooms.length;
+            nextRoundGenerated = true;
+            
+            console.log(`Created ${newRoomsCreated} rooms for round ${room.round_number + 1}`);
           }
         }
         
         return new Response(JSON.stringify({ 
           success: true,
           roundComplete,
-          nextRoundReady,
+          nextRoundGenerated,
+          newRoomsCreated,
           isFinalRound
         }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" }
