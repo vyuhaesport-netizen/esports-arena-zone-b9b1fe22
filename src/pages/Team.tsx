@@ -639,18 +639,18 @@ const TeamPage = () => {
   return (
     <div className="h-[100dvh] bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border shadow-sm">
-        <div className="flex items-center gap-3 px-5 h-16">
+      <header className="sticky top-0 z-40 bg-card border-b border-border shadow-md shadow-black/20">
+        <div className="flex items-center gap-3 px-4 h-14">
           <button 
             onClick={() => navigate('/profile')} 
             className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <img src={vyuhaLogo} alt="Vyuha" className="w-9 h-9 rounded-full shadow-sm" />
+          <img src={vyuhaLogo} alt="Vyuha" className="w-8 h-8 rounded-full shadow-sm" />
           <div className="flex-1">
-            <h1 className="font-bold text-lg">Teams</h1>
-            <p className="text-xs text-muted-foreground">Build your squad for duo/squad matches</p>
+            <h1 className="font-bold text-base">Teams</h1>
+            <p className="text-[10px] text-muted-foreground">Build your squad for duo/squad matches</p>
           </div>
           
           {/* Leader Requests Icon in Header */}
@@ -661,7 +661,7 @@ const TeamPage = () => {
             >
               <Inbox className="h-5 w-5 text-muted-foreground" />
               {joinRequests.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-primary text-[10px] rounded-full flex items-center justify-center text-primary-foreground font-bold animate-pulse">
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-[9px] rounded-full flex items-center justify-center text-primary-foreground font-bold animate-pulse">
                   {joinRequests.length}
                 </span>
               )}
@@ -670,12 +670,11 @@ const TeamPage = () => {
           
           {!myTeam && (
             <Button
-              variant="gaming"
               size="sm"
               onClick={() => setCreateDialogOpen(true)}
-              className="gap-1.5 shadow-md hover:shadow-lg transition-all"
+              className="gap-1.5 shadow-md hover:shadow-lg transition-all h-8 text-xs"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               Create
             </Button>
           )}
@@ -684,46 +683,46 @@ const TeamPage = () => {
 
       {/* Tabs - Conditional based on team membership */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <div className="px-5 pt-4 shrink-0">
+        <div className="px-4 pt-3 shrink-0">
           {/* If user has a team, show different tab layout */}
           {myTeam ? (
             isLeader ? (
               // Leader: My Team + Chat (Requests moved to header icon)
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="my-team" className="gap-1.5 text-xs">
-                  <Shield className="h-3.5 w-3.5" />
+              <TabsList className="w-full grid grid-cols-2 h-9">
+                <TabsTrigger value="my-team" className="gap-1.5 text-[11px] h-7">
+                  <Shield className="h-3 w-3" />
                   Team
                 </TabsTrigger>
-                <TabsTrigger value="chat" className="gap-1.5 text-xs">
-                  <MessageCircle className="h-3.5 w-3.5" />
+                <TabsTrigger value="chat" className="gap-1.5 text-[11px] h-7">
+                  <MessageCircle className="h-3 w-3" />
                   Chat
                 </TabsTrigger>
               </TabsList>
             ) : (
               // Member (not leader): My Team + Chat
-              <TabsList className="w-full grid grid-cols-2">
-                <TabsTrigger value="my-team" className="gap-1.5 text-xs">
-                  <Shield className="h-3.5 w-3.5" />
+              <TabsList className="w-full grid grid-cols-2 h-9">
+                <TabsTrigger value="my-team" className="gap-1.5 text-[11px] h-7">
+                  <Shield className="h-3 w-3" />
                   My Team
                 </TabsTrigger>
-                <TabsTrigger value="chat" className="gap-1.5 text-xs">
-                  <MessageCircle className="h-3.5 w-3.5" />
+                <TabsTrigger value="chat" className="gap-1.5 text-[11px] h-7">
+                  <MessageCircle className="h-3 w-3" />
                   Chat
                 </TabsTrigger>
               </TabsList>
             )
           ) : (
             // No team: Browse + My Requests
-            <TabsList className="w-full grid grid-cols-2">
-              <TabsTrigger value="browse" className="gap-1.5 text-xs">
-                <Globe className="h-3.5 w-3.5" />
+            <TabsList className="w-full grid grid-cols-2 h-9">
+              <TabsTrigger value="browse" className="gap-1.5 text-[11px] h-7">
+                <Globe className="h-3 w-3" />
                 Browse Teams
               </TabsTrigger>
-              <TabsTrigger value="requests" className="gap-1.5 text-xs relative">
-                <Send className="h-3.5 w-3.5" />
+              <TabsTrigger value="requests" className="gap-1.5 text-[11px] h-7 relative">
+                <Send className="h-3 w-3" />
                 My Requests
                 {myRequests.filter(r => r.status === 'pending').length > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 text-[10px] rounded-full flex items-center justify-center text-white font-bold">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-[9px] rounded-full flex items-center justify-center text-primary-foreground font-bold">
                     {myRequests.filter(r => r.status === 'pending').length}
                   </span>
                 )}
@@ -735,36 +734,36 @@ const TeamPage = () => {
         {/* My Team Tab */}
         <TabsContent value="my-team" className="flex-1 mt-0 min-h-0 overflow-hidden">
           <ScrollArea className="h-full">
-            <div className="px-5 py-4">
+            <div className="px-4 py-3">
           {myTeam ? (
-              <div className="space-y-5 animate-fade-in">
+              <div className="space-y-4 animate-fade-in">
               {/* Team Card - Enhanced Design */}
-              <Card className="border border-border/60 bg-gradient-to-br from-card to-muted/20 overflow-hidden shadow-sm">
-                <CardHeader className="pb-4 relative">
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shadow-lg">
-                      <Users className="h-8 w-8 text-white" />
+              <Card className="border border-border bg-card overflow-hidden shadow-lg shadow-black/25">
+                <CardHeader className="pb-3 relative">
+                  <div className="flex items-start gap-3">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg">
+                      <Users className="h-7 w-7 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="text-xl font-bold">{myTeam.name}</CardTitle>
+                        <CardTitle className="text-lg font-bold">{myTeam.name}</CardTitle>
                         {isLeader && (
-                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[10px] shadow-sm">
-                            <Crown className="h-3 w-3 mr-0.5" /> Leader
+                          <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[9px] shadow-sm px-1.5 py-0">
+                            <Crown className="h-2.5 w-2.5 mr-0.5" /> Leader
                           </Badge>
                         )}
                       </div>
                       {myTeam.slogan && (
-                        <p className="text-sm text-muted-foreground italic mt-1">"{myTeam.slogan}"</p>
+                        <p className="text-xs text-muted-foreground italic mt-0.5">"{myTeam.slogan}"</p>
                       )}
-                      <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+                      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         {myTeam.game && (
-                          <Badge variant="secondary" className="text-xs gap-1">
-                            <Gamepad2 className="h-3 w-3" /> {myTeam.game}
+                          <Badge variant="secondary" className="text-[10px] gap-1 h-5">
+                            <Gamepad2 className="h-2.5 w-2.5" /> {myTeam.game}
                           </Badge>
                         )}
-                        <Badge variant="outline" className="text-xs gap-1">
-                          <Users className="h-3 w-3" /> {teamMembers.length}/{MAX_TEAM_MEMBERS}
+                        <Badge variant="outline" className="text-[10px] gap-1 h-5">
+                          <Users className="h-2.5 w-2.5" /> {teamMembers.length}/{MAX_TEAM_MEMBERS}
                         </Badge>
                       </div>
                     </div>

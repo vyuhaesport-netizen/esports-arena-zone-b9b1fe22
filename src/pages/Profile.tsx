@@ -413,7 +413,7 @@ const ProfilePage = () => {
           </div>
         </div>
 
-        <button onClick={() => setEditDialogOpen(true)} className="w-full mt-4 py-2 bg-secondary hover:bg-secondary/80 text-sm font-semibold rounded-lg border border-border transition-colors text-primary-foreground">
+        <button onClick={() => setEditDialogOpen(true)} className="w-full mt-4 py-2.5 bg-primary hover:bg-primary/90 text-sm font-semibold rounded-lg border border-primary/50 transition-colors text-primary-foreground shadow-md">
           Edit Profile
         </button>
       </div>

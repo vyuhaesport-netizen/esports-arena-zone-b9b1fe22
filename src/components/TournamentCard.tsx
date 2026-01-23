@@ -178,35 +178,35 @@ const TournamentCard = ({
           transform: `translateX(${swipeX}px)`,
           transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
         }} 
-        className="premium-card p-4 hover-lift shine-effect"
+        className="bg-card border border-border rounded-xl p-3 shadow-lg shadow-black/25 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-0.5 transition-all duration-300"
       >
         {/* Swipe indicator */}
         {canSwipeJoin && (
-          <div className={`absolute inset-y-0 right-0 w-16 pointer-events-none rounded-r-2xl bg-gradient-to-l from-success to-success/50 flex items-center justify-end pr-3 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
-            <span className="text-white text-xs font-bold">Join</span>
+          <div className={`absolute inset-y-0 right-0 w-14 pointer-events-none rounded-r-xl bg-gradient-to-l from-success to-success/50 flex items-center justify-end pr-2 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
+            <span className="text-white text-[10px] font-bold">Join</span>
           </div>
         )}
         
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
+        {/* Header - More Compact */}
+        <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-foreground truncate">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <h3 className="font-semibold text-sm text-foreground truncate">
                 {tournament.title}
               </h3>
               {tournament.is_giveaway && (
-                <Badge className="text-[10px] px-2 py-0.5 bg-gradient-to-r from-success to-gaming-cyan text-white border-0 font-bold shadow-glow-success">
-                  <Gift className="h-3 w-3 mr-0.5" />
+                <Badge className="text-[9px] px-1.5 py-0 bg-gradient-to-r from-success to-gaming-cyan text-white border-0 font-bold">
+                  <Gift className="h-2.5 w-2.5 mr-0.5" />
                   Giveaway
                 </Badge>
               )}
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Gamepad2 className="h-3 w-3" />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <Gamepad2 className="h-2.5 w-2.5" />
                 {tournament.game}
               </span>
-              <Badge className={`text-[10px] px-2 py-0.5 capitalize bg-gradient-to-r ${getModeColor()} text-white border-0`}>
+              <Badge className={`text-[9px] px-1.5 py-0 capitalize bg-gradient-to-r ${getModeColor()} text-white border-0`}>
                 {tournament.tournament_mode || 'Solo'}
               </Badge>
               {getStatusBadge()}
@@ -214,7 +214,7 @@ const TournamentCard = ({
             {organizerName && tournament.created_by && (
               <button 
                 onClick={() => setProfilePreviewOpen(true)} 
-                className="text-xs text-muted-foreground hover:text-primary hover:underline transition-colors mt-1"
+                className="text-[10px] text-muted-foreground hover:text-primary hover:underline transition-colors mt-0.5"
               >
                 by {organizerName}
               </button>
@@ -240,47 +240,47 @@ const TournamentCard = ({
           />
         )}
 
-        {/* Deadline Countdown */}
+        {/* Deadline Countdown - Compact */}
         {countdown && !isJoined && (
-          <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl text-xs font-medium ${
+          <div className={`flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg text-[10px] font-medium ${
             isDeadlineSoon 
               ? 'bg-destructive/10 text-destructive animate-pulse' 
               : 'bg-warning/10 text-warning'
           }`}>
-            <Clock className="h-3.5 w-3.5" />
-            <span>Registration closes in {countdown}</span>
+            <Clock className="h-3 w-3" />
+            <span>Closes in {countdown}</span>
           </div>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-4 gap-2 mb-3">
-          <div className="stat-card text-center">
-            <Trophy className="h-4 w-4 text-warning mx-auto mb-1" />
-            <p className="text-xs font-bold text-warning">{prizeAmount}</p>
-            <p className="text-[10px] text-muted-foreground">Prize</p>
+        {/* Stats Grid - Compact */}
+        <div className="grid grid-cols-4 gap-1.5 mb-2">
+          <div className="bg-muted/50 rounded-lg p-2 text-center border border-border/50">
+            <Trophy className="h-3.5 w-3.5 text-warning mx-auto mb-0.5" />
+            <p className="text-[11px] font-bold text-warning">{prizeAmount}</p>
+            <p className="text-[9px] text-muted-foreground">Prize</p>
           </div>
-          <div className="stat-card text-center">
-            <Wallet className="h-4 w-4 text-success mx-auto mb-1" />
-            <p className="text-xs font-bold text-success">{tournament.is_giveaway ? '₹1' : entryFee}</p>
-            <p className="text-[10px] text-muted-foreground">Entry</p>
+          <div className="bg-muted/50 rounded-lg p-2 text-center border border-border/50">
+            <Wallet className="h-3.5 w-3.5 text-success mx-auto mb-0.5" />
+            <p className="text-[11px] font-bold text-success">{tournament.is_giveaway ? '₹1' : entryFee}</p>
+            <p className="text-[9px] text-muted-foreground">Entry</p>
           </div>
-          <div className="stat-card text-center">
-            <Users className="h-4 w-4 text-primary mx-auto mb-1" />
-            <p className="text-xs font-bold">{playerCount}/{maxPlayers}</p>
-            <p className="text-[10px] text-muted-foreground">Players</p>
+          <div className="bg-muted/50 rounded-lg p-2 text-center border border-border/50">
+            <Users className="h-3.5 w-3.5 text-primary mx-auto mb-0.5" />
+            <p className="text-[11px] font-bold">{playerCount}/{maxPlayers}</p>
+            <p className="text-[9px] text-muted-foreground">Players</p>
           </div>
-          <div className="stat-card text-center">
-            <Calendar className="h-4 w-4 text-muted-foreground mx-auto mb-1" />
-            <p className="text-xs font-bold">{format(new Date(tournament.start_date), 'MMM dd')}</p>
-            <p className="text-[10px] text-muted-foreground">{format(new Date(tournament.start_date), 'h:mm a')}</p>
+          <div className="bg-muted/50 rounded-lg p-2 text-center border border-border/50">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground mx-auto mb-0.5" />
+            <p className="text-[11px] font-bold">{format(new Date(tournament.start_date), 'MMM d')}</p>
+            <p className="text-[9px] text-muted-foreground">{format(new Date(tournament.start_date), 'h:mm a')}</p>
           </div>
         </div>
 
         {/* Room Details */}
         {isJoined && showRoomDetails && tournament.room_id && (
-          <div className="p-3 bg-success/10 rounded-xl border border-success/20 mb-3">
-            <div className="flex items-center gap-2 text-success text-sm font-medium">
-              <Eye className="h-4 w-4" />
+          <div className="p-2 bg-success/10 rounded-lg border border-success/20 mb-2">
+            <div className="flex items-center gap-2 text-success text-[11px] font-medium">
+              <Eye className="h-3.5 w-3.5" />
               <span>Room: {tournament.room_id}</span>
               {tournament.room_password && (
                 <span className="text-muted-foreground">• Pass: {tournament.room_password}</span>
@@ -289,18 +289,18 @@ const TournamentCard = ({
           </div>
         )}
 
-        {/* Social Links */}
+        {/* Social Links - Compact */}
         {(tournament.youtube_link || tournament.instagram_link) && (
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1.5 mb-2">
             {tournament.youtube_link && (
               <a 
                 href={tournament.youtube_link} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 text-xs font-medium hover:bg-red-500/20 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/10 text-red-500 text-[10px] font-medium hover:bg-red-500/20 transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
-                <Youtube className="h-3.5 w-3.5" />
+                <Youtube className="h-3 w-3" />
                 YouTube
               </a>
             )}
@@ -309,21 +309,21 @@ const TournamentCard = ({
                 href={tournament.instagram_link} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-pink-500/10 text-pink-500 text-xs font-medium hover:bg-pink-500/20 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-pink-500/10 text-pink-500 text-[10px] font-medium hover:bg-pink-500/20 transition-colors"
                 onClick={(e) => e.stopPropagation()}
               >
-                <Instagram className="h-3.5 w-3.5" />
+                <Instagram className="h-3 w-3" />
                 Instagram
               </a>
             )}
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
+        {/* Actions - Compact */}
+        <div className="flex items-center gap-1.5">
           {isJoined ? (
             exitDisabled ? (
-              <div className="flex-1 h-10 rounded-xl bg-warning/10 border border-warning/30 flex items-center justify-center text-warning text-xs font-medium">
+              <div className="flex-1 h-8 rounded-lg bg-warning/10 border border-warning/30 flex items-center justify-center text-warning text-[10px] font-medium">
                 {exitDisabledReason || 'Exit not allowed'}
               </div>
             ) : (
@@ -331,7 +331,7 @@ const TournamentCard = ({
                 onClick={onExitClick} 
                 disabled={isLoading} 
                 variant="outline" 
-                className="flex-1 h-10 text-sm text-destructive border-destructive/50 hover:bg-destructive/10 rounded-xl"
+                className="flex-1 h-8 text-[11px] text-destructive border-destructive/50 hover:bg-destructive/10 rounded-lg"
               >
                 {isLoading ? 'Processing...' : 'Exit Tournament'}
               </Button>
@@ -340,16 +340,16 @@ const TournamentCard = ({
             <Button 
               onClick={onJoinClick} 
               disabled={isLoading} 
-              className="flex-1 h-10 text-sm rounded-xl bg-gradient-to-r from-success to-gaming-green hover:opacity-90 shadow-glow-success"
+              className="flex-1 h-8 text-[11px] rounded-lg bg-gradient-to-r from-success to-gaming-green hover:opacity-90"
             >
               {isLoading ? 'Processing...' : 'Join Now'}
             </Button>
           ) : joinDisabled ? (
-            <div className="flex-1 h-10 rounded-xl bg-destructive/10 border border-destructive/30 flex items-center justify-center text-destructive text-xs font-medium">
+            <div className="flex-1 h-8 rounded-lg bg-destructive/10 border border-destructive/30 flex items-center justify-center text-destructive text-[10px] font-medium">
               {joinDisabledReason || 'Registration Closed'}
             </div>
           ) : (
-            <div className="flex-1 h-10 rounded-xl bg-muted/50 flex items-center justify-center text-muted-foreground text-xs font-medium">
+            <div className="flex-1 h-8 rounded-lg bg-muted/50 flex items-center justify-center text-muted-foreground text-[10px] font-medium">
               {spotsLeft <= 0 ? 'Tournament Full' : 'Not Available'}
             </div>
           )}
@@ -357,18 +357,20 @@ const TournamentCard = ({
           <Button 
             variant="outline" 
             onClick={onRulesClick} 
-            className="h-10 px-3 rounded-xl gap-1.5"
+            className="h-8 px-2 rounded-lg gap-1 text-[10px]"
+            size="sm"
           >
-            <ScrollText className="h-4 w-4" />
+            <ScrollText className="h-3 w-3" />
             <span className="hidden sm:inline">Rules</span>
           </Button>
           
           <Button 
             variant="outline" 
             onClick={onPrizeClick} 
-            className="h-10 px-3 rounded-xl gap-1.5"
+            className="h-8 px-2 rounded-lg gap-1 text-[10px]"
+            size="sm"
           >
-            <Trophy className="h-4 w-4" />
+            <Trophy className="h-3 w-3" />
             <span className="hidden sm:inline">Prizes</span>
           </Button>
           
@@ -381,19 +383,20 @@ const TournamentCard = ({
             }}
             onPointerDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
-            className="h-10 w-10 p-0 rounded-xl touch-manipulation"
+            className="h-8 w-8 p-0 rounded-lg touch-manipulation"
+            size="sm"
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-3 w-3" />
           </Button>
         </div>
       </div>
       
-      {/* Swipe indicator */}
+      {/* Swipe indicator - Smaller */}
       {canSwipeJoin && (
-        <div className="flex items-center justify-center gap-2 mt-2 text-success/80">
-          <ChevronLeft className="h-4 w-4 animate-bounce-soft" />
-          <span className="text-xs font-medium">Swipe to join</span>
-          <ChevronLeft className="h-4 w-4 animate-bounce-soft" />
+        <div className="flex items-center justify-center gap-1.5 mt-1.5 text-success/70">
+          <ChevronLeft className="h-3 w-3 animate-bounce-soft" />
+          <span className="text-[10px] font-medium">Swipe to join</span>
+          <ChevronLeft className="h-3 w-3 animate-bounce-soft" />
         </div>
       )}
     </div>
