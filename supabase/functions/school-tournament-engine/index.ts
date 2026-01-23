@@ -127,6 +127,25 @@ Deno.serve(async (req) => {
           throw new Error("Tournament not found");
         }
         
+        // Check if rooms already exist for this round
+        const { data: existingRooms } = await supabase
+          .from("school_tournament_rooms")
+          .select("id")
+          .eq("tournament_id", tournamentId)
+          .eq("round_number", roundNumber);
+        
+        if (existingRooms && existingRooms.length > 0) {
+          // Rooms already exist, just return success
+          return new Response(JSON.stringify({ 
+            success: true, 
+            roomsCreated: 0,
+            teamsAssigned: 0,
+            message: "Rooms already exist for this round"
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          });
+        }
+        
         const teamsPerRoom = tournament.game === "BGMI" ? 25 : 12;
         
         // Get active teams for this round
