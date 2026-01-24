@@ -239,6 +239,102 @@ export type Database = {
         }
         Relationships: []
       }
+      creator_custom_rules: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          custom_rules_content: string | null
+          game: string
+          id: string
+          mode: string
+          updated_at: string | null
+          use_platform_rules: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          custom_rules_content?: string | null
+          game: string
+          id?: string
+          mode: string
+          updated_at?: string | null
+          use_platform_rules?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          custom_rules_content?: string | null
+          game?: string
+          id?: string
+          mode?: string
+          updated_at?: string | null
+          use_platform_rules?: boolean | null
+        }
+        Relationships: []
+      }
+      creator_invite_links: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          id: string
+          invite_code: string
+          is_active: boolean | null
+          link_name: string | null
+          total_clicks: number | null
+          total_qualified: number | null
+          total_signups: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          id?: string
+          invite_code: string
+          is_active?: boolean | null
+          link_name?: string | null
+          total_clicks?: number | null
+          total_qualified?: number | null
+          total_signups?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          id?: string
+          invite_code?: string
+          is_active?: boolean | null
+          link_name?: string | null
+          total_clicks?: number | null
+          total_qualified?: number | null
+          total_signups?: number | null
+        }
+        Relationships: []
+      }
+      creator_referrals: {
+        Row: {
+          id: string
+          invite_link_id: string
+          qualified_at: string | null
+          referred_user_id: string
+          registered_at: string | null
+          status: string | null
+        }
+        Insert: {
+          id?: string
+          invite_link_id: string
+          qualified_at?: string | null
+          referred_user_id: string
+          registered_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          id?: string
+          invite_link_id?: string
+          qualified_at?: string | null
+          referred_user_id?: string
+          registered_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       dhana_balances: {
         Row: {
           available_dhana: number
