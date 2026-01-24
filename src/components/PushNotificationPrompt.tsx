@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Bell, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -11,48 +11,62 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-const PUSH_PROMPT_KEY = 'push_notification_prompted';
+const PUSH_PROMPT_DISMISSED_KEY = 'push_notification_dismissed_at';
+const PROMPT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export const PushNotificationPrompt: React.FC = () => {
   const { user } = useAuth();
   const [showPrompt, setShowPrompt] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const checkAndShowPrompt = async () => {
-      if (!user) return;
-      
-      // Check if already prompted
-      const alreadyPrompted = localStorage.getItem(PUSH_PROMPT_KEY);
-      if (alreadyPrompted) return;
-      
-      // Initialize OneSignal
-      await initOneSignal();
-      
-      // Wait a bit for OneSignal to fully load
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Check current permission status
-      const status = getPushPermissionStatus();
-      
-      // Only show if permission is 'default' (not yet asked)
-      if (status === 'default') {
-        // Small delay before showing popup
-        setTimeout(() => setShowPrompt(true), 2000);
+  const checkAndShowPrompt = useCallback(async () => {
+    if (!user) return;
+    
+    // Initialize OneSignal
+    await initOneSignal();
+    
+    // Wait a bit for OneSignal to fully load
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Check current permission status
+    const status = getPushPermissionStatus();
+    
+    // If permission already granted or denied, don't show
+    if (status === 'granted' || status === 'denied') {
+      return;
+    }
+    
+    // Check if dismissed recently (within cooldown period)
+    const dismissedAt = localStorage.getItem(PUSH_PROMPT_DISMISSED_KEY);
+    if (dismissedAt) {
+      const dismissedTime = parseInt(dismissedAt, 10);
+      const now = Date.now();
+      if (now - dismissedTime < PROMPT_COOLDOWN_MS) {
+        // Schedule to show again after cooldown
+        const remainingTime = PROMPT_COOLDOWN_MS - (now - dismissedTime);
+        setTimeout(() => {
+          checkAndShowPrompt();
+        }, remainingTime + 2000);
+        return;
       }
-      
-      // Link user to OneSignal
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      await loginOneSignal(user.id, profile?.email);
-    };
-
-    checkAndShowPrompt();
+    }
+    
+    // Show popup after small delay
+    setTimeout(() => setShowPrompt(true), 2000);
+    
+    // Link user to OneSignal
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    await loginOneSignal(user.id, profile?.email);
   }, [user]);
+
+  useEffect(() => {
+    checkAndShowPrompt();
+  }, [checkAndShowPrompt]);
 
   const handleEnable = async () => {
     setIsLoading(true);
@@ -60,7 +74,8 @@ export const PushNotificationPrompt: React.FC = () => {
     try {
       const granted = await requestPushPermission();
       
-      localStorage.setItem(PUSH_PROMPT_KEY, 'true');
+      // Clear dismissed timestamp since user interacted
+      localStorage.removeItem(PUSH_PROMPT_DISMISSED_KEY);
       setShowPrompt(false);
       
       if (granted) {
@@ -76,8 +91,13 @@ export const PushNotificationPrompt: React.FC = () => {
   };
 
   const handleDismiss = () => {
-    localStorage.setItem(PUSH_PROMPT_KEY, 'true');
+    // Store dismissal timestamp - will show again after cooldown
+    localStorage.setItem(PUSH_PROMPT_DISMISSED_KEY, Date.now().toString());
     setShowPrompt(false);
+    
+    toast.info('We\'ll remind you later!', {
+      description: 'Enable notifications anytime from Profile.',
+    });
   };
 
   if (!showPrompt || !user) return null;
@@ -134,7 +154,7 @@ export const PushNotificationPrompt: React.FC = () => {
               className="flex-1"
               size="sm"
             >
-              Not Now
+              Remind Later
             </Button>
             <Button
               onClick={handleEnable}

@@ -767,57 +767,61 @@ const TeamPage = () => {
           {myTeam && (
             <div className="space-y-4 animate-fade-in">
               {/* Team Card */}
-              <Card variant="premium" className="overflow-hidden">
-                <CardHeader className="pb-3 relative bg-gradient-to-br from-primary/10 via-transparent to-transparent">
-                  <div className="flex items-start gap-4">
-                    <div className="relative group">
-                      {myTeam.logo_url ? (
-                        <Avatar className="w-16 h-16 rounded-2xl shadow-xl shadow-primary/30">
-                          <AvatarImage src={myTeam.logo_url} className="object-cover" />
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-gaming-purple rounded-2xl">
-                            <Users className="h-8 w-8 text-primary-foreground" />
-                          </AvatarFallback>
-                        </Avatar>
-                      ) : (
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-gaming-purple flex items-center justify-center shadow-xl shadow-primary/30">
-                          <Users className="h-8 w-8 text-primary-foreground" />
-                        </div>
-                      )}
+              <div 
+                className="p-4 rounded-xl border border-border/30 bg-card/50 overflow-hidden"
+                style={{
+                  backdropFilter: 'blur(12px)',
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="relative group">
+                    {myTeam.logo_url ? (
+                      <Avatar className="w-12 h-12 rounded-xl">
+                        <AvatarImage src={myTeam.logo_url} className="object-cover" />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/50 rounded-xl">
+                          <Users className="h-6 w-6 text-primary-foreground" />
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center">
+                        <Users className="h-6 w-6 text-primary-foreground" />
+                      </div>
+                    )}
+                    {isLeader && (
+                      <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleLogoUpload}
+                        />
+                        <Plus className="h-4 w-4 text-white" />
+                      </label>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm font-bold">{myTeam.name}</h3>
                       {isLeader && (
-                        <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleLogoUpload}
-                          />
-                          <Plus className="h-6 w-6 text-white" />
-                        </label>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="text-xl font-bold">{myTeam.name}</CardTitle>
-                        {isLeader && (
-                          <Badge className="bg-gradient-to-r from-warning to-gaming-orange text-warning-foreground text-[10px] shadow-sm">
-                            <Crown className="h-3 w-3 mr-1" /> Leader
-                          </Badge>
-                        )}
-                      </div>
-                      {myTeam.slogan && (
-                        <p className="text-sm text-muted-foreground italic mt-1">"{myTeam.slogan}"</p>
-                      )}
-                      <div className="flex items-center gap-2 mt-3 flex-wrap">
-                        {myTeam.game && (
-                          <Badge variant="secondary" className="text-xs gap-1">
-                            <Gamepad2 className="h-3 w-3" /> {myTeam.game}
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs gap-1">
-                          <Users className="h-3 w-3" /> {teamMembers.length}/{MAX_TEAM_MEMBERS}
+                        <Badge className="bg-warning/20 text-warning text-[9px] px-1.5 py-0">
+                          <Crown className="h-2.5 w-2.5 mr-0.5" /> Leader
                         </Badge>
-                      </div>
+                      )}
                     </div>
+                    {myTeam.slogan && (
+                      <p className="text-[10px] text-muted-foreground italic mt-0.5">"{myTeam.slogan}"</p>
+                    )}
+                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      {myTeam.game && (
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 gap-0.5">
+                          <Gamepad2 className="h-2.5 w-2.5" /> {myTeam.game}
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 gap-0.5">
+                        <Users className="h-2.5 w-2.5" /> {teamMembers.length}/{MAX_TEAM_MEMBERS}
+                      </Badge>
+                    </div>
+                  </div>
                     
                     {isLeader && (
                       <DropdownMenu>
@@ -854,114 +858,119 @@ const TeamPage = () => {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     )}
-                  </div>
-                  
-                  <div className="flex gap-2 mt-4 flex-wrap">
-                    {myTeam.is_open_for_players ? (
-                      <Badge variant="outline" className="text-success border-success/30 bg-success/10 text-xs gap-1">
-                        <Eye className="h-3 w-3" /> Visible
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-muted-foreground bg-muted/50 text-xs gap-1">
-                        <EyeOff className="h-3 w-3" /> Hidden
-                      </Badge>
-                    )}
-                    {myTeam.requires_approval ? (
-                      <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10 text-xs gap-1">
-                        <ShieldCheck className="h-3 w-3" /> Approval Required
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10 text-xs gap-1">
-                        <Check className="h-3 w-3" /> Direct Join
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
+                </div>
                 
-                <CardContent className="pt-0">
-                  {isLeader && joinRequests.length > 0 && (
-                    <div 
-                      onClick={() => setActiveTab('requests')}
-                      className="p-4 mb-5 bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-xl cursor-pointer hover:border-primary/40 transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-primary/20 flex items-center justify-center">
-                          <Inbox className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-sm font-semibold">{joinRequests.length} pending request{joinRequests.length > 1 ? 's' : ''}</span>
-                          <p className="text-xs text-muted-foreground">Tap to review and approve players</p>
-                        </div>
-                        <Badge className="bg-primary text-primary-foreground">{joinRequests.length}</Badge>
-                      </div>
-                    </div>
+                <div className="flex gap-1.5 mt-3 flex-wrap">
+                  {myTeam.is_open_for_players ? (
+                    <Badge variant="outline" className="text-success border-success/30 bg-success/10 text-[9px] px-1.5 py-0 gap-0.5">
+                      <Eye className="h-2.5 w-2.5" /> Visible
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground bg-muted/50 text-[9px] px-1.5 py-0 gap-0.5">
+                      <EyeOff className="h-2.5 w-2.5" /> Hidden
+                    </Badge>
                   )}
+                  {myTeam.requires_approval ? (
+                    <Badge variant="outline" className="text-warning border-warning/30 bg-warning/10 text-[9px] px-1.5 py-0 gap-0.5">
+                      <ShieldCheck className="h-2.5 w-2.5" /> Approval Required
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10 text-[9px] px-1.5 py-0 gap-0.5">
+                      <Check className="h-2.5 w-2.5" /> Direct Join
+                    </Badge>
+                  )}
+                </div>
+              </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-semibold flex items-center gap-2">
-                        <Users className="h-4 w-4 text-muted-foreground" /> Team Members
-                      </p>
-                      <Badge variant="secondary" className="text-xs">{teamMembers.length}/{MAX_TEAM_MEMBERS}</Badge>
+              {/* Pending Requests Alert */}
+              {isLeader && joinRequests.length > 0 && (
+                <div 
+                  onClick={() => setActiveTab('requests')}
+                  className="p-3 mt-4 bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-xl cursor-pointer hover:border-primary/40 transition-all"
+                  style={{ backdropFilter: 'blur(8px)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Inbox className="h-4 w-4 text-primary" />
                     </div>
-                    {teamMembers.map((member) => (
-                      <div
-                        key={member.id}
-                        className={`flex items-center gap-3 p-4 rounded-xl transition-all ${
-                          member.role === 'leader' 
-                            ? 'bg-gradient-to-r from-primary/10 to-transparent border border-primary/20' 
-                            : 'bg-muted/50 hover:bg-muted/80 border border-transparent'
-                        }`}
-                      >
-                        <Avatar className="h-12 w-12 border-2 border-background shadow-lg">
-                          <AvatarImage src={member.profile?.avatar_url || ''} />
-                          <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
-                            {member.profile?.username?.charAt(0).toUpperCase() || 'P'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm truncate">
-                              {member.profile?.full_name || member.profile?.username || 'Player'}
-                            </p>
-                            {member.role === 'leader' && (
-                              <Crown className="h-4 w-4 text-warning" />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Badge variant="secondary" className="text-[10px]">
-                              IGN: {member.profile?.in_game_name || 'Not set'}
-                            </Badge>
-                            <Badge variant="outline" className="text-[10px]">
-                              UID: {member.profile?.game_uid || 'Not set'}
-                            </Badge>
-                          </div>
-                        </div>
-                        {isLeader && member.user_id !== user?.id && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl"
-                            onClick={() => handleRemoveMember(member.id, member.user_id)}
-                          >
-                            <UserMinus className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                    <div className="flex-1">
+                      <span className="text-xs font-semibold">{joinRequests.length} pending request{joinRequests.length > 1 ? 's' : ''}</span>
+                      <p className="text-[10px] text-muted-foreground">Tap to review and approve players</p>
+                    </div>
+                    <Badge className="bg-primary text-primary-foreground text-[10px]">{joinRequests.length}</Badge>
                   </div>
+                </div>
+              )}
 
-                  {!isLeader && (
-                    <Button
-                      variant="outline"
-                      className="w-full mt-6 text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl h-11"
-                      onClick={handleLeaveTeam}
+              {/* Team Members Section */}
+              <div 
+                className="mt-4 p-3 rounded-xl border border-border/30 bg-card/50"
+                style={{ backdropFilter: 'blur(8px)' }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-semibold flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" /> Team Members
+                  </p>
+                  <Badge variant="secondary" className="text-[9px]">{teamMembers.length}/{MAX_TEAM_MEMBERS}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {teamMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                        member.role === 'leader' 
+                          ? 'bg-gradient-to-r from-primary/10 to-transparent border border-primary/20' 
+                          : 'bg-muted/30 hover:bg-muted/50 border border-border/30'
+                      }`}
                     >
-                      <UserMinus className="h-4 w-4 mr-2" /> Leave Team
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+                      <Avatar className="h-10 w-10 border border-border/50">
+                        <AvatarImage src={member.profile?.avatar_url || ''} />
+                        <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                          {member.profile?.username?.charAt(0).toUpperCase() || 'P'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-xs truncate">
+                            {member.profile?.full_name || member.profile?.username || 'Player'}
+                          </p>
+                          {member.role === 'leader' && (
+                            <Crown className="h-3 w-3 text-warning shrink-0" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                            IGN: {member.profile?.in_game_name || 'N/A'}
+                          </Badge>
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                            UID: {member.profile?.game_uid || 'N/A'}
+                          </Badge>
+                        </div>
+                      </div>
+                      {isLeader && member.user_id !== user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg"
+                          onClick={() => handleRemoveMember(member.id, member.user_id)}
+                        >
+                          <UserMinus className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {!isLeader && (
+                  <Button
+                    variant="outline"
+                    className="w-full mt-4 text-destructive border-destructive/30 hover:bg-destructive/10 rounded-xl h-9 text-xs"
+                    onClick={handleLeaveTeam}
+                  >
+                    <UserMinus className="h-3.5 w-3.5 mr-1.5" /> Leave Team
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </TabsContent>
@@ -994,56 +1003,61 @@ const TeamPage = () => {
               </div>
             ) : (
               filteredOpenTeams.map((team) => (
-                <Card key={team.id} variant="premium" className="hover:border-primary/30 transition-all">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-gaming-purple/20 flex items-center justify-center">
-                        <Users className="h-7 w-7 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold truncate">{team.name}</h4>
-                          {team.requires_approval ? (
-                            <Badge variant="outline" className="text-[10px] text-warning border-warning/30 bg-warning/10">
-                              Approval
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] text-success border-success/30 bg-success/10">
-                              Direct
-                            </Badge>
-                          )}
-                        </div>
-                        {team.slogan && (
-                          <p className="text-xs text-muted-foreground italic truncate mt-0.5">"{team.slogan}"</p>
-                        )}
-                        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                          {team.game && (
-                            <Badge variant="secondary" className="text-[10px]">{team.game}</Badge>
-                          )}
-                          <span>{team.memberCount}/{MAX_TEAM_MEMBERS} members</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">Leader: {team.leaderName}</p>
-                      </div>
-                      <Button
-                        variant={pendingRequestsForTeam(team.id) ? "outline" : "default"}
-                        size="sm"
-                        onClick={() => handleJoinTeam(team)}
-                        disabled={!!myTeam || team.memberCount >= MAX_TEAM_MEMBERS || pendingRequestsForTeam(team.id)}
-                        className="rounded-xl h-10 shadow-md"
-                      >
-                        {team.memberCount >= MAX_TEAM_MEMBERS ? (
-                          'Full'
-                        ) : pendingRequestsForTeam(team.id) ? (
-                          <><Clock className="h-4 w-4 mr-1" /> Pending</>
-                        ) : team.requires_approval ? (
-                          <><Send className="h-4 w-4 mr-1" /> Request</>
-                        ) : (
-                          <><UserPlus className="h-4 w-4 mr-1" /> Join</>
-                        )}
-                      </Button>
+                <div 
+                  key={team.id} 
+                  className="p-3 rounded-xl border border-border/30 bg-card/50 hover:border-primary/30 transition-all"
+                  style={{
+                    backdropFilter: 'blur(8px)',
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                      <Users className="h-5 w-5 text-primary" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-semibold text-xs truncate">{team.name}</h4>
+                        {team.requires_approval ? (
+                          <Badge variant="outline" className="text-[8px] px-1 py-0 text-warning border-warning/30 bg-warning/10">
+                            Approval
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[8px] px-1 py-0 text-success border-success/30 bg-success/10">
+                            Direct
+                          </Badge>
+                        )}
+                      </div>
+                      {team.slogan && (
+                        <p className="text-[10px] text-muted-foreground italic truncate mt-0.5">"{team.slogan}"</p>
+                      )}
+                      <div className="flex items-center gap-1.5 mt-1 text-[10px] text-muted-foreground">
+                        {team.game && (
+                          <Badge variant="secondary" className="text-[8px] px-1 py-0">{team.game}</Badge>
+                        )}
+                        <span>{team.memberCount}/{MAX_TEAM_MEMBERS}</span>
+                        <span>•</span>
+                        <span>{team.leaderName}</span>
+                      </div>
+                    </div>
+                    <Button
+                      variant={pendingRequestsForTeam(team.id) ? "outline" : "default"}
+                      size="sm"
+                      onClick={() => handleJoinTeam(team)}
+                      disabled={!!myTeam || team.memberCount >= MAX_TEAM_MEMBERS || pendingRequestsForTeam(team.id)}
+                      className="rounded-lg h-8 text-[10px] px-2.5"
+                    >
+                      {team.memberCount >= MAX_TEAM_MEMBERS ? (
+                        'Full'
+                      ) : pendingRequestsForTeam(team.id) ? (
+                        <><Clock className="h-3 w-3 mr-1" /> Pending</>
+                      ) : team.requires_approval ? (
+                        <><Send className="h-3 w-3 mr-1" /> Request</>
+                      ) : (
+                        <><UserPlus className="h-3 w-3 mr-1" /> Join</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               ))
             )}
           </div>

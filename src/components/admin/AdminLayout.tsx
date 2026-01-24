@@ -29,6 +29,7 @@ import {
   Coins,
   Search,
   ScrollText,
+  Link2,
   Ban,
   Bot,
   Smartphone,
@@ -72,6 +73,7 @@ const menuItems: MenuItem[] = [
   { icon: ScrollText, label: 'Tournament Rules', path: '/admin/rules', superAdminOnly: true },
   { icon: Bot, label: 'Vyuha AI', path: '/admin/ai', superAdminOnly: true },
   { icon: Smartphone, label: 'Push Notifications', path: '/admin/push-notifications', permission: 'notifications:manage' },
+  { icon: Link2, label: 'Creator Invites', path: '/admin/creator-invites', superAdminOnly: true },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
 ];
