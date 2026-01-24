@@ -12,7 +12,8 @@ import {
   MessageCircle,
   ArrowLeft,
   Loader2,
-  ChevronRight
+  ChevronRight,
+  ScrollText
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -125,6 +126,13 @@ const OrganizerHub = () => {
       icon: Wallet,
       path: '/organizer/wallet',
       stat: `${stats.availableBalance} Dhana Available`
+    },
+    {
+      title: 'Tournament Rules',
+      description: 'Set platform or custom rules',
+      icon: ScrollText,
+      path: '/organizer/rules',
+      stat: 'Configure rules per game'
     },
     {
       title: 'Reports',
