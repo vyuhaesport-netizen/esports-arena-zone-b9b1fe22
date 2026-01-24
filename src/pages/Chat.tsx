@@ -559,7 +559,7 @@ const ChatPage = () => {
   const groupedMessages = groupMessagesByDate(messages);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
+    <div className="h-screen bg-background flex flex-col max-w-lg mx-auto overflow-hidden">
       {/* Header with back button - themed properly */}
       <header className="sticky top-0 z-40 bg-card border-b border-border px-3 py-2 flex items-center gap-2">
         <Button
@@ -578,15 +578,15 @@ const ChatPage = () => {
       </header>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 min-h-0 px-2 py-2" ref={scrollRef}>
+      <ScrollArea className="flex-1 min-h-0 px-3 py-3" ref={scrollRef}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-8">
-            <MessageCircle className="h-8 w-8 text-muted-foreground/30 mb-2" />
-            <p className="text-muted-foreground text-xs">No messages yet</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Start the conversation with your team!</p>
+            <MessageCircle className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <p className="text-muted-foreground text-sm">No messages yet</p>
+            <p className="text-xs text-muted-foreground mt-1">Start the conversation with your team!</p>
           </div>
         ) : (
-          <div className="space-y-3 pb-28">
+          <div className="space-y-3 pb-4">
             {groupedMessages.map((group) => (
               <div key={group.date}>
                 <div className="flex items-center gap-2 my-3">
@@ -725,16 +725,16 @@ const ChatPage = () => {
         )}
       </ScrollArea>
 
-      {/* Fixed Composer */}
-      <div className="fixed left-0 right-0 bottom-14 bg-card border-t border-border px-2 py-1.5 z-40 max-w-lg mx-auto">
+      {/* Bottom Composer - Sticky above bottom nav */}
+      <div className="sticky bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border px-3 py-3 z-50">
         {/* Typing Indicator */}
         {typingUsers.length > 0 && (
-          <div className="flex items-center gap-1 mb-1 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
             <div className="flex -space-x-1.5">
               {typingUsers.slice(0, 3).map((u) => (
-                <Avatar key={u.id} className="h-4 w-4 border border-background">
+                <Avatar key={u.id} className="h-5 w-5 border-2 border-background">
                   <AvatarImage src={u.avatar} />
-                  <AvatarFallback className="text-[7px]">{u.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-[8px]">{u.name.charAt(0)}</AvatarFallback>
                 </Avatar>
               ))}
             </div>
@@ -748,35 +748,35 @@ const ChatPage = () => {
 
         {/* Reply Preview */}
         {replyingTo && (
-          <div className="flex items-center justify-between bg-muted/60 rounded-lg px-2 py-1 mb-1.5">
-            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground truncate">
-              <Reply className="h-3 w-3 shrink-0" />
+          <div className="flex items-center justify-between bg-muted/60 rounded-lg px-3 py-2 mb-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+              <Reply className="h-4 w-4 shrink-0" />
               <span className="truncate">
                 Replying to {replyingTo.sender?.full_name || replyingTo.sender?.username}
               </span>
             </div>
-            <Button size="icon" variant="ghost" className="h-4 w-4" onClick={cancelReply}>
-              <X className="h-3 w-3" />
+            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={cancelReply}>
+              <X className="h-4 w-4" />
             </Button>
           </div>
         )}
 
-        <form onSubmit={handleSendMessage} className="flex items-center gap-1.5 pb-safe">
+        <form onSubmit={handleSendMessage} className="flex items-center gap-2">
           <Input
             ref={inputRef}
             value={newMessage}
             onChange={handleInputChange}
             placeholder="Type a message..."
-            className="flex-1 h-8 bg-muted/50 border-border/60 rounded-full px-3 text-xs"
+            className="flex-1 h-12 bg-muted/50 border-border/60 rounded-2xl px-4 text-sm"
             disabled={sending}
           />
           <Button
             type="submit"
             size="icon"
-            className="h-8 w-8 rounded-full shrink-0"
+            className="h-12 w-12 rounded-2xl shrink-0"
             disabled={sending || !newMessage.trim()}
           >
-            {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
           </Button>
         </form>
       </div>
