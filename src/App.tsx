@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { ThemeProvider } from "next-themes";
 import { useState, useEffect } from "react";
 import { supabase } from "./integrations/supabase/client";
 import SEOProvider from "./components/SEOProvider";
@@ -317,19 +318,21 @@ const AppRoutes = () => {
 const App = () => (
   <SEOProvider>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <NotificationProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <BanCheckWrapper>
-                <AppRoutes />
-              </BanCheckWrapper>
-            </BrowserRouter>
-          </TooltipProvider>
-        </NotificationProvider>
-      </AuthProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <AuthProvider>
+          <NotificationProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <BanCheckWrapper>
+                  <AppRoutes />
+                </BanCheckWrapper>
+              </BrowserRouter>
+            </TooltipProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   </SEOProvider>
 );

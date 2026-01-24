@@ -11,11 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2, BarChart3, Bell, MessageCircle } from 'lucide-react';
+import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2, BarChart3, Bell, MessageCircle, Moon, Sun } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarGallery } from '@/components/AvatarGallery';
 import PushNotificationSetup from '@/components/PushNotificationSetup';
+import ThemeToggle from '@/components/ThemeToggle';
 interface Profile {
   id: string;
   user_id: string;
@@ -500,6 +501,14 @@ const ProfilePage = () => {
       {/* Push Notification Card */}
       <div className="px-4 pt-4">
         <PushNotificationSetup variant="card" />
+      </div>
+
+      {/* Settings Section */}
+      <div className="px-4 pt-4">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Settings</h3>
+        <div className="bg-card rounded-xl border border-border shadow-sm divide-y divide-border overflow-hidden">
+          <ThemeToggle variant="full" />
+        </div>
       </div>
 
       {/* More Section */}
