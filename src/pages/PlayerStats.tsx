@@ -14,10 +14,9 @@ import {
   Gamepad2, Gift, ChevronRight, Users, Trophy, Calendar,
   BarChart3, PieChart, Activity, Swords, Star
 } from 'lucide-react';
-import vyuhaLogo from '@/assets/vyuha-logo.png';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, Legend
+  PieChart as RechartsPieChart, Pie, Cell, Legend
 } from 'recharts';
 
 interface UserStats {
@@ -55,6 +54,7 @@ const PlayerStatsPage = () => {
   const [performanceData, setPerformanceData] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [profile, setProfile] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('overview');
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -74,62 +74,16 @@ const PlayerStatsPage = () => {
     if (!user) return;
     
     try {
-      // Parallel fetch all data
       const [statsResult, profileResult, registrationsResult, teamResult] = await Promise.all([
-        supabase
-          .from('user_stats')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('profiles')
-          .select('username, full_name, avatar_url, preferred_game, created_at')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('tournament_registrations')
-          .select(`
-            id,
-            registered_at,
-            status,
-            team_members,
-            tournaments (
-              id,
-              title,
-              game,
-              start_date,
-              status,
-              winner_user_id,
-              joined_users,
-              prize_distribution
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('registered_at', { ascending: false })
-          .limit(20),
-        supabase
-          .from('player_team_members')
-          .select(`
-            team_id,
-            player_teams (
-              id,
-              name,
-              leader_id,
-              game
-            )
-          `)
-          .eq('user_id', user.id)
+        supabase.from('user_stats').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.from('profiles').select('username, full_name, avatar_url, preferred_game, created_at').eq('user_id', user.id).maybeSingle(),
+        supabase.from('tournament_registrations').select(`id, registered_at, status, team_members, tournaments (id, title, game, start_date, status, winner_user_id, joined_users, prize_distribution)`).eq('user_id', user.id).order('registered_at', { ascending: false }).limit(20),
+        supabase.from('player_team_members').select(`team_id, player_teams (id, name, leader_id, game)`).eq('user_id', user.id)
       ]);
 
-      if (statsResult.data) {
-        setUserStats(statsResult.data);
-      }
+      if (statsResult.data) setUserStats(statsResult.data);
+      if (profileResult.data) setProfile(profileResult.data);
 
-      if (profileResult.data) {
-        setProfile(profileResult.data);
-      }
-
-      // Process match history - ONLY completed tournaments
       if (registrationsResult.data) {
         const history: MatchHistory[] = registrationsResult.data
           .filter((reg: any) => reg.tournaments?.status === 'completed')
@@ -141,7 +95,6 @@ const PlayerStatsPage = () => {
             if (tournament?.winner_user_id === user.id) {
               position = 1;
             } else if (tournament?.joined_users?.includes(user.id)) {
-              // Could derive position from prize_distribution if available
               const joinedIndex = tournament.joined_users.indexOf(user.id);
               if (joinedIndex < 3) position = joinedIndex + 1;
             }
@@ -158,7 +111,6 @@ const PlayerStatsPage = () => {
           });
         setMatchHistory(history);
 
-        // Generate performance data (last 6 months)
         const monthlyData: any = {};
         const now = new Date();
         for (let i = 5; i >= 0; i--) {
@@ -180,34 +132,21 @@ const PlayerStatsPage = () => {
         setPerformanceData(Object.values(monthlyData));
       }
 
-      // Process team data - get frequent teammates
       if (teamResult.data && teamResult.data.length > 0) {
         const teamIds = teamResult.data.map((t: any) => t.team_id);
         
-        const { data: teammates } = await supabase
-          .from('player_team_members')
-          .select('user_id')
-          .in('team_id', teamIds)
-          .neq('user_id', user.id);
+        const { data: teammates } = await supabase.from('player_team_members').select('user_id').in('team_id', teamIds).neq('user_id', user.id);
 
         if (teammates) {
-          // Count frequency of each teammate
           const teammateCount: Record<string, number> = {};
           teammates.forEach((t: any) => {
             teammateCount[t.user_id] = (teammateCount[t.user_id] || 0) + 1;
           });
 
-          // Get top 5 teammates
-          const topTeammateIds = Object.entries(teammateCount)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 5)
-            .map(([id]) => id);
+          const topTeammateIds = Object.entries(teammateCount).sort(([,a], [,b]) => b - a).slice(0, 5).map(([id]) => id);
 
           if (topTeammateIds.length > 0) {
-            const { data: teammateProfiles } = await supabase
-              .from('profiles')
-              .select('user_id, username, avatar_url')
-              .in('user_id', topTeammateIds);
+            const { data: teammateProfiles } = await supabase.from('profiles').select('user_id, username, avatar_url').in('user_id', topTeammateIds);
 
             if (teammateProfiles) {
               setTeamMembers(
@@ -231,9 +170,7 @@ const PlayerStatsPage = () => {
 
   const calculatePoints = () => {
     if (!userStats) return 0;
-    return (userStats.first_place_count * 10) + 
-           (userStats.second_place_count * 9) + 
-           (userStats.third_place_count * 8);
+    return (userStats.first_place_count * 10) + (userStats.second_place_count * 9) + (userStats.third_place_count * 8);
   };
 
   const getPlayerRank = (points: number): { name: string; color: string } => {
@@ -253,11 +190,10 @@ const PlayerStatsPage = () => {
   };
 
   const pieData = userStats ? [
-    { name: '1st Place', value: userStats.first_place_count, color: '#f59e0b' },
-    { name: '2nd Place', value: userStats.second_place_count, color: '#9ca3af' },
-    { name: '3rd Place', value: userStats.third_place_count, color: '#d97706' },
-    { name: 'Other', value: Math.max(0, (userStats.tournament_participations || 0) - 
-      userStats.first_place_count - userStats.second_place_count - userStats.third_place_count), color: '#3b82f6' },
+    { name: '1st', value: userStats.first_place_count, color: '#f59e0b' },
+    { name: '2nd', value: userStats.second_place_count, color: '#9ca3af' },
+    { name: '3rd', value: userStats.third_place_count, color: '#d97706' },
+    { name: 'Other', value: Math.max(0, (userStats.tournament_participations || 0) - userStats.first_place_count - userStats.second_place_count - userStats.third_place_count), color: '#3b82f6' },
   ].filter(d => d.value > 0) : [];
 
   if (authLoading || loading) {
@@ -274,17 +210,54 @@ const PlayerStatsPage = () => {
   const rank = getPlayerRank(totalPoints);
   const winRate = getWinRate();
 
+  // Glass Card Component
+  const GlassCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+    <div 
+      className={`rounded-xl border border-white/10 p-3 ${className}`}
+      style={{
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1)',
+      }}
+    >
+      {children}
+    </div>
+  );
+
+  // Glass Tab Component
+  const GlassTab = ({ label, value, isActive, onClick, icon: Icon }: { label: string; value: string; isActive: boolean; onClick: () => void; icon: React.ComponentType<{ className?: string }> }) => (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-medium transition-all duration-300
+        ${isActive ? 'bg-white/20 text-white shadow-lg border border-white/30' : 'text-muted-foreground hover:bg-white/10'}
+      `}
+      style={isActive ? { boxShadow: '0 4px 16px rgba(139, 92, 246, 0.3)' } : {}}
+    >
+      <Icon className={`h-3 w-3 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+      {label}
+    </button>
+  );
+
   return (
     <AppLayout title="Player Stats" showBack>
-      <div className="px-3 py-4 space-y-4 pb-24 max-w-lg mx-auto">
-        {/* Profile Hero */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 p-4">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
+      <div className="px-3 py-4 space-y-3 pb-24 max-w-lg mx-auto">
+        {/* Profile Hero - Glass Effect */}
+        <div 
+          className="relative overflow-hidden rounded-xl p-4"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(59, 130, 246, 0.1) 50%, rgba(16, 185, 129, 0.1) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
+          }}
+        >
+          <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
           
           <div className="relative flex items-center gap-3">
             <div className="relative shrink-0">
               <div className="absolute inset-0 bg-gradient-to-r from-primary to-orange-500 rounded-full blur-md opacity-50" />
-              <Avatar className="h-16 w-16 border-2 border-white/20 relative">
+              <Avatar className="h-14 w-14 border-2 border-white/20 relative">
                 <AvatarImage src={profile?.avatar_url} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-orange-500 text-white text-lg">
                   {profile?.username?.charAt(0).toUpperCase() || 'P'}
@@ -293,15 +266,15 @@ const PlayerStatsPage = () => {
             </div>
             
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-bold text-white truncate">{profile?.username || 'Player'}</h1>
-              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+              <h1 className="text-base font-bold text-white truncate">{profile?.username || 'Player'}</h1>
+              <div className="flex flex-wrap items-center gap-1 mt-0.5">
                 {profile?.preferred_game && (
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5">
-                    <Gamepad2 className="h-2.5 w-2.5 mr-0.5" />
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-white/10 border-white/20">
+                    <Gamepad2 className="h-2 w-2 mr-0.5" />
                     {profile.preferred_game}
                   </Badge>
                 )}
-                <Badge className={`bg-gradient-to-r ${rank.color} text-white text-[10px] px-1.5 py-0.5 border-0`}>
+                <Badge className={`bg-gradient-to-r ${rank.color} text-white text-[9px] px-1.5 py-0 h-4 border-0`}>
                   {rank.name}
                 </Badge>
               </div>
@@ -309,198 +282,148 @@ const PlayerStatsPage = () => {
 
             <div className="text-right shrink-0">
               <p className="text-2xl font-bold text-white">{totalPoints}</p>
-              <p className="text-[10px] text-white/60">Stats Points</p>
+              <p className="text-[9px] text-white/60">Stats Points</p>
             </div>
           </div>
         </div>
 
-        {/* Quick Stats Grid */}
+        {/* Quick Stats Grid - Glass Cards */}
         <div className="grid grid-cols-4 gap-2">
-          <Card className="text-center p-2">
-            <Crown className="h-4 w-4 text-yellow-500 mx-auto mb-0.5" />
-            <p className="text-base font-bold">{userStats?.first_place_count || 0}</p>
-            <p className="text-[9px] text-muted-foreground leading-tight">1st</p>
-          </Card>
-          <Card className="text-center p-2">
-            <Medal className="h-4 w-4 text-gray-400 mx-auto mb-0.5" />
-            <p className="text-base font-bold">{userStats?.second_place_count || 0}</p>
-            <p className="text-[9px] text-muted-foreground leading-tight">2nd</p>
-          </Card>
-          <Card className="text-center p-2">
-            <Award className="h-4 w-4 text-amber-600 mx-auto mb-0.5" />
-            <p className="text-base font-bold">{userStats?.third_place_count || 0}</p>
-            <p className="text-[9px] text-muted-foreground leading-tight">3rd</p>
-          </Card>
-          <Card className="text-center p-2">
-            <Trophy className="h-4 w-4 text-primary mx-auto mb-0.5" />
-            <p className="text-base font-bold">{userStats?.tournament_participations || 0}</p>
-            <p className="text-[9px] text-muted-foreground leading-tight">Played</p>
-          </Card>
+          {[
+            { icon: Crown, value: userStats?.first_place_count || 0, label: '1st', color: 'text-yellow-500' },
+            { icon: Medal, value: userStats?.second_place_count || 0, label: '2nd', color: 'text-gray-400' },
+            { icon: Award, value: userStats?.third_place_count || 0, label: '3rd', color: 'text-amber-600' },
+            { icon: Trophy, value: userStats?.tournament_participations || 0, label: 'Played', color: 'text-primary' },
+          ].map((stat, idx) => (
+            <GlassCard key={idx} className="text-center">
+              <stat.icon className={`h-3.5 w-3.5 ${stat.color} mx-auto mb-0.5`} />
+              <p className="text-sm font-bold">{stat.value}</p>
+              <p className="text-[8px] text-muted-foreground">{stat.label}</p>
+            </GlassCard>
+          ))}
         </div>
 
-        {/* Claim Bonus CTA */}
+        {/* Claim Bonus CTA - Glass */}
         <Link to="/claim-bonus">
-          <Card className="bg-gradient-to-r from-primary/10 to-orange-500/10 border-primary/30 hover:border-primary/50 transition-colors cursor-pointer">
-            <CardContent className="p-3 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+          <GlassCard className="hover:border-primary/30 transition-colors cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
                   <Gift className="h-4 w-4 text-primary" />
                 </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm">Claim Your Rewards</p>
-                  <p className="text-[11px] text-muted-foreground">Milestone bonuses available!</p>
+                <div>
+                  <p className="font-semibold text-xs">Claim Your Rewards</p>
+                  <p className="text-[10px] text-muted-foreground">Milestone bonuses available!</p>
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-            </CardContent>
-          </Card>
+            </div>
+          </GlassCard>
         </Link>
 
-        {/* Analytics Tabs */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 h-9">
-            <TabsTrigger value="overview" className="text-[11px] px-2 gap-1">
-              <BarChart3 className="h-3 w-3" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="history" className="text-[11px] px-2 gap-1">
-              <Calendar className="h-3 w-3" />
-              History
-            </TabsTrigger>
-            <TabsTrigger value="team" className="text-[11px] px-2 gap-1">
-              <Users className="h-3 w-3" />
-              Team
-            </TabsTrigger>
-          </TabsList>
+        {/* Glass Tabs */}
+        <div 
+          className="p-1 rounded-xl"
+          style={{
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}
+        >
+          <div className="flex gap-1">
+            <GlassTab label="Overview" value="overview" isActive={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={BarChart3} />
+            <GlassTab label="History" value="history" isActive={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={Calendar} />
+            <GlassTab label="Team" value="team" isActive={activeTab === 'team'} onClick={() => setActiveTab('team')} icon={Users} />
+          </div>
+        </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-3 mt-3">
-            {/* Win Rate Card */}
-            <Card>
-              <CardHeader className="pb-1.5 px-3 pt-3">
-                <CardTitle className="text-xs flex items-center gap-1.5">
+        {/* Tab Contents */}
+        <div className="animate-fade-in">
+          {activeTab === 'overview' && (
+            <div className="space-y-3">
+              {/* Win Rate Card */}
+              <GlassCard>
+                <div className="flex items-center gap-1.5 mb-2">
                   <Activity className="h-3.5 w-3.5 text-primary" />
-                  Win Rate
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
+                  <span className="text-xs font-semibold">Win Rate</span>
+                </div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-2xl font-bold">{winRate}%</span>
-                  <Badge variant={winRate >= 50 ? 'default' : 'secondary'} className="text-[10px]">
+                  <span className="text-xl font-bold">{winRate}%</span>
+                  <Badge variant={winRate >= 50 ? 'default' : 'secondary'} className="text-[9px]">
                     {winRate >= 50 ? 'Above Average' : 'Keep Going!'}
                   </Badge>
                 </div>
                 <Progress value={winRate} className="h-1.5" />
-              </CardContent>
-            </Card>
+              </GlassCard>
 
-            {/* Rank Distribution Pie Chart */}
-            <Card>
-              <CardHeader className="pb-1.5 px-3 pt-3">
-                <CardTitle className="text-xs flex items-center gap-1.5">
+              {/* Rank Distribution */}
+              <GlassCard>
+                <div className="flex items-center gap-1.5 mb-2">
                   <PieChart className="h-3.5 w-3.5 text-primary" />
-                  Rank Distribution
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
+                  <span className="text-xs font-semibold">Rank Distribution</span>
+                </div>
                 {pieData.length > 0 ? (
-                  <div className="h-40">
+                  <div className="h-36">
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="45%"
-                          innerRadius={30}
-                          outerRadius={55}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
+                        <Pie data={pieData} cx="50%" cy="45%" innerRadius={25} outerRadius={50} paddingAngle={2} dataKey="value">
                           {pieData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip 
-                          formatter={(value: number) => [`${value} times`, '']}
-                          contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: '11px' }}
-                        />
-                        <Legend 
-                          verticalAlign="bottom" 
-                          height={28}
-                          formatter={(value) => <span className="text-[10px]">{value}</span>}
-                        />
+                        <Tooltip formatter={(value: number) => [`${value} times`, '']} contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: '10px' }} />
+                        <Legend verticalAlign="bottom" height={24} formatter={(value) => <span className="text-[9px]">{value}</span>} />
                       </RechartsPieChart>
                     </ResponsiveContainer>
                   </div>
                 ) : (
-                  <div className="h-32 flex items-center justify-center text-muted-foreground text-xs">
-                    Play tournaments to see your rank distribution!
+                  <div className="h-28 flex items-center justify-center text-muted-foreground text-xs">
+                    Play tournaments to see stats!
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </GlassCard>
 
-            {/* Performance Timeline */}
-            <Card>
-              <CardHeader className="pb-1.5 px-3 pt-3">
-                <CardTitle className="text-xs flex items-center gap-1.5">
+              {/* Performance Timeline */}
+              <GlassCard>
+                <div className="flex items-center gap-1.5 mb-2">
                   <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                  Performance Timeline
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
-                <div className="h-40">
+                  <span className="text-xs font-semibold">Performance Timeline</span>
+                </div>
+                <div className="h-36">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={performanceData} margin={{ left: -20, right: 5, top: 5, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="month" tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" />
-                      <YAxis tick={{ fontSize: 9 }} stroke="hsl(var(--muted-foreground))" width={30} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: '11px' }}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="participated" 
-                        stackId="1"
-                        stroke="hsl(var(--primary))" 
-                        fill="hsl(var(--primary)/0.3)" 
-                        name="Participated"
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="wins" 
-                        stackId="2"
-                        stroke="#f59e0b" 
-                        fill="#f59e0b33" 
-                        name="Wins"
-                      />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                      <XAxis dataKey="month" tick={{ fontSize: 9 }} stroke="rgba(255,255,255,0.5)" />
+                      <YAxis tick={{ fontSize: 9 }} stroke="rgba(255,255,255,0.5)" width={30} />
+                      <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', fontSize: '10px' }} />
+                      <Area type="monotone" dataKey="participated" stackId="1" stroke="hsl(var(--primary))" fill="hsl(var(--primary)/0.3)" name="Participated" />
+                      <Area type="monotone" dataKey="wins" stackId="2" stroke="#f59e0b" fill="#f59e0b33" name="Wins" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </GlassCard>
+            </div>
+          )}
 
-          {/* History Tab */}
-          <TabsContent value="history" className="space-y-2 mt-3">
-            {matchHistory.length > 0 ? (
-              matchHistory.map((match) => (
-                <Card key={match.id} className="overflow-hidden">
-                  <CardContent className="p-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+          {activeTab === 'history' && (
+            <div className="space-y-2">
+              {matchHistory.length > 0 ? (
+                matchHistory.map((match) => (
+                  <GlassCard key={match.id}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         match.position === 1 ? 'bg-yellow-500/20' :
                         match.position === 2 ? 'bg-gray-400/20' :
-                        match.position === 3 ? 'bg-amber-600/20' : 'bg-muted'
+                        match.position === 3 ? 'bg-amber-600/20' : 'bg-white/5'
                       }`}>
-                        {match.position === 1 ? <Crown className="h-4 w-4 text-yellow-500" /> :
-                         match.position === 2 ? <Medal className="h-4 w-4 text-gray-400" /> :
-                         match.position === 3 ? <Award className="h-4 w-4 text-amber-600" /> :
-                         <Swords className="h-4 w-4 text-muted-foreground" />}
+                        {match.position === 1 ? <Crown className="h-3.5 w-3.5 text-yellow-500" /> :
+                         match.position === 2 ? <Medal className="h-3.5 w-3.5 text-gray-400" /> :
+                         match.position === 3 ? <Award className="h-3.5 w-3.5 text-amber-600" /> :
+                         <Swords className="h-3.5 w-3.5 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{match.tournament_title}</p>
-                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <p className="font-medium text-xs truncate">{match.tournament_title}</p>
+                        <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
                           <Gamepad2 className="h-2.5 w-2.5" />
                           <span className="truncate">{match.game}</span>
                           <span>•</span>
@@ -509,95 +432,94 @@ const PlayerStatsPage = () => {
                       </div>
                       <div className="shrink-0">
                         {match.position ? (
-                          <Badge variant={match.position <= 3 ? 'default' : 'secondary'} className="text-[10px] px-1.5">
+                          <Badge variant={match.position <= 3 ? 'default' : 'secondary'} className="text-[9px] px-1.5">
                             #{match.position}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-[10px] px-1.5">
+                          <Badge variant="outline" className="text-[9px] px-1.5 bg-white/5">
                             {match.status}
                           </Badge>
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <Card>
-                <CardContent className="py-8 px-4 text-center">
-                  <Swords className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                  <p className="text-muted-foreground text-sm">No match history yet</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">Join tournaments to build your history!</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
+                  </GlassCard>
+                ))
+              ) : (
+                <GlassCard className="py-6 text-center">
+                  <Swords className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-xs">No match history yet</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Join tournaments to build your history!</p>
+                </GlassCard>
+              )}
+            </div>
+          )}
 
-          {/* Team Tab */}
-          <TabsContent value="team" className="space-y-3 mt-3">
-            {teamMembers.length > 0 ? (
-              <Card>
-                <CardHeader className="pb-1.5 px-3 pt-3">
-                  <CardTitle className="text-xs flex items-center gap-1.5">
+          {activeTab === 'team' && (
+            <div className="space-y-3">
+              {teamMembers.length > 0 ? (
+                <GlassCard>
+                  <div className="flex items-center gap-1.5 mb-3">
                     <Star className="h-3.5 w-3.5 text-primary" />
-                    Best Teammates
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 space-y-2">
-                  {teamMembers.map((member, index) => (
-                    <div key={member.user_id} className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-muted-foreground w-4 shrink-0">
-                        {index + 1}
-                      </span>
-                      <Avatar className="h-8 w-8 shrink-0">
-                        <AvatarImage src={member.avatar_url || ''} />
-                        <AvatarFallback className="text-xs">{member.username.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{member.username}</p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {member.games_together} games together
-                        </p>
+                    <span className="text-xs font-semibold">Best Teammates</span>
+                  </div>
+                  <div className="space-y-2">
+                    {teamMembers.map((member, index) => (
+                      <div key={member.user_id} className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+                        <span className="text-[10px] font-bold text-muted-foreground w-4 shrink-0">
+                          {index + 1}
+                        </span>
+                        <Avatar className="h-7 w-7 shrink-0">
+                          <AvatarImage src={member.avatar_url || ''} />
+                          <AvatarFallback className="text-[10px]">{member.username.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-xs truncate">{member.username}</p>
+                          <p className="text-[9px] text-muted-foreground">
+                            {member.games_together} games together
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] px-1.5 shrink-0 bg-white/5">
+                          <Users className="h-2 w-2 mr-0.5" />
+                          Mate
+                        </Badge>
                       </div>
-                      <Badge variant="outline" className="text-[10px] px-1.5 shrink-0">
-                        <Users className="h-2.5 w-2.5 mr-0.5" />
-                        Mate
-                      </Badge>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardContent className="py-8 px-4 text-center">
-                  <Users className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
-                  <p className="text-muted-foreground text-sm">No team data yet</p>
-                  <p className="text-[11px] text-muted-foreground mt-1">Join or create a team to see your best teammates!</p>
-                  <Button variant="outline" size="sm" className="mt-3 text-xs h-8" asChild>
-                    <Link to="/team">
-                      Browse Teams
-                    </Link>
+                    ))}
+                  </div>
+                </GlassCard>
+              ) : (
+                <GlassCard className="py-6 text-center">
+                  <Users className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                  <p className="text-muted-foreground text-xs">No team data yet</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Join or create a team!</p>
+                  <Button variant="outline" size="sm" className="mt-3 text-[10px] h-7" asChild>
+                    <Link to="/team">Browse Teams</Link>
                   </Button>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+                </GlassCard>
+              )}
+            </div>
+          )}
+        </div>
 
-        {/* Total Earnings */}
-        <Card className="bg-gradient-to-r from-success/10 to-emerald-500/10 border-success/30">
-          <CardContent className="p-3 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center shrink-0">
-              <TrendingUp className="h-5 w-5 text-success" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] text-muted-foreground">Total Earnings</p>
-              <p className="text-xl font-bold text-success">
-                ₹{(userStats?.total_earnings || 0).toLocaleString()}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Total Earnings - Glass */}
+        <div 
+          className="rounded-xl p-3 flex items-center gap-3"
+          style={{
+            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
+            boxShadow: '0 4px 24px rgba(16, 185, 129, 0.15)',
+          }}
+        >
+          <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+            <TrendingUp className="h-5 w-5 text-emerald-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[9px] text-muted-foreground">Total Earnings</p>
+            <p className="text-xl font-bold text-emerald-500">
+              ₹{(userStats?.total_earnings || 0).toLocaleString()}
+            </p>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

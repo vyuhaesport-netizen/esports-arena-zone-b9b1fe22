@@ -738,7 +738,7 @@ const MyMatch = () => {
     );
   }
 
-  // Apple Glass Tab Component
+  // Apple Glass Tab Component - Rectangle Shape
   const GlassTab = ({ value, label, count, isActive, onClick, icon: Icon, accentColor }: {
     value: string;
     label: string;
@@ -751,48 +751,48 @@ const MyMatch = () => {
     <button
       onClick={onClick}
       className={`
-        relative flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-xl transition-all duration-300 ease-out min-w-0
+        relative flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg transition-all duration-300 ease-out min-w-0
         ${isActive 
-          ? `bg-white/20 backdrop-blur-xl shadow-lg shadow-${accentColor}/20 border border-white/30 scale-105` 
+          ? 'bg-white/20 backdrop-blur-xl shadow-lg border border-white/30 scale-[1.02]' 
           : 'bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20'
         }
       `}
       style={{
-        boxShadow: isActive ? `0 8px 32px -4px rgba(139, 92, 246, 0.25), inset 0 1px 0 rgba(255,255,255,0.2)` : 'none',
+        boxShadow: isActive ? `0 8px 32px -4px ${accentColor}40, inset 0 1px 0 rgba(255,255,255,0.2)` : 'none',
       }}
     >
       {/* Glow effect for active tab */}
       {isActive && (
         <div 
-          className="absolute inset-0 rounded-xl opacity-40 blur-sm"
+          className="absolute inset-0 rounded-lg opacity-40 blur-sm"
           style={{ background: `linear-gradient(135deg, ${accentColor}40, transparent 60%)` }}
         />
       )}
       
       {/* Icon */}
-      <div className={`relative z-10 p-1.5 rounded-lg transition-all duration-300 ${isActive ? 'bg-white/20' : 'bg-white/5'}`}>
-        <Icon className={`h-3.5 w-3.5 transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+      <div className={`relative z-10 p-1.5 rounded-md transition-all duration-300 ${isActive ? 'bg-white/20' : 'bg-white/5'}`}>
+        <Icon className={`h-3 w-3 transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
       </div>
       
-      {/* Label */}
-      <span className={`relative z-10 text-[9px] font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`}>
-        {label}
-      </span>
-      
-      {/* Count Badge */}
-      <div className={`
-        relative z-10 min-w-[18px] h-4 px-1.5 rounded-full flex items-center justify-center text-[8px] font-bold transition-all duration-300
-        ${isActive 
-          ? 'bg-white/30 text-white shadow-inner' 
-          : 'bg-white/10 text-muted-foreground'
-        }
-      `}>
-        {count}
+      {/* Label & Count in a row */}
+      <div className="relative z-10 flex items-center gap-1.5">
+        <span className={`text-[10px] font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`}>
+          {label}
+        </span>
+        <div className={`
+          min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[8px] font-bold transition-all duration-300
+          ${isActive 
+            ? 'bg-white/30 text-white shadow-inner' 
+            : 'bg-white/10 text-muted-foreground'
+          }
+        `}>
+          {count}
+        </div>
       </div>
       
-      {/* Active indicator dot */}
+      {/* Active indicator bar */}
       {isActive && (
-        <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white shadow-lg" />
+        <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-white shadow-lg" />
       )}
     </button>
   );
@@ -828,8 +828,8 @@ const MyMatch = () => {
               }}
             />
             
-            {/* Tabs Grid */}
-            <div className="relative z-10 grid grid-cols-4 gap-1">
+            {/* Tabs Grid - Rectangle layout */}
+            <div className="relative z-10 grid grid-cols-2 gap-1.5">
               {tabs.map((tab) => (
                 <GlassTab
                   key={tab.value}

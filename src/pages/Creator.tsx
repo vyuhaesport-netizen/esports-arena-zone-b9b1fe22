@@ -55,11 +55,20 @@ interface Tournament {
   youtube_link: string | null;
   instagram_link: string | null;
   is_giveaway: boolean | null;
+  rules?: string | null;
 }
 
 interface Profile {
   preferred_game: string | null;
   wallet_balance: number | null;
+}
+
+interface AdminRule {
+  id: string;
+  title: string;
+  content: string;
+  game: string;
+  mode?: string;
 }
 
 const Creator = () => {
@@ -70,10 +79,13 @@ const Creator = () => {
   const [userProfile, setUserProfile] = useState<Profile | null>(null);
   const [prizeDrawer, setPrizeDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [shareDialog, setShareDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
+  const [rulesDrawer, setRulesDrawer] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [activeMode, setActiveMode] = useState<'solo' | 'duo' | 'squad'>('solo');
   const [exitDialog, setExitDialog] = useState<{ open: boolean; tournament: Tournament | null }>({ open: false, tournament: null });
   const [exiting, setExiting] = useState(false);
   const [showGuestBanner, setShowGuestBanner] = useState(true);
+  const [adminRules, setAdminRules] = useState<AdminRule[]>([]);
+  const [selectedRulesGame, setSelectedRulesGame] = useState<'bgmi' | 'freefire'>('bgmi');
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -81,6 +93,7 @@ const Creator = () => {
 
   useEffect(() => {
     fetchTournaments();
+    fetchAdminRules();
     if (user) {
       fetchUserRegistrations();
       fetchUserProfile();
@@ -109,6 +122,27 @@ const Creator = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
+
+  const fetchAdminRules = async () => {
+    try {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('setting_value')
+        .eq('setting_key', 'tournament_rules_config')
+        .single();
+      
+      if (data?.setting_value) {
+        try {
+          const parsed = JSON.parse(data.setting_value);
+          setAdminRules(Array.isArray(parsed) ? parsed : []);
+        } catch {
+          setAdminRules([]);
+        }
+      }
+    } catch (error) {
+      // No rules configured yet
+    }
+  };
 
   const fetchUserProfile = async () => {
     if (!user) return;
@@ -482,6 +516,10 @@ const Creator = () => {
                     onSwipeJoin={() => handleRegister(tournament)}
                     onPrizeClick={() => setPrizeDrawer({ open: true, tournament })}
                     onShareClick={() => setShareDialog({ open: true, tournament })}
+                    onRulesClick={() => {
+                      setSelectedRulesGame(tournament.game.toLowerCase().includes('bgmi') || tournament.game.toLowerCase().includes('pubg') ? 'bgmi' : 'freefire');
+                      setRulesDrawer({ open: true, tournament });
+                    }}
                     isLoading={registering === tournament.id}
                     variant="creator"
                     joinDisabled={!canJoin}
@@ -574,6 +612,153 @@ const Creator = () => {
                 <p>Prize distribution not set</p>
                 <p className="text-xs mt-2 bg-amber-500/10 p-2 rounded">
                   ⚠️ Note: Prize amounts may be adjusted based on actual participants.
+                </p>
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Rules Drawer with Game Toggle */}
+      <Drawer open={rulesDrawer.open} onOpenChange={(open) => setRulesDrawer({ open, tournament: rulesDrawer.tournament })}>
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader>
+            <DrawerTitle className="flex items-center gap-2">
+              <span>Tournament Rules</span>
+            </DrawerTitle>
+          </DrawerHeader>
+          <div className="p-4 pb-8 overflow-y-auto">
+            {/* Game Toggle for BGMI / Free Fire */}
+            <div className="flex items-center justify-center gap-1 p-1 bg-muted/50 rounded-lg mb-4">
+              <button
+                onClick={() => setSelectedRulesGame('bgmi')}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all ${
+                  selectedRulesGame === 'bgmi'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                🎮 BGMI / PUBG
+              </button>
+              <button
+                onClick={() => setSelectedRulesGame('freefire')}
+                className={`flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all ${
+                  selectedRulesGame === 'freefire'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                🔥 Free Fire
+              </button>
+            </div>
+
+            {/* Mode-specific rules info */}
+            {rulesDrawer.tournament?.tournament_mode && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
+                <p className="text-xs font-medium text-primary">
+                  📋 Mode: {rulesDrawer.tournament.tournament_mode.toUpperCase()}
+                </p>
+              </div>
+            )}
+
+            {/* Tournament specific rules first */}
+            {rulesDrawer.tournament?.rules && (
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
+                <h4 className="font-medium text-sm mb-2 text-primary">Tournament Specific Rules</h4>
+                <div className="whitespace-pre-wrap text-sm text-muted-foreground">
+                  {rulesDrawer.tournament.rules}
+                </div>
+              </div>
+            )}
+            
+            {/* Game-specific rules from admin */}
+            {adminRules.length > 0 ? (
+              <div className="space-y-4">
+                {adminRules
+                  .filter(rule => {
+                    const ruleGame = rule.game?.toLowerCase() || '';
+                    if (selectedRulesGame === 'bgmi') {
+                      return ruleGame.includes('bgmi') || ruleGame.includes('pubg') || !ruleGame;
+                    } else {
+                      return ruleGame.includes('free fire') || ruleGame.includes('freefire') || !ruleGame;
+                    }
+                  })
+                  .filter(rule => {
+                    // Filter by mode if specified
+                    if (!rule.mode) return true;
+                    return rule.mode.toLowerCase() === rulesDrawer.tournament?.tournament_mode?.toLowerCase();
+                  })
+                  .map((rule) => (
+                    <div key={rule.id} className="bg-muted/50 rounded-lg p-4">
+                      <h4 className="font-medium text-sm mb-2">{rule.title}</h4>
+                      <div className="whitespace-pre-wrap text-sm text-muted-foreground">
+                        {rule.content}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            ) : !rulesDrawer.tournament?.rules && (
+              <div className="space-y-3">
+                {/* Default rules based on selected game */}
+                {selectedRulesGame === 'bgmi' ? (
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <h4 className="font-medium text-sm">BGMI Rules</h4>
+                    <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+                      <li>Join the room 5-10 minutes before match time</li>
+                      <li>No hacks, mods, or cheating tools allowed</li>
+                      <li>Screen recording may be required for proof</li>
+                      <li>iPads are NOT allowed (mobile only)</li>
+                      <li>Emulator players will be disqualified</li>
+                      <li>Room ID & Password shared 10 mins before start</li>
+                      <li>Late entry may result in disqualification</li>
+                      <li>Follow fair play guidelines</li>
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <h4 className="font-medium text-sm">Free Fire Rules</h4>
+                    <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+                      <li>Join the custom room 5-10 minutes before match</li>
+                      <li>No hacks, mods, or script usage allowed</li>
+                      <li>Screen recording required for verification</li>
+                      <li>Character skills must follow tournament guidelines</li>
+                      <li>No teaming with enemies</li>
+                      <li>Room details shared 10 mins before start</li>
+                      <li>Network issues are player's responsibility</li>
+                      <li>Admin decision is final</li>
+                    </ul>
+                  </div>
+                )}
+                
+                {/* Mode-specific additional rules */}
+                {rulesDrawer.tournament?.tournament_mode && rulesDrawer.tournament.tournament_mode !== 'solo' && (
+                  <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
+                    <h4 className="font-medium text-sm mb-2 text-orange-600">
+                      {rulesDrawer.tournament.tournament_mode.toUpperCase()} Mode Rules
+                    </h4>
+                    <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
+                      {rulesDrawer.tournament.tournament_mode === 'duo' ? (
+                        <>
+                          <li>Both team members must join the room</li>
+                          <li>Team leader is responsible for communication</li>
+                          <li>If one member disconnects, team continues</li>
+                          <li>Entry fee charged per player</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>All 4 squad members must join the room</li>
+                          <li>Squad leader handles room entry</li>
+                          <li>Team ranking based on squad performance</li>
+                          <li>Entry fee charged per player</li>
+                          <li>No team changes after registration</li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  Additional rules may apply. Contact organizer for details.
                 </p>
               </div>
             )}
