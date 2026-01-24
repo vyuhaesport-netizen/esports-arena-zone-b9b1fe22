@@ -738,7 +738,7 @@ const MyMatch = () => {
     );
   }
 
-  // Apple Glass Tab Component - Rectangle Shape
+  // Apple Glass Tab Component - Rectangle Shape with theme support
   const GlassTab = ({ value, label, count, isActive, onClick, icon: Icon, accentColor }: {
     value: string;
     label: string;
@@ -752,38 +752,36 @@ const MyMatch = () => {
       onClick={onClick}
       className={`
         relative flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg transition-all duration-300 ease-out min-w-0
+        border shadow-sm
         ${isActive 
-          ? 'bg-white/20 backdrop-blur-xl shadow-lg border border-white/30 scale-[1.02]' 
-          : 'bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20'
+          ? 'bg-primary/20 dark:bg-white/20 backdrop-blur-xl border-primary/30 dark:border-white/30 scale-[1.02] shadow-lg' 
+          : 'bg-card/80 dark:bg-white/5 backdrop-blur-sm border-border dark:border-white/10 hover:bg-primary/10 dark:hover:bg-white/10 hover:border-primary/20 dark:hover:border-white/20'
         }
       `}
-      style={{
-        boxShadow: isActive ? `0 8px 32px -4px ${accentColor}40, inset 0 1px 0 rgba(255,255,255,0.2)` : 'none',
-      }}
     >
       {/* Glow effect for active tab */}
       {isActive && (
         <div 
-          className="absolute inset-0 rounded-lg opacity-40 blur-sm"
+          className="absolute inset-0 rounded-lg opacity-30 blur-sm"
           style={{ background: `linear-gradient(135deg, ${accentColor}40, transparent 60%)` }}
         />
       )}
       
       {/* Icon */}
-      <div className={`relative z-10 p-1.5 rounded-md transition-all duration-300 ${isActive ? 'bg-white/20' : 'bg-white/5'}`}>
-        <Icon className={`h-3 w-3 transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`} />
+      <div className={`relative z-10 p-1.5 rounded-md transition-all duration-300 ${isActive ? 'bg-primary/20 dark:bg-white/20' : 'bg-muted dark:bg-white/5'}`}>
+        <Icon className={`h-3 w-3 transition-colors duration-300 ${isActive ? 'text-primary dark:text-white' : 'text-muted-foreground'}`} />
       </div>
       
       {/* Label & Count in a row */}
       <div className="relative z-10 flex items-center gap-1.5">
-        <span className={`text-[10px] font-medium transition-colors duration-300 ${isActive ? 'text-white' : 'text-muted-foreground'}`}>
+        <span className={`text-[10px] font-medium transition-colors duration-300 ${isActive ? 'text-primary dark:text-white' : 'text-muted-foreground'}`}>
           {label}
         </span>
         <div className={`
           min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center text-[8px] font-bold transition-all duration-300
           ${isActive 
-            ? 'bg-white/30 text-white shadow-inner' 
-            : 'bg-white/10 text-muted-foreground'
+            ? 'bg-primary/30 dark:bg-white/30 text-primary dark:text-white shadow-inner' 
+            : 'bg-muted dark:bg-white/10 text-muted-foreground'
           }
         `}>
           {count}
@@ -792,7 +790,7 @@ const MyMatch = () => {
       
       {/* Active indicator bar */}
       {isActive && (
-        <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-white shadow-lg" />
+        <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-primary dark:bg-white shadow-lg" />
       )}
     </button>
   );
@@ -811,18 +809,15 @@ const MyMatch = () => {
         <div className="relative mb-4">
           {/* Glass background container */}
           <div 
-            className="relative p-1.5 rounded-2xl overflow-hidden"
+            className="relative p-1.5 rounded-2xl overflow-hidden bg-card/50 dark:bg-transparent border border-border dark:border-white/15 shadow-md"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
               backdropFilter: 'blur(20px)',
               WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)',
             }}
           >
             {/* Inner glass reflection */}
             <div 
-              className="absolute top-0 left-0 right-0 h-1/2 rounded-t-xl pointer-events-none"
+              className="absolute top-0 left-0 right-0 h-1/2 rounded-t-xl pointer-events-none opacity-50 dark:opacity-100"
               style={{
                 background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 100%)',
               }}
