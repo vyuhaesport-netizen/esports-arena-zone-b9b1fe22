@@ -1,8 +1,7 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const DEEPSEEK_API_KEY = Deno.env.get('DEEPSEEK_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -10,14 +9,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// DeepSeek R1 compatible models - fallback chain for reliability
-const FALLBACK_MODELS = [
-  'google/gemini-3-flash-preview',  // Primary: Fast reasoning model
-  'google/gemini-2.5-flash',
-  'google/gemini-2.5-flash-lite',
-  'openai/gpt-5-mini',
-];
 
 // Function to fetch real-time platform data
 async function getPlatformContext(supabase: any, userId?: string): Promise<string> {
@@ -111,7 +102,7 @@ async function getPlatformContext(supabase: any, userId?: string): Promise<strin
         context += `- Is Unusual Activity Ban: ${activeBan.ban_reason?.toLowerCase().includes('unusual activity') || activeBan.ban_reason?.toLowerCase().includes('inactive') ? 'YES' : 'NO'}\n`;
       }
       
-      // Get user's registered tournaments (My Match)
+      // Get user's registered tournaments
       const { data: userRegistrations } = await supabase
         .from('tournament_registrations')
         .select(`
@@ -295,72 +286,53 @@ function parseUnbanAction(response: string): { email: string; phone: string; uid
   return null;
 }
 
-// Function to call AI with fallback models
-async function callAIWithFallback(
+// Function to call DeepSeek R1 API
+async function callDeepSeekR1(
   systemPrompt: string,
   messages: any[],
-  supabase: any,
-  userId: string | undefined,
-  requestType: string,
-  startTime: number
-): Promise<{ response: string; usage: any; model: string }> {
+  model: string,
+  maxTokens: number,
+  temperature: number
+): Promise<{ response: string; reasoning: string | null; usage: any; model: string }> {
   
-  for (let i = 0; i < FALLBACK_MODELS.length; i++) {
-    const model = FALLBACK_MODELS[i];
-    console.log(`Attempting AI call with model: ${model} (attempt ${i + 1}/${FALLBACK_MODELS.length})`);
-    
-    try {
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages
-          ],
-          max_tokens: 1024,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Model ${model} failed with status ${response.status}:`, errorText);
-        
-        // If rate limited (429) or payment required (402), don't try fallbacks
-        if (response.status === 429) {
-          throw { status: 429, message: 'Rate limit exceeded. Please try again in a moment.' };
-        }
-        if (response.status === 402) {
-          throw { status: 402, message: 'AI service credits exhausted. Please contact admin.' };
-        }
-        
-        // For other errors, try next model
-        continue;
-      }
-
-      const data = await response.json();
-      const generatedText = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
-      const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-      
-      console.log(`Successfully got response from model: ${model}, tokens used: ${usage.total_tokens}`);
-      
-      return { response: generatedText, usage, model };
-    } catch (error: any) {
-      // If it's a rate limit or payment error, throw immediately
-      if (error.status === 429 || error.status === 402) {
-        throw error;
-      }
-      console.error(`Error with model ${model}:`, error);
-      // Continue to next model
-    }
+  if (!DEEPSEEK_API_KEY) {
+    throw new Error('DEEPSEEK_API_KEY is not configured');
   }
+
+  console.log(`Calling DeepSeek R1 with model: ${model}`);
   
-  // All models failed
-  throw new Error('All AI models failed. Please try again later.');
+  const response = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: model,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ],
+      max_tokens: maxTokens,
+      temperature: temperature,
+      stream: false,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`DeepSeek R1 API error: ${response.status}`, errorText);
+    throw new Error(`DeepSeek R1 API error: ${response.status} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  const generatedText = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+  const reasoningContent = data.choices?.[0]?.message?.reasoning_content || null;
+  const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+  
+  console.log(`Successfully got response from DeepSeek R1 model: ${model}, tokens used: ${usage.total_tokens}`);
+  
+  return { response: generatedText, reasoning: reasoningContent, usage, model };
 }
 
 serve(async (req) => {
@@ -375,11 +347,30 @@ serve(async (req) => {
   try {
     const { messages, type = 'support', userId } = await req.json();
 
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY is not configured');
+    if (!DEEPSEEK_API_KEY) {
+      console.error('DEEPSEEK_API_KEY is not configured');
       return new Response(
-        JSON.stringify({ error: 'AI service not configured' }),
+        JSON.stringify({ error: 'DeepSeek R1 API key not configured. Please add your API key in admin settings.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get AI settings from platform_settings
+    const { data: settings } = await supabase
+      .from('platform_settings')
+      .select('setting_key, setting_value')
+      .in('setting_key', ['ai_model', 'ai_max_tokens', 'ai_temperature', 'ai_system_prompt', 'ai_enabled']);
+
+    const settingsMap: Record<string, string> = {};
+    settings?.forEach(s => {
+      settingsMap[s.setting_key] = s.setting_value;
+    });
+
+    // Check if AI is enabled
+    if (settingsMap['ai_enabled'] === 'false') {
+      return new Response(
+        JSON.stringify({ error: 'AI features are currently disabled' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -434,109 +425,119 @@ serve(async (req) => {
       );
     }
 
+    // Get configuration
+    const model = settingsMap['ai_model'] || 'deepseek-reasoner';
+    const maxTokens = parseInt(settingsMap['ai_max_tokens'] || '1024');
+    const temperature = parseFloat(settingsMap['ai_temperature'] || '0.7');
+    const customSystemPrompt = settingsMap['ai_system_prompt'] || '';
+
     let systemPrompt = VYUHA_SYSTEM_PROMPT;
     
     // Different system prompts for different use cases
     if (type === 'moderation') {
-      systemPrompt = `You are a content moderation AI for Vyuha Esports platform. 
-Analyze the provided content and determine if it violates community guidelines.
-Flag content that contains:
-- Hate speech or discrimination
-- Threats or harassment
-- Spam or scam attempts
-- Inappropriate language
-- Cheating/hacking discussions
-Respond with JSON: { "flagged": boolean, "reason": string, "severity": "low"|"medium"|"high" }`;
-    } else {
-      // Fetch real-time platform context for support queries
-      const platformContext = await getPlatformContext(supabase, userId);
-      systemPrompt = VYUHA_SYSTEM_PROMPT + platformContext;
+      systemPrompt = `You are a content moderation assistant. Analyze the given content and determine if it violates community guidelines.`;
+    } else if (type === 'broadcast') {
+      systemPrompt = `You are the official Vyuha Esports content writer. Create engaging, gaming-focused content for broadcasts to the community.`;
     }
 
-    console.log('Calling AI with type:', type, 'userId:', userId);
+    // Append custom prompt if configured
+    if (customSystemPrompt) {
+      systemPrompt += `\n\nAdditional Context: ${customSystemPrompt}`;
+    }
 
-    // Call AI with fallback models
-    const { response: generatedText, usage, model } = await callAIWithFallback(
+    // Get real-time platform context
+    const platformContext = await getPlatformContext(supabase, userId);
+    systemPrompt += platformContext;
+
+    console.log(`Calling DeepSeek R1 with type: ${type} userId: ${userId}`);
+
+    // Call DeepSeek R1 API
+    const result = await callDeepSeekR1(
       systemPrompt,
       messages,
-      supabase,
-      userId,
-      type,
-      startTime
+      model,
+      maxTokens,
+      temperature
     );
 
-    // Check if AI response contains an unban action
-    let finalResponse = generatedText;
-    const unbanAction = parseUnbanAction(generatedText);
-    
+    let finalResponse = result.response;
+
+    // Check for unban action in the response
+    const unbanAction = parseUnbanAction(finalResponse);
     if (unbanAction && userId) {
-      console.log('Detected unban action, attempting to restore account for user:', userId);
-      
-      // Call the ai_unban_user function
+      // Attempt to unban the user
       const { data: unbanResult, error: unbanError } = await supabase.rpc('ai_unban_user', {
         p_user_id: userId,
         p_verified_email: unbanAction.email,
         p_verified_phone: unbanAction.phone,
         p_verified_uid: unbanAction.uid
       });
-      
-      if (unbanError) {
-        console.error('Unban error:', unbanError);
-        // Remove the action from response and add error message
-        finalResponse = generatedText.replace(/\[UNBAN_ACTION:[^\]]+\]/, '').trim();
-        finalResponse += `\n\n❌ Account restoration failed: ${unbanError.message}. Please contact admin for assistance.`;
-      } else if (unbanResult) {
-        // Remove the action from response and add result
-        finalResponse = generatedText.replace(/\[UNBAN_ACTION:[^\]]+\]/, '').trim();
-        if (unbanResult.success) {
-          finalResponse += `\n\n✅ ${unbanResult.message} 🎉\n\nPlease refresh the page or log in again to access your account.`;
-        } else {
-          finalResponse += `\n\n❌ ${unbanResult.error}`;
-        }
+
+      if (!unbanError && unbanResult?.success) {
+        // Remove the action from visible response and add success message
+        finalResponse = finalResponse.replace(/\[UNBAN_ACTION:[^\]]+\]/, '');
+        finalResponse += '\n\n✅ Great news! Your account has been successfully restored! You can now access all features of Vyuha Esports again. Welcome back! 🎮';
+      } else if (unbanError || !unbanResult?.success) {
+        finalResponse = finalResponse.replace(/\[UNBAN_ACTION:[^\]]+\]/, '');
+        finalResponse += '\n\n❌ Sorry, I couldn\'t verify your details. Please make sure you\'re providing the correct registered email, phone number, and game UID. If the issue persists, please contact support directly.';
       }
     }
 
+    // Log the usage
     const responseTime = Date.now() - startTime;
-
-    // Log successful request
     await supabase.from('ai_usage_logs').insert({
       user_id: userId || null,
       request_type: type,
-      input_tokens: usage.prompt_tokens,
-      output_tokens: usage.completion_tokens,
-      total_tokens: usage.total_tokens,
-      model,
+      input_tokens: result.usage.prompt_tokens || 0,
+      output_tokens: result.usage.completion_tokens || 0,
+      total_tokens: result.usage.total_tokens || 0,
+      model: result.model,
       response_time_ms: responseTime,
       status: 'success',
     });
 
     return new Response(
-      JSON.stringify({ response: finalResponse, usage }),
+      JSON.stringify({ 
+        response: finalResponse,
+        reasoning: result.reasoning,
+        model: result.model,
+        tokens: result.usage.total_tokens
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
-  } catch (error: any) {
-    const responseTime = Date.now() - startTime;
-    console.error('Error in ai-chat function:', error);
-    
-    const errorMessage = error.message || 'An unexpected error occurred';
-    const statusCode = error.status || 500;
 
-    // Log error
-    try {
-      await supabase.from('ai_usage_logs').insert({
-        request_type: 'support',
-        model: 'unknown',
-        response_time_ms: responseTime,
-        status: 'error',
-        error_message: errorMessage.substring(0, 500),
-      });
-    } catch (logError) {
-      console.error('Failed to log error:', logError);
+  } catch (error: any) {
+    console.error('DeepSeek R1 chat error:', error);
+    
+    const responseTime = Date.now() - startTime;
+    
+    // Log the error
+    await supabase.from('ai_usage_logs').insert({
+      user_id: null,
+      request_type: 'support',
+      input_tokens: 0,
+      output_tokens: 0,
+      total_tokens: 0,
+      model: 'deepseek-reasoner',
+      response_time_ms: responseTime,
+      status: 'error',
+      error_message: error.message || 'Unknown error',
+    });
+
+    // Handle specific error types
+    if (error.status === 429) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please try again in a moment.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: 'Failed to get AI response. Please try again.',
+        details: error.message 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
