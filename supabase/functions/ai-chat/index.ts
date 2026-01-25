@@ -286,7 +286,32 @@ function parseUnbanAction(response: string): { email: string; phone: string; uid
   return null;
 }
 
-// Function to call DeepSeek R1 API
+type LlmApiError = Error & { status?: number; provider?: string };
+
+function isOpenRouterKey(apiKey: string) {
+  return apiKey.startsWith('sk-or-');
+}
+
+function normalizeOpenRouterModel(model: string) {
+  // If already a full OpenRouter model id, keep it.
+  if (model.includes('/')) return model;
+
+  const m = model.trim().toLowerCase();
+  // Common values used in this codebase / admin settings
+  if (m === 'deepseek-r1' || m === 'deepseek-reasoner' || m === 'r1') return 'deepseek/deepseek-r1';
+  if (m === 'deepseek-chat') return 'deepseek/deepseek-chat';
+  // Fallback: let OpenRouter decide (may error if invalid)
+  return model;
+}
+
+function throwLlmApiError(provider: string, status: number, bodyText: string): never {
+  const err = new Error(`${provider} API error: ${status} - ${bodyText}`) as LlmApiError;
+  err.status = status;
+  err.provider = provider;
+  throw err;
+}
+
+// Function to call DeepSeek R1 API (or OpenRouter when the configured key is an OpenRouter key)
 async function callDeepSeekR1(
   systemPrompt: string,
   messages: any[],
@@ -299,16 +324,24 @@ async function callDeepSeekR1(
     throw new Error('DEEPSEEK_API_KEY is not configured');
   }
 
-  console.log(`Calling DeepSeek R1 with model: ${model}`);
+  const useOpenRouter = isOpenRouterKey(DEEPSEEK_API_KEY);
+  const provider = useOpenRouter ? 'OpenRouter' : 'DeepSeek';
+  const endpoint = useOpenRouter
+    ? 'https://openrouter.ai/api/v1/chat/completions'
+    : 'https://api.deepseek.com/chat/completions';
+  const apiModel = useOpenRouter ? normalizeOpenRouterModel(model) : model;
+
+  console.log(`Calling ${provider} with model: ${apiModel}`);
   
-  const response = await fetch('https://api.deepseek.com/chat/completions', {
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
       'Content-Type': 'application/json',
+      ...(useOpenRouter ? { 'X-Title': 'Vyuha Esports' } : {}),
     },
     body: JSON.stringify({
-      model: model,
+      model: apiModel,
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages
@@ -321,18 +354,19 @@ async function callDeepSeekR1(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`DeepSeek R1 API error: ${response.status}`, errorText);
-    throw new Error(`DeepSeek R1 API error: ${response.status} - ${errorText}`);
+    console.error(`${provider} API error: ${response.status}`, errorText);
+    throwLlmApiError(provider, response.status, errorText);
   }
 
   const data = await response.json();
   const generatedText = data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.';
+  // DeepSeek direct can return reasoning_content; OpenRouter typically won't.
   const reasoningContent = data.choices?.[0]?.message?.reasoning_content || null;
   const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
   
-  console.log(`Successfully got response from DeepSeek R1 model: ${model}, tokens used: ${usage.total_tokens}`);
+  console.log(`Successfully got response from ${provider} model: ${apiModel}, tokens used: ${usage.total_tokens}`);
   
-  return { response: generatedText, reasoning: reasoningContent, usage, model };
+  return { response: generatedText, reasoning: reasoningContent, usage, model: apiModel };
 }
 
 serve(async (req) => {
