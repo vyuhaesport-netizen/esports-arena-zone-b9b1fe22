@@ -9,8 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import { 
-  Gamepad2, Trophy, Users, Zap, ChevronRight, Star, 
-  Target, Shield, Crown, Sparkles, Eye, EyeOff, Loader2
+  Gamepad2, Trophy, Users, ChevronRight, Star, Sparkles,
+  Target, Shield, Crown, Eye, EyeOff, Loader2,
+  Swords, Crosshair, Medal, Flame, Zap, Joystick
 } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -219,19 +220,19 @@ const Landing = () => {
   const features = [
     { icon: Trophy, title: 'Win Real Prizes', desc: 'Compete for cash prizes & exclusive rewards' },
     { icon: Shield, title: 'Fair Play', desc: 'Anti-cheat systems & transparent rules' },
-    { icon: Users, title: 'Build Your Team', desc: 'Find teammates & form squads' },
-    { icon: Zap, title: 'Instant Payouts', desc: 'Quick withdrawals to your wallet' },
+    { icon: Swords, title: 'Build Your Team', desc: 'Find teammates & form squads' },
+    { icon: Flame, title: 'Instant Payouts', desc: 'Quick withdrawals to your wallet' },
   ];
 
   const opportunities = [
     { 
       title: 'For Players', 
-      icon: Gamepad2,
+      icon: Crosshair,
       points: ['Join tournaments & win prizes', 'Track your stats & rankings', 'Connect with pro players', 'Build your esports career']
     },
     { 
       title: 'For Creators', 
-      icon: Crown,
+      icon: Medal,
       points: ['Host your own tournaments', 'Earn commission on every match', 'Build your community', 'Get verified creator badge']
     },
   ];

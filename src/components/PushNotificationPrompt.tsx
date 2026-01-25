@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Bell, X, Sparkles } from 'lucide-react';
+import { Bell, X, Trophy, Swords, Wallet, Gift, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   initOneSignal, 
@@ -10,9 +10,6 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-const PUSH_PROMPT_DISMISSED_KEY = 'push_notification_dismissed_at';
-const PROMPT_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export const PushNotificationPrompt: React.FC = () => {
   const { user } = useAuth();
@@ -31,27 +28,12 @@ export const PushNotificationPrompt: React.FC = () => {
     // Check current permission status
     const status = getPushPermissionStatus();
     
-    // If permission already granted or denied, don't show
+    // If permission already granted or denied permanently, don't show
     if (status === 'granted' || status === 'denied') {
       return;
     }
     
-    // Check if dismissed recently (within cooldown period)
-    const dismissedAt = localStorage.getItem(PUSH_PROMPT_DISMISSED_KEY);
-    if (dismissedAt) {
-      const dismissedTime = parseInt(dismissedAt, 10);
-      const now = Date.now();
-      if (now - dismissedTime < PROMPT_COOLDOWN_MS) {
-        // Schedule to show again after cooldown
-        const remainingTime = PROMPT_COOLDOWN_MS - (now - dismissedTime);
-        setTimeout(() => {
-          checkAndShowPrompt();
-        }, remainingTime + 2000);
-        return;
-      }
-    }
-    
-    // Show popup after small delay
+    // Show popup after small delay on every login
     setTimeout(() => setShowPrompt(true), 2000);
     
     // Link user to OneSignal
@@ -73,14 +55,11 @@ export const PushNotificationPrompt: React.FC = () => {
     
     try {
       const granted = await requestPushPermission();
-      
-      // Clear dismissed timestamp since user interacted
-      localStorage.removeItem(PUSH_PROMPT_DISMISSED_KEY);
       setShowPrompt(false);
       
       if (granted) {
-        toast.success('🎉 Notifications enabled!', {
-          description: 'You will get tournament & prize alerts.',
+        toast.success('Notifications enabled', {
+          description: 'You will receive tournament and prize alerts.',
         });
       }
     } catch (error) {
@@ -91,82 +70,75 @@ export const PushNotificationPrompt: React.FC = () => {
   };
 
   const handleDismiss = () => {
-    // Store dismissal timestamp - will show again after cooldown
-    localStorage.setItem(PUSH_PROMPT_DISMISSED_KEY, Date.now().toString());
     setShowPrompt(false);
-    
-    toast.info('We\'ll remind you later!', {
-      description: 'Enable notifications anytime from Profile.',
-    });
   };
 
   if (!showPrompt || !user) return null;
 
+  const notificationFeatures = [
+    { icon: Trophy, text: 'Tournament announcements' },
+    { icon: Swords, text: 'Match start reminders' },
+    { icon: Wallet, text: 'Prize and withdrawal updates' },
+    { icon: Gift, text: 'Special offers and rewards' },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-24 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-sm max-h-[80vh] overflow-hidden bg-card border border-border rounded-2xl shadow-2xl animate-scale-in">
-        {/* Header with gradient */}
-        <div className="bg-gradient-to-r from-primary via-orange-500 to-yellow-500 p-4 relative">
-          <button 
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
-          >
-            <X className="h-4 w-4 text-white" />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-24 bg-background/80 backdrop-blur-md animate-fade-in">
+      <div className="w-full max-w-sm bg-card border border-border rounded-xl shadow-xl animate-scale-in">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center">
-              <Bell className="h-7 w-7 text-white" />
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bell className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-white font-bold text-lg">Stay Updated!</h3>
-                <Sparkles className="h-4 w-4 text-yellow-200" />
-              </div>
-              <p className="text-white/80 text-sm">Never miss a tournament</p>
+              <h3 className="text-foreground font-semibold text-sm">Enable Notifications</h3>
+              <p className="text-muted-foreground text-xs">Stay updated with tournaments</p>
             </div>
           </div>
+          <button 
+            onClick={handleDismiss}
+            className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center transition-colors"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
         
         {/* Content */}
-        <div className="p-4 space-y-4 overflow-y-auto max-h-[calc(80vh-96px)]">
+        <div className="p-4 space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Get notified about:
+          </p>
+          
           <div className="space-y-2">
-            <p className="text-foreground text-sm font-medium">Get notified for:</p>
-            <ul className="space-y-1.5 text-muted-foreground text-sm">
-              <li className="flex items-center gap-2">
-                <span className="text-primary">🏆</span> New tournament announcements
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-primary">⚔️</span> Match start reminders
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-primary">💰</span> Prize & withdrawal updates
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-primary">🎁</span> Special offers & giveaways
-              </li>
-            </ul>
+            {notificationFeatures.map((feature, i) => (
+              <div key={i} className="flex items-center gap-3 text-xs text-foreground">
+                <feature.icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span>{feature.text}</span>
+              </div>
+            ))}
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-2">
             <Button
               variant="outline"
               onClick={handleDismiss}
-              className="flex-1"
+              className="flex-1 text-xs"
               size="sm"
             >
-              Remind Later
+              Not Now
             </Button>
             <Button
               onClick={handleEnable}
               disabled={isLoading}
-              className="flex-1 bg-gradient-to-r from-primary to-orange-500 hover:opacity-90 text-white font-semibold"
+              className="flex-1 text-xs bg-primary hover:bg-primary/90"
               size="sm"
             >
               {isLoading ? (
-                <span className="animate-spin">⏳</span>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  <Bell className="h-4 w-4 mr-1.5" />
+                  <Bell className="h-3.5 w-3.5 mr-1.5" />
                   Enable
                 </>
               )}
