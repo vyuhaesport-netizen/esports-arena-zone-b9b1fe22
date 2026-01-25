@@ -8,6 +8,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
+import controllerSticker from '@/assets/stickers/controller-sticker.png';
+import headsetSticker from '@/assets/stickers/headset-sticker.png';
+import trophySticker from '@/assets/stickers/trophy-sticker.png';
+import keyboardSticker from '@/assets/stickers/keyboard-sticker.png';
+import gamer1 from '@/assets/players/gamer-1.png';
+import gamer2 from '@/assets/players/gamer-2.png';
 import { 
   Trophy, ChevronRight,
   Target, Shield, Eye, EyeOff, Loader2,
@@ -52,6 +58,8 @@ const Landing = () => {
   const opportunitiesRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
+  const stickersRef = useRef<HTMLDivElement>(null);
+  const playersRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user) navigate('/home');
@@ -239,6 +247,56 @@ const Landing = () => {
         });
       }
 
+      // Floating stickers animation
+      if (stickersRef.current) {
+        const stickers = stickersRef.current.querySelectorAll('.sticker');
+        stickers.forEach((sticker, i) => {
+          gsap.fromTo(sticker,
+            { opacity: 0, scale: 0, rotation: -45 },
+            {
+              opacity: 0.7,
+              scale: 1,
+              rotation: 0,
+              duration: 1,
+              ease: 'elastic.out(1, 0.5)',
+              delay: 0.5 + i * 0.2,
+            }
+          );
+          gsap.to(sticker, {
+            y: `random(-20, 20)`,
+            x: `random(-15, 15)`,
+            rotation: `random(-10, 10)`,
+            duration: `random(4, 6)`,
+            repeat: -1,
+            yoyo: true,
+            ease: 'power1.inOut',
+            delay: i * 0.3,
+          });
+        });
+      }
+
+      // Player images parallax
+      if (playersRef.current) {
+        const players = playersRef.current.querySelectorAll('.player-img');
+        players.forEach((player, i) => {
+          gsap.fromTo(player,
+            { opacity: 0, x: i % 2 === 0 ? -100 : 100, scale: 0.8 },
+            {
+              opacity: 1,
+              x: 0,
+              scale: 1,
+              duration: 1.2,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: player,
+                start: 'top 90%',
+                toggleActions: 'play none none reverse',
+              },
+            }
+          );
+        });
+      }
+
     }, containerRef);
 
     return () => ctx.revert();
@@ -341,6 +399,14 @@ const Landing = () => {
             backgroundSize: '50px 50px',
           }}
         />
+      </div>
+
+      {/* Floating Gaming Stickers */}
+      <div ref={stickersRef} className="fixed inset-0 pointer-events-none overflow-hidden z-20">
+        <img src={controllerSticker} alt="" className="sticker absolute top-20 left-4 w-16 h-16 object-contain opacity-0" />
+        <img src={headsetSticker} alt="" className="sticker absolute top-32 right-6 w-14 h-14 object-contain opacity-0" />
+        <img src={trophySticker} alt="" className="sticker absolute bottom-40 left-8 w-12 h-12 object-contain opacity-0" />
+        <img src={keyboardSticker} alt="" className="sticker absolute bottom-1/3 right-4 w-16 h-16 object-contain opacity-0" />
       </div>
 
       {/* Header */}
@@ -468,6 +534,29 @@ const Landing = () => {
               </ul>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Pro Players Section */}
+      <section ref={playersRef} className="relative z-10 px-4 py-8">
+        <h2 className="text-lg font-bold text-center mb-6 text-foreground">Join Pro Gamers</h2>
+        <div className="flex justify-center gap-4 max-w-md mx-auto">
+          <div className="player-img relative rounded-2xl overflow-hidden shadow-xl shadow-primary/20">
+            <img src={gamer1} alt="Pro Gamer" className="w-36 h-44 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+            <div className="absolute bottom-2 left-2 right-2">
+              <p className="text-[10px] font-semibold text-foreground">Mobile Esports</p>
+              <p className="text-[8px] text-muted-foreground">Join the battle</p>
+            </div>
+          </div>
+          <div className="player-img relative rounded-2xl overflow-hidden shadow-xl shadow-gaming-purple/20">
+            <img src={gamer2} alt="Champion" className="w-36 h-44 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+            <div className="absolute bottom-2 left-2 right-2">
+              <p className="text-[10px] font-semibold text-foreground">Victory Awaits</p>
+              <p className="text-[8px] text-muted-foreground">Be a champion</p>
+            </div>
+          </div>
         </div>
       </section>
 
