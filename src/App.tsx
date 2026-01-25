@@ -44,6 +44,7 @@ import AdminRules from "./pages/admin/AdminRules";
 import AdminCreatorInvites from "./pages/admin/AdminCreatorInvites";
 import AdminAI from "./pages/admin/AdminAI";
 import AdminAIBroadcast from "./pages/admin/AdminAIBroadcast";
+import AdminAIMonitor from "./pages/admin/AdminAIMonitor";
 import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerHub from "./pages/organizer/OrganizerHub";
@@ -271,6 +272,7 @@ const AppRoutes = () => {
       <Route path="/admin/rules" element={<ProtectedRoute><AdminRules /></ProtectedRoute>} />
       <Route path="/admin/ai" element={<ProtectedRoute><AdminAI /></ProtectedRoute>} />
       <Route path="/admin/ai-broadcast" element={<ProtectedRoute><AdminAIBroadcast /></ProtectedRoute>} />
+      <Route path="/admin/ai-monitor" element={<ProtectedRoute><AdminAIMonitor /></ProtectedRoute>} />
       <Route path="/admin/push-notifications" element={<ProtectedRoute><AdminPushNotifications /></ProtectedRoute>} />
       <Route path="/admin/creator-invites" element={<ProtectedRoute><AdminCreatorInvites /></ProtectedRoute>} />
       

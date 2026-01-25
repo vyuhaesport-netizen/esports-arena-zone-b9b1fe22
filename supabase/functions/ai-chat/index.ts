@@ -11,12 +11,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Fallback models in order of preference
+// DeepSeek R1 compatible models - fallback chain for reliability
 const FALLBACK_MODELS = [
+  'google/gemini-3-flash-preview',  // Primary: Fast reasoning model
   'google/gemini-2.5-flash',
   'google/gemini-2.5-flash-lite',
   'openai/gpt-5-mini',
-  'openai/gpt-5-nano',
 ];
 
 // Function to fetch real-time platform data

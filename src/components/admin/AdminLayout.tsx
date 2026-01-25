@@ -31,7 +31,7 @@ import {
   ScrollText,
   Link2,
   Ban,
-  Bot,
+  Brain,
   Smartphone,
   School,
 } from 'lucide-react';
@@ -71,7 +71,7 @@ const menuItems: MenuItem[] = [
   { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'local_tournaments:view', countKey: 'pendingLocalTournamentApps' },
   { icon: School, label: 'School Tournaments', path: '/admin/school-tournaments', permission: 'local_tournaments:view' },
   { icon: ScrollText, label: 'Tournament Rules', path: '/admin/rules', superAdminOnly: true },
-  { icon: Bot, label: 'Vyuha AI', path: '/admin/ai', superAdminOnly: true },
+  { icon: Brain, label: 'DeepSeek R1', path: '/admin/ai', superAdminOnly: true },
   { icon: Smartphone, label: 'Push Notifications', path: '/admin/push-notifications', permission: 'notifications:manage' },
   { icon: Link2, label: 'Creator Invites', path: '/admin/creator-invites', superAdminOnly: true },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },

@@ -19,8 +19,6 @@ import {
   Activity, 
   Settings, 
   RefreshCw, 
-  Eye, 
-  EyeOff,
   Save,
   TestTube,
   Zap,
@@ -31,7 +29,10 @@ import {
   CheckCircle2,
   XCircle,
   Gauge,
-  Radio
+  Radio,
+  Brain,
+  Sparkles,
+  BarChart3
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -67,12 +68,11 @@ interface UsageLog {
   response_time_ms: number;
   error_message: string | null;
   created_at: string;
+  model?: string;
 }
 
 const AdminAI = () => {
   const navigate = useNavigate();
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
   const [isSaving, setIsSaving] = useState(false);
@@ -81,7 +81,7 @@ const AdminAI = () => {
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
 
   const [config, setConfig] = useState<AIConfig>({
-    model: 'llama-3.3-70b-versatile',
+    model: 'deepseek-r1',
     maxTokens: 1024,
     temperature: 0.7,
     systemPrompt: '',
@@ -104,11 +104,12 @@ const AdminAI = () => {
     averageResponseTime: 0,
   });
 
+  // DeepSeek R1 Models
   const availableModels = [
-    { id: 'llama-3.3-70b-versatile', name: 'LLaMA 3.3 70B Versatile', description: 'Best for general tasks' },
-    { id: 'llama-3.1-8b-instant', name: 'LLaMA 3.1 8B Instant', description: 'Fast responses' },
-    { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B', description: 'Good balance' },
-    { id: 'gemma2-9b-it', name: 'Gemma 2 9B', description: 'Efficient' },
+    { id: 'deepseek-r1', name: 'DeepSeek R1', description: 'Advanced reasoning model with chain-of-thought' },
+    { id: 'deepseek-r1-lite', name: 'DeepSeek R1 Lite', description: 'Fast & efficient for simple tasks' },
+    { id: 'deepseek-v3', name: 'DeepSeek V3', description: 'General purpose model' },
+    { id: 'deepseek-coder', name: 'DeepSeek Coder', description: 'Optimized for code generation' },
   ];
 
   useEffect(() => {
@@ -133,7 +134,7 @@ const AdminAI = () => {
       });
 
       setConfig({
-        model: settings.ai_model || 'llama-3.3-70b-versatile',
+        model: settings.ai_model || 'deepseek-r1',
         maxTokens: parseInt(settings.ai_max_tokens) || 1024,
         temperature: parseFloat(settings.ai_temperature) || 0.7,
         systemPrompt: settings.ai_system_prompt || '',
@@ -172,7 +173,6 @@ const AdminAI = () => {
       today.setHours(0, 0, 0, 0);
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
-      // Get all logs
       const { data: allLogs, error } = await supabase
         .from('ai_usage_logs')
         .select('total_tokens, status, response_time_ms, created_at');
@@ -243,13 +243,13 @@ const AdminAI = () => {
 
       setConnectionStatus('connected');
       setTestResponse(response.data.response || 'Connection successful!');
-      toast.success('Groq API connection successful!');
+      toast.success('DeepSeek R1 connection successful!');
       loadUsageStats();
       loadUsageLogs();
     } catch (error: any) {
       setConnectionStatus('error');
       setTestResponse(error.message || 'Connection failed');
-      toast.error('Groq API connection failed');
+      toast.error('DeepSeek R1 connection failed');
     } finally {
       setIsTestingConnection(false);
     }
@@ -315,8 +315,38 @@ const AdminAI = () => {
   const monthlyUsagePercent = (usageStats.monthlyTokensUsed / tokenLimits.monthlyLimit) * 100;
 
   return (
-    <AdminLayout title="Vyuha AI Management">
+    <AdminLayout title="DeepSeek R1 AI Management">
       <div className="p-4 space-y-6">
+        {/* Header with DeepSeek Branding */}
+        <Card className="border-blue-500/30 bg-gradient-to-r from-blue-500/5 via-purple-500/5 to-cyan-500/5">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+                <Brain className="h-8 w-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  DeepSeek R1 
+                  <Badge variant="outline" className="border-blue-500/50 text-blue-500">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Reasoning Model
+                  </Badge>
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Advanced AI with chain-of-thought reasoning for Vyuha Esports
+                </p>
+              </div>
+              <Button 
+                onClick={() => navigate('/admin/ai-monitor')} 
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                R1 Monitor
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Header Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
@@ -382,26 +412,46 @@ const AdminAI = () => {
           </Card>
         </div>
 
-        {/* AI Broadcast Quick Access */}
-        <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-purple-500/5">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Radio className="h-5 w-5 text-primary" />
+        {/* Quick Access Cards */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-purple-500/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Radio className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">AI Daily Broadcast</h3>
+                    <p className="text-sm text-muted-foreground">Auto-generated content for users</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold">AI Daily Broadcast</h3>
-                  <p className="text-sm text-muted-foreground">Automated daily content generation for Broadcast Channel</p>
-                </div>
+                <Button onClick={() => navigate('/admin/ai-broadcast')} variant="outline" size="sm">
+                  Manage
+                </Button>
               </div>
-              <Button onClick={() => navigate('/admin/ai-broadcast')} variant="outline" className="border-primary/30">
-                <Radio className="w-4 h-4 mr-2" />
-                Manage AI Broadcast
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-cyan-500/5">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                    <BarChart3 className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">R1 Performance Monitor</h3>
+                    <p className="text-sm text-muted-foreground">Detailed analytics & insights</p>
+                  </div>
+                </div>
+                <Button onClick={() => navigate('/admin/ai-monitor')} variant="outline" size="sm">
+                  View
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Token Usage Bars */}
         <div className="grid md:grid-cols-2 gap-4">
@@ -417,7 +467,7 @@ const AdminAI = () => {
                 <div 
                   className={`h-full transition-all ${
                     dailyUsagePercent > 90 ? 'bg-red-500' : 
-                    dailyUsagePercent > 70 ? 'bg-amber-500' : 'bg-green-500'
+                    dailyUsagePercent > 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'
                   }`}
                   style={{ width: `${Math.min(dailyUsagePercent, 100)}%` }}
                 />
@@ -438,7 +488,7 @@ const AdminAI = () => {
                 <div 
                   className={`h-full transition-all ${
                     monthlyUsagePercent > 90 ? 'bg-red-500' : 
-                    monthlyUsagePercent > 70 ? 'bg-amber-500' : 'bg-green-500'
+                    monthlyUsagePercent > 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-blue-500 to-purple-500'
                   }`}
                   style={{ width: `${Math.min(monthlyUsagePercent, 100)}%` }}
                 />
@@ -452,7 +502,7 @@ const AdminAI = () => {
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="connection" className="flex items-center gap-2">
               <Key className="h-4 w-4" />
-              <span className="hidden sm:inline">API</span>
+              <span className="hidden sm:inline">Test</span>
             </TabsTrigger>
             <TabsTrigger value="config" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -468,47 +518,30 @@ const AdminAI = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* API Key Management */}
+          {/* Connection Test */}
           <TabsContent value="connection" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Key className="h-5 w-5" />
-                  Groq API Key Management
+                  <Brain className="h-5 w-5 text-blue-500" />
+                  DeepSeek R1 Connection Test
                 </CardTitle>
                 <CardDescription>
-                  Manage your Groq API key for Vyuha AI features. Get your API key from{' '}
-                  <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                    console.groq.com
-                  </a>
+                  Test the AI connection and verify the reasoning model is working
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="apiKey">API Key</Label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Input
-                        id="apiKey"
-                        type={showApiKey ? 'text' : 'password'}
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        placeholder="gsk_xxxxxxxxxxxxxxxxxxxx"
-                        className="pr-10"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                      >
-                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </Button>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Brain className="h-6 w-6 text-blue-500" />
+                    <div>
+                      <p className="font-medium">DeepSeek R1 Reasoning Model</p>
+                      <p className="text-xs text-muted-foreground">Advanced chain-of-thought AI for Vyuha</p>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Note: API key changes require manual update in Supabase secrets
+                  <p className="text-sm text-muted-foreground">
+                    DeepSeek R1 provides superior reasoning capabilities with transparent thinking process. 
+                    Perfect for support queries, content moderation, and intelligent assistance.
                   </p>
                 </div>
 
@@ -516,15 +549,14 @@ const AdminAI = () => {
                   <Button 
                     onClick={handleTestConnection} 
                     disabled={isTestingConnection}
-                    variant="outline"
-                    className="flex-1"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                   >
                     {isTestingConnection ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
                       <TestTube className="h-4 w-4 mr-2" />
                     )}
-                    Test Connection
+                    Test R1 Connection
                   </Button>
                   
                   <div className="flex items-center gap-2">
@@ -541,10 +573,10 @@ const AdminAI = () => {
 
                 {testResponse && (
                   <div className={`p-3 rounded-lg text-sm ${
-                    connectionStatus === 'connected' ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
+                    connectionStatus === 'connected' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'
                   }`}>
-                    <p className="font-medium mb-1">Response:</p>
-                    <p className="line-clamp-3">{testResponse}</p>
+                    <p className="font-medium mb-1">R1 Response:</p>
+                    <p className="line-clamp-5">{testResponse}</p>
                   </div>
                 )}
               </CardContent>
@@ -560,7 +592,7 @@ const AdminAI = () => {
                   AI Configuration
                 </CardTitle>
                 <CardDescription>
-                  Configure the AI behavior for your platform
+                  Configure DeepSeek R1 behavior for your platform
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -701,7 +733,7 @@ const AdminAI = () => {
                   <div className="p-3 bg-amber-500/10 rounded-lg flex items-start gap-2">
                     <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-amber-600">Usage Warning</p>
+                      <p className="font-medium text-amber-600 dark:text-amber-400">Usage Warning</p>
                       <p className="text-sm text-muted-foreground">
                         {dailyUsagePercent > 80 && 'Daily usage is above 80%. '}
                         {monthlyUsagePercent > 80 && 'Monthly usage is above 80%. '}
@@ -734,7 +766,7 @@ const AdminAI = () => {
                       Usage Logs
                     </CardTitle>
                     <CardDescription>
-                      Recent AI usage activity
+                      Recent DeepSeek R1 usage activity
                     </CardDescription>
                   </div>
                   <Button variant="outline" size="sm" onClick={loadUsageLogs} disabled={isLoadingLogs}>
@@ -774,6 +806,10 @@ const AdminAI = () => {
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               {(log.response_time_ms / 1000).toFixed(2)}s
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Brain className="h-3 w-3" />
+                              R1
                             </span>
                             {log.error_message && (
                               <span className="text-red-500 truncate max-w-xs">
