@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import SEOHead from '@/components/SEOHead';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import gamer1 from '@/assets/players/gamer-1.png';
 import gamer2 from '@/assets/players/gamer-2.png';
@@ -319,7 +320,14 @@ const Landing = () => {
   ];
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-background overflow-hidden">
+    <>
+      <SEOHead
+        title="India's #1 BGMI & Free Fire Tournament Platform"
+        description="Join Vyuha Esport - India's premier esports platform founded by Abhishek Shukla. Compete in BGMI, Free Fire, COD Mobile tournaments. Win real cash prizes up to ₹1 Lakh!"
+        keywords="BGMI tournament, Free Fire tournament India, esports India, Vyuha Esport, Abhishek Shukla, gaming tournaments, mobile esports, competitive gaming India"
+        url="https://vyuhaesport.in"
+      />
+      <div ref={containerRef} className="min-h-screen bg-background overflow-hidden">
       {/* Animated Background Particles */}
       <div ref={particlesRef} className="fixed inset-0 pointer-events-none overflow-hidden">
         {[...Array(25)].map((_, i) => (
@@ -626,6 +634,7 @@ const Landing = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 };
 

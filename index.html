@@ -56,23 +56,42 @@
     <meta name="apple-mobile-web-app-title" content="Vyuha Esport" />
     <meta name="application-name" content="Vyuha Esport" />
     
-    <!-- Structured Data - Organization -->
+    <!-- Structured Data - Organization with Founder -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": "https://vyuhaesport.in/#organization",
       "name": "Vyuha Esport",
+      "alternateName": "Vyuha Esports",
       "url": "https://vyuhaesport.in",
-      "logo": "https://vyuhaesport.in/favicon.png",
-      "description": "India's premier esports tournament platform for BGMI, Free Fire, and COD Mobile",
-      "foundingDate": "2024",
-      "founders": [{
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://vyuhaesport.in/favicon.png",
+        "width": 512,
+        "height": 512
+      },
+      "image": "https://vyuhaesport.in/favicon.png",
+      "description": "India's premier mobile-first esports tournament platform for BGMI, Free Fire, COD Mobile. Compete in daily tournaments and win real cash prizes up to ₹1 Lakh.",
+      "foundingDate": "2025",
+      "founder": {
         "@type": "Person",
-        "name": "Vyuha Esport Team"
-      }],
+        "@id": "https://vyuhaesport.in/#abhishek-shukla",
+        "name": "Abhishek Shukla",
+        "alternateName": "abhishek.shhh",
+        "jobTitle": "Founder & CEO",
+        "description": "18-year-old Engineering Student and Tech Genius who built Vyuha Esport - India's leading mobile esports platform from scratch.",
+        "image": "https://vyuhaesport.in/abhishek-shukla.jpg",
+        "url": "https://vyuhaesport.in/about",
+        "sameAs": [
+          "https://www.instagram.com/abhishek.shhh"
+        ],
+        "knowsAbout": ["Esports", "Gaming", "BGMI", "Free Fire", "Web Development", "Technology", "Entrepreneurship"]
+      },
       "address": {
         "@type": "PostalAddress",
-        "addressCountry": "IN"
+        "addressCountry": "IN",
+        "addressLocality": "India"
       },
       "contactPoint": {
         "@type": "ContactPoint",
@@ -80,23 +99,75 @@
         "availableLanguage": ["English", "Hindi"]
       },
       "sameAs": [
-        "https://twitter.com/VyuhaEsport",
-        "https://instagram.com/VyuhaEsport",
-        "https://youtube.com/@VyuhaEsport"
-      ]
+        "https://instagram.com/vyuhaesport",
+        "https://youtube.com/@VyuhaEsport",
+        "https://twitter.com/VyuhaEsport"
+      ],
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      }
     }
     </script>
     
-    <!-- Structured Data - Website -->
+    <!-- Structured Data - Founder Person (Abhishek Shukla) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "@id": "https://vyuhaesport.in/#abhishek-shukla",
+      "name": "Abhishek Shukla",
+      "alternateName": "abhishek.shhh",
+      "jobTitle": "Founder & CEO of Vyuha Esport",
+      "description": "18-year-old Engineering Student and Tech Genius who single-handedly built Vyuha Esport - India's leading mobile esports tournament platform. A visionary entrepreneur revolutionizing competitive gaming in India by making esports accessible to schools, colleges, and local communities.",
+      "image": {
+        "@type": "ImageObject",
+        "url": "https://vyuhaesport.in/abhishek-shukla.jpg",
+        "width": 400,
+        "height": 400
+      },
+      "url": "https://vyuhaesport.in/about",
+      "sameAs": [
+        "https://www.instagram.com/abhishek.shhh"
+      ],
+      "worksFor": {
+        "@type": "Organization",
+        "@id": "https://vyuhaesport.in/#organization",
+        "name": "Vyuha Esport",
+        "url": "https://vyuhaesport.in"
+      },
+      "knowsAbout": ["Esports", "Mobile Gaming", "BGMI", "Free Fire", "Web Development", "React", "Technology", "Entrepreneurship", "Competitive Gaming"],
+      "nationality": {
+        "@type": "Country",
+        "name": "India"
+      },
+      "alumniOf": {
+        "@type": "EducationalOrganization",
+        "name": "Engineering College"
+      }
+    }
+    </script>
+    
+    <!-- Structured Data - Website with SearchAction -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": "https://vyuhaesport.in/#website",
       "name": "Vyuha Esport",
+      "alternateName": "Vyuha Esports India",
       "url": "https://vyuhaesport.in",
+      "description": "India's #1 BGMI & Free Fire Tournament Platform",
+      "publisher": {
+        "@id": "https://vyuhaesport.in/#organization"
+      },
+      "inLanguage": "en-IN",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://vyuhaesport.in/search?q={search_term_string}",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://vyuhaesport.in/home?search={search_term_string}"
+        },
         "query-input": "required name=search_term_string"
       }
     }
@@ -110,8 +181,11 @@
       "name": "Vyuha Esport",
       "url": "https://vyuhaesport.in",
       "sport": "Esports",
-      "description": "Premier esports tournament platform in India hosting BGMI, Free Fire, and COD Mobile competitions",
+      "description": "Premier esports tournament platform in India hosting BGMI, Free Fire, and COD Mobile competitions with real cash prizes",
       "logo": "https://vyuhaesport.in/favicon.png",
+      "founder": {
+        "@id": "https://vyuhaesport.in/#abhishek-shukla"
+      },
       "areaServed": {
         "@type": "Country",
         "name": "India"

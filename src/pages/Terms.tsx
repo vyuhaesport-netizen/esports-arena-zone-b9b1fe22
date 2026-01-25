@@ -1,4 +1,5 @@
 import AppLayout from '@/components/layout/AppLayout';
+import SEOHead from '@/components/SEOHead';
 import { 
   FileText, User, CreditCard, Shield, RefreshCcw, AlertTriangle,
   Scale, Gavel, Lock, Eye, Ban, Trophy, Users, Smartphone,
@@ -7,7 +8,14 @@ import {
 
 const Terms = () => {
   return (
-    <AppLayout title="Terms & Conditions" showBack>
+    <>
+      <SEOHead
+        title="Terms & Conditions"
+        description="Read the official terms and conditions for Vyuha Esport - India's premier esports tournament platform. Legal compliance, user agreements, and fair play policies."
+        keywords="Vyuha Esport terms, esports terms conditions, gaming platform rules, BGMI tournament rules, Free Fire rules India"
+        url="https://vyuhaesport.in/terms"
+      />
+      <AppLayout title="Terms & Conditions" showBack>
       <div className="p-3 pb-8 space-y-4">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-xl border border-border p-4 overflow-hidden">
@@ -397,6 +405,7 @@ const Terms = () => {
         </div>
       </div>
     </AppLayout>
+    </>
   );
 };
 

@@ -1,4 +1,5 @@
 import AppLayout from '@/components/layout/AppLayout';
+import SEOHead from '@/components/SEOHead';
 import { 
   IndianRupee, CheckCircle, XCircle, Clock, AlertCircle, 
   Wallet, ArrowRight, Shield, HelpCircle, FileText
@@ -6,7 +7,14 @@ import {
 
 const RefundPolicy = () => {
   return (
-    <AppLayout title="Refund Policy" showBack>
+    <>
+      <SEOHead
+        title="Refund Policy"
+        description="Vyuha Esport refund policy - Full refunds for cancelled tournaments before match start. Transparent exit strategy for esports players in India."
+        keywords="Vyuha Esport refund, esports refund policy, gaming tournament refund, BGMI refund, Free Fire refund India"
+        url="https://vyuhaesport.in/refund-policy"
+      />
+      <AppLayout title="Refund Policy" showBack>
       <div className="p-3 pb-8 space-y-4">
         {/* Header Section */}
         <div className="relative bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-xl border border-border p-4 overflow-hidden">
@@ -263,6 +271,7 @@ const RefundPolicy = () => {
         </div>
       </div>
     </AppLayout>
+    </>
   );
 };
 
