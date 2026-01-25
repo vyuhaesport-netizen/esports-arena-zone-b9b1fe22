@@ -43,65 +43,143 @@ VYUHA ESPORTS PLATFORM STATUS:
 Today's date: ${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
     `;
 
-    // Randomly pick content type
-    const contentTypes = ['tournament_update', 'motivation', 'game_tips', 'platform_news'];
+    // Get current date and time in IST
+    const now = new Date();
+    const istOptions: Intl.DateTimeFormatOptions = { 
+      timeZone: 'Asia/Kolkata', 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    const currentDateTime = now.toLocaleString('en-IN', istOptions);
+
+    // Expanded content types with esports news and player highlights
+    const contentTypes = [
+      'tournament_update', 
+      'motivation', 
+      'game_tips', 
+      'platform_news',
+      'esports_news',
+      'player_spotlight',
+      'industry_update',
+      'match_analysis'
+    ];
     const selectedType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
 
     let systemPrompt = '';
     let userPrompt = '';
 
+    // Base system prompt for professional, no-emoji responses
+    const baseSystemPrompt = `You are Vyuha AI, the official AI of Vyuha Esports - India's premier gaming tournament platform. 
+RULES:
+- Write professionally without emojis
+- Be concise and informative
+- Include relevant dates and times
+- Focus on facts and actionable information
+- Current Date/Time: ${currentDateTime}`;
+
     switch (selectedType) {
       case 'tournament_update':
-        systemPrompt = `You are Vyuha AI, the official AI of Vyuha Esports - India's premier gaming tournament platform. Create engaging tournament updates for players.`;
+        systemPrompt = baseSystemPrompt;
         userPrompt = `${platformContext}
 
-Create a brief, exciting tournament update message for our players. Include:
-- Mention any active or upcoming tournaments
-- Encourage participation
-- Keep it under 150 words
-- Use gaming language and emojis appropriately
-- Be enthusiastic but professional
+Create a tournament update for players:
+- Mention active or upcoming tournaments with dates
+- Include entry fees and prize pools where relevant
+- Keep it under 120 words
+- Professional tone, no emojis
 
-Format: Start with an attention-grabbing title, then the message.`;
+Format: Title on first line, then content.`;
         break;
 
       case 'motivation':
-        systemPrompt = `You are Vyuha AI, creating motivational content for competitive gamers on Vyuha Esports platform.`;
-        userPrompt = `Create a motivational message for gamers that:
-- Inspires competitive spirit
-- Relates to esports/gaming journey
-- Includes a powerful quote or insight
-- Encourages players to participate in tournaments
-- Keep it under 120 words
-- Use gaming references
+        systemPrompt = baseSystemPrompt;
+        userPrompt = `Create a motivational message for competitive gamers:
+- Focus on improvement and dedication
+- Reference esports legends or tournament success stories
+- Keep it under 100 words
+- Professional tone, no emojis
 
-Format: Start with a catchy title, then the motivational message.`;
+Format: Title on first line, then content.`;
         break;
 
       case 'game_tips':
-        systemPrompt = `You are Vyuha AI, an expert gaming coach for BGMI and Free Fire players on Vyuha Esports.`;
-        userPrompt = `Create a quick gaming tip post that:
-- Provides actionable tips for BGMI or Free Fire
-- Helps players improve their gameplay
-- Is relevant for tournament play
-- Keep it under 130 words
-- Include practical advice
+        systemPrompt = baseSystemPrompt;
+        userPrompt = `Create a gaming strategy tip for BGMI or Free Fire:
+- Provide one specific actionable tip
+- Explain why it works in competitive play
+- Keep it under 100 words
+- Professional tone, no emojis
 
-Format: Start with a catchy title about the tip, then the detailed advice.`;
+Format: Title on first line, then content.`;
         break;
 
       case 'platform_news':
-        systemPrompt = `You are Vyuha AI, announcing platform updates for Vyuha Esports - India's gaming tournament platform.`;
+        systemPrompt = baseSystemPrompt;
         userPrompt = `${platformContext}
 
-Create a platform update/news message that:
-- Highlights platform features (tournaments, Dhana rewards, local tournaments)
-- Welcomes new players
-- Promotes community engagement
-- Keep it under 130 words
-- Sound professional yet friendly
+Create a platform update:
+- Highlight a feature (tournaments, Dhana rewards, local events)
+- Include current platform stats
+- Keep it under 100 words
+- Professional tone, no emojis
 
-Format: Start with an engaging title, then the update message.`;
+Format: Title on first line, then content.`;
+        break;
+
+      case 'esports_news':
+        systemPrompt = baseSystemPrompt;
+        userPrompt = `Create an esports industry news update:
+- Cover recent developments in Indian esports (BGMI, Free Fire, Valorant)
+- Include tournament announcements, team updates, or industry milestones
+- Reference real esports organizations (like BGIS, FFIC, VCT)
+- Include the date: ${currentDateTime}
+- Keep it under 150 words
+- Professional tone, no emojis
+
+Format: Title on first line, then news content.`;
+        break;
+
+      case 'player_spotlight':
+        systemPrompt = baseSystemPrompt;
+        userPrompt = `Create a player spotlight feature:
+- Highlight achievements of notable Indian esports players
+- Reference players from teams like GodLike, Soul, TSM, OR, Global Esports
+- Include their achievements, playstyle, or recent performances
+- Date: ${currentDateTime}
+- Keep it under 130 words
+- Professional tone, no emojis
+
+Format: "Player Spotlight: [Name]" as title, then profile content.`;
+        break;
+
+      case 'industry_update':
+        systemPrompt = baseSystemPrompt;
+        userPrompt = `Create an esports industry update:
+- Cover esports market growth, sponsorships, or major announcements
+- Reference Indian gaming industry developments
+- Include prize pool trends or viewership statistics
+- Date: ${currentDateTime}
+- Keep it under 130 words
+- Professional tone, no emojis
+
+Format: Title on first line, then industry update.`;
+        break;
+
+      case 'match_analysis':
+        systemPrompt = baseSystemPrompt;
+        userPrompt = `Create a match analysis or tournament recap:
+- Analyze recent competitive matches or tournament results
+- Reference BGMI or Free Fire tournaments
+- Include tactical insights or standout performances
+- Date: ${currentDateTime}
+- Keep it under 140 words
+- Professional tone, no emojis
+
+Format: Title on first line, then analysis content.`;
         break;
     }
 
@@ -165,12 +243,13 @@ Format: Start with an engaging title, then the update message.`;
       });
     }
 
-    // Insert broadcast
+    // Insert broadcast with category tag
+    const categoryTag = selectedType.replace('_', ' ').toUpperCase();
     const { data: broadcast, error: insertError } = await supabase
       .from('admin_broadcasts')
       .insert({
         admin_id: adminId,
-        title: `🤖 ${title}`,
+        title: `[${categoryTag}] ${title}`,
         message: message,
         broadcast_type: 'message',
         target_audience: 'all',
@@ -194,7 +273,7 @@ Format: Start with an engaging title, then the update message.`;
     if (allUsers && allUsers.length > 0) {
       const notifications = allUsers.map(user => ({
         user_id: user.user_id,
-        title: `🤖 ${title}`,
+        title: `[${categoryTag}] ${title}`,
         message: message.substring(0, 200) + (message.length > 200 ? '...' : ''),
         type: 'broadcast',
         related_id: broadcast.id,
