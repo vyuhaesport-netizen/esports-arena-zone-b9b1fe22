@@ -8,10 +8,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
-import controllerSticker from '@/assets/stickers/controller-sticker.png';
-import headsetSticker from '@/assets/stickers/headset-sticker.png';
-import trophySticker from '@/assets/stickers/trophy-sticker.png';
-import keyboardSticker from '@/assets/stickers/keyboard-sticker.png';
 import gamer1 from '@/assets/players/gamer-1.png';
 import gamer2 from '@/assets/players/gamer-2.png';
 import { 
@@ -58,7 +54,6 @@ const Landing = () => {
   const opportunitiesRef = useRef<HTMLDivElement>(null);
   const aboutRef = useRef<HTMLDivElement>(null);
   const particlesRef = useRef<HTMLDivElement>(null);
-  const stickersRef = useRef<HTMLDivElement>(null);
   const playersRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,113 +63,108 @@ const Landing = () => {
   // GSAP Hollywood Animations
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
-      // Master timeline for hero entrance
-      const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+      // Master timeline for hero entrance - smoother easing
+      const heroTl = gsap.timeline({ defaults: { ease: 'power2.out' } });
 
       // Initial states
       gsap.set([logoRef.current, titleRef.current, subtitleRef.current, ctaRef.current], {
         opacity: 0,
-        y: 60,
+        y: 40,
       });
       gsap.set([ring1Ref.current, ring2Ref.current, ring3Ref.current], {
         opacity: 0,
-        scale: 0,
-        rotation: -180,
+        scale: 0.8,
       });
 
-      // Dramatic logo reveal
+      // Smooth logo reveal
       heroTl
         .to(logoRef.current, {
           opacity: 1,
           y: 0,
-          duration: 1.2,
-          ease: 'elastic.out(1, 0.5)',
+          duration: 0.8,
+          ease: 'power3.out',
         })
         .to([ring1Ref.current, ring2Ref.current, ring3Ref.current], {
           opacity: 1,
           scale: 1,
-          rotation: 0,
-          duration: 1.5,
-          stagger: 0.15,
-          ease: 'back.out(1.7)',
-        }, '-=0.8')
+          duration: 0.6,
+          stagger: 0.1,
+          ease: 'power2.out',
+        }, '-=0.4')
         .to(titleRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.8,
-        }, '-=0.6')
+          duration: 0.6,
+        }, '-=0.3')
         .to(subtitleRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.6,
-        }, '-=0.4')
+          duration: 0.5,
+        }, '-=0.3')
         .to(ctaRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.6,
-        }, '-=0.3');
+          duration: 0.5,
+        }, '-=0.2');
 
-      // Continuous logo float animation
+      // Subtle logo float animation
       gsap.to(logoRef.current, {
-        y: -15,
-        duration: 2,
+        y: -8,
+        duration: 3,
         repeat: -1,
         yoyo: true,
-        ease: 'power1.inOut',
+        ease: 'sine.inOut',
       });
 
-      // Orbiting rings continuous rotation
+      // Smooth ring rotations
       gsap.to(ring1Ref.current, {
-        rotation: 360,
-        duration: 20,
-        repeat: -1,
-        ease: 'none',
-      });
-      gsap.to(ring2Ref.current, {
-        rotation: -360,
-        duration: 25,
-        repeat: -1,
-        ease: 'none',
-      });
-      gsap.to(ring3Ref.current, {
         rotation: 360,
         duration: 30,
         repeat: -1,
         ease: 'none',
       });
+      gsap.to(ring2Ref.current, {
+        rotation: -360,
+        duration: 40,
+        repeat: -1,
+        ease: 'none',
+      });
+      gsap.to(ring3Ref.current, {
+        rotation: 360,
+        duration: 50,
+        repeat: -1,
+        ease: 'none',
+      });
 
-      // Scroll-triggered sections with cinematic reveals
+      // Smooth scroll-triggered sections
       if (visionRef.current) {
         gsap.fromTo(visionRef.current,
-          { opacity: 0, y: 100, scale: 0.9 },
+          { opacity: 0, y: 50 },
           {
             opacity: 1,
             y: 0,
-            scale: 1,
-            duration: 1,
-            ease: 'power3.out',
+            duration: 0.7,
+            ease: 'power2.out',
             scrollTrigger: {
               trigger: visionRef.current,
               start: 'top 85%',
-              end: 'top 50%',
               toggleActions: 'play none none reverse',
             },
           }
         );
       }
 
-      // Features grid stagger animation
+      // Features grid smooth animation
       if (featuresRef.current) {
         const featureCards = featuresRef.current.querySelectorAll('.feature-card');
         gsap.fromTo(featureCards,
-          { opacity: 0, y: 80, rotateX: 15 },
+          { opacity: 0, y: 40 },
           {
             opacity: 1,
             y: 0,
-            rotateX: 0,
-            duration: 0.8,
-            stagger: 0.15,
-            ease: 'power3.out',
+            duration: 0.5,
+            stagger: 0.1,
+            ease: 'power2.out',
             scrollTrigger: {
               trigger: featuresRef.current,
               start: 'top 80%',
@@ -184,18 +174,17 @@ const Landing = () => {
         );
       }
 
-      // Opportunities dramatic slide-in
+      // Opportunities smooth slide-in
       if (opportunitiesRef.current) {
         const oppCards = opportunitiesRef.current.querySelectorAll('.opp-card');
         gsap.fromTo(oppCards,
-          { opacity: 0, x: -100, rotateY: -15 },
+          { opacity: 0, x: -30 },
           {
             opacity: 1,
             x: 0,
-            rotateY: 0,
-            duration: 1,
-            stagger: 0.2,
-            ease: 'power3.out',
+            duration: 0.6,
+            stagger: 0.15,
+            ease: 'power2.out',
             scrollTrigger: {
               trigger: opportunitiesRef.current,
               start: 'top 80%',
@@ -205,16 +194,15 @@ const Landing = () => {
         );
       }
 
-      // About section cinematic reveal
+      // About section smooth reveal
       if (aboutRef.current) {
         gsap.fromTo(aboutRef.current,
-          { opacity: 0, scale: 0.8, y: 60 },
+          { opacity: 0, y: 40 },
           {
             opacity: 1,
-            scale: 1,
             y: 0,
-            duration: 1.2,
-            ease: 'elastic.out(1, 0.75)',
+            duration: 0.7,
+            ease: 'power2.out',
             scrollTrigger: {
               trigger: aboutRef.current,
               start: 'top 85%',
@@ -224,77 +212,40 @@ const Landing = () => {
         );
       }
 
-      // Floating particles
+      // Subtle floating particles
       if (particlesRef.current) {
         const particles = particlesRef.current.querySelectorAll('.particle');
         particles.forEach((particle, i) => {
           gsap.to(particle, {
-            y: `random(-30, 30)`,
-            x: `random(-20, 20)`,
-            duration: `random(3, 5)`,
-            repeat: -1,
-            yoyo: true,
-            ease: 'power1.inOut',
-            delay: i * 0.1,
-          });
-          gsap.to(particle, {
-            opacity: `random(0.3, 0.8)`,
-            duration: `random(2, 4)`,
-            repeat: -1,
-            yoyo: true,
-            ease: 'power1.inOut',
-          });
-        });
-      }
-
-      // Floating stickers animation
-      if (stickersRef.current) {
-        const stickers = stickersRef.current.querySelectorAll('.sticker');
-        stickers.forEach((sticker, i) => {
-          gsap.fromTo(sticker,
-            { opacity: 0, scale: 0, rotation: -45 },
-            {
-              opacity: 0.7,
-              scale: 1,
-              rotation: 0,
-              duration: 1,
-              ease: 'elastic.out(1, 0.5)',
-              delay: 0.5 + i * 0.2,
-            }
-          );
-          gsap.to(sticker, {
-            y: `random(-20, 20)`,
-            x: `random(-15, 15)`,
-            rotation: `random(-10, 10)`,
+            y: `random(-15, 15)`,
+            x: `random(-10, 10)`,
             duration: `random(4, 6)`,
             repeat: -1,
             yoyo: true,
-            ease: 'power1.inOut',
-            delay: i * 0.3,
+            ease: 'sine.inOut',
+            delay: i * 0.1,
           });
         });
       }
 
-      // Player images parallax
+      // Player images smooth reveal
       if (playersRef.current) {
         const players = playersRef.current.querySelectorAll('.player-img');
-        players.forEach((player, i) => {
-          gsap.fromTo(player,
-            { opacity: 0, x: i % 2 === 0 ? -100 : 100, scale: 0.8 },
-            {
-              opacity: 1,
-              x: 0,
-              scale: 1,
-              duration: 1.2,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: player,
-                start: 'top 90%',
-                toggleActions: 'play none none reverse',
-              },
-            }
-          );
-        });
+        gsap.fromTo(players,
+          { opacity: 0, y: 30 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.6,
+            stagger: 0.15,
+            ease: 'power2.out',
+            scrollTrigger: {
+              trigger: playersRef.current,
+              start: 'top 85%',
+              toggleActions: 'play none none reverse',
+            },
+          }
+        );
       }
 
     }, containerRef);
@@ -399,14 +350,6 @@ const Landing = () => {
             backgroundSize: '50px 50px',
           }}
         />
-      </div>
-
-      {/* Floating Gaming Stickers */}
-      <div ref={stickersRef} className="fixed inset-0 pointer-events-none overflow-hidden z-20">
-        <img src={controllerSticker} alt="" className="sticker absolute top-20 left-4 w-16 h-16 object-contain opacity-0" />
-        <img src={headsetSticker} alt="" className="sticker absolute top-32 right-6 w-14 h-14 object-contain opacity-0" />
-        <img src={trophySticker} alt="" className="sticker absolute bottom-40 left-8 w-12 h-12 object-contain opacity-0" />
-        <img src={keyboardSticker} alt="" className="sticker absolute bottom-1/3 right-4 w-16 h-16 object-contain opacity-0" />
       </div>
 
       {/* Header */}
