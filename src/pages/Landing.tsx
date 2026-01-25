@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -9,132 +9,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 import { 
-  Gamepad2, Trophy, Users, ChevronRight, Star, Sparkles,
-  Target, Shield, Crown, Eye, EyeOff, Loader2,
-  Swords, Crosshair, Medal, Flame, Zap, Joystick
+  Trophy, ChevronRight,
+  Target, Shield, Eye, EyeOff, Loader2,
+  Swords, Crosshair, Medal, Flame
 } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const emailSchema = z.string().email('Invalid email');
 const passwordSchema = z.string().min(6, 'Min 6 characters');
-
-// Stunning particle system
-const ParticleField = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const particles: Array<{
-      x: number; y: number; size: number; speedX: number; speedY: number; 
-      opacity: number; hue: number; pulse: number;
-    }> = [];
-
-    // Create particles
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 3 + 1,
-        speedX: (Math.random() - 0.5) * 0.5,
-        speedY: (Math.random() - 0.5) * 0.5,
-        opacity: Math.random() * 0.5 + 0.2,
-        hue: Math.random() * 60 + 180, // Cyan to purple range
-        pulse: Math.random() * Math.PI * 2,
-      });
-    }
-
-    let animationId: number;
-    let time = 0;
-
-    const animate = () => {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      time += 0.01;
-
-      particles.forEach((p, i) => {
-        // Update position
-        p.x += p.speedX + Math.sin(time + i) * 0.2;
-        p.y += p.speedY + Math.cos(time + i) * 0.2;
-        p.pulse += 0.02;
-
-        // Wrap around
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-
-        // Pulsing size
-        const pulseSize = p.size * (1 + Math.sin(p.pulse) * 0.3);
-        const pulseOpacity = p.opacity * (0.7 + Math.sin(p.pulse) * 0.3);
-
-        // Draw particle with glow
-        ctx.beginPath();
-        const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, pulseSize * 4);
-        gradient.addColorStop(0, `hsla(${p.hue}, 80%, 60%, ${pulseOpacity})`);
-        gradient.addColorStop(0.5, `hsla(${p.hue}, 80%, 50%, ${pulseOpacity * 0.3})`);
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.arc(p.x, p.y, pulseSize * 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw connections
-        particles.forEach((p2, j) => {
-          if (i === j) return;
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.strokeStyle = `hsla(${(p.hue + p2.hue) / 2}, 70%, 50%, ${(1 - dist / 120) * 0.15})`;
-            ctx.lineWidth = 0.5;
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.stroke();
-          }
-        });
-      });
-
-      animationId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none" style={{ opacity: 0.6 }} />;
-};
-
-// Morphing blob animation
-const MorphingBlob = ({ className, delay = 0 }: { className: string; delay?: number }) => (
-  <div 
-    className={`absolute rounded-full blur-3xl animate-pulse ${className}`}
-    style={{ 
-      animationDelay: `${delay}s`, 
-      animationDuration: '4s',
-      background: 'linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--gaming-purple) / 0.15))',
-    }}
-  />
-);
 
 const Landing = () => {
   const [authDialog, setAuthDialog] = useState<'login' | 'signup' | null>(null);
@@ -145,31 +32,216 @@ const Landing = () => {
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string; terms?: string }>({});
-  const [visibleSections, setVisibleSections] = useState<Set<string>>(new Set());
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Refs for GSAP animations
+  const containerRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLImageElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const ring1Ref = useRef<HTMLDivElement>(null);
+  const ring2Ref = useRef<HTMLDivElement>(null);
+  const ring3Ref = useRef<HTMLDivElement>(null);
+  const visionRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const opportunitiesRef = useRef<HTMLDivElement>(null);
+  const aboutRef = useRef<HTMLDivElement>(null);
+  const particlesRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (user) navigate('/home');
   }, [user, navigate]);
 
-  // Intersection observer for scroll animations
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setVisibleSections((prev) => new Set([...prev, entry.target.id]));
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
-    );
+  // GSAP Hollywood Animations
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      // Master timeline for hero entrance
+      const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
 
-    document.querySelectorAll('[data-animate]').forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
+      // Initial states
+      gsap.set([logoRef.current, titleRef.current, subtitleRef.current, ctaRef.current], {
+        opacity: 0,
+        y: 60,
+      });
+      gsap.set([ring1Ref.current, ring2Ref.current, ring3Ref.current], {
+        opacity: 0,
+        scale: 0,
+        rotation: -180,
+      });
+
+      // Dramatic logo reveal
+      heroTl
+        .to(logoRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 1.2,
+          ease: 'elastic.out(1, 0.5)',
+        })
+        .to([ring1Ref.current, ring2Ref.current, ring3Ref.current], {
+          opacity: 1,
+          scale: 1,
+          rotation: 0,
+          duration: 1.5,
+          stagger: 0.15,
+          ease: 'back.out(1.7)',
+        }, '-=0.8')
+        .to(titleRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+        }, '-=0.6')
+        .to(subtitleRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+        }, '-=0.4')
+        .to(ctaRef.current, {
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+        }, '-=0.3');
+
+      // Continuous logo float animation
+      gsap.to(logoRef.current, {
+        y: -15,
+        duration: 2,
+        repeat: -1,
+        yoyo: true,
+        ease: 'power1.inOut',
+      });
+
+      // Orbiting rings continuous rotation
+      gsap.to(ring1Ref.current, {
+        rotation: 360,
+        duration: 20,
+        repeat: -1,
+        ease: 'none',
+      });
+      gsap.to(ring2Ref.current, {
+        rotation: -360,
+        duration: 25,
+        repeat: -1,
+        ease: 'none',
+      });
+      gsap.to(ring3Ref.current, {
+        rotation: 360,
+        duration: 30,
+        repeat: -1,
+        ease: 'none',
+      });
+
+      // Scroll-triggered sections with cinematic reveals
+      if (visionRef.current) {
+        gsap.fromTo(visionRef.current,
+          { opacity: 0, y: 100, scale: 0.9 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 1,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: visionRef.current,
+              start: 'top 85%',
+              end: 'top 50%',
+              toggleActions: 'play none none reverse',
+            },
+          }
+        );
+      }
+
+      // Features grid stagger animation
+      if (featuresRef.current) {
+        const featureCards = featuresRef.current.querySelectorAll('.feature-card');
+        gsap.fromTo(featureCards,
+          { opacity: 0, y: 80, rotateX: 15 },
+          {
+            opacity: 1,
+            y: 0,
+            rotateX: 0,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: featuresRef.current,
+              start: 'top 80%',
+              toggleActions: 'play none none reverse',
+            },
+          }
+        );
+      }
+
+      // Opportunities dramatic slide-in
+      if (opportunitiesRef.current) {
+        const oppCards = opportunitiesRef.current.querySelectorAll('.opp-card');
+        gsap.fromTo(oppCards,
+          { opacity: 0, x: -100, rotateY: -15 },
+          {
+            opacity: 1,
+            x: 0,
+            rotateY: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: opportunitiesRef.current,
+              start: 'top 80%',
+              toggleActions: 'play none none reverse',
+            },
+          }
+        );
+      }
+
+      // About section cinematic reveal
+      if (aboutRef.current) {
+        gsap.fromTo(aboutRef.current,
+          { opacity: 0, scale: 0.8, y: 60 },
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 1.2,
+            ease: 'elastic.out(1, 0.75)',
+            scrollTrigger: {
+              trigger: aboutRef.current,
+              start: 'top 85%',
+              toggleActions: 'play none none reverse',
+            },
+          }
+        );
+      }
+
+      // Floating particles
+      if (particlesRef.current) {
+        const particles = particlesRef.current.querySelectorAll('.particle');
+        particles.forEach((particle, i) => {
+          gsap.to(particle, {
+            y: `random(-30, 30)`,
+            x: `random(-20, 20)`,
+            duration: `random(3, 5)`,
+            repeat: -1,
+            yoyo: true,
+            ease: 'power1.inOut',
+            delay: i * 0.1,
+          });
+          gsap.to(particle, {
+            opacity: `random(0.3, 0.8)`,
+            duration: `random(2, 4)`,
+            repeat: -1,
+            yoyo: true,
+            ease: 'power1.inOut',
+          });
+        });
+      }
+
+    }, containerRef);
+
+    return () => ctx.revert();
   }, []);
 
   const validateForm = () => {
@@ -237,28 +309,36 @@ const Landing = () => {
     },
   ];
 
-  const isVisible = (id: string) => visibleSections.has(id);
-
   return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      {/* Particle Canvas Background */}
-      <ParticleField />
-      
-      {/* Morphing Gradient Blobs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <MorphingBlob className="w-[500px] h-[500px] -top-48 -left-24" delay={0} />
-        <MorphingBlob className="w-[400px] h-[400px] top-1/3 -right-32" delay={1.5} />
-        <MorphingBlob className="w-[350px] h-[350px] bottom-1/4 left-1/4" delay={3} />
+    <div ref={containerRef} className="min-h-screen bg-background overflow-hidden">
+      {/* Animated Background Particles */}
+      <div ref={particlesRef} className="fixed inset-0 pointer-events-none overflow-hidden">
+        {[...Array(25)].map((_, i) => (
+          <div
+            key={i}
+            className="particle absolute w-2 h-2 rounded-full bg-primary/40"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              opacity: 0.4,
+            }}
+          />
+        ))}
         
-        {/* Animated grid lines */}
+        {/* Gradient orbs */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl" />
+        <div className="absolute top-1/3 -right-48 w-[500px] h-[500px] bg-gradient-to-br from-gaming-purple/15 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 left-1/4 w-80 h-80 bg-gradient-to-br from-gaming-cyan/20 to-transparent rounded-full blur-3xl" />
+        
+        {/* Grid overlay */}
         <div 
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.02]"
           style={{
             backgroundImage: `
               linear-gradient(to right, hsl(var(--primary)) 1px, transparent 1px),
               linear-gradient(to bottom, hsl(var(--primary)) 1px, transparent 1px)
             `,
-            backgroundSize: '60px 60px',
+            backgroundSize: '50px 50px',
           }}
         />
       </div>
@@ -266,20 +346,17 @@ const Landing = () => {
       {/* Header */}
       <header className="relative z-50 flex items-center justify-between px-4 py-3 bg-background/60 backdrop-blur-2xl border-b border-border/30">
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/30 rounded-full blur-lg animate-pulse" />
-            <img src={vyuhaLogo} alt="Vyuha" className="relative h-10 w-10 rounded-full object-cover ring-2 ring-primary/50 shadow-lg shadow-primary/20" />
-          </div>
+          <img src={vyuhaLogo} alt="Vyuha" className="h-10 w-10 rounded-full object-cover ring-2 ring-primary/30" />
           <span className="font-bold text-lg text-foreground tracking-wide">VYUHA</span>
         </div>
         <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => setAuthDialog('login')} className="text-xs hover:bg-primary/10">
+          <Button variant="ghost" size="sm" onClick={() => setAuthDialog('login')} className="text-xs">
             Login
           </Button>
           <Button 
             size="sm" 
             onClick={() => setAuthDialog('signup')} 
-            className="text-xs bg-gradient-to-r from-primary via-gaming-purple to-primary bg-[length:200%_100%] animate-[gradient_3s_ease_infinite] shadow-lg shadow-primary/30"
+            className="text-xs bg-primary hover:bg-primary/90"
           >
             Sign Up
           </Button>
@@ -287,76 +364,58 @@ const Landing = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="relative z-10 px-4 py-16 text-center">
-        <div className="relative inline-block mb-8">
-          {/* Multiple glow layers */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/40 to-gaming-purple/40 rounded-full blur-3xl scale-[2] animate-pulse" />
-          <div className="absolute inset-0 bg-gradient-to-r from-gaming-cyan/30 to-primary/30 rounded-full blur-2xl scale-150 animate-pulse" style={{ animationDelay: '0.5s' }} />
+      <section ref={heroRef} className="relative z-10 px-4 py-20 text-center">
+        <div className="relative inline-block mb-10">
+          {/* Animated orbital rings */}
+          <div ref={ring1Ref} className="absolute inset-[-25px] rounded-full border-2 border-primary/30" />
+          <div ref={ring2Ref} className="absolute inset-[-45px] rounded-full border border-gaming-purple/20" />
+          <div ref={ring3Ref} className="absolute inset-[-65px] rounded-full border border-gaming-cyan/15" style={{ borderStyle: 'dashed' }} />
           
-          {/* Orbiting rings */}
-          <div className="absolute inset-[-20px] rounded-full border border-primary/20 animate-spin" style={{ animationDuration: '20s' }} />
-          <div className="absolute inset-[-35px] rounded-full border border-gaming-purple/15 animate-spin" style={{ animationDuration: '25s', animationDirection: 'reverse' }} />
-          <div className="absolute inset-[-50px] rounded-full border border-gaming-cyan/10 animate-spin" style={{ animationDuration: '30s' }} />
+          {/* Glow effect */}
+          <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-150" />
           
           <img 
+            ref={logoRef}
             src={vyuhaLogo} 
             alt="Vyuha Esport" 
-            className="relative h-32 w-32 rounded-full object-cover ring-4 ring-primary/40 shadow-2xl shadow-primary/30"
-            style={{ animation: 'float 4s ease-in-out infinite' }}
+            className="relative h-32 w-32 rounded-full object-cover ring-4 ring-primary/50 shadow-2xl"
           />
-          
-          {/* Sparkle decorations */}
-          <Sparkles className="absolute -top-3 -right-3 h-7 w-7 text-warning animate-pulse" />
-          <Star className="absolute -bottom-2 -left-2 h-5 w-5 text-gaming-cyan animate-pulse" style={{ animationDelay: '0.3s' }} />
         </div>
         
         <h1 
+          ref={titleRef}
           className="text-4xl font-bold mb-4 text-foreground"
-          style={{ animation: 'slideUp 0.8s ease-out forwards', opacity: 0 }}
         >
-          <span className="bg-gradient-to-r from-primary via-gaming-cyan to-gaming-purple bg-clip-text text-transparent bg-[length:200%_100%] animate-[gradient_4s_ease_infinite]">
-            VYUHA ESPORT
-          </span>
+          <span className="text-primary">VYUHA</span> ESPORT
         </h1>
         
         <p 
-          className="text-muted-foreground text-sm mb-8 max-w-xs mx-auto leading-relaxed"
-          style={{ animation: 'slideUp 0.8s ease-out 0.2s forwards', opacity: 0 }}
+          ref={subtitleRef}
+          className="text-muted-foreground text-sm mb-10 max-w-xs mx-auto leading-relaxed"
         >
           India's Premier Platform for School, College & Local Esports Tournaments
         </p>
 
-        <div 
-          className="flex justify-center gap-3"
-          style={{ animation: 'slideUp 0.8s ease-out 0.4s forwards', opacity: 0 }}
-        >
+        <div ref={ctaRef} className="flex justify-center">
           <Button 
             size="lg" 
             onClick={() => setAuthDialog('signup')}
-            className="relative overflow-hidden bg-gradient-to-r from-primary to-gaming-purple hover:opacity-90 shadow-xl shadow-primary/30 gap-2 group"
+            className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 gap-2 group"
           >
-            <span className="relative z-10 flex items-center gap-2">
-              Start Playing <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-gaming-purple to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            Start Playing 
+            <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </section>
 
       {/* Vision Section */}
-      <section 
-        id="vision" 
-        data-animate
-        className={`relative z-10 px-4 py-8 transition-all duration-700 ${
-          isVisible('vision') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
-        <div className="relative glass-card rounded-2xl p-6 max-w-md mx-auto overflow-hidden group hover:shadow-xl hover:shadow-primary/10 transition-all duration-500">
-          {/* Animated border gradient */}
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/20 via-gaming-purple/20 to-gaming-cyan/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ padding: '1px' }} />
-          
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-gaming-purple/20">
+      <section className="relative z-10 px-4 py-8">
+        <div 
+          ref={visionRef}
+          className="glass-card rounded-2xl p-6 max-w-md mx-auto"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2.5 rounded-xl bg-primary/10">
               <Target className="h-5 w-5 text-primary" />
             </div>
             <h2 className="font-bold text-foreground">Our Vision</h2>
@@ -368,29 +427,15 @@ const Landing = () => {
       </section>
 
       {/* Features Grid */}
-      <section 
-        id="features"
-        data-animate
-        className={`relative z-10 px-4 py-8 transition-all duration-700 delay-100 ${
-          isVisible('features') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
+      <section ref={featuresRef} className="relative z-10 px-4 py-8">
         <h2 className="text-lg font-bold text-center mb-6 text-foreground">Why Vyuha?</h2>
         <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
           {features.map((feature, i) => (
             <div 
               key={i} 
-              className="relative glass-card rounded-xl p-4 group hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 hover:-translate-y-1"
-              style={{ 
-                animation: isVisible('features') ? `slideUp 0.6s ease-out ${i * 0.1}s forwards` : 'none',
-                opacity: isVisible('features') ? undefined : 0,
-              }}
+              className="feature-card glass-card rounded-xl p-4 hover:shadow-lg hover:shadow-primary/10 transition-shadow"
             >
-              {/* Icon glow */}
-              <div className="relative mb-3">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <feature.icon className="relative h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
-              </div>
+              <feature.icon className="h-7 w-7 text-primary mb-3" />
               <h3 className="font-semibold text-xs text-foreground">{feature.title}</h3>
               <p className="text-[10px] text-muted-foreground mt-1">{feature.desc}</p>
             </div>
@@ -399,41 +444,24 @@ const Landing = () => {
       </section>
 
       {/* Opportunities Section */}
-      <section 
-        id="opportunities"
-        data-animate
-        className={`relative z-10 px-4 py-8 transition-all duration-700 delay-200 ${
-          isVisible('opportunities') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
+      <section ref={opportunitiesRef} className="relative z-10 px-4 py-8">
         <h2 className="text-lg font-bold text-center mb-6 text-foreground">Opportunities</h2>
         <div className="space-y-4 max-w-md mx-auto">
           {opportunities.map((opp, i) => (
             <div 
               key={i} 
-              className="relative glass-card rounded-xl p-5 group hover:shadow-xl hover:shadow-primary/10 transition-all duration-500"
-              style={{ 
-                animation: isVisible('opportunities') ? `slideUp 0.6s ease-out ${i * 0.15}s forwards` : 'none',
-                opacity: isVisible('opportunities') ? undefined : 0,
-              }}
+              className="opp-card glass-card rounded-xl p-5"
             >
-              {/* Gradient accent line */}
-              <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-gradient-to-b from-primary via-gaming-purple to-gaming-cyan opacity-60" />
-              
-              <div className="flex items-center gap-3 mb-4 pl-2">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-gaming-purple/20 group-hover:scale-110 transition-transform duration-300">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-primary/10">
                   <opp.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-bold text-foreground">{opp.title}</h3>
               </div>
-              <ul className="space-y-2 pl-2">
+              <ul className="space-y-2">
                 {opp.points.map((point, j) => (
-                  <li 
-                    key={j} 
-                    className="flex items-center gap-2 text-xs text-muted-foreground group-hover:text-foreground transition-colors duration-300"
-                    style={{ transitionDelay: `${j * 50}ms` }}
-                  >
-                    <Star className="h-3 w-3 text-warning flex-shrink-0" />
+                  <li key={j} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
                     {point}
                   </li>
                 ))}
@@ -444,36 +472,27 @@ const Landing = () => {
       </section>
 
       {/* About Creator */}
-      <section 
-        id="about"
-        data-animate
-        className={`relative z-10 px-4 py-8 pb-28 transition-all duration-700 delay-300 ${
-          isVisible('about') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
-        <div className="relative glass-card rounded-2xl p-6 max-w-md mx-auto overflow-hidden group">
-          {/* Background gradient animation */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-gaming-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-          
-          <div className="relative flex items-center gap-4 mb-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/30 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <img 
-                src="/abhishek-shukla.jpg" 
-                alt="Abhishek Shukla" 
-                className="relative h-16 w-16 rounded-full object-cover ring-2 ring-primary/40 shadow-lg"
-              />
-            </div>
+      <section className="relative z-10 px-4 py-8 pb-28">
+        <div 
+          ref={aboutRef}
+          className="glass-card rounded-2xl p-6 max-w-md mx-auto"
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <img 
+              src="/abhishek-shukla.jpg" 
+              alt="Abhishek Shukla" 
+              className="h-14 w-14 rounded-full object-cover ring-2 ring-primary/30"
+            />
             <div>
               <h3 className="font-bold text-foreground">Abhishek Shukla</h3>
               <p className="text-[10px] text-primary font-medium">Founder & CEO</p>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground leading-relaxed relative">
-            An 18-year-old engineering student and tech enthusiast who built Vyuha to bridge the gap between casual gaming and professional esports. Passionate about creating opportunities for the next generation of Indian gamers.
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            An 18-year-old engineering student and tech enthusiast who built Vyuha to bridge the gap between casual gaming and professional esports.
           </p>
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border/50 relative">
-            <a href="https://instagram.com/abhishek.shhh" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:text-primary/80 hover:underline transition-colors">
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <a href="https://instagram.com/abhishek.shhh" target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
               @abhishek.shhh
             </a>
           </div>
@@ -481,26 +500,21 @@ const Landing = () => {
       </section>
 
       {/* CTA Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/60 backdrop-blur-2xl border-t border-border/30">
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/80 backdrop-blur-xl border-t border-border/30">
         <Button 
-          className="w-full max-w-md mx-auto block relative overflow-hidden bg-gradient-to-r from-primary via-gaming-purple to-primary bg-[length:200%_100%] animate-[gradient_3s_ease_infinite] shadow-xl shadow-primary/30 group"
+          className="w-full max-w-md mx-auto block bg-primary hover:bg-primary/90 shadow-lg"
           onClick={() => setAuthDialog('signup')}
         >
-          <span className="relative z-10 flex items-center justify-center gap-2">
-            Join Vyuha Now <Sparkles className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-          </span>
+          Join Vyuha Now
         </Button>
       </div>
 
       {/* Auth Dialog */}
       <Dialog open={authDialog !== null} onOpenChange={(open) => !open && setAuthDialog(null)}>
-        <DialogContent className="max-w-sm bg-background/95 backdrop-blur-xl border-border/50">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/30 rounded-full blur-md" />
-                <img src={vyuhaLogo} alt="Vyuha" className="relative h-8 w-8 rounded-full" />
-              </div>
+              <img src={vyuhaLogo} alt="Vyuha" className="h-8 w-8 rounded-full" />
               {authDialog === 'login' ? 'Welcome Back' : 'Join Vyuha'}
             </DialogTitle>
           </DialogHeader>
@@ -513,7 +527,7 @@ const Landing = () => {
                   value={fullName}
                   onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
                   placeholder="Your name"
-                  className={`bg-background/50 ${errors.fullName ? 'border-destructive' : ''}`}
+                  className={errors.fullName ? 'border-destructive' : ''}
                 />
                 {errors.fullName && <p className="text-[10px] text-destructive">{errors.fullName}</p>}
               </div>
@@ -526,7 +540,7 @@ const Landing = () => {
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
                 placeholder="you@example.com"
-                className={`bg-background/50 ${errors.email ? 'border-destructive' : ''}`}
+                className={errors.email ? 'border-destructive' : ''}
               />
               {errors.email && <p className="text-[10px] text-destructive">{errors.email}</p>}
             </div>
@@ -539,12 +553,12 @@ const Landing = () => {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setErrors(p => ({...p, password: undefined})); }}
                   placeholder="••••••••"
-                  className={`bg-background/50 ${errors.password ? 'border-destructive' : ''}`}
+                  className={errors.password ? 'border-destructive' : ''}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -565,11 +579,7 @@ const Landing = () => {
             )}
             {errors.terms && <p className="text-[10px] text-destructive">{errors.terms}</p>}
 
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full bg-gradient-to-r from-primary via-gaming-purple to-primary bg-[length:200%_100%] animate-[gradient_3s_ease_infinite]"
-            >
+            <Button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary/90">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : authDialog === 'login' ? 'Login' : 'Create Account'}
             </Button>
 
@@ -583,21 +593,6 @@ const Landing = () => {
           </form>
         </DialogContent>
       </Dialog>
-
-      <style>{`
-        @keyframes gradient {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
-        }
-      `}</style>
     </div>
   );
 };
