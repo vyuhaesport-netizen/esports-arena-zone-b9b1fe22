@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { Bell, Send, Users, Target, History, Settings, Loader2, CheckCircle, XCircle, Smartphone, Globe } from 'lucide-react';
+import { Bell, Send, Users, Target, History, Settings, Loader2, CheckCircle, XCircle, Smartphone, Globe, Zap, Bot } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -242,10 +242,14 @@ const AdminPushNotifications = () => {
         </div>
 
         <Tabs defaultValue="send" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="send" className="gap-2">
               <Send className="h-4 w-4" />
-              Send Push
+              Send
+            </TabsTrigger>
+            <TabsTrigger value="auto" className="gap-2">
+              <Zap className="h-4 w-4" />
+              Auto
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
               <History className="h-4 w-4" />
@@ -388,6 +392,61 @@ const AdminPushNotifications = () => {
                     Aapko push notifications bhejne ki permission nahi hai
                   </p>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Auto Push Tab */}
+          <TabsContent value="auto" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-primary" />
+                  AI Auto Push Notifications
+                </CardTitle>
+                <CardDescription>
+                  Automatic notifications triggered by user account events
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-3">
+                  <div className="p-4 rounded-lg border bg-green-500/10 border-green-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="font-medium text-sm">Auto Push Active</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Push notifications are automatically sent when user account events occur.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Supported Events:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { event: 'Deposit Approved', icon: '💰' },
+                        { event: 'Withdrawal Processed', icon: '🏦' },
+                        { event: 'Tournament Joined', icon: '🎮' },
+                        { event: 'Tournament Won', icon: '🏆' },
+                        { event: 'Ban Lifted', icon: '✅' },
+                        { event: 'Dhana Earned', icon: '💎' },
+                        { event: 'Match Starting', icon: '⏰' },
+                        { event: 'Bonus Received', icon: '🎁' },
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 rounded bg-muted/50 text-xs">
+                          <span>{item.icon}</span>
+                          <span>{item.event}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-xs text-muted-foreground">
+                      These notifications are triggered automatically via the <code className="bg-background px-1 rounded">ai-auto-push</code> edge function when relevant database events occur.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
