@@ -479,8 +479,8 @@ const Landing = () => {
             </Button>
             <Button 
               size="default" 
-              variant="outline"
-              className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 px-5 py-2 text-xs"
+              variant="ghost"
+              className="bg-transparent border border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 px-5 py-2 text-xs"
               onClick={() => window.open('https://instagram.com/vyuhaesport', '_blank')}
             >
               <Instagram className="h-3.5 w-3.5" />
