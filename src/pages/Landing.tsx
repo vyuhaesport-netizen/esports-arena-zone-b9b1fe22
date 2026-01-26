@@ -481,7 +481,7 @@ const Landing = () => {
               size="default" 
               variant="ghost"
               className="bg-transparent border border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 px-5 py-2 text-xs"
-              onClick={() => window.open('https://instagram.com/vyuhaesport', '_blank')}
+              onClick={() => window.open('https://www.instagram.com/vyuha_freefire?igsh=M3N6bnVncDJ4azVs', '_blank')}
             >
               <Instagram className="h-3.5 w-3.5" />
               Join Community
