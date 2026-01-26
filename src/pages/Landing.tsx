@@ -12,7 +12,7 @@ import vyuhaLogo from '@/assets/vyuha-logo.png';
 import { 
   Trophy, ChevronRight, Wallet, BarChart3, User, Zap,
   Target, Shield, Eye, EyeOff, Loader2, Gamepad2, Brain,
-  Swords, Crosshair, Medal, Flame, Users, Star, Crown, Cpu
+  Swords, Crosshair, Medal, Flame, Users, Star, Crown, Cpu, Instagram
 } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,23 +24,13 @@ gsap.registerPlugin(ScrollTrigger);
 const emailSchema = z.string().email('Invalid email');
 const passwordSchema = z.string().min(6, 'Min 6 characters');
 
-// Mouse position hook for parallax
-const useMousePosition = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  
-  useEffect(() => {
-    const updateMousePosition = (e: MouseEvent) => {
-      setMousePosition({ 
-        x: (e.clientX / window.innerWidth - 0.5) * 2,
-        y: (e.clientY / window.innerHeight - 0.5) * 2 
-      });
-    };
-    
-    window.addEventListener('mousemove', updateMousePosition);
-    return () => window.removeEventListener('mousemove', updateMousePosition);
-  }, []);
-  
-  return mousePosition;
+// Glitch Text Component
+const GlitchText = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
+  return (
+    <span className={`glitch-text relative inline-block ${className}`} data-text={children}>
+      {children}
+    </span>
+  );
 };
 
 const Landing = () => {
@@ -56,7 +46,6 @@ const Landing = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const mousePosition = useMousePosition();
 
   // Refs for GSAP animations
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,7 +74,7 @@ const Landing = () => {
       // Initial states
       gsap.set([logoRef.current, titleRef.current, subtitleRef.current, ctaRef.current], {
         opacity: 0,
-        y: 60,
+        y: 40,
       });
 
       // Epic logo reveal with glow
@@ -93,24 +82,24 @@ const Landing = () => {
         .to(logoRef.current, {
           opacity: 1,
           y: 0,
-          duration: 1,
-          ease: 'back.out(1.4)',
+          duration: 0.8,
+          ease: 'back.out(1.2)',
         })
         .to(titleRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.8,
-        }, '-=0.5')
+          duration: 0.6,
+        }, '-=0.4')
         .to(subtitleRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.6,
-        }, '-=0.4')
+          duration: 0.5,
+        }, '-=0.3')
         .to(ctaRef.current, {
           opacity: 1,
           y: 0,
-          duration: 0.6,
-        }, '-=0.3');
+          duration: 0.5,
+        }, '-=0.2');
 
       // Logo pulse animation
       gsap.to(logoRef.current, {
@@ -126,35 +115,29 @@ const Landing = () => {
         const particles = particleContainerRef.current.querySelectorAll('.cyber-particle');
         particles.forEach((particle, i) => {
           gsap.to(particle, {
-            y: `random(-50, 50)`,
-            x: `random(-30, 30)`,
-            opacity: `random(0.3, 0.8)`,
-            duration: `random(3, 6)`,
+            y: `random(-30, 30)`,
+            x: `random(-20, 20)`,
+            opacity: `random(0.3, 0.7)`,
+            duration: `random(3, 5)`,
             repeat: -1,
             yoyo: true,
             ease: 'sine.inOut',
-            delay: i * 0.1,
+            delay: i * 0.08,
           });
         });
       }
 
-      // Scroll-triggered sections with stagger
-      const sections = [
-        { ref: tournamentRef, delay: 0 },
-        { ref: dashboardRef, delay: 0.1 },
-        { ref: featuresRef, delay: 0.2 },
-        { ref: aiRef, delay: 0.3 },
-        { ref: aboutRef, delay: 0.4 },
-      ];
+      // Scroll-triggered sections
+      const sections = [tournamentRef, dashboardRef, featuresRef, aiRef, aboutRef];
 
-      sections.forEach(({ ref }) => {
+      sections.forEach((ref) => {
         if (ref.current) {
           gsap.fromTo(ref.current,
-            { opacity: 0, y: 80 },
+            { opacity: 0, y: 60 },
             {
               opacity: 1,
               y: 0,
-              duration: 0.8,
+              duration: 0.7,
               ease: 'power2.out',
               scrollTrigger: {
                 trigger: ref.current,
@@ -170,13 +153,12 @@ const Landing = () => {
       if (tournamentRef.current) {
         const cards = tournamentRef.current.querySelectorAll('.tournament-card');
         gsap.fromTo(cards,
-          { opacity: 0, y: 40, rotateX: -15 },
+          { opacity: 0, y: 30 },
           {
             opacity: 1,
             y: 0,
-            rotateX: 0,
-            duration: 0.6,
-            stagger: 0.15,
+            duration: 0.5,
+            stagger: 0.1,
             ease: 'power2.out',
             scrollTrigger: {
               trigger: tournamentRef.current,
@@ -190,14 +172,14 @@ const Landing = () => {
       if (featuresRef.current) {
         const featureCards = featuresRef.current.querySelectorAll('.feature-card');
         gsap.fromTo(featureCards,
-          { opacity: 0, scale: 0.9, y: 30 },
+          { opacity: 0, scale: 0.95, y: 20 },
           {
             opacity: 1,
             scale: 1,
             y: 0,
-            duration: 0.5,
-            stagger: 0.1,
-            ease: 'back.out(1.2)',
+            duration: 0.4,
+            stagger: 0.08,
+            ease: 'power2.out',
             scrollTrigger: {
               trigger: featuresRef.current,
               start: 'top 80%',
@@ -219,8 +201,8 @@ const Landing = () => {
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const rotateX = (y - centerY) / 10;
-    const rotateY = (centerX - x) / 10;
+    const rotateX = (y - centerY) / 12;
+    const rotateY = (centerX - x) / 12;
     
     gsap.to(card, {
       rotateX: rotateX,
@@ -235,7 +217,7 @@ const Landing = () => {
     gsap.to(e.currentTarget, {
       rotateX: 0,
       rotateY: 0,
-      duration: 0.5,
+      duration: 0.4,
       ease: 'power2.out',
     });
   }, []);
@@ -293,14 +275,14 @@ const Landing = () => {
   ];
 
   const features = [
-    { icon: Trophy, title: 'Win Real Prizes', desc: 'Cash prizes & exclusive rewards', color: 'from-yellow-500 to-orange-500' },
-    { icon: Shield, title: 'Fair Play Guaranteed', desc: 'Anti-cheat & transparent rules', color: 'from-cyan-500 to-blue-500' },
-    { icon: Swords, title: 'Build Your Squad', desc: 'Find teammates & dominate', color: 'from-purple-500 to-pink-500' },
-    { icon: Zap, title: 'Instant Payouts', desc: 'Win & withdraw instantly', color: 'from-green-500 to-emerald-500' },
+    { icon: Trophy, title: 'Win Prizes', desc: 'Cash & rewards', color: 'from-yellow-500 to-orange-500' },
+    { icon: Shield, title: 'Fair Play', desc: 'Anti-cheat system', color: 'from-cyan-500 to-blue-500' },
+    { icon: Swords, title: 'Build Squad', desc: 'Find teammates', color: 'from-purple-500 to-pink-500' },
+    { icon: Zap, title: 'Fast Payouts', desc: 'Instant withdraw', color: 'from-green-500 to-emerald-500' },
   ];
 
   const dashboardFeatures = [
-    { icon: Wallet, label: 'Player Wallet', value: '₹5,240', color: 'text-green-400' },
+    { icon: Wallet, label: 'Wallet', value: '₹5,240', color: 'text-green-400' },
     { icon: BarChart3, label: 'Win Rate', value: '67%', color: 'text-cyan-400' },
     { icon: Crown, label: 'Rank', value: '#142', color: 'text-yellow-400' },
   ];
@@ -313,105 +295,137 @@ const Landing = () => {
         keywords="BGMI tournament, Free Fire tournament India, esports India, Vyuha Esport, Abhishek Shukla, gaming tournaments, mobile esports, competitive gaming India"
         url="https://vyuhaesport.in"
       />
+      
+      {/* Glitch CSS */}
+      <style>{`
+        @keyframes glitch {
+          0% { transform: translate(0); }
+          20% { transform: translate(-2px, 2px); }
+          40% { transform: translate(-2px, -2px); }
+          60% { transform: translate(2px, 2px); }
+          80% { transform: translate(2px, -2px); }
+          100% { transform: translate(0); }
+        }
+        
+        @keyframes glitch-skew {
+          0% { transform: skew(0deg); }
+          20% { transform: skew(-1deg); }
+          40% { transform: skew(1deg); }
+          60% { transform: skew(-0.5deg); }
+          80% { transform: skew(0.5deg); }
+          100% { transform: skew(0deg); }
+        }
+        
+        .glitch-text {
+          animation: glitch-skew 4s infinite linear alternate-reverse;
+        }
+        
+        .glitch-text::before,
+        .glitch-text::after {
+          content: attr(data-text);
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+        }
+        
+        .glitch-text::before {
+          left: 2px;
+          text-shadow: -2px 0 #ff00ff;
+          clip: rect(24px, 550px, 90px, 0);
+          animation: glitch 3s infinite linear alternate-reverse;
+        }
+        
+        .glitch-text::after {
+          left: -2px;
+          text-shadow: -2px 0 #00ffff;
+          clip: rect(85px, 550px, 140px, 0);
+          animation: glitch 2s infinite linear alternate-reverse;
+        }
+        
+        .glitch-underline {
+          position: relative;
+        }
+        
+        .glitch-underline::after {
+          content: '';
+          position: absolute;
+          bottom: -4px;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: linear-gradient(90deg, #6366f1, #a855f7, #06b6d4);
+          animation: glitch 2s infinite linear alternate-reverse;
+        }
+      `}</style>
+      
       <div ref={containerRef} className="min-h-screen bg-[#0a0a0f] overflow-hidden text-white">
         
-        {/* Cyberpunk Background with Mouse-Reactive Particles */}
-        <div 
-          ref={particleContainerRef} 
-          className="fixed inset-0 pointer-events-none overflow-hidden"
-          style={{
-            transform: `translate(${mousePosition.x * 10}px, ${mousePosition.y * 10}px)`,
-            transition: 'transform 0.3s ease-out',
-          }}
-        >
+        {/* Cyberpunk Background - Static (No Mouse Effects) */}
+        <div ref={particleContainerRef} className="fixed inset-0 pointer-events-none overflow-hidden">
           {/* Animated particles */}
-          {[...Array(40)].map((_, i) => (
+          {[...Array(25)].map((_, i) => (
             <div
               key={i}
               className="cyber-particle absolute rounded-full"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                width: `${Math.random() * 4 + 2}px`,
-                height: `${Math.random() * 4 + 2}px`,
+                width: `${Math.random() * 3 + 1}px`,
+                height: `${Math.random() * 3 + 1}px`,
                 background: i % 3 === 0 
-                  ? 'rgba(99, 102, 241, 0.6)' 
+                  ? 'rgba(99, 102, 241, 0.5)' 
                   : i % 3 === 1 
-                    ? 'rgba(139, 92, 246, 0.6)' 
-                    : 'rgba(6, 182, 212, 0.5)',
+                    ? 'rgba(139, 92, 246, 0.5)' 
+                    : 'rgba(6, 182, 212, 0.4)',
                 boxShadow: i % 3 === 0 
-                  ? '0 0 15px rgba(99, 102, 241, 0.8)' 
+                  ? '0 0 10px rgba(99, 102, 241, 0.6)' 
                   : i % 3 === 1 
-                    ? '0 0 15px rgba(139, 92, 246, 0.8)' 
-                    : '0 0 15px rgba(6, 182, 212, 0.7)',
+                    ? '0 0 10px rgba(139, 92, 246, 0.6)' 
+                    : '0 0 10px rgba(6, 182, 212, 0.5)',
               }}
             />
           ))}
           
-          {/* Large gradient orbs with parallax */}
-          <div 
-            className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full blur-[100px]"
-            style={{
-              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%)',
-              transform: `translate(${mousePosition.x * 30}px, ${mousePosition.y * 30}px)`,
-            }}
-          />
-          <div 
-            className="absolute top-1/2 -right-48 w-[500px] h-[500px] rounded-full blur-[100px]"
-            style={{
-              background: 'radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%)',
-              transform: `translate(${mousePosition.x * -20}px, ${mousePosition.y * 20}px)`,
-            }}
-          />
-          <div 
-            className="absolute -bottom-32 left-1/3 w-[400px] h-[400px] rounded-full blur-[100px]"
-            style={{
-              background: 'radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, transparent 70%)',
-              transform: `translate(${mousePosition.x * 15}px, ${mousePosition.y * -15}px)`,
-            }}
-          />
+          {/* Static gradient orbs */}
+          <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full blur-[80px] bg-indigo-600/20" />
+          <div className="absolute top-1/2 -right-32 w-[350px] h-[350px] rounded-full blur-[80px] bg-purple-600/15" />
+          <div className="absolute -bottom-20 left-1/3 w-[300px] h-[300px] rounded-full blur-[80px] bg-cyan-600/15" />
           
           {/* Cyberpunk grid */}
           <div 
-            className="absolute inset-0 opacity-[0.03]"
-            style={{
-              backgroundImage: `
-                linear-gradient(to right, rgba(99, 102, 241, 0.5) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(99, 102, 241, 0.5) 1px, transparent 1px)
-              `,
-              backgroundSize: '60px 60px',
-            }}
-          />
-          
-          {/* Scan lines effect */}
-          <div 
             className="absolute inset-0 opacity-[0.02]"
             style={{
-              background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
+              backgroundImage: `
+                linear-gradient(to right, rgba(99, 102, 241, 0.4) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(99, 102, 241, 0.4) 1px, transparent 1px)
+              `,
+              backgroundSize: '50px 50px',
             }}
           />
         </div>
 
-        {/* Glassmorphic Navbar */}
-        <header className="fixed top-0 left-0 right-0 z-50 px-4 py-3">
-          <nav className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl shadow-indigo-500/10">
-            <div className="flex items-center gap-3">
-              <img src={vyuhaLogo} alt="Vyuha" className="h-10 w-10 rounded-full object-cover ring-2 ring-indigo-500/50 shadow-lg shadow-indigo-500/30" />
-              <span className="font-bold text-lg bg-gradient-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent tracking-wider">VYUHA</span>
+        {/* Glassmorphic Navbar - Compact */}
+        <header className="fixed top-0 left-0 right-0 z-50 px-3 py-2">
+          <nav className="max-w-5xl mx-auto flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 backdrop-blur-xl border border-white/10">
+            <div className="flex items-center gap-2">
+              <img src={vyuhaLogo} alt="Vyuha" className="h-7 w-7 rounded-full object-cover ring-1 ring-indigo-500/50" />
+              <span className="font-bold text-sm bg-gradient-to-r from-white via-indigo-200 to-purple-200 bg-clip-text text-transparent">VYUHA</span>
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setAuthDialog('login')} 
-                className="text-xs text-white/80 hover:text-white hover:bg-white/10 border border-transparent hover:border-indigo-500/50 transition-all duration-300"
+                className="text-[10px] h-7 px-2 text-white/80 hover:text-white hover:bg-white/10"
               >
                 Login
               </Button>
               <Button 
                 size="sm" 
                 onClick={() => setAuthDialog('signup')} 
-                className="text-xs bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border border-indigo-400/30 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all duration-300"
+                className="text-[10px] h-7 px-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border border-indigo-400/30"
               >
                 Sign Up
               </Button>
@@ -419,107 +433,108 @@ const Landing = () => {
           </nav>
         </header>
 
-        {/* Hero Section - The Shock Factor */}
-        <section ref={heroRef} className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 pt-24 pb-16">
-          {/* Logo with glow effect */}
-          <div className="relative mb-8">
-            <div className="absolute inset-0 bg-indigo-500/30 rounded-full blur-3xl scale-150 animate-pulse" />
-            <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-2xl scale-125" />
+        {/* Hero Section - Compact with Glitch Effect */}
+        <section ref={heroRef} className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 pt-16 pb-12">
+          {/* Logo with glow effect - Smaller */}
+          <div className="relative mb-5">
+            <div className="absolute inset-0 bg-indigo-500/25 rounded-full blur-2xl scale-150" />
             <img 
               ref={logoRef}
               src={vyuhaLogo} 
               alt="Vyuha Esport" 
-              className="relative h-28 w-28 md:h-36 md:w-36 rounded-full object-cover ring-4 ring-indigo-500/50 shadow-2xl shadow-indigo-500/40"
+              className="relative h-20 w-20 md:h-24 md:w-24 rounded-full object-cover ring-2 ring-indigo-500/50 shadow-xl shadow-indigo-500/30"
             />
           </div>
           
-          {/* Massive Headline */}
+          {/* Headline with Glitch Effect */}
           <h1 
             ref={titleRef}
-            className="text-4xl md:text-6xl lg:text-7xl font-black text-center mb-6 leading-tight"
+            className="text-2xl md:text-4xl lg:text-5xl font-black text-center mb-4 leading-tight"
           >
-            <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">VYUHA ESPORTS</span>
+            <GlitchText className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
+              VYUHA ESPORTS
+            </GlitchText>
             <br />
-            <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-white/90 block mt-2">
-              The Stage for <span className="text-cyan-400 underline decoration-wavy decoration-cyan-400/50">Underdogs</span>
+            <span className="text-base md:text-xl lg:text-2xl font-bold text-white/90 block mt-2">
+              The Stage for <span className="glitch-underline text-cyan-400">Underdogs</span>
             </span>
           </h1>
           
           <p 
             ref={subtitleRef}
-            className="text-white/60 text-sm md:text-base mb-10 max-w-lg mx-auto text-center leading-relaxed"
+            className="text-white/60 text-xs md:text-sm mb-6 max-w-sm mx-auto text-center leading-relaxed"
           >
-            Empowering players from schools and colleges across India. Your journey from underdog to champion starts here.
+            Empowering players from schools & colleges across India. Your journey from underdog to champion starts here.
           </p>
 
-          <div ref={ctaRef} className="flex flex-col sm:flex-row gap-4">
+          <div ref={ctaRef} className="flex flex-col sm:flex-row gap-3">
             <Button 
-              size="lg" 
+              size="default" 
               onClick={() => setAuthDialog('signup')}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-2xl shadow-indigo-500/30 hover:shadow-indigo-500/50 border border-indigo-400/30 gap-2 group px-8 py-6 text-base font-semibold"
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25 border border-indigo-400/30 gap-1.5 group px-5 py-2 text-xs font-semibold"
             >
-              <Gamepad2 className="h-5 w-5" />
-              Start Playing Now
-              <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <Gamepad2 className="h-3.5 w-3.5" />
+              Start Playing
+              <ChevronRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
             </Button>
             <Button 
-              size="lg" 
+              size="default" 
               variant="outline"
-              className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white hover:border-cyan-500/50 gap-2 px-8 py-6"
+              className="border-white/20 text-white/80 hover:bg-white/10 hover:text-white gap-1.5 px-5 py-2 text-xs"
+              onClick={() => window.open('https://instagram.com/vyuhaesport', '_blank')}
             >
-              <Users className="h-5 w-5" />
+              <Instagram className="h-3.5 w-3.5" />
               Join Community
             </Button>
           </div>
 
           {/* Scroll indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-            <div className="w-6 h-10 rounded-full border-2 border-white/30 flex items-start justify-center p-2">
-              <div className="w-1 h-2 bg-white/50 rounded-full animate-pulse" />
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
+            <div className="w-5 h-8 rounded-full border border-white/30 flex items-start justify-center p-1.5">
+              <div className="w-0.5 h-1.5 bg-white/50 rounded-full" />
             </div>
           </div>
         </section>
 
-        {/* Tournament Lobby Section */}
-        <section ref={tournamentRef} className="relative z-10 px-4 py-16">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/30">
-                <Trophy className="h-6 w-6 text-indigo-400" />
+        {/* Tournament Lobby Section - Compact */}
+        <section ref={tournamentRef} className="relative z-10 px-3 py-10">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border border-indigo-500/30">
+                <Trophy className="h-4 w-4 text-indigo-400" />
               </div>
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white">Tournament Lobby</h2>
-                <p className="text-white/50 text-sm">Live matches happening right now</p>
+                <h2 className="text-lg md:text-xl font-bold text-white">Tournament Lobby</h2>
+                <p className="text-white/50 text-[10px]">Live matches happening now</p>
               </div>
             </div>
             
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {liveTournaments.map((tournament) => (
                 <div
                   key={tournament.id}
-                  className="tournament-card group relative p-5 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10 hover:border-indigo-500/50 transition-all duration-500 cursor-pointer overflow-hidden"
+                  className="tournament-card group relative p-3 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10 hover:border-indigo-500/50 transition-all duration-300 cursor-pointer overflow-hidden"
                   onMouseMove={handleCardTilt}
                   onMouseLeave={handleCardTiltReset}
                   style={{ transformStyle: 'preserve-3d' }}
                 >
-                  {/* Glow effect on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-purple-600/0 to-cyan-600/0 group-hover:from-indigo-600/10 group-hover:via-purple-600/10 group-hover:to-cyan-600/10 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/0 via-purple-600/0 to-cyan-600/0 group-hover:from-indigo-600/5 group-hover:via-purple-600/5 group-hover:to-cyan-600/5 transition-all duration-300" />
                   
                   <div className="relative flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600/30 to-purple-600/30 flex items-center justify-center border border-indigo-500/30">
-                        <Gamepad2 className="h-6 w-6 text-indigo-400" />
+                    <div className="flex items-center gap-3">
+                      <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-600/30 to-purple-600/30 flex items-center justify-center border border-indigo-500/30">
+                        <Gamepad2 className="h-4 w-4 text-indigo-400" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-white group-hover:text-indigo-300 transition-colors">{tournament.name}</h3>
-                        <p className="text-xs text-white/50">{tournament.players} players</p>
+                        <h3 className="font-semibold text-xs text-white group-hover:text-indigo-300 transition-colors">{tournament.name}</h3>
+                        <p className="text-[10px] text-white/50">{tournament.players} players</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-cyan-400">{tournament.prize}</div>
-                      <div className={`text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${
+                      <div className="text-sm font-bold text-cyan-400">{tournament.prize}</div>
+                      <div className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full inline-block ${
                         tournament.status === 'LIVE' 
-                          ? 'bg-green-500/20 text-green-400 animate-pulse' 
+                          ? 'bg-green-500/20 text-green-400' 
                           : 'bg-yellow-500/20 text-yellow-400'
                       }`}>
                         ● {tournament.status}
@@ -532,49 +547,49 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Dashboard Preview Section */}
-        <section ref={dashboardRef} className="relative z-10 px-4 py-16">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/30">
-                <User className="h-6 w-6 text-cyan-400" />
+        {/* Dashboard Preview Section - Compact */}
+        <section ref={dashboardRef} className="relative z-10 px-3 py-10">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-cyan-600/20 to-blue-600/20 border border-cyan-500/30">
+                <User className="h-4 w-4 text-cyan-400" />
               </div>
               <div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white">Player Dashboard</h2>
-                <p className="text-white/50 text-sm">Your gaming command center</p>
+                <h2 className="text-lg md:text-xl font-bold text-white">Player Dashboard</h2>
+                <p className="text-white/50 text-[10px]">Your gaming command center</p>
               </div>
             </div>
             
-            <div className="p-6 rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10 shadow-2xl">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10">
               {/* Dashboard Header */}
-              <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/10">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                  <User className="h-7 w-7 text-white" />
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                  <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-lg">Pro_Underdog_42</h3>
-                  <p className="text-xs text-cyan-400">⭐ Elite Player</p>
+                  <h3 className="font-bold text-white text-sm">Pro_Underdog_42</h3>
+                  <p className="text-[10px] text-cyan-400">⭐ Elite Player</p>
                 </div>
               </div>
               
               {/* Stats Grid */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2">
                 {dashboardFeatures.map((feature, i) => (
-                  <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-indigo-500/30 transition-all">
-                    <feature.icon className={`h-5 w-5 ${feature.color} mb-2`} />
-                    <div className={`text-xl font-bold ${feature.color}`}>{feature.value}</div>
-                    <div className="text-xs text-white/50">{feature.label}</div>
+                  <div key={i} className="p-3 rounded-lg bg-white/5 border border-white/10">
+                    <feature.icon className={`h-4 w-4 ${feature.color} mb-1.5`} />
+                    <div className={`text-base font-bold ${feature.color}`}>{feature.value}</div>
+                    <div className="text-[9px] text-white/50">{feature.label}</div>
                   </div>
                 ))}
               </div>
               
               {/* Quick Stats */}
-              <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/20">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white/60">Tournaments Played</span>
+              <div className="mt-4 p-3 rounded-lg bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/20">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-white/60">Tournaments</span>
                   <span className="text-white font-semibold">47</span>
                 </div>
-                <div className="flex items-center justify-between text-sm mt-2">
+                <div className="flex items-center justify-between text-xs mt-1.5">
                   <span className="text-white/60">Total Winnings</span>
                   <span className="text-green-400 font-semibold">₹12,450</span>
                 </div>
@@ -583,80 +598,83 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Features Grid */}
-        <section ref={featuresRef} className="relative z-10 px-4 py-16">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-3 text-white">Why Choose Vyuha?</h2>
-            <p className="text-white/50 text-center mb-10">Built by gamers, for gamers</p>
+        {/* Features Grid - Compact */}
+        <section ref={featuresRef} className="relative z-10 px-3 py-10">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-lg md:text-xl font-bold text-center mb-2 text-white">
+              <GlitchText>Why Vyuha?</GlitchText>
+            </h2>
+            <p className="text-white/50 text-[10px] text-center mb-6">Built by gamers, for gamers</p>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {features.map((feature, i) => (
                 <div 
                   key={i} 
-                  className="feature-card p-5 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10 hover:border-indigo-500/40 transition-all duration-300 group cursor-pointer"
+                  className="feature-card p-3 rounded-xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10 hover:border-indigo-500/40 transition-all duration-300 group cursor-pointer"
                   onMouseMove={handleCardTilt}
                   onMouseLeave={handleCardTiltReset}
                   style={{ transformStyle: 'preserve-3d' }}
                 >
-                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
-                    <feature.icon className="h-6 w-6 text-white" />
+                  <div className={`h-9 w-9 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center mb-2.5 shadow-lg group-hover:scale-105 transition-transform`}>
+                    <feature.icon className="h-4 w-4 text-white" />
                   </div>
-                  <h3 className="font-bold text-white text-sm mb-1">{feature.title}</h3>
-                  <p className="text-xs text-white/50">{feature.desc}</p>
+                  <h3 className="font-bold text-white text-[11px] mb-0.5">{feature.title}</h3>
+                  <p className="text-[9px] text-white/50">{feature.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Groq AI Integration Section */}
-        <section ref={aiRef} className="relative z-10 px-4 py-16">
-          <div className="max-w-4xl mx-auto">
-            <div className="p-8 rounded-3xl bg-gradient-to-br from-purple-900/30 via-indigo-900/30 to-cyan-900/30 backdrop-blur-xl border border-purple-500/20 relative overflow-hidden">
-              {/* Animated background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-transparent to-cyan-600/10 animate-pulse" />
+        {/* Groq AI Integration Section - Compact */}
+        <section ref={aiRef} className="relative z-10 px-3 py-10">
+          <div className="max-w-3xl mx-auto">
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-900/30 via-indigo-900/30 to-cyan-900/30 backdrop-blur-xl border border-purple-500/20 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/5 via-transparent to-cyan-600/5" />
               
               <div className="relative">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-purple-600/30 to-cyan-600/30 border border-purple-500/30">
-                    <Brain className="h-6 w-6 text-purple-400" />
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-purple-600/30 to-cyan-600/30 border border-purple-500/30">
+                    <Brain className="h-4 w-4 text-purple-400" />
                   </div>
                   <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white">Powered by AI</h2>
-                    <p className="text-white/50 text-sm">Smart insights for smarter gaming</p>
+                    <h2 className="text-lg font-bold text-white">
+                      <GlitchText>Powered by AI</GlitchText>
+                    </h2>
+                    <p className="text-white/50 text-[10px]">Smart gaming insights</p>
                   </div>
                 </div>
                 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <Cpu className="h-5 w-5 text-cyan-400 mt-1" />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2">
+                      <Cpu className="h-4 w-4 text-cyan-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-white text-sm">Match Analysis</h4>
-                        <p className="text-xs text-white/50">AI-powered breakdown of your gameplay</p>
+                        <h4 className="font-semibold text-white text-xs">Match Analysis</h4>
+                        <p className="text-[10px] text-white/50">AI-powered gameplay breakdown</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <Star className="h-5 w-5 text-yellow-400 mt-1" />
+                    <div className="flex items-start gap-2">
+                      <Star className="h-4 w-4 text-yellow-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-white text-sm">Performance Tips</h4>
-                        <p className="text-xs text-white/50">Personalized recommendations to improve</p>
+                        <h4 className="font-semibold text-white text-xs">Performance Tips</h4>
+                        <p className="text-[10px] text-white/50">Personalized recommendations</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-3">
-                      <Target className="h-5 w-5 text-green-400 mt-1" />
+                    <div className="flex items-start gap-2">
+                      <Target className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-white text-sm">Opponent Insights</h4>
-                        <p className="text-xs text-white/50">Know your competition before the match</p>
+                        <h4 className="font-semibold text-white text-xs">Opponent Insights</h4>
+                        <p className="text-[10px] text-white/50">Know your competition</p>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-center">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-2xl blur-xl opacity-30 animate-pulse" />
-                      <div className="relative px-6 py-4 rounded-2xl bg-gradient-to-r from-purple-600/20 to-cyan-600/20 border border-purple-500/30">
-                        <Brain className="h-16 w-16 text-purple-400 mx-auto mb-2" />
-                        <p className="text-xs text-white/60 text-center">Groq AI Integration</p>
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-xl blur-lg opacity-20" />
+                      <div className="relative px-4 py-3 rounded-xl bg-gradient-to-r from-purple-600/20 to-cyan-600/20 border border-purple-500/30">
+                        <Brain className="h-10 w-10 text-purple-400 mx-auto mb-1" />
+                        <p className="text-[9px] text-white/60 text-center">Groq AI</p>
                       </div>
                     </div>
                   </div>
@@ -666,100 +684,106 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* About Creator */}
-        <section className="relative z-10 px-4 py-16 pb-32">
+        {/* About Creator - Compact */}
+        <section className="relative z-10 px-3 py-10 pb-28">
           <div 
             ref={aboutRef}
-            className="max-w-4xl mx-auto p-6 rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10"
+            className="max-w-3xl mx-auto p-4 rounded-2xl bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-xl border border-white/10"
           >
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-3 mb-3">
               <img 
                 src="/abhishek-shukla.jpg" 
                 alt="Abhishek Shukla" 
-                className="h-16 w-16 rounded-full object-cover ring-2 ring-indigo-500/50 shadow-lg"
+                className="h-12 w-12 rounded-full object-cover ring-2 ring-indigo-500/50"
               />
               <div>
-                <h3 className="font-bold text-white text-lg">Abhishek Shukla</h3>
-                <p className="text-xs text-indigo-400 font-medium">Founder & CEO</p>
+                <h3 className="font-bold text-white text-sm">Abhishek Shukla</h3>
+                <p className="text-[10px] text-indigo-400 font-medium">Founder & CEO</p>
               </div>
             </div>
-            <p className="text-sm text-white/60 leading-relaxed">
-              An 18-year-old engineering student and tech enthusiast who built Vyuha to bridge the gap between casual gaming and professional esports. Our mission is to give every underdog a fair chance to shine.
+            <p className="text-[11px] text-white/60 leading-relaxed">
+              An 18-year-old engineering student and tech enthusiast who built Vyuha to bridge the gap between casual gaming and professional esports.
             </p>
-            <div className="mt-4 pt-4 border-t border-white/10">
-              <a href="https://instagram.com/abhishek.shhh" target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <a 
+                href="https://instagram.com/abhishek.shhh" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
+              >
+                <Instagram className="h-3 w-3" />
                 @abhishek.shhh
               </a>
             </div>
           </div>
         </section>
 
-        {/* CTA Footer */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/95 to-transparent">
+        {/* CTA Footer - Fixed Button */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-3 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/95 to-transparent">
           <Button 
-            className="w-full max-w-md mx-auto block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-2xl shadow-indigo-500/30 border border-indigo-400/30 py-6 text-base font-semibold"
+            className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-xl shadow-indigo-500/25 border border-indigo-400/30 py-5 text-sm font-semibold"
             onClick={() => setAuthDialog('signup')}
           >
-            <Gamepad2 className="h-5 w-5 mr-2" />
-            Join Vyuha Now
+            <Gamepad2 className="h-4 w-4" />
+            Join Vyuha
           </Button>
         </div>
 
         {/* Auth Dialog */}
         <Dialog open={authDialog !== null} onOpenChange={(open) => !open && setAuthDialog(null)}>
-          <DialogContent className="max-w-sm bg-[#0a0a0f]/95 backdrop-blur-2xl border border-white/10 text-white">
+          <DialogContent className="max-w-xs bg-[#0a0a0f]/95 backdrop-blur-2xl border border-white/10 text-white">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-white">
-                <img src={vyuhaLogo} alt="Vyuha" className="h-8 w-8 rounded-full ring-2 ring-indigo-500/50" />
+              <DialogTitle className="flex items-center gap-2 text-white text-sm">
+                <img src={vyuhaLogo} alt="Vyuha" className="h-6 w-6 rounded-full ring-1 ring-indigo-500/50" />
                 {authDialog === 'login' ? 'Welcome Back' : 'Join Vyuha'}
               </DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <form onSubmit={handleSubmit} className="space-y-3 pt-1">
               {authDialog === 'signup' && (
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-white/70">Full Name</Label>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-white/70">Full Name</Label>
                   <Input 
                     value={fullName}
                     onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
                     placeholder="Your name"
-                    className={`bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.fullName ? 'border-red-500' : ''}`}
+                    className={`h-8 text-xs bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.fullName ? 'border-red-500' : ''}`}
                   />
-                  {errors.fullName && <p className="text-[10px] text-red-400">{errors.fullName}</p>}
+                  {errors.fullName && <p className="text-[9px] text-red-400">{errors.fullName}</p>}
                 </div>
               )}
               
-              <div className="space-y-1.5">
-                <Label className="text-xs text-white/70">Email</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-white/70">Email</Label>
                 <Input 
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
                   placeholder="you@example.com"
-                  className={`bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.email ? 'border-red-500' : ''}`}
+                  className={`h-8 text-xs bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.email ? 'border-red-500' : ''}`}
                 />
-                {errors.email && <p className="text-[10px] text-red-400">{errors.email}</p>}
+                {errors.email && <p className="text-[9px] text-red-400">{errors.email}</p>}
               </div>
               
-              <div className="space-y-1.5">
-                <Label className="text-xs text-white/70">Password</Label>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-white/70">Password</Label>
                 <div className="relative">
                   <Input 
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setErrors(p => ({...p, password: undefined})); }}
                     placeholder="••••••••"
-                    className={`bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.password ? 'border-red-500' : ''}`}
+                    className={`h-8 text-xs bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.password ? 'border-red-500' : ''}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                   </button>
                 </div>
-                {errors.password && <p className="text-[10px] text-red-400">{errors.password}</p>}
+                {errors.password && <p className="text-[9px] text-red-400">{errors.password}</p>}
               </div>
 
               {authDialog === 'signup' && (
@@ -767,20 +791,20 @@ const Landing = () => {
                   <Checkbox 
                     checked={acceptedTerms} 
                     onCheckedChange={(c) => { setAcceptedTerms(!!c); setErrors(p => ({...p, terms: undefined})); }}
-                    className="border-white/30 data-[state=checked]:bg-indigo-600"
+                    className="h-3.5 w-3.5 border-white/30 data-[state=checked]:bg-indigo-600"
                   />
-                  <Label className="text-[10px] text-white/60 leading-tight">
+                  <Label className="text-[9px] text-white/60 leading-tight">
                     I accept the <a href="/terms" className="text-indigo-400 hover:underline">Terms</a> & <a href="/refund" className="text-indigo-400 hover:underline">Refund Policy</a>
                   </Label>
                 </div>
               )}
-              {errors.terms && <p className="text-[10px] text-red-400">{errors.terms}</p>}
+              {errors.terms && <p className="text-[9px] text-red-400">{errors.terms}</p>}
 
-              <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border border-indigo-400/30">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : authDialog === 'login' ? 'Login' : 'Create Account'}
+              <Button type="submit" disabled={loading} className="w-full h-9 text-xs bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border border-indigo-400/30">
+                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : authDialog === 'login' ? 'Login' : 'Create Account'}
               </Button>
 
-              <p className="text-center text-xs text-white/50">
+              <p className="text-center text-[10px] text-white/50">
                 {authDialog === 'login' ? (
                   <>Don't have an account? <button type="button" onClick={() => setAuthDialog('signup')} className="text-indigo-400 hover:underline">Sign Up</button></>
                 ) : (
