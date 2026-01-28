@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -58,8 +58,12 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  Trash2
+  Trash2,
+  Share2,
+  Copy,
+  Link2
 } from 'lucide-react';
+import { copyToClipboard, tryNativeShare } from '@/utils/share';
 
 interface PlayerTeam {
   id: string;
@@ -119,6 +123,7 @@ const TeamPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [saving, setSaving] = useState(false);
   const [requestMessage, setRequestMessage] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
   
   const [teamForm, setTeamForm] = useState({
     name: '',
@@ -131,6 +136,7 @@ const TeamPage = () => {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const games = ['Free Fire', 'BGMI', 'Call of Duty Mobile', 'PUBG New State', 'Clash Royale'];
   const MAX_TEAM_MEMBERS = 6;
@@ -148,6 +154,84 @@ const TeamPage = () => {
       fetchMyRequests();
     }
   }, [user]);
+
+  // Handle join team from shared link
+  useEffect(() => {
+    const handleJoinFromLink = async () => {
+      const joinTeamId = searchParams.get('join');
+      if (!joinTeamId || !user || myTeam || loading) return;
+      
+      // Clear the URL param
+      setSearchParams({});
+      
+      // Fetch the team to join
+      const { data: teamToJoin } = await supabase
+        .from('player_teams')
+        .select('*, player_team_members(count)')
+        .eq('id', joinTeamId)
+        .single();
+      
+      if (!teamToJoin) {
+        toast({ title: 'Team Not Found', description: 'This team link is invalid or expired.', variant: 'destructive' });
+        return;
+      }
+      
+      // Check member count
+      const { count } = await supabase
+        .from('player_team_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('team_id', joinTeamId);
+      
+      if ((count || 0) >= MAX_TEAM_MEMBERS) {
+        toast({ title: 'Team Full', description: 'This team has reached maximum capacity.', variant: 'destructive' });
+        return;
+      }
+      
+      // Get leader profile for request dialog
+      const { data: leaderProfile } = await supabase
+        .from('profiles')
+        .select('full_name, username')
+        .eq('user_id', teamToJoin.leader_id)
+        .single();
+      
+      const teamWithDetails = {
+        ...teamToJoin,
+        memberCount: count || 0,
+        leaderName: leaderProfile?.full_name || leaderProfile?.username || 'Unknown',
+      };
+      
+      if (teamToJoin.requires_approval) {
+        setSelectedTeamForRequest(teamToJoin as PlayerTeam);
+        setRequestDialogOpen(true);
+        toast({ title: `Join ${teamToJoin.name}`, description: 'Send a request to join this team.' });
+      } else {
+        // Direct join
+        try {
+          const { error } = await supabase
+            .from('player_team_members')
+            .insert({
+              team_id: joinTeamId,
+              user_id: user.id,
+              role: 'member',
+            });
+
+          if (error) throw error;
+
+          toast({ title: 'Joined Team!', description: `You have joined ${teamToJoin.name}!` });
+          fetchMyTeam();
+          fetchOpenTeams();
+        } catch (error: any) {
+          if (error.code === '23505') {
+            toast({ title: 'Already a Member', description: 'You are already in this team.', variant: 'destructive' });
+          } else {
+            toast({ title: 'Error', description: 'Failed to join team.', variant: 'destructive' });
+          }
+        }
+      }
+    };
+    
+    handleJoinFromLink();
+  }, [searchParams, user, myTeam, loading]);
 
   useEffect(() => {
     if (!loading) {
@@ -669,6 +753,33 @@ const TeamPage = () => {
 
   const isLeader = myTeam?.leader_id === user?.id;
 
+  // Share team link function
+  const handleShareTeamLink = async () => {
+    if (!myTeam) return;
+    
+    const teamLink = `${window.location.origin}/team?join=${myTeam.id}`;
+    const shareText = `Join my team "${myTeam.name}" on Vyuha Esports! 🎮🔥`;
+    
+    // Try native share first (better on mobile)
+    const shared = await tryNativeShare({
+      title: `Join ${myTeam.name}`,
+      text: shareText,
+      url: teamLink,
+    });
+    
+    if (!shared) {
+      // Fallback to clipboard
+      const copied = await copyToClipboard(teamLink);
+      if (copied) {
+        setCopiedLink(true);
+        toast({ title: 'Link Copied!', description: 'Share this link with friends to invite them.' });
+        setTimeout(() => setCopiedLink(false), 2000);
+      } else {
+        toast({ title: 'Error', description: 'Could not copy link.', variant: 'destructive' });
+      }
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -880,9 +991,34 @@ const TeamPage = () => {
                     </Badge>
                   )}
                 </div>
+                
+                {/* Share Team Link Button */}
+                <div className="mt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2 h-10 rounded-xl border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all"
+                    onClick={handleShareTeamLink}
+                  >
+                    {copiedLink ? (
+                      <>
+                        <Check className="h-4 w-4 text-success" />
+                        <span className="text-success">Link Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="h-4 w-4 text-primary" />
+                        <span>Share Team Link</span>
+                        <Link2 className="h-3.5 w-3.5 text-muted-foreground ml-auto" />
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground text-center mt-1.5">
+                    Share this link with friends to invite them to your team
+                  </p>
+                </div>
               </div>
 
-              {/* Pending Requests Alert */}
               {isLeader && joinRequests.length > 0 && (
                 <div 
                   onClick={() => setActiveTab('requests')}

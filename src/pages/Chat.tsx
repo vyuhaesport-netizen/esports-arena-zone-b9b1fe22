@@ -364,31 +364,40 @@ const ChatPage = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newMessage.trim() || !myTeam) return;
+    const trimmedMessage = newMessage.trim();
+    if (!user || !trimmedMessage || !myTeam || sending) return;
 
+    // Optimistic UI: Clear input immediately for faster UX
+    const messageToSend = trimmedMessage;
+    const replyToSend = replyingTo;
+    setNewMessage('');
+    setReplyingTo(null);
     setSending(true);
+
     try {
       const insertData: any = {
         team_id: myTeam.id,
         sender_id: user.id,
-        content: newMessage.trim(),
+        content: messageToSend,
         seen_by: [user.id],
       };
       
-      if (replyingTo) {
-        insertData.reply_to = replyingTo.id;
+      if (replyToSend) {
+        insertData.reply_to = replyToSend.id;
       }
 
       const { error } = await supabase.from('team_messages').insert(insertData);
 
       if (error) throw error;
-      setNewMessage('');
-      setReplyingTo(null);
     } catch (error) {
       console.error('Error sending message:', error);
+      // Restore message on error
+      setNewMessage(messageToSend);
       toast({ title: 'Error', description: 'Failed to send message.', variant: 'destructive' });
     } finally {
       setSending(false);
+      // Keep focus on input for continuous typing
+      inputRef.current?.focus();
     }
   };
 
