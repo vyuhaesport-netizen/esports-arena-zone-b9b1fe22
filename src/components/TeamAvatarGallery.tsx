@@ -2,25 +2,25 @@ import { useState } from 'react';
 import { Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Import team avatars (using existing anime avatars)
-import animeSamurai from '@/assets/avatars/anime-samurai.png';
-import animeNinja from '@/assets/avatars/anime-ninja.png';
-import animeSorcerer from '@/assets/avatars/anime-sorcerer.png';
-import animeDragonslayer from '@/assets/avatars/anime-dragonslayer.png';
-import animeCommander from '@/assets/avatars/anime-commander.png';
-import animeFiremage from '@/assets/avatars/anime-firemage.png';
-import animeWarrior from '@/assets/avatars/anime-warrior.png';
-import animeAngel from '@/assets/avatars/anime-angel.png';
+// Import unique team mascot avatars
+import phoenixTeam from '@/assets/team-avatars/phoenix-team.png';
+import dragonTeam from '@/assets/team-avatars/dragon-team.png';
+import lionTeam from '@/assets/team-avatars/lion-team.png';
+import wolfTeam from '@/assets/team-avatars/wolf-team.png';
+import cobraTeam from '@/assets/team-avatars/cobra-team.png';
+import tigerTeam from '@/assets/team-avatars/tiger-team.png';
+import eagleTeam from '@/assets/team-avatars/eagle-team.png';
+import skullTeam from '@/assets/team-avatars/skull-team.png';
 
 export const teamAvatars = [
-  { id: 'samurai', src: animeSamurai, name: 'Dark Samurai' },
-  { id: 'ninja', src: animeNinja, name: 'Red Ninja' },
-  { id: 'sorcerer', src: animeSorcerer, name: 'Blue Sorcerer' },
-  { id: 'dragonslayer', src: animeDragonslayer, name: 'Dragon Slayer' },
-  { id: 'commander', src: animeCommander, name: 'Commander' },
-  { id: 'firemage', src: animeFiremage, name: 'Fire Mage' },
-  { id: 'warrior', src: animeWarrior, name: 'Warrior' },
-  { id: 'angel', src: animeAngel, name: 'Divine Angel' },
+  { id: 'phoenix', src: phoenixTeam, name: 'Phoenix' },
+  { id: 'dragon', src: dragonTeam, name: 'Dragon' },
+  { id: 'lion', src: lionTeam, name: 'Lion' },
+  { id: 'wolf', src: wolfTeam, name: 'Wolf' },
+  { id: 'cobra', src: cobraTeam, name: 'Cobra' },
+  { id: 'tiger', src: tigerTeam, name: 'Tiger' },
+  { id: 'eagle', src: eagleTeam, name: 'Eagle' },
+  { id: 'skull', src: skullTeam, name: 'Skull' },
 ];
 
 interface TeamAvatarGalleryProps {
@@ -55,7 +55,7 @@ export const TeamAvatarGallery = ({
 
   return (
     <div className="space-y-3">
-      <p className="text-sm font-medium text-center">Choose Team Avatar</p>
+      <p className="text-sm font-medium text-center">Choose Team Logo</p>
       
       <div className="grid grid-cols-4 gap-3">
         {teamAvatars.map((avatar) => {
@@ -68,7 +68,7 @@ export const TeamAvatarGallery = ({
               onClick={() => handleSelect(avatar)}
               disabled={disabled || !!selecting}
               className={cn(
-                "relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300",
+                "relative aspect-square rounded-full overflow-hidden border-2 transition-all duration-300",
                 "hover:scale-105 hover:border-primary hover:shadow-lg hover:shadow-primary/20",
                 "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                 isSelected ? "border-primary ring-2 ring-primary ring-offset-2 shadow-lg shadow-primary/30" : "border-border",
@@ -103,7 +103,7 @@ export const TeamAvatarGallery = ({
       </div>
       
       <p className="text-xs text-muted-foreground text-center">
-        Tap to select your team's avatar
+        Tap to select your team's logo
       </p>
     </div>
   );

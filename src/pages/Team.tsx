@@ -865,14 +865,14 @@ const TeamPage = () => {
                 <div className="flex items-start gap-3">
                   <div className="relative">
                     {myTeam.logo_url ? (
-                      <Avatar className="w-14 h-14 rounded-xl">
+                      <Avatar className="w-14 h-14 rounded-full">
                         <AvatarImage src={myTeam.logo_url} className="object-cover" />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/50 rounded-xl">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/50 rounded-full">
                           <Users className="h-7 w-7 text-primary-foreground" />
                         </AvatarFallback>
                       </Avatar>
                     ) : (
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center">
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center">
                         <Users className="h-7 w-7 text-primary-foreground" />
                       </div>
                     )}
@@ -1132,9 +1132,18 @@ const TeamPage = () => {
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
+                    {team.logo_url ? (
+                      <Avatar className="w-10 h-10 rounded-full shrink-0">
+                        <AvatarImage src={team.logo_url} className="object-cover" />
+                        <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-full">
+                          <Users className="h-5 w-5 text-primary" />
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0">
+                        <Users className="h-5 w-5 text-primary" />
+                      </div>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <h4 className="font-semibold text-xs truncate">{team.name}</h4>
