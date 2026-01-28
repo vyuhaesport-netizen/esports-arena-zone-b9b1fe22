@@ -62,9 +62,9 @@ import {
   Share2,
   Copy,
   Link2,
-  Camera,
-  ImagePlus
+  Palette
 } from 'lucide-react';
+import { TeamAvatarGallery } from '@/components/TeamAvatarGallery';
 import { copyToClipboard, tryNativeShare } from '@/utils/share';
 
 interface PlayerTeam {
@@ -126,6 +126,7 @@ const TeamPage = () => {
   const [saving, setSaving] = useState(false);
   const [requestMessage, setRequestMessage] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   
   const [teamForm, setTeamForm] = useState({
     name: '',
@@ -696,50 +697,25 @@ const TeamPage = () => {
     }
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelectTeamAvatar = async (avatarSrc: string) => {
     if (!user || !myTeam || myTeam.leader_id !== user.id) return;
-    
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({ title: 'Invalid File', description: 'Please select an image file.', variant: 'destructive' });
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ title: 'File Too Large', description: 'Image must be less than 2MB.', variant: 'destructive' });
-      return;
-    }
 
     setSaving(true);
 
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `team-logos/${myTeam.id}-${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('branding')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('branding')
-        .getPublicUrl(fileName);
-
       const { error: updateError } = await supabase
         .from('player_teams')
-        .update({ logo_url: publicUrl })
+        .update({ logo_url: avatarSrc })
         .eq('id', myTeam.id);
 
       if (updateError) throw updateError;
 
-      toast({ title: 'Logo Updated!', description: 'Your team logo has been updated.' });
+      toast({ title: 'Avatar Updated!', description: 'Your team avatar has been updated.' });
+      setAvatarDialogOpen(false);
       fetchMyTeam();
     } catch (error) {
-      console.error('Error uploading logo:', error);
-      toast({ title: 'Error', description: 'Failed to upload logo.', variant: 'destructive' });
+      console.error('Error updating avatar:', error);
+      toast({ title: 'Error', description: 'Failed to update avatar.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -900,22 +876,19 @@ const TeamPage = () => {
                         <Users className="h-7 w-7 text-primary-foreground" />
                       </div>
                     )}
-                    {/* Upload badge indicator for leaders */}
+                    {/* Avatar change badge indicator for leaders */}
                     {isLeader && (
-                      <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-colors border-2 border-card">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleLogoUpload}
-                          disabled={saving}
-                        />
+                      <button
+                        onClick={() => setAvatarDialogOpen(true)}
+                        disabled={saving}
+                        className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-colors border-2 border-card"
+                      >
                         {saving ? (
                           <Loader2 className="h-3 w-3 text-primary-foreground animate-spin" />
                         ) : (
-                          <Camera className="h-3 w-3 text-primary-foreground" />
+                          <Palette className="h-3 w-3 text-primary-foreground" />
                         )}
-                      </label>
+                      </button>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -956,18 +929,9 @@ const TeamPage = () => {
                             </p>
                           </div>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem asChild className="cursor-pointer gap-2">
-                            <label>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleLogoUpload}
-                                disabled={saving}
-                              />
-                              <ImagePlus className="h-4 w-4 text-primary" />
-                              <span>{myTeam.logo_url ? 'Change Logo' : 'Upload Logo'}</span>
-                            </label>
+                          <DropdownMenuItem onClick={() => setAvatarDialogOpen(true)} className="cursor-pointer gap-2">
+                            <Palette className="h-4 w-4 text-primary" />
+                            <span>Change Avatar</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={toggleTeamVisibility} className="cursor-pointer gap-2">
                             {myTeam.is_open_for_players ? (
@@ -1507,6 +1471,26 @@ const TeamPage = () => {
               Send Request
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Avatar Selection Dialog */}
+      <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5 text-primary" />
+              Team Avatar
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <TeamAvatarGallery
+              currentAvatarUrl={myTeam?.logo_url}
+              onSelect={handleSelectTeamAvatar}
+              disabled={saving}
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
