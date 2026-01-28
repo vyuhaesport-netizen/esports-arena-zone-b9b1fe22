@@ -61,7 +61,9 @@ import {
   Trash2,
   Share2,
   Copy,
-  Link2
+  Link2,
+  Camera,
+  ImagePlus
 } from 'lucide-react';
 import { copyToClipboard, tryNativeShare } from '@/utils/share';
 
@@ -885,28 +887,34 @@ const TeamPage = () => {
                 }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="relative group">
+                  <div className="relative">
                     {myTeam.logo_url ? (
-                      <Avatar className="w-12 h-12 rounded-xl">
+                      <Avatar className="w-14 h-14 rounded-xl">
                         <AvatarImage src={myTeam.logo_url} className="object-cover" />
                         <AvatarFallback className="bg-gradient-to-br from-primary to-primary/50 rounded-xl">
-                          <Users className="h-6 w-6 text-primary-foreground" />
+                          <Users className="h-7 w-7 text-primary-foreground" />
                         </AvatarFallback>
                       </Avatar>
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center">
-                        <Users className="h-6 w-6 text-primary-foreground" />
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center">
+                        <Users className="h-7 w-7 text-primary-foreground" />
                       </div>
                     )}
+                    {/* Upload badge indicator for leaders */}
                     {isLeader && (
-                      <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                      <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-primary/90 transition-colors border-2 border-card">
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
                           onChange={handleLogoUpload}
+                          disabled={saving}
                         />
-                        <Plus className="h-4 w-4 text-white" />
+                        {saving ? (
+                          <Loader2 className="h-3 w-3 text-primary-foreground animate-spin" />
+                        ) : (
+                          <Camera className="h-3 w-3 text-primary-foreground" />
+                        )}
                       </label>
                     )}
                   </div>
@@ -948,6 +956,19 @@ const TeamPage = () => {
                             </p>
                           </div>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                            <label>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleLogoUpload}
+                                disabled={saving}
+                              />
+                              <ImagePlus className="h-4 w-4 text-primary" />
+                              <span>{myTeam.logo_url ? 'Change Logo' : 'Upload Logo'}</span>
+                            </label>
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={toggleTeamVisibility} className="cursor-pointer gap-2">
                             {myTeam.is_open_for_players ? (
                               <><EyeOff className="h-4 w-4 text-muted-foreground" /><span>Hide from Browse</span></>
