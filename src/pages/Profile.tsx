@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarGallery } from '@/components/AvatarGallery';
 import PushNotificationSetup from '@/components/PushNotificationSetup';
+
 interface Profile {
   id: string;
   user_id: string;
