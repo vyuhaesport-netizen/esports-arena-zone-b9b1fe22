@@ -157,19 +157,19 @@ const TournamentCard = ({
           transform: `translateX(${swipeX}px)`,
           transition: isSwiping ? 'none' : 'transform 0.3s ease-out'
         }} 
-        className="glass-card rounded-xl p-3 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+        className="glass-card rounded-xl p-2.5 hover:shadow-md transition-all duration-200"
       >
         {/* Swipe indicator */}
         {canSwipeJoin && (
-          <div className={`absolute inset-y-0 right-0 w-14 pointer-events-none rounded-r-xl bg-gradient-to-l from-success to-success/50 flex items-center justify-end pr-2 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
-            <span className="text-white text-[10px] font-bold">JOIN</span>
+          <div className={`absolute inset-y-0 right-0 w-12 pointer-events-none rounded-r-xl bg-gradient-to-l from-success to-success/50 flex items-center justify-end pr-2 transition-opacity ${swipeX < -30 ? 'opacity-100' : 'opacity-0'}`}>
+            <span className="text-white text-[9px] font-bold">JOIN</span>
           </div>
         )}
         
-        {/* Header - Bigger Title, Giveaway on Right */}
-        <div className="flex items-start justify-between gap-2 mb-2">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-1.5">
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-base text-foreground line-clamp-2 leading-tight">
+            <h3 className="font-semibold text-xs text-foreground line-clamp-2 leading-tight">
               {tournament.title}
             </h3>
             {organizerName && tournament.created_by && (
@@ -277,10 +277,10 @@ const TournamentCard = ({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {isJoined ? (
             exitDisabled ? (
-              <div className="flex-1 h-9 rounded-lg bg-warning/15 border border-warning/30 flex items-center justify-center text-warning text-[10px] font-semibold">
+              <div className="flex-1 h-7 rounded-md bg-warning/15 border border-warning/30 flex items-center justify-center text-warning text-[9px] font-medium">
                 {exitDisabledReason || 'Exit not allowed'}
               </div>
             ) : (
@@ -288,45 +288,45 @@ const TournamentCard = ({
                 onClick={onExitClick} 
                 disabled={isLoading} 
                 variant="outline" 
-                className="flex-1 h-9 text-xs text-destructive border-destructive/50 hover:bg-destructive/10 rounded-lg font-semibold"
+                className="flex-1 h-7 text-[10px] text-destructive border-destructive/50 hover:bg-destructive/10 rounded-md font-medium"
               >
-                {isLoading ? 'Processing...' : 'Exit Tournament'}
+                {isLoading ? 'Processing...' : 'Exit'}
               </Button>
             )
           ) : canSwipeJoin ? (
             <Button 
               onClick={onJoinClick} 
               disabled={isLoading} 
-              className="flex-1 h-9 text-xs rounded-lg bg-gradient-to-r from-success to-gaming-green hover:opacity-90 font-semibold shadow-md"
+              className="flex-1 h-7 text-[10px] rounded-md bg-success hover:bg-success/90 font-medium"
             >
               {isLoading ? 'Processing...' : 'Join Now'}
             </Button>
           ) : joinDisabled ? (
-            <div className="flex-1 h-9 rounded-lg bg-destructive/15 border border-destructive/30 flex items-center justify-center text-destructive text-[10px] font-semibold">
-              {joinDisabledReason || 'Registration Closed'}
+            <div className="flex-1 h-7 rounded-md bg-destructive/15 border border-destructive/30 flex items-center justify-center text-destructive text-[9px] font-medium">
+              {joinDisabledReason || 'Closed'}
             </div>
           ) : (
-            <div className="flex-1 h-9 rounded-lg bg-muted/60 flex items-center justify-center text-muted-foreground text-[10px] font-medium">
-              {spotsLeft <= 0 ? 'Tournament Full' : 'Not Available'}
+            <div className="flex-1 h-7 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground text-[9px] font-medium">
+              {spotsLeft <= 0 ? 'Full' : 'N/A'}
             </div>
           )}
           
           <Button 
             variant="outline" 
             onClick={onRulesClick} 
-            className="h-9 w-9 p-0 rounded-lg"
+            className="h-7 w-7 p-0 rounded-md"
             size="sm"
           >
-            <ScrollText className="h-3.5 w-3.5" />
+            <ScrollText className="h-3 w-3" />
           </Button>
           
           <Button 
             variant="outline" 
             onClick={onPrizeClick} 
-            className="h-9 w-9 p-0 rounded-lg"
+            className="h-7 w-7 p-0 rounded-md"
             size="sm"
           >
-            <Trophy className="h-3.5 w-3.5" />
+            <Trophy className="h-3 w-3" />
           </Button>
           
           <Button 
@@ -338,10 +338,10 @@ const TournamentCard = ({
             }}
             onPointerDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
-            className="h-9 w-9 p-0 rounded-lg touch-manipulation"
+            className="h-7 w-7 p-0 rounded-md touch-manipulation"
             size="sm"
           >
-            <Share2 className="h-3.5 w-3.5" />
+            <Share2 className="h-3 w-3" />
           </Button>
         </div>
       </div>

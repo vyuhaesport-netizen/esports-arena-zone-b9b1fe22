@@ -295,48 +295,46 @@ const Wallet = () => {
   return (
     <AppLayout title="Wallet" showBack>
       <div className="p-4">
-        {/* Balance Cards - Enhanced */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {/* Total Balance Card (Deposits) */}
-          <div className="glass-card bg-gradient-to-br from-success/10 to-success/5 border-success/30 rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <WalletIcon className="h-4 w-4 text-success" />
-              <span className="text-xs text-muted-foreground font-medium">Total Balance</span>
+        {/* Balance Cards */}
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div className="glass-card bg-success/5 border-success/20 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <WalletIcon className="h-3.5 w-3.5 text-success" />
+              <span className="text-[10px] text-muted-foreground">Total Balance</span>
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-sm text-success font-medium">₹</span>
-              <span className="text-2xl font-bold text-success">{balance.toFixed(0)}</span>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-xs text-success">₹</span>
+              <span className="text-lg font-bold text-success">{balance.toFixed(0)}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">For joining tournaments</p>
+            <p className="text-[9px] text-muted-foreground">For tournaments</p>
           </div>
 
-          {/* Total Earned Card (Winnings) */}
           <button
             type="button"
             onClick={() => setShowEarningsBreakdown(!showEarningsBreakdown)}
-            className="glass-card bg-gradient-to-br from-success/10 to-success/5 border-success/30 rounded-2xl p-4 text-left hover:bg-success/15 transition-colors"
+            className="glass-card bg-success/5 border-success/20 rounded-xl p-3 text-left hover:bg-success/10 transition-colors"
           >
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-success" />
-              <span className="text-xs text-muted-foreground font-medium">Total Earned</span>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <TrendingUp className="h-3.5 w-3.5 text-success" />
+              <span className="text-[10px] text-muted-foreground">Total Earned</span>
               {showEarningsBreakdown ? (
-                <ChevronUp className="h-3 w-3 ml-auto text-muted-foreground" />
+                <ChevronUp className="h-2.5 w-2.5 ml-auto text-muted-foreground" />
               ) : (
-                <ChevronDown className="h-3 w-3 ml-auto text-muted-foreground" />
+                <ChevronDown className="h-2.5 w-2.5 ml-auto text-muted-foreground" />
               )}
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-sm text-success font-medium">₹</span>
-              <span className="text-2xl font-bold text-success">{totalEarned.toFixed(0)}</span>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-xs text-success">₹</span>
+              <span className="text-lg font-bold text-success">{totalEarned.toFixed(0)}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1">Available to withdraw</p>
+            <p className="text-[9px] text-muted-foreground">Withdrawable</p>
           </button>
         </div>
 
         {/* Info Banner */}
-        <div className="glass-card bg-muted/30 rounded-xl p-3 mb-4">
-          <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Note:</strong> Deposits go to Total Balance (for tournaments). Prize winnings go to Total Earned (withdrawable).
+        <div className="glass-card bg-muted/20 rounded-lg p-2 mb-3">
+          <p className="text-[10px] text-muted-foreground">
+            <strong className="text-foreground">Note:</strong> Deposits → Balance (tournaments). Winnings → Earned (withdraw).
           </p>
         </div>
 
@@ -394,24 +392,24 @@ const Wallet = () => {
           </div>
         )}
 
-        {/* Action Buttons - Enhanced */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-2 mb-4">
           <Button 
             variant="outline" 
-            className="h-14 flex-col gap-1 rounded-xl border-2 hover:bg-primary/5"
+            className="h-10 flex-col gap-0.5 rounded-lg"
             onClick={() => setAddMoneyDialog(true)}
           >
-            <Plus className="h-5 w-5" />
-            <span className="text-xs font-semibold">Add Money</span>
+            <Plus className="h-4 w-4" />
+            <span className="text-[10px] font-medium">Add Money</span>
           </Button>
           <Button 
             variant="outline" 
-            className="h-14 flex-col gap-1 rounded-xl border-2 hover:bg-primary/5"
+            className="h-10 flex-col gap-0.5 rounded-lg"
             onClick={() => setWithdrawDialog(true)}
             disabled={totalEarned < 10}
           >
-            <ArrowUpRight className="h-5 w-5" />
-            <span className="text-xs font-semibold">Withdraw</span>
+            <ArrowUpRight className="h-4 w-4" />
+            <span className="text-[10px] font-medium">Withdraw</span>
           </Button>
         </div>
 

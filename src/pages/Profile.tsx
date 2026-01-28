@@ -11,12 +11,11 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2, BarChart3, Bell, MessageCircle, Moon, Sun } from 'lucide-react';
+import { Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, CreditCard, Users, Megaphone, Building2, BarChart3, Bell, MessageCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarGallery } from '@/components/AvatarGallery';
 import PushNotificationSetup from '@/components/PushNotificationSetup';
-import ThemeToggle from '@/components/ThemeToggle';
 interface Profile {
   id: string;
   user_id: string;
@@ -373,55 +372,44 @@ const ProfilePage = () => {
       </AppLayout>;
   }
   return <AppLayout>
-      {/* Profile Header - Enhanced */}
-      <div className="bg-gradient-to-br from-card via-card to-primary/5 px-4 pt-5 pb-4 border-b border-border/50">
-        {/* Username above avatar - left aligned */}
-        <h1 className="font-bold text-xl text-foreground mb-3">
-          @{profile?.username || 'username'}
-        </h1>
-
-        <div className="flex items-center gap-4">
-          {/* Avatar on left */}
+      {/* Profile Header */}
+      <div className="bg-card/80 backdrop-blur-sm px-4 pt-4 pb-3 border-b border-border/30">
+        <div className="flex items-center gap-3">
           <div className="shrink-0 relative">
-            <Avatar className="h-20 w-20 border-3 border-primary/30 shadow-xl">
+            <Avatar className="h-14 w-14 border-2 border-primary/20">
               <AvatarImage src={profile?.avatar_url || ''} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-2xl font-bold">
+              <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
                 {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success border-2 border-background flex items-center justify-center">
-              <User className="h-3 w-3 text-white" />
-            </div>
           </div>
 
-          {/* Details on right */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <p className="font-semibold text-base text-foreground">
+          <div className="flex-1 min-w-0">
+            <h1 className="font-semibold text-sm text-foreground truncate">
+              @{profile?.username || 'username'}
+            </h1>
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <p className="text-xs text-muted-foreground">
                 {profile?.full_name || 'Gamer'}
               </p>
-              {isSuperAdmin && <Badge className="bg-gradient-to-r from-primary to-orange-500 text-white text-[10px] shadow-sm">
-                  <Crown className="h-2.5 w-2.5 mr-1" /> Owner
+              {isSuperAdmin && <Badge className="bg-primary/15 text-primary text-[9px] px-1.5 py-0">
+                  <Crown className="h-2 w-2 mr-0.5" /> Owner
                 </Badge>}
-              {isAdmin && !isSuperAdmin && <Badge className="bg-primary/15 text-primary text-[10px]">
-                  <Shield className="h-2.5 w-2.5 mr-1" /> Team
+              {isAdmin && !isSuperAdmin && <Badge className="bg-primary/10 text-primary text-[9px] px-1.5 py-0">
+                  <Shield className="h-2 w-2 mr-0.5" /> Team
                 </Badge>}
-              {isOrganizer && <Badge className="bg-purple-500/15 text-purple-600 text-[10px]">
-                  <UserCheck className="h-2.5 w-2.5 mr-1" /> Organizer
+              {isOrganizer && <Badge className="bg-purple-500/10 text-purple-600 text-[9px] px-1.5 py-0">
+                  <UserCheck className="h-2 w-2 mr-0.5" /> Organizer
                 </Badge>}
             </div>
-            {profile?.in_game_name && <p className="text-sm text-foreground">
-                <Gamepad2 className="h-3.5 w-3.5 inline mr-1.5 text-primary" />
+            {profile?.in_game_name && <p className="text-[10px] text-muted-foreground mt-0.5">
+                <Gamepad2 className="h-2.5 w-2.5 inline mr-1 text-primary" />
                 {profile.in_game_name}
-              </p>}
-            {profile?.game_uid && <p className="text-xs text-muted-foreground mt-0.5">
-                <Hash className="h-3 w-3 inline mr-1" />
-                UID: {profile.game_uid}
               </p>}
           </div>
         </div>
 
-        <button onClick={() => setEditDialogOpen(true)} className="w-full mt-4 py-2.5 bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 text-sm font-semibold rounded-xl border border-primary/50 transition-all text-white shadow-lg">
+        <button onClick={() => setEditDialogOpen(true)} className="w-full mt-3 py-2 bg-primary hover:bg-primary/90 text-xs font-medium rounded-lg transition-all text-primary-foreground">
           Edit Profile
         </button>
       </div>
@@ -508,13 +496,6 @@ const ProfilePage = () => {
         <PushNotificationSetup variant="card" />
       </div>
 
-      {/* Settings Section */}
-      <div className="px-4 pt-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Settings</h3>
-        <div className="glass-card rounded-2xl divide-y divide-border/50 overflow-hidden">
-          <ThemeToggle variant="full" />
-        </div>
-      </div>
 
       {/* More Section */}
       <div className="px-4 pt-4">
