@@ -969,7 +969,7 @@ const MyMatch = () => {
                 <div className="text-center py-10">
                   <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-2" />
                   <p className="text-muted-foreground text-xs">No upcoming matches</p>
-                  <Button variant="gaming" size="sm" className="mt-3 h-7 text-xs" onClick={() => navigate('/creator')}>Browse</Button>
+                  <Button variant="gaming" size="sm" className="mt-3 h-7 text-xs" onClick={() => navigate('/')}>Browse</Button>
                 </div>
               ) : (
                 <div className="space-y-2">{upcomingMatches.map((reg) => <MatchCard key={reg.id} registration={reg} showCancel />)}</div>
