@@ -545,13 +545,13 @@ const ProfilePage = () => {
 
       {/* Edit Profile Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle className="text-xl font-bold">Edit Profile</DialogTitle>
             <DialogDescription>Update your profile and gaming details</DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 pt-2">
+          <div className="flex-1 overflow-y-auto space-y-4 pt-2 pb-4">
             {/* Avatar Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -648,6 +648,9 @@ const ProfilePage = () => {
               </div>
             </div>
 
+          </div>
+          
+          <div className="shrink-0 pt-4 border-t">
             <Button variant="gaming" className="w-full" onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Changes'}
             </Button>
