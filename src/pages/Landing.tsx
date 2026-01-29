@@ -729,89 +729,191 @@ const Landing = () => {
           </Button>
         </div>
 
-        {/* Auth Dialog */}
+        {/* Tactical Terminal Auth Dialog */}
         <Dialog open={authDialog !== null} onOpenChange={(open) => !open && setAuthDialog(null)}>
-          <DialogContent className="max-w-xs bg-[#0a0a0f]/95 backdrop-blur-2xl border border-white/10 text-white">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-white text-sm">
-                <img src={vyuhaLogo} alt="Vyuha" className="h-6 w-6 rounded-full ring-1 ring-indigo-500/50" />
-                {authDialog === 'login' ? 'Welcome Back' : 'Join Vyuha'}
-              </DialogTitle>
-            </DialogHeader>
+          <DialogContent className="max-w-sm p-0 bg-[#0d0d0d] border border-[#1a1a1a] text-white overflow-hidden font-mono">
+            {/* Corner Accents */}
+            <div className="absolute top-0 left-0 w-3 h-3 border-l-2 border-t-2 border-[#00ff00]" />
+            <div className="absolute top-0 right-0 w-3 h-3 border-r-2 border-t-2 border-[#00ff00]" />
+            <div className="absolute bottom-0 left-0 w-3 h-3 border-l-2 border-b-2 border-[#00ff00]" />
+            <div className="absolute bottom-0 right-0 w-3 h-3 border-r-2 border-b-2 border-[#00ff00]" />
             
-            <form onSubmit={handleSubmit} className="space-y-3 pt-1">
-              {authDialog === 'signup' && (
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-white/70">Full Name</Label>
-                  <Input 
-                    value={fullName}
-                    onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
-                    placeholder="Your name"
-                    className={`h-8 text-xs bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.fullName ? 'border-red-500' : ''}`}
-                  />
-                  {errors.fullName && <p className="text-[9px] text-red-400">{errors.fullName}</p>}
-                </div>
-              )}
-              
-              <div className="space-y-1">
-                <Label className="text-[10px] text-white/70">Email</Label>
-                <Input 
-                  type="email"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
-                  placeholder="you@example.com"
-                  className={`h-8 text-xs bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.email ? 'border-red-500' : ''}`}
-                />
-                {errors.email && <p className="text-[9px] text-red-400">{errors.email}</p>}
+            <div className="p-6">
+              {/* Status Badge */}
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1.5 bg-[#00ff00] text-black text-[10px] font-bold tracking-wider uppercase">
+                  {authDialog === 'login' ? 'SECURITY_GATEWAY_ACTIVE' : 'REGISTRATION_GATEWAY_ACTIVE'}
+                </span>
               </div>
               
-              <div className="space-y-1">
-                <Label className="text-[10px] text-white/70">Password</Label>
-                <div className="relative">
-                  <Input 
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setErrors(p => ({...p, password: undefined})); }}
-                    placeholder="••••••••"
-                    className={`h-8 text-xs bg-white/5 border-white/20 text-white placeholder:text-white/40 focus:border-indigo-500 ${errors.password ? 'border-red-500' : ''}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white"
-                  >
-                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-[9px] text-red-400">{errors.password}</p>}
-              </div>
-
-              {authDialog === 'signup' && (
-                <div className="flex items-start gap-2">
-                  <Checkbox 
-                    checked={acceptedTerms} 
-                    onCheckedChange={(c) => { setAcceptedTerms(!!c); setErrors(p => ({...p, terms: undefined})); }}
-                    className="h-3.5 w-3.5 border-white/30 data-[state=checked]:bg-indigo-600"
-                  />
-                  <Label className="text-[9px] text-white/60 leading-tight">
-                    I accept the <a href="/terms" className="text-indigo-400 hover:underline">Terms</a> & <a href="/refund" className="text-indigo-400 hover:underline">Refund Policy</a>
-                  </Label>
-                </div>
-              )}
-              {errors.terms && <p className="text-[9px] text-red-400">{errors.terms}</p>}
-
-              <Button type="submit" disabled={loading} className="w-full h-9 text-xs bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 border border-indigo-400/30">
-                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : authDialog === 'login' ? 'Login' : 'Create Account'}
-              </Button>
-
-              <p className="text-center text-[10px] text-white/50">
+              {/* Title */}
+              <h2 className="text-2xl font-black tracking-tight mb-1">
                 {authDialog === 'login' ? (
-                  <>Don't have an account? <button type="button" onClick={() => setAuthDialog('signup')} className="text-indigo-400 hover:underline">Sign Up</button></>
+                  <>SYSTEM <span className="text-[#00ff00]">ACCESS</span></>
                 ) : (
-                  <>Already have an account? <button type="button" onClick={() => setAuthDialog('login')} className="text-indigo-400 hover:underline">Login</button></>
+                  <>CREATE <span className="text-[#00ff00]">CREDENTIALS</span></>
                 )}
+              </h2>
+              <p className="text-[10px] text-gray-500 tracking-[0.2em] uppercase mb-6">
+                {authDialog === 'login' ? 'IDENTIFY YOURSELF TO PROCEED' : 'ENROLL YOUR PROFILE INTO THE NETWORK'}
               </p>
-            </form>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {authDialog === 'signup' && (
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-[#00ff00] tracking-[0.15em] uppercase font-bold">OPERATOR_IDENTITY</label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <Input 
+                        value={fullName}
+                        onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
+                        placeholder="OPERATOR_NAME"
+                        className={`h-11 pl-10 text-xs bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 placeholder:text-gray-600 placeholder:tracking-wider focus:border-[#00ff00] focus:ring-0 rounded-none font-mono uppercase ${errors.fullName ? 'border-red-500' : ''}`}
+                      />
+                    </div>
+                    {errors.fullName && <p className="text-[9px] text-red-500 tracking-wider">{errors.fullName}</p>}
+                  </div>
+                )}
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-[#00ff00] tracking-[0.15em] uppercase font-bold">
+                    {authDialog === 'login' ? 'IDENTITY_HANDLE' : 'COMMS_CHANNEL'}
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600">
+                      <span className="text-sm">@</span>
+                    </div>
+                    <Input 
+                      type="email"
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
+                      placeholder={authDialog === 'login' ? 'OPERATOR_NAME' : 'COMMS_CHANNEL'}
+                      className={`h-11 pl-10 text-xs bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 placeholder:text-gray-600 placeholder:tracking-wider focus:border-[#00ff00] focus:ring-0 rounded-none font-mono uppercase ${errors.email ? 'border-red-500' : ''}`}
+                    />
+                  </div>
+                  {errors.email && <p className="text-[9px] text-red-500 tracking-wider">{errors.email}</p>}
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-[#00ff00] tracking-[0.15em] uppercase font-bold">
+                    {authDialog === 'login' ? 'ACCESS_CODE' : 'SECURE_CODE'}
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600">
+                      <Shield className="h-4 w-4" />
+                    </div>
+                    <Input 
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => { setPassword(e.target.value); setErrors(p => ({...p, password: undefined})); }}
+                      placeholder={authDialog === 'login' ? '••••••••' : 'SECURE_CODE'}
+                      className={`h-11 pl-10 pr-10 text-xs bg-[#0a0a0a] border-[#1a1a1a] text-gray-400 placeholder:text-gray-600 placeholder:tracking-wider focus:border-[#00ff00] focus:ring-0 rounded-none font-mono ${errors.password ? 'border-red-500' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-[9px] text-red-500 tracking-wider">{errors.password}</p>}
+                </div>
+
+                {authDialog === 'signup' ? (
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      checked={acceptedTerms} 
+                      onCheckedChange={(c) => { setAcceptedTerms(!!c); setErrors(p => ({...p, terms: undefined})); }}
+                      className="h-4 w-4 border-[#1a1a1a] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-none"
+                    />
+                    <label className="text-[10px] text-gray-500 tracking-wider uppercase">
+                      ACCEPT_NETWORK_PROTOCOLS
+                    </label>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        className="h-4 w-4 border-[#1a1a1a] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-none"
+                      />
+                      <label className="text-[10px] text-gray-500 tracking-wider uppercase">
+                        REMEMBER_TERMINAL
+                      </label>
+                    </div>
+                    <button type="button" className="text-[10px] text-[#00ff00] tracking-wider uppercase hover:underline">
+                      FORGOT_CODE?
+                    </button>
+                  </div>
+                )}
+                {errors.terms && <p className="text-[9px] text-red-500 tracking-wider">{errors.terms}</p>}
+
+                <Button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="w-full h-12 text-xs bg-[#00ff00] hover:bg-[#00dd00] text-black font-bold tracking-[0.15em] uppercase rounded-none border-0"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      {authDialog === 'login' ? 'INITIALIZE_LOGIN' : 'INITIALIZE_REGISTRATION'}
+                      <Zap className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+
+                {/* Divider */}
+                <div className="relative py-3">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-[#1a1a1a]" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-[#0d0d0d] px-3 text-[9px] text-gray-600 tracking-[0.2em] uppercase">
+                      NETWORK_INTEGRATIONS
+                    </span>
+                  </div>
+                </div>
+
+                {/* Social Buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="h-10 bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-[#2a2a2a] rounded-none text-[10px] tracking-wider uppercase font-medium"
+                  >
+                    <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
+                      <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    GOOGLE
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="h-10 bg-[#0a0a0a] border-[#1a1a1a] text-white hover:bg-[#1a1a1a] hover:border-[#2a2a2a] rounded-none text-[10px] tracking-wider uppercase font-medium"
+                  >
+                    <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+                    </svg>
+                    DISCORD
+                  </Button>
+                </div>
+
+                {/* Switch Auth Mode */}
+                <p className="text-center text-[10px] text-gray-500 tracking-wider uppercase pt-2">
+                  {authDialog === 'login' ? (
+                    <>NEW OPERATOR? <button type="button" onClick={() => setAuthDialog('signup')} className="text-[#00ff00] hover:underline">REQUEST_ACCESS_CREDENTIALS</button></>
+                  ) : (
+                    <>ALREADY REGISTERED? <button type="button" onClick={() => setAuthDialog('login')} className="text-[#00ff00] hover:underline">INITIALIZE_LOGIN_SEQUENCE</button></>
+                  )}
+                </p>
+              </form>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
