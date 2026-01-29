@@ -731,150 +731,166 @@ const Landing = () => {
 
         {/* Tactical Terminal Auth Dialog */}
         <Dialog open={authDialog !== null} onOpenChange={(open) => !open && setAuthDialog(null)}>
-          <DialogContent className="max-w-[360px] p-0 bg-[#0d0d0d] border border-[#1a1a1a] text-white overflow-hidden" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+          <DialogContent 
+            className="max-w-[380px] max-h-[90vh] p-0 bg-[#0d0d0d] border border-[#1a1a1a] text-white overflow-y-auto" 
+            style={{ fontFamily: 'Rajdhani, sans-serif' }}
+            aria-describedby={undefined}
+          >
+            <DialogTitle className="sr-only">
+              {authDialog === 'login' ? 'Login' : 'Sign Up'}
+            </DialogTitle>
+            
             {/* Corner Accents */}
             <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-[#00ff00]" />
             <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-[#00ff00]" />
             <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-[#00ff00]" />
             <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-[#00ff00]" />
             
-            <div className="p-8">
+            <div className="p-6">
               {/* Status Badge */}
-              <div className="mb-5">
-                <span className="inline-block px-4 py-2 bg-[#00ff00] text-black text-xs font-bold tracking-[0.2em] uppercase">
+              <div className="mb-4">
+                <span className="inline-block px-3 py-1.5 bg-[#00ff00] text-black text-[11px] font-bold tracking-[0.15em] uppercase">
                   {authDialog === 'login' ? 'SECURITY_GATEWAY_ACTIVE' : 'REGISTRATION_GATEWAY_ACTIVE'}
                 </span>
               </div>
               
               {/* Title */}
-              <h2 className="text-3xl font-bold tracking-tight mb-1" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+              <h2 className="text-2xl font-bold tracking-tight mb-1" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
                 {authDialog === 'login' ? (
                   <>SYSTEM <span className="text-[#00ff00]">ACCESS</span></>
                 ) : (
                   <>CREATE <span className="text-[#00ff00]">CREDENTIALS</span></>
                 )}
               </h2>
-              <p className="text-xs text-gray-500 tracking-[0.25em] uppercase mb-8" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+              <p className="text-[11px] text-gray-500 tracking-[0.2em] uppercase mb-6" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
                 {authDialog === 'login' ? 'IDENTIFY YOURSELF TO PROCEED' : 'ENROLL YOUR PROFILE INTO THE NETWORK'}
               </p>
               
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {authDialog === 'signup' && (
-                  <div className="space-y-2">
-                    <label className="text-xs text-[#00ff00] tracking-[0.2em] uppercase font-semibold" style={{ fontFamily: 'Rajdhani, sans-serif' }}>PLAYER_REAL_NAME</label>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] text-white/80 tracking-[0.15em] uppercase font-medium" style={{ fontFamily: 'Rajdhani, sans-serif' }}>PLAYER_REAL_NAME</label>
                     <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
-                        <User className="h-5 w-5" />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                        <User className="h-4 w-4" />
                       </div>
                       <Input 
                         value={fullName}
                         onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
                         placeholder="Enter your name"
-                        className={`h-12 pl-12 text-sm bg-[#0a0a0a] border-[#1a1a1a] text-white placeholder:text-gray-500 focus:border-[#00ff00] focus:ring-0 rounded-none ${errors.fullName ? 'border-red-500' : ''}`}
+                        className={`h-11 pl-10 text-sm bg-[#0a0a0a] border-[#222] text-white placeholder:text-gray-600 focus:border-[#00ff00] focus:ring-0 rounded-sm ${errors.fullName ? 'border-red-500' : ''}`}
                         style={{ fontFamily: 'Rajdhani, sans-serif' }}
                       />
                     </div>
-                    {errors.fullName && <p className="text-xs text-red-500 tracking-wider">{errors.fullName}</p>}
+                    {errors.fullName && <p className="text-[10px] text-red-500 tracking-wider">{errors.fullName}</p>}
                   </div>
                 )}
                 
-                <div className="space-y-2">
-                  <label className="text-xs text-[#00ff00] tracking-[0.2em] uppercase font-semibold" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] text-white/80 tracking-[0.15em] uppercase font-medium" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
                     EMAIL
                   </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
-                      <span className="text-base">@</span>
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <span className="text-sm">@</span>
                     </div>
                     <Input 
                       type="email"
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
                       placeholder="Enter your email"
-                      className={`h-12 pl-12 text-sm bg-[#0a0a0a] border-[#1a1a1a] text-white placeholder:text-gray-500 focus:border-[#00ff00] focus:ring-0 rounded-none ${errors.email ? 'border-red-500' : ''}`}
+                      className={`h-11 pl-10 text-sm bg-[#0a0a0a] border-[#222] text-white placeholder:text-gray-600 focus:border-[#00ff00] focus:ring-0 rounded-sm ${errors.email ? 'border-red-500' : ''}`}
                       style={{ fontFamily: 'Rajdhani, sans-serif' }}
                     />
                   </div>
-                  {errors.email && <p className="text-xs text-red-500 tracking-wider">{errors.email}</p>}
+                  {errors.email && <p className="text-[10px] text-red-500 tracking-wider">{errors.email}</p>}
                 </div>
                 
-                <div className="space-y-2">
-                  <label className="text-xs text-[#00ff00] tracking-[0.2em] uppercase font-semibold" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                    {authDialog === 'login' ? 'ACCESS_CODE' : 'SECURE_CODE'}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] text-white/80 tracking-[0.15em] uppercase font-medium" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                    {authDialog === 'login' ? 'PASSWORD' : 'PASSWORD'}
                   </label>
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600">
-                      <Shield className="h-5 w-5" />
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <Shield className="h-4 w-4" />
                     </div>
                     <Input 
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setErrors(p => ({...p, password: undefined})); }}
                       placeholder="••••••••"
-                      className={`h-12 pl-12 pr-12 text-sm bg-[#0a0a0a] border-[#1a1a1a] text-white placeholder:text-gray-500 focus:border-[#00ff00] focus:ring-0 rounded-none ${errors.password ? 'border-red-500' : ''}`}
+                      className={`h-11 pl-10 pr-10 text-sm bg-[#0a0a0a] border-[#222] text-white placeholder:text-gray-600 focus:border-[#00ff00] focus:ring-0 rounded-sm ${errors.password ? 'border-red-500' : ''}`}
                       style={{ fontFamily: 'Rajdhani, sans-serif' }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-400"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400"
                     >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-xs text-red-500 tracking-wider">{errors.password}</p>}
+                  {errors.password && <p className="text-[10px] text-red-500 tracking-wider">{errors.password}</p>}
                 </div>
 
                 {authDialog === 'signup' ? (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Checkbox 
                       checked={acceptedTerms} 
                       onCheckedChange={(c) => { setAcceptedTerms(!!c); setErrors(p => ({...p, terms: undefined})); }}
-                      className="h-5 w-5 border-[#1a1a1a] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-none"
+                      className="h-4 w-4 border-[#333] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-sm"
                     />
-                    <label className="text-xs text-gray-400 tracking-wider uppercase" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                      ACCEPT_NETWORK_PROTOCOLS
+                    <label className="text-[11px] text-gray-400 tracking-wider" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                      I accept the terms & conditions
                     </label>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Checkbox 
-                        className="h-5 w-5 border-[#1a1a1a] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-none"
+                        className="h-4 w-4 border-[#333] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-sm"
                       />
-                      <label className="text-xs text-gray-400 tracking-wider uppercase" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                        REMEMBER_TERMINAL
+                      <label className="text-[11px] text-gray-400 tracking-wider" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                        Remember me
                       </label>
                     </div>
-                    <button type="button" className="text-xs text-[#00ff00] tracking-wider uppercase hover:underline" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                      FORGOT_CODE?
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setAuthDialog(null);
+                        navigate('/auth?mode=forgot');
+                      }}
+                      className="text-[11px] text-[#00ff00] tracking-wider hover:underline" 
+                      style={{ fontFamily: 'Rajdhani, sans-serif' }}
+                    >
+                      Forgot password?
                     </button>
                   </div>
                 )}
-                {errors.terms && <p className="text-xs text-red-500 tracking-wider">{errors.terms}</p>}
+                {errors.terms && <p className="text-[10px] text-red-500 tracking-wider">{errors.terms}</p>}
 
                 <Button 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full h-14 text-base bg-[#00ff00] hover:bg-[#00dd00] text-black font-bold tracking-[0.2em] uppercase rounded-none border-0"
+                  className="w-full h-12 text-sm bg-[#00ff00] hover:bg-[#00dd00] text-black font-bold tracking-[0.15em] uppercase rounded-sm border-0"
                   style={{ fontFamily: 'Rajdhani, sans-serif' }}
                 >
                   {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {authDialog === 'login' ? 'INITIALIZE_LOGIN' : 'INITIALIZE_REGISTRATION'}
-                      <Zap className="ml-2 h-5 w-5" />
+                      {authDialog === 'login' ? 'LOGIN' : 'SIGN UP'}
+                      <Zap className="ml-2 h-4 w-4" />
                     </>
                   )}
                 </Button>
 
                 {/* Switch Auth Mode */}
-                <p className="text-center text-xs text-gray-400 tracking-wider uppercase pt-4" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                <p className="text-center text-[11px] text-gray-400 tracking-wider pt-3" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
                   {authDialog === 'login' ? (
-                    <>NEW OPERATOR? <button type="button" onClick={() => setAuthDialog('signup')} className="text-[#00ff00] hover:underline font-semibold">REQUEST_ACCESS_CREDENTIALS</button></>
+                    <>Don't have an account? <button type="button" onClick={() => setAuthDialog('signup')} className="text-[#00ff00] hover:underline font-semibold">Sign up</button></>
                   ) : (
-                    <>ALREADY REGISTERED? <button type="button" onClick={() => setAuthDialog('login')} className="text-[#00ff00] hover:underline font-semibold">INITIALIZE_LOGIN_SEQUENCE</button></>
+                    <>Already have an account? <button type="button" onClick={() => setAuthDialog('login')} className="text-[#00ff00] hover:underline font-semibold">Login</button></>
                   )}
                 </p>
               </form>
