@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +11,7 @@ import vyuhaLogo from '@/assets/vyuha-logo.png';
 import { 
   Trophy, ChevronRight, Wallet, BarChart3, User, Zap,
   Target, Shield, Eye, EyeOff, Loader2, Gamepad2, Brain,
-  Swords, Crosshair, Medal, Flame, Users, Star, Crown, Cpu, Instagram
+  Swords, Medal, Crown, Cpu, Instagram
 } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,15 +22,6 @@ gsap.registerPlugin(ScrollTrigger);
 
 const emailSchema = z.string().email('Invalid email');
 const passwordSchema = z.string().min(6, 'Min 6 characters');
-
-// Simple Text Component (removed glitch to fix flickering)
-const AccentText = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => {
-  return (
-    <span className={`${className}`}>
-      {children}
-    </span>
-  );
-};
 
 const Landing = () => {
   const [authDialog, setAuthDialog] = useState<'login' | 'signup' | null>(null);
@@ -275,16 +265,16 @@ const Landing = () => {
   ];
 
   const features = [
-    { icon: Trophy, title: 'Win Prizes', desc: 'Cash & rewards', color: 'from-yellow-500 to-orange-500' },
-    { icon: Shield, title: 'Fair Play', desc: 'Anti-cheat system', color: 'from-cyan-500 to-blue-500' },
-    { icon: Swords, title: 'Build Squad', desc: 'Find teammates', color: 'from-purple-500 to-pink-500' },
-    { icon: Zap, title: 'Fast Payouts', desc: 'Instant withdraw', color: 'from-green-500 to-emerald-500' },
+    { icon: Trophy, title: 'Win Prizes', desc: 'Cash & rewards' },
+    { icon: Shield, title: 'Fair Play', desc: 'Anti-cheat system' },
+    { icon: Swords, title: 'Build Squad', desc: 'Find teammates' },
+    { icon: Zap, title: 'Fast Payouts', desc: 'Instant withdraw' },
   ];
 
   const dashboardFeatures = [
-    { icon: Wallet, label: 'Wallet', value: '₹5,240', color: 'text-green-400' },
-    { icon: BarChart3, label: 'Win Rate', value: '67%', color: 'text-cyan-400' },
-    { icon: Crown, label: 'Rank', value: '#142', color: 'text-yellow-400' },
+    { icon: Wallet, label: 'Wallet', value: '₹5,240' },
+    { icon: BarChart3, label: 'Win Rate', value: '67%' },
+    { icon: Crown, label: 'Rank', value: '#142' },
   ];
 
   return (
@@ -296,65 +286,48 @@ const Landing = () => {
         url="https://vyuhaesport.in"
       />
       
-      {/* Tactical Terminal CSS */}
-      <style>{`
-        .tactical-underline {
-          position: relative;
-        }
+      <div ref={containerRef} className="min-h-screen bg-background overflow-hidden text-foreground">
         
-        .tactical-underline::after {
-          content: '';
-          position: absolute;
-          bottom: -4px;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: #00ff00;
-        }
-      `}</style>
-      
-      <div ref={containerRef} className="min-h-screen bg-[#0a0a0a] overflow-hidden text-white" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-        
-        {/* Tactical Terminal Background */}
+        {/* Dark Background with subtle gradients */}
         <div ref={particleContainerRef} className="fixed inset-0 pointer-events-none overflow-hidden">
-          {/* Static gradient orbs - Green themed */}
-          <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-[#00ff00]/10" />
-          <div className="absolute top-1/2 -right-32 w-[350px] h-[350px] rounded-full blur-[100px] bg-[#00ff00]/5" />
-          <div className="absolute -bottom-20 left-1/3 w-[300px] h-[300px] rounded-full blur-[100px] bg-[#00ff00]/8" />
+          {/* Subtle gradient orbs using design system colors */}
+          <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-primary/5" />
+          <div className="absolute top-1/2 -right-32 w-[350px] h-[350px] rounded-full blur-[100px] bg-muted/10" />
+          <div className="absolute -bottom-20 left-1/3 w-[300px] h-[300px] rounded-full blur-[100px] bg-primary/3" />
           
           {/* Grid pattern */}
           <div 
-            className="absolute inset-0 opacity-[0.03]"
+            className="absolute inset-0 opacity-[0.02]"
             style={{
               backgroundImage: `
-                linear-gradient(to right, rgba(0, 255, 0, 0.3) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0, 255, 0, 0.3) 1px, transparent 1px)
+                linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
               `,
               backgroundSize: '50px 50px',
             }}
           />
         </div>
 
-        {/* Tactical Navbar */}
+        {/* Navbar */}
         <header className="fixed top-0 left-0 right-0 z-50 px-3 py-2">
-          <nav className="max-w-5xl mx-auto flex items-center justify-between px-4 py-2.5 rounded-lg bg-[#0d0d0d]/90 backdrop-blur-xl border border-[#1a1a1a]">
+          <nav className="max-w-5xl mx-auto flex items-center justify-between px-4 py-2.5 rounded-xl glass-card">
             <div className="flex items-center gap-2">
-              <img src={vyuhaLogo} alt="Vyuha" className="h-7 w-7 rounded-full object-cover ring-1 ring-[#00ff00]/50" />
-              <span className="font-bold text-sm text-[#00ff00] tracking-wider">VYUHA</span>
+              <img src={vyuhaLogo} alt="Vyuha" className="h-7 w-7 rounded-full object-cover ring-1 ring-primary/30" />
+              <span className="font-semibold text-sm text-foreground tracking-wide">VYUHA</span>
             </div>
             <div className="flex gap-2">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setAuthDialog('login')} 
-                className="text-sm h-8 px-4 text-white/80 hover:text-[#00ff00] hover:bg-[#00ff00]/10 font-semibold tracking-wide"
+                className="text-xs h-8 px-4 text-muted-foreground hover:text-foreground font-medium"
               >
                 Login
               </Button>
               <Button 
                 size="sm" 
                 onClick={() => setAuthDialog('signup')} 
-                className="text-sm h-8 px-4 bg-[#00ff00] hover:bg-[#00dd00] text-black font-bold tracking-wide"
+                className="text-xs h-8 px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
               >
                 Sign Up
               </Button>
@@ -362,36 +335,34 @@ const Landing = () => {
           </nav>
         </header>
 
-        {/* Hero Section - Tactical Terminal Theme */}
+        {/* Hero Section */}
         <section ref={heroRef} className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 pt-16 pb-12">
-          {/* Logo with green glow effect */}
+          {/* Logo with glow effect */}
           <div className="relative mb-5">
-            <div className="absolute inset-0 bg-[#00ff00]/20 rounded-full blur-2xl scale-150" />
+            <div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl scale-150" />
             <img 
               ref={logoRef}
               src={vyuhaLogo} 
               alt="Vyuha Esport" 
-              className="relative h-20 w-20 md:h-24 md:w-24 rounded-full object-cover ring-2 ring-[#00ff00]/50 shadow-xl shadow-[#00ff00]/20"
+              className="relative h-20 w-20 md:h-24 md:w-24 rounded-full object-cover ring-2 ring-primary/30 shadow-xl"
             />
           </div>
           
           {/* Headline */}
           <h1 
             ref={titleRef}
-            className="text-2xl md:text-4xl lg:text-5xl font-black text-center mb-4 leading-tight tracking-tight"
+            className="text-2xl md:text-4xl lg:text-5xl font-bold text-center mb-4 leading-tight tracking-tight"
           >
-            <AccentText className="text-[#00ff00]">
-              VYUHA ESPORTS
-            </AccentText>
+            <span className="text-foreground">VYUHA ESPORTS</span>
             <br />
-            <span className="text-base md:text-xl lg:text-2xl font-bold text-white/90 block mt-2">
-              The Stage for <span className="tactical-underline text-[#00ff00]">Underdogs</span>
+            <span className="text-sm md:text-lg lg:text-xl font-medium text-muted-foreground block mt-2">
+              The Stage for <span className="text-primary font-semibold">Underdogs</span>
             </span>
           </h1>
           
           <p 
             ref={subtitleRef}
-            className="text-white/60 text-xs md:text-sm mb-6 max-w-sm mx-auto text-center leading-relaxed"
+            className="text-muted-foreground text-xs md:text-sm mb-6 max-w-sm mx-auto text-center leading-relaxed"
           >
             Empowering players from schools & colleges across India. Your journey from underdog to champion starts here.
           </p>
@@ -400,7 +371,7 @@ const Landing = () => {
             <Button 
               size="default" 
               onClick={() => setAuthDialog('signup')}
-              className="bg-[#00ff00] hover:bg-[#00dd00] text-black shadow-lg shadow-[#00ff00]/25 gap-1.5 group px-5 py-2.5 text-sm font-bold tracking-wide"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg gap-1.5 group px-5 py-2.5 text-xs font-semibold"
             >
               <Gamepad2 className="h-4 w-4" />
               Start Playing
@@ -408,8 +379,8 @@ const Landing = () => {
             </Button>
             <Button 
               size="default" 
-              variant="ghost"
-              className="bg-transparent border border-[#00ff00]/30 text-[#00ff00] hover:bg-[#00ff00]/10 hover:text-[#00ff00] gap-1.5 px-5 py-2.5 text-sm font-semibold"
+              variant="outline"
+              className="border-border text-foreground hover:bg-muted gap-1.5 px-5 py-2.5 text-xs font-medium"
               onClick={() => window.open('https://www.instagram.com/vyuha_freefire?igsh=M3N6bnVncDJ4azVs', '_blank')}
             >
               <Instagram className="h-4 w-4" />
@@ -419,22 +390,22 @@ const Landing = () => {
 
           {/* Scroll indicator */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 animate-bounce">
-            <div className="w-5 h-8 rounded-full border border-[#00ff00]/30 flex items-start justify-center p-1.5">
-              <div className="w-0.5 h-1.5 bg-[#00ff00]/50 rounded-full" />
+            <div className="w-5 h-8 rounded-full border border-border flex items-start justify-center p-1.5">
+              <div className="w-0.5 h-1.5 bg-muted-foreground rounded-full" />
             </div>
           </div>
         </section>
 
-        {/* Tournament Lobby Section - Tactical Theme */}
+        {/* Tournament Lobby Section */}
         <section ref={tournamentRef} className="relative z-10 px-3 py-10">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-2 mb-5">
-              <div className="p-2 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/30">
-                <Trophy className="h-4 w-4 text-[#00ff00]" />
+              <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                <Trophy className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg md:text-xl font-bold text-white tracking-wide">Tournament Lobby</h2>
-                <p className="text-white/50 text-[10px] tracking-wider uppercase">Live matches happening now</p>
+                <h2 className="text-base md:text-lg font-semibold text-foreground">Tournament Lobby</h2>
+                <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Live matches happening now</p>
               </div>
             </div>
             
@@ -442,29 +413,27 @@ const Landing = () => {
               {liveTournaments.map((tournament) => (
                 <div
                   key={tournament.id}
-                  className="tournament-card group relative p-3 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a] hover:border-[#00ff00]/50 transition-all duration-300 cursor-pointer overflow-hidden"
+                  className="tournament-card group relative p-3 rounded-xl glass-card hover:border-primary/30 transition-all duration-300 cursor-pointer overflow-hidden"
                   onMouseMove={handleCardTilt}
                   onMouseLeave={handleCardTiltReset}
                   style={{ transformStyle: 'preserve-3d' }}
                 >
-                  <div className="absolute inset-0 bg-[#00ff00]/0 group-hover:bg-[#00ff00]/5 transition-all duration-300" />
-                  
                   <div className="relative flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-lg bg-[#00ff00]/10 flex items-center justify-center border border-[#00ff00]/30">
-                        <Gamepad2 className="h-4 w-4 text-[#00ff00]" />
+                      <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                        <Gamepad2 className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-xs text-white group-hover:text-[#00ff00] transition-colors">{tournament.name}</h3>
-                        <p className="text-[10px] text-white/50">{tournament.players} players</p>
+                        <h3 className="font-medium text-xs text-foreground group-hover:text-primary transition-colors">{tournament.name}</h3>
+                        <p className="text-[10px] text-muted-foreground">{tournament.players} players</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-[#00ff00]">{tournament.prize}</div>
-                      <div className={`text-[9px] font-semibold px-1.5 py-0.5 rounded inline-block ${
+                      <div className="text-xs font-semibold text-primary">{tournament.prize}</div>
+                      <div className={`text-[9px] font-medium px-1.5 py-0.5 rounded inline-block ${
                         tournament.status === 'LIVE' 
-                          ? 'bg-[#00ff00]/20 text-[#00ff00]' 
-                          : 'bg-yellow-500/20 text-yellow-400'
+                          ? 'bg-success/20 text-success' 
+                          : 'bg-warning/20 text-warning'
                       }`}>
                         ● {tournament.status}
                       </div>
@@ -476,134 +445,132 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* Dashboard Preview Section - Tactical Theme */}
+        {/* Dashboard Preview Section */}
         <section ref={dashboardRef} className="relative z-10 px-3 py-10">
           <div className="max-w-3xl mx-auto">
             <div className="flex items-center gap-2 mb-5">
-              <div className="p-2 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/30">
-                <User className="h-4 w-4 text-[#00ff00]" />
+              <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                <User className="h-4 w-4 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg md:text-xl font-bold text-white tracking-wide">Player Dashboard</h2>
-                <p className="text-white/50 text-[10px] tracking-wider uppercase">Your gaming command center</p>
+                <h2 className="text-base md:text-lg font-semibold text-foreground">Player Dashboard</h2>
+                <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Your gaming command center</p>
               </div>
             </div>
             
-            <div className="p-4 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a]">
+            <div className="p-4 rounded-xl glass-card">
               {/* Dashboard Header */}
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-[#1a1a1a]">
-                <div className="h-10 w-10 rounded-lg bg-[#00ff00]/20 flex items-center justify-center border border-[#00ff00]/30">
-                  <User className="h-5 w-5 text-[#00ff00]" />
+              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-border">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <User className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-white text-sm">Pro_Underdog_42</h3>
-                  <p className="text-[10px] text-[#00ff00]">⭐ Elite Player</p>
+                  <h3 className="font-semibold text-foreground text-sm">Pro_Underdog_42</h3>
+                  <p className="text-[10px] text-primary">⭐ Elite Player</p>
                 </div>
               </div>
               
               {/* Stats Grid */}
               <div className="grid grid-cols-3 gap-2">
                 {dashboardFeatures.map((feature, i) => (
-                  <div key={i} className="p-3 rounded-lg bg-[#0a0a0a] border border-[#1a1a1a]">
-                    <feature.icon className="h-4 w-4 text-[#00ff00] mb-1.5" />
-                    <div className="text-base font-bold text-[#00ff00]">{feature.value}</div>
-                    <div className="text-[9px] text-white/50">{feature.label}</div>
+                  <div key={i} className="p-3 rounded-lg bg-card border border-border">
+                    <feature.icon className="h-4 w-4 text-primary mb-1.5" />
+                    <div className="text-sm font-semibold text-foreground">{feature.value}</div>
+                    <div className="text-[9px] text-muted-foreground">{feature.label}</div>
                   </div>
                 ))}
               </div>
               
               {/* Quick Stats */}
-              <div className="mt-4 p-3 rounded-lg bg-[#00ff00]/5 border border-[#00ff00]/20">
+              <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/10">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-white/60">Tournaments</span>
-                  <span className="text-white font-semibold">47</span>
+                  <span className="text-muted-foreground">Tournaments</span>
+                  <span className="text-foreground font-medium">47</span>
                 </div>
                 <div className="flex items-center justify-between text-xs mt-1.5">
-                  <span className="text-white/60">Total Winnings</span>
-                  <span className="text-[#00ff00] font-semibold">₹12,450</span>
+                  <span className="text-muted-foreground">Total Winnings</span>
+                  <span className="text-primary font-medium">₹12,450</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Features Grid - Tactical Theme */}
+        {/* Features Grid */}
         <section ref={featuresRef} className="relative z-10 px-3 py-10">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-lg md:text-xl font-bold text-center mb-2 text-white tracking-wide">
-              <AccentText>Why <span className="text-[#00ff00]">Vyuha</span>?</AccentText>
+            <h2 className="text-base md:text-lg font-semibold text-center mb-2 text-foreground">
+              Why <span className="text-primary">Vyuha</span>?
             </h2>
-            <p className="text-white/50 text-[10px] text-center mb-6 tracking-wider uppercase">Built by gamers, for gamers</p>
+            <p className="text-muted-foreground text-[10px] text-center mb-6 uppercase tracking-wider">Built by gamers, for gamers</p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {features.map((feature, i) => (
                 <div 
                   key={i} 
-                  className="feature-card p-3 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a] hover:border-[#00ff00]/40 transition-all duration-300 group cursor-pointer"
+                  className="feature-card p-3 rounded-xl glass-card hover:border-primary/30 transition-all duration-300 group cursor-pointer"
                   onMouseMove={handleCardTilt}
                   onMouseLeave={handleCardTiltReset}
                   style={{ transformStyle: 'preserve-3d' }}
                 >
-                  <div className="h-9 w-9 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/30 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                    <feature.icon className="h-4 w-4 text-[#00ff00]" />
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
+                    <feature.icon className="h-4 w-4 text-primary" />
                   </div>
-                  <h3 className="font-bold text-white text-[11px] mb-0.5">{feature.title}</h3>
-                  <p className="text-[9px] text-white/50">{feature.desc}</p>
+                  <h3 className="font-medium text-foreground text-[11px] mb-0.5">{feature.title}</h3>
+                  <p className="text-[9px] text-muted-foreground">{feature.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* AI Integration Section - Tactical Theme */}
+        {/* AI Integration Section */}
         <section ref={aiRef} className="relative z-10 px-3 py-10">
           <div className="max-w-3xl mx-auto">
-            <div className="p-5 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a] relative overflow-hidden">
-              <div className="absolute inset-0 bg-[#00ff00]/[0.02]" />
-              
+            <div className="p-5 rounded-xl glass-card relative overflow-hidden">
               <div className="relative">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/30">
-                    <Brain className="h-4 w-4 text-[#00ff00]" />
+                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                    <Brain className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-white tracking-wide">
-                      <AccentText>Powered by <span className="text-[#00ff00]">AI</span></AccentText>
+                    <h2 className="text-base font-semibold text-foreground">
+                      Powered by <span className="text-primary">AI</span>
                     </h2>
-                    <p className="text-white/50 text-[10px] tracking-wider uppercase">Smart gaming insights</p>
+                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Smart gaming insights</p>
                   </div>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div className="flex items-start gap-2">
-                      <Cpu className="h-4 w-4 text-[#00ff00] mt-0.5 flex-shrink-0" />
+                      <Cpu className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-white text-xs">Match Analysis</h4>
-                        <p className="text-[10px] text-white/50">AI-powered gameplay breakdown</p>
+                        <h4 className="font-medium text-foreground text-xs">Match Analysis</h4>
+                        <p className="text-[10px] text-muted-foreground">AI-powered gameplay breakdown</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Star className="h-4 w-4 text-[#00ff00] mt-0.5 flex-shrink-0" />
+                      <Medal className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-white text-xs">Performance Tips</h4>
-                        <p className="text-[10px] text-white/50">Personalized recommendations</p>
+                        <h4 className="font-medium text-foreground text-xs">Performance Tips</h4>
+                        <p className="text-[10px] text-muted-foreground">Personalized recommendations</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-2">
-                      <Target className="h-4 w-4 text-[#00ff00] mt-0.5 flex-shrink-0" />
+                      <Target className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-white text-xs">Opponent Insights</h4>
-                        <p className="text-[10px] text-white/50">Know your competition</p>
+                        <h4 className="font-medium text-foreground text-xs">Opponent Insights</h4>
+                        <p className="text-[10px] text-muted-foreground">Know your competition</p>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-center">
                     <div className="relative">
-                      <div className="absolute inset-0 bg-[#00ff00]/20 rounded-lg blur-lg" />
-                      <div className="relative px-4 py-3 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/30">
-                        <Brain className="h-10 w-10 text-[#00ff00] mx-auto mb-1" />
-                        <p className="text-[9px] text-white/60 text-center">AI Engine</p>
+                      <div className="absolute inset-0 bg-primary/10 rounded-lg blur-lg" />
+                      <div className="relative px-4 py-3 rounded-lg bg-primary/5 border border-primary/20">
+                        <Brain className="h-10 w-10 text-primary mx-auto mb-1" />
+                        <p className="text-[9px] text-muted-foreground text-center">AI Engine</p>
                       </div>
                     </div>
                   </div>
@@ -613,32 +580,32 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* About Creator - Tactical Theme */}
+        {/* About Creator */}
         <section className="relative z-10 px-3 py-10 pb-28">
           <div 
             ref={aboutRef}
-            className="max-w-3xl mx-auto p-4 rounded-lg bg-[#0d0d0d] border border-[#1a1a1a]"
+            className="max-w-3xl mx-auto p-4 rounded-xl glass-card"
           >
             <div className="flex items-center gap-3 mb-3">
               <img 
                 src="/abhishek-shukla.jpg" 
                 alt="Abhishek Shukla" 
-                className="h-12 w-12 rounded-full object-cover ring-2 ring-[#00ff00]/50"
+                className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/30"
               />
               <div>
-                <h3 className="font-bold text-white text-sm">Abhishek Shukla</h3>
-                <p className="text-[10px] text-[#00ff00] font-medium">Founder & CEO</p>
+                <h3 className="font-semibold text-foreground text-sm">Abhishek Shukla</h3>
+                <p className="text-[10px] text-primary font-medium">Founder & CEO</p>
               </div>
             </div>
-            <p className="text-[11px] text-white/60 leading-relaxed">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
               An 18-year-old engineering student and tech enthusiast who built Vyuha to bridge the gap between casual gaming and professional esports.
             </p>
-            <div className="mt-3 pt-3 border-t border-[#1a1a1a]">
+            <div className="mt-3 pt-3 border-t border-border">
               <a 
                 href="https://instagram.com/abhishek.shhh" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-xs text-[#00ff00] hover:text-[#00dd00] transition-colors flex items-center gap-1"
+                className="text-xs text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
               >
                 <Instagram className="h-3 w-3" />
                 @abhishek.shhh
@@ -648,9 +615,9 @@ const Landing = () => {
         </section>
 
         {/* CTA Footer - Fixed Button */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-3 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/95 to-transparent">
+        <div className="fixed bottom-0 left-0 right-0 z-50 p-3 bg-gradient-to-t from-background via-background/95 to-transparent">
           <Button 
-            className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 bg-[#00ff00] hover:bg-[#00dd00] text-black shadow-xl shadow-[#00ff00]/25 py-5 text-sm font-bold tracking-wide"
+            className="w-full max-w-sm mx-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl py-5 text-xs font-semibold"
             onClick={() => setAuthDialog('signup')}
           >
             <Gamepad2 className="h-4 w-4" />
@@ -658,69 +625,48 @@ const Landing = () => {
           </Button>
         </div>
 
-        {/* Tactical Terminal Auth Dialog */}
+        {/* Auth Dialog */}
         <Dialog open={authDialog !== null} onOpenChange={(open) => !open && setAuthDialog(null)}>
           <DialogContent 
-            className="max-w-[380px] max-h-[90vh] p-0 bg-[#0d0d0d] border border-[#1a1a1a] text-white overflow-y-auto" 
-            style={{ fontFamily: 'Rajdhani, sans-serif' }}
+            className="max-w-[380px] max-h-[90vh] p-0 bg-card border border-border text-card-foreground overflow-y-auto"
             aria-describedby={undefined}
           >
             <DialogTitle className="sr-only">
               {authDialog === 'login' ? 'Login' : 'Sign Up'}
             </DialogTitle>
             
-            {/* Corner Accents */}
-            <div className="absolute top-0 left-0 w-4 h-4 border-l-2 border-t-2 border-[#00ff00]" />
-            <div className="absolute top-0 right-0 w-4 h-4 border-r-2 border-t-2 border-[#00ff00]" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-l-2 border-b-2 border-[#00ff00]" />
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-r-2 border-b-2 border-[#00ff00]" />
-            
             <div className="p-6">
-              {/* Status Badge */}
-              <div className="mb-4">
-                <span className="inline-block px-3 py-1.5 bg-[#00ff00] text-black text-[11px] font-bold tracking-[0.15em] uppercase">
-                  {authDialog === 'login' ? 'SECURITY_GATEWAY_ACTIVE' : 'REGISTRATION_GATEWAY_ACTIVE'}
-                </span>
-              </div>
-              
               {/* Title */}
-              <h2 className="text-2xl font-bold tracking-tight mb-1" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                {authDialog === 'login' ? (
-                  <>SYSTEM <span className="text-[#00ff00]">ACCESS</span></>
-                ) : (
-                  <>CREATE <span className="text-[#00ff00]">CREDENTIALS</span></>
-                )}
+              <h2 className="text-xl font-semibold tracking-tight mb-1 text-foreground">
+                {authDialog === 'login' ? 'Welcome Back' : 'Create Account'}
               </h2>
-              <p className="text-[11px] text-gray-500 tracking-[0.2em] uppercase mb-6" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                {authDialog === 'login' ? 'IDENTIFY YOURSELF TO PROCEED' : 'ENROLL YOUR PROFILE INTO THE NETWORK'}
+              <p className="text-xs text-muted-foreground mb-6">
+                {authDialog === 'login' ? 'Sign in to continue your gaming journey' : 'Join Vyuha and start winning'}
               </p>
               
               <form onSubmit={handleSubmit} className="space-y-4">
                 {authDialog === 'signup' && (
                   <div className="space-y-1.5">
-                    <label className="text-[11px] text-white/80 tracking-[0.15em] uppercase font-medium" style={{ fontFamily: 'Rajdhani, sans-serif' }}>PLAYER_REAL_NAME</label>
+                    <label className="text-xs text-muted-foreground font-medium">Full Name</label>
                     <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         <User className="h-4 w-4" />
                       </div>
                       <Input 
                         value={fullName}
                         onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
                         placeholder="Enter your name"
-                        className={`h-11 pl-10 text-sm bg-[#0a0a0a] border-[#222] text-white placeholder:text-gray-600 focus:border-[#00ff00] focus:ring-0 rounded-sm ${errors.fullName ? 'border-red-500' : ''}`}
-                        style={{ fontFamily: 'Rajdhani, sans-serif' }}
+                        className={`h-10 pl-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.fullName ? 'border-destructive' : ''}`}
                       />
                     </div>
-                    {errors.fullName && <p className="text-[10px] text-red-500 tracking-wider">{errors.fullName}</p>}
+                    {errors.fullName && <p className="text-[10px] text-destructive">{errors.fullName}</p>}
                   </div>
                 )}
                 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] text-white/80 tracking-[0.15em] uppercase font-medium" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                    EMAIL
-                  </label>
+                  <label className="text-xs text-muted-foreground font-medium">Email</label>
                   <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                       <span className="text-sm">@</span>
                     </div>
                     <Input 
@@ -728,19 +674,16 @@ const Landing = () => {
                       value={email}
                       onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
                       placeholder="Enter your email"
-                      className={`h-11 pl-10 text-sm bg-[#0a0a0a] border-[#222] text-white placeholder:text-gray-600 focus:border-[#00ff00] focus:ring-0 rounded-sm ${errors.email ? 'border-red-500' : ''}`}
-                      style={{ fontFamily: 'Rajdhani, sans-serif' }}
+                      className={`h-10 pl-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.email ? 'border-destructive' : ''}`}
                     />
                   </div>
-                  {errors.email && <p className="text-[10px] text-red-500 tracking-wider">{errors.email}</p>}
+                  {errors.email && <p className="text-[10px] text-destructive">{errors.email}</p>}
                 </div>
                 
                 <div className="space-y-1.5">
-                  <label className="text-[11px] text-white/80 tracking-[0.15em] uppercase font-medium" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                    {authDialog === 'login' ? 'PASSWORD' : 'PASSWORD'}
-                  </label>
+                  <label className="text-xs text-muted-foreground font-medium">Password</label>
                   <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                       <Shield className="h-4 w-4" />
                     </div>
                     <Input 
@@ -748,18 +691,17 @@ const Landing = () => {
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setErrors(p => ({...p, password: undefined})); }}
                       placeholder="••••••••"
-                      className={`h-11 pl-10 pr-10 text-sm bg-[#0a0a0a] border-[#222] text-white placeholder:text-gray-600 focus:border-[#00ff00] focus:ring-0 rounded-sm ${errors.password ? 'border-red-500' : ''}`}
-                      style={{ fontFamily: 'Rajdhani, sans-serif' }}
+                      className={`h-10 pl-10 pr-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.password ? 'border-destructive' : ''}`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-[10px] text-red-500 tracking-wider">{errors.password}</p>}
+                  {errors.password && <p className="text-[10px] text-destructive">{errors.password}</p>}
                 </div>
 
                 {authDialog === 'signup' ? (
@@ -767,21 +709,17 @@ const Landing = () => {
                     <Checkbox 
                       checked={acceptedTerms} 
                       onCheckedChange={(c) => { setAcceptedTerms(!!c); setErrors(p => ({...p, terms: undefined})); }}
-                      className="h-4 w-4 border-[#333] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-sm"
+                      className="h-4 w-4 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
-                    <label className="text-[11px] text-gray-400 tracking-wider" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
+                    <label className="text-xs text-muted-foreground">
                       I accept the terms & conditions
                     </label>
                   </div>
                 ) : (
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Checkbox 
-                        className="h-4 w-4 border-[#333] data-[state=checked]:bg-[#00ff00] data-[state=checked]:border-[#00ff00] rounded-sm"
-                      />
-                      <label className="text-[11px] text-gray-400 tracking-wider" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                        Remember me
-                      </label>
+                      <Checkbox className="h-4 w-4 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                      <label className="text-xs text-muted-foreground">Remember me</label>
                     </div>
                     <button 
                       type="button" 
@@ -789,40 +727,39 @@ const Landing = () => {
                         setAuthDialog(null);
                         navigate('/forgot-password');
                       }}
-                      className="text-[11px] text-[#00ff00] tracking-wider hover:underline" 
-                      style={{ fontFamily: 'Rajdhani, sans-serif' }}
+                      className="text-xs text-primary hover:underline font-medium"
                     >
                       Forgot password?
                     </button>
                   </div>
                 )}
-                {errors.terms && <p className="text-[10px] text-red-500 tracking-wider">{errors.terms}</p>}
+                
+                {errors.terms && <p className="text-[10px] text-destructive">{errors.terms}</p>}
 
                 <Button 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full h-12 text-sm bg-[#00ff00] hover:bg-[#00dd00] text-black font-bold tracking-[0.15em] uppercase rounded-sm border-0"
-                  style={{ fontFamily: 'Rajdhani, sans-serif' }}
+                  className="w-full h-11 text-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      {authDialog === 'login' ? 'LOGIN' : 'SIGN UP'}
-                      <Zap className="ml-2 h-4 w-4" />
+                      {authDialog === 'login' ? 'Sign In' : 'Create Account'}
+                      <ChevronRight className="ml-2 h-4 w-4" />
                     </>
                   )}
                 </Button>
-
-                {/* Switch Auth Mode */}
-                <p className="text-center text-[11px] text-gray-400 tracking-wider pt-3" style={{ fontFamily: 'Rajdhani, sans-serif' }}>
-                  {authDialog === 'login' ? (
-                    <>Don't have an account? <button type="button" onClick={() => setAuthDialog('signup')} className="text-[#00ff00] hover:underline font-semibold">Sign up</button></>
-                  ) : (
-                    <>Already have an account? <button type="button" onClick={() => setAuthDialog('login')} className="text-[#00ff00] hover:underline font-semibold">Login</button></>
-                  )}
-                </p>
               </form>
+
+              {/* Switch */}
+              <p className="text-center text-xs text-muted-foreground pt-4">
+                {authDialog === 'login' ? (
+                  <>Don't have an account? <button type="button" onClick={() => setAuthDialog('signup')} className="text-primary hover:underline font-medium">Sign up</button></>
+                ) : (
+                  <>Already have an account? <button type="button" onClick={() => setAuthDialog('login')} className="text-primary hover:underline font-medium">Login</button></>
+                )}
+              </p>
             </div>
           </DialogContent>
         </Dialog>
