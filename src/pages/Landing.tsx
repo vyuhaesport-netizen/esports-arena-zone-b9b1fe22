@@ -858,7 +858,7 @@ const Landing = () => {
                       type="button" 
                       onClick={() => {
                         setAuthDialog(null);
-                        navigate('/auth?mode=forgot');
+                        navigate('/forgot-password');
                       }}
                       className="text-[11px] text-[#00ff00] tracking-wider hover:underline" 
                       style={{ fontFamily: 'Rajdhani, sans-serif' }}

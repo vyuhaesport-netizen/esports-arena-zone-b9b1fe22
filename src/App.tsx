@@ -10,7 +10,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "./integrations/supabase/client";
 import SEOProvider from "./components/SEOProvider";
 import Landing from "./pages/Landing";
-import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import Creator from "./pages/Creator";
 import MyMatch from "./pages/MyMatch";
@@ -231,7 +231,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       {/* Public Routes - accessible without login */}
       <Route path="/home" element={<Home />} />
       <Route path="/creator-tournaments" element={<Creator />} />
