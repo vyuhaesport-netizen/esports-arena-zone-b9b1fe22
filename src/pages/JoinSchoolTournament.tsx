@@ -30,7 +30,12 @@ import {
   UserPlus,
   Crown,
   Lock,
-  Timer
+  Timer,
+  Play,
+  Eye,
+  EyeOff,
+  Radio,
+  Hash
 } from 'lucide-react';
 
 interface Tournament {
@@ -73,6 +78,7 @@ interface RoomTeam {
   member_1_id?: string;
   member_2_id?: string;
   member_3_id?: string;
+  slot_number?: number;
 }
 
 interface MyRoom {
@@ -120,6 +126,7 @@ const JoinSchoolTournament = () => {
   const [myRoom, setMyRoom] = useState<MyRoom | null>(null);
   const [roomTeams, setRoomTeams] = useState<RoomTeam[]>([]);
   const [playerProfiles, setPlayerProfiles] = useState<Record<string, PlayerProfile>>({});
+  const [myTeamNumber, setMyTeamNumber] = useState<number | null>(null);
   
   // Join dialog
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
@@ -178,10 +185,24 @@ const JoinSchoolTournament = () => {
       setMyTeam(teamData);
       setActiveTab('my-room');
       
+      // Fetch team number (registration order)
+      const { data: allTeams } = await supabase
+        .from('school_tournament_teams')
+        .select('id, registered_at')
+        .eq('tournament_id', tournament.id)
+        .order('registered_at', { ascending: true });
+      
+      if (allTeams) {
+        const teamIndex = allTeams.findIndex(t => t.id === teamData.id);
+        if (teamIndex !== -1) {
+          setMyTeamNumber(teamIndex + 1);
+        }
+      }
+      
       // Fetch my room assignment
       const { data: assignmentData } = await supabase
         .from('school_tournament_room_assignments')
-        .select('room_id')
+        .select('room_id, slot_number')
         .eq('team_id', teamData.id)
         .single();
 
@@ -196,11 +217,12 @@ const JoinSchoolTournament = () => {
         if (roomData) {
           setMyRoom(roomData);
           
-          // Fetch all teams in this room
+          // Fetch all teams in this room with their slot numbers
           const { data: roomAssignments } = await supabase
             .from('school_tournament_room_assignments')
-            .select('team_id')
-            .eq('room_id', roomData.id);
+            .select('team_id, slot_number')
+            .eq('room_id', roomData.id)
+            .order('slot_number', { ascending: true });
 
           if (roomAssignments && roomAssignments.length > 0) {
             const teamIds = roomAssignments.map(a => a.team_id);
@@ -211,7 +233,12 @@ const JoinSchoolTournament = () => {
               .in('id', teamIds);
 
             if (teamsData) {
-              setRoomTeams(teamsData);
+              // Merge slot numbers with teams
+              const teamsWithSlots = teamsData.map(team => ({
+                ...team,
+                slot_number: roomAssignments.find(a => a.team_id === team.id)?.slot_number
+              }));
+              setRoomTeams(teamsWithSlots.sort((a, b) => (a.slot_number || 0) - (b.slot_number || 0)));
               
               // Fetch player profiles for all teams
               const allPlayerIds: string[] = [];
@@ -261,7 +288,6 @@ const JoinSchoolTournament = () => {
     setLoadingTeams(true);
 
     try {
-      // Get teams where user is a member
       const { data: membershipData, error: membershipError } = await supabase
         .from('player_team_members')
         .select('team_id')
@@ -277,7 +303,6 @@ const JoinSchoolTournament = () => {
 
       const teamIds = membershipData.map(m => m.team_id);
 
-      // Fetch teams
       const { data: teamsData, error: teamsError } = await supabase
         .from('player_teams')
         .select('id, name')
@@ -285,7 +310,6 @@ const JoinSchoolTournament = () => {
 
       if (teamsError) throw teamsError;
 
-      // Fetch all members for these teams with their wallet balances
       const teams: PlayerTeam[] = [];
       
       for (const team of teamsData || []) {
@@ -343,7 +367,6 @@ const JoinSchoolTournament = () => {
       return;
     }
 
-    // Validate team size (4 players for squad)
     if (selectedTeamMembers.length !== 3) {
       toast.error('Please select exactly 3 teammates for squad mode');
       return;
@@ -407,7 +430,6 @@ const JoinSchoolTournament = () => {
     const entryFee = tournament.entry_fee || 0;
     const teamMembersList = getSelectedTeamMembers();
     
-    // Check all selected members have sufficient balance
     for (const memberId of selectedTeamMembers) {
       const member = teamMembersList.find(m => m.user_id === memberId);
       if (!member || member.wallet_balance < entryFee) {
@@ -415,7 +437,6 @@ const JoinSchoolTournament = () => {
       }
     }
 
-    // Check self balance
     if (walletBalance < entryFee) return false;
 
     return teamName.trim().length > 0;
@@ -431,6 +452,7 @@ const JoinSchoolTournament = () => {
   const canAfford = tournament?.entry_type === 'free' || walletBalance >= (tournament?.entry_fee || 0);
   const teamsPerRoom = tournament?.game === 'BGMI' ? 25 : 12;
   const entryFee = tournament?.entry_fee || 0;
+  const isTournamentCompleted = tournament?.status === 'completed';
 
   if (loading || authLoading) {
     return (
@@ -457,50 +479,62 @@ const JoinSchoolTournament = () => {
     );
   }
 
+  const getRoomStatusBadge = (status: string) => {
+    switch (status) {
+      case 'ongoing':
+        return (
+          <Badge className="bg-green-500 text-white gap-1">
+            <Radio className="h-2.5 w-2.5 animate-pulse" />
+            Live
+          </Badge>
+        );
+      case 'completed':
+        return <Badge variant="secondary">Finished</Badge>;
+      case 'waiting':
+        return <Badge variant="outline">Waiting</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
   return (
     <AppLayout>
       <div className="pb-40">
-        {/* Header Image */}
-        {tournament.school_image_url && (
-          <div className="relative h-40">
-            <img 
-              src={tournament.school_image_url} 
-              alt={tournament.school_name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
+        {/* Header - No Image, Just Registration Title */}
+        <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex-1">
+              <h1 className="text-sm font-bold">Registration</h1>
+              <p className="text-[10px] text-muted-foreground">{tournament.school_name}</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Badge variant={tournament.status === 'registration' ? 'secondary' : tournament.status === 'ongoing' ? 'default' : 'outline'}
+                className={tournament.status === 'ongoing' ? 'bg-green-500' : ''}>
+                {tournament.status}
+              </Badge>
+              {isFull && <Badge variant="destructive">FULL</Badge>}
+            </div>
           </div>
-        )}
+        </header>
 
         {/* Tournament Info */}
         <div className="px-4 py-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="mb-2" 
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between mb-3">
             <div>
-              <h1 className="text-xl font-bold">{tournament.tournament_name}</h1>
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                <School className="h-4 w-4" /> {tournament.school_name}
-              </p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <h1 className="text-lg font-bold">{tournament.tournament_name}</h1>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                 <MapPin className="h-3 w-3" /> {tournament.school_city}, {tournament.school_state}
               </p>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <Badge variant={tournament.status === 'registration' ? 'secondary' : 'default'}>
-                {tournament.status}
+            {myTeamNumber && (
+              <Badge className="bg-primary/10 text-primary border-primary/30">
+                <Hash className="h-3 w-3 mr-0.5" />
+                Team {myTeamNumber}
               </Badge>
-              {isFull && (
-                <Badge variant="destructive">FULL</Badge>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Tabs for Joined Users */}
@@ -513,46 +547,76 @@ const JoinSchoolTournament = () => {
 
               {/* My Room Tab */}
               <TabsContent value="my-room" className="mt-4 space-y-4">
-                {myRoom ? (
+                {/* Tournament Completed - Can't view room/teams */}
+                {isTournamentCompleted ? (
+                  <Card className="border-muted">
+                    <CardContent className="p-6 text-center">
+                      <EyeOff className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                      <h3 className="font-semibold text-sm mb-1">Tournament Completed</h3>
+                      <p className="text-xs text-muted-foreground">
+                        You can't view your room or teams anymore. Previous round data has been cleared.
+                      </p>
+                      {myTeam?.final_rank && (
+                        <Badge className="mt-3 bg-yellow-500 text-white">
+                          <Trophy className="h-3 w-3 mr-1" />
+                          Final Rank: #{myTeam.final_rank}
+                        </Badge>
+                      )}
+                    </CardContent>
+                  </Card>
+                ) : myRoom ? (
                   <>
                     {/* Room Info Card */}
                     <Card className="border-primary/30 bg-primary/5">
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{myRoom.room_name}</CardTitle>
-                          <Badge variant={myRoom.status === 'completed' ? 'default' : 'secondary'}>
-                            {myRoom.status}
-                          </Badge>
+                          <CardTitle className="text-base">{myRoom.room_name}</CardTitle>
+                          {getRoomStatusBadge(myRoom.status)}
                         </div>
-                        <CardDescription>
+                        <CardDescription className="text-xs">
                           Round {myRoom.round_number} • Room {myRoom.room_number}
                         </CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {/* My Team Highlight */}
                         {myTeam && (
-                          <div className="p-3 bg-primary/10 rounded-lg border border-primary/30">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Crown className="h-4 w-4 text-yellow-500" />
-                              <span className="font-medium">Your Team: {myTeam.team_name}</span>
+                          <div className="p-2.5 bg-primary/10 rounded-lg border border-primary/30">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <Crown className="h-3.5 w-3.5 text-yellow-500" />
+                              <span className="font-medium text-sm">Your Team: {myTeam.team_name}</span>
+                              {myTeamNumber && (
+                                <Badge variant="outline" className="text-[10px] ml-auto">
+                                  #{myTeamNumber}
+                                </Badge>
+                              )}
                             </div>
-                            {myTeam.is_eliminated && (
-                              <Badge variant="destructive">Eliminated</Badge>
-                            )}
-                            {myTeam.final_rank && (
-                              <Badge className="bg-yellow-500">Rank #{myTeam.final_rank}</Badge>
-                            )}
+                            <div className="flex gap-2">
+                              {myTeam.is_eliminated && (
+                                <Badge variant="destructive" className="text-xs">Eliminated</Badge>
+                              )}
+                              {myTeam.final_rank && (
+                                <Badge className="bg-yellow-500 text-xs">Rank #{myTeam.final_rank}</Badge>
+                              )}
+                            </div>
                           </div>
                         )}
 
-                        {/* Room Credentials (if set) */}
-                        {myRoom.room_id && (
-                          <div className="p-3 bg-muted rounded-lg">
+                        {/* Room Status Indicator */}
+                        {myRoom.status === 'ongoing' && (
+                          <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                            <Play className="h-4 w-4 text-green-500 fill-green-500" />
+                            <span className="text-xs font-medium text-green-600">Room is LIVE - Match in progress</span>
+                          </div>
+                        )}
+
+                        {/* Room Credentials (if set and room is ongoing/waiting) */}
+                        {myRoom.room_id && myRoom.status !== 'completed' ? (
+                          <div className="p-2.5 bg-muted rounded-lg">
                             <div className="flex items-center gap-2 mb-2">
-                              <Lock className="h-4 w-4" />
-                              <span className="font-medium">Room Credentials</span>
+                              <Lock className="h-3.5 w-3.5" />
+                              <span className="font-medium text-xs">Room Credentials</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
                               <div>
                                 <span className="text-muted-foreground">Room ID:</span>
                                 <span className="ml-2 font-mono font-bold">{myRoom.room_id}</span>
@@ -563,12 +627,19 @@ const JoinSchoolTournament = () => {
                               </div>
                             </div>
                           </div>
-                        )}
+                        ) : myRoom.status === 'completed' ? (
+                          <div className="p-2.5 bg-muted/50 rounded-lg text-center">
+                            <EyeOff className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+                            <p className="text-xs text-muted-foreground">
+                              Room credentials hidden - Match finished
+                            </p>
+                          </div>
+                        ) : null}
 
                         {/* Scheduled Time */}
                         {myRoom.scheduled_time && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Timer className="h-4 w-4 text-primary" />
+                          <div className="flex items-center gap-2 text-xs">
+                            <Timer className="h-3.5 w-3.5 text-primary" />
                             <span>Match Time: {new Date(myRoom.scheduled_time).toLocaleString()}</span>
                           </div>
                         )}
@@ -584,9 +655,9 @@ const JoinSchoolTournament = () => {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <ScrollArea className="h-[300px]">
+                        <ScrollArea className="h-[280px]">
                           <div className="space-y-2">
-                            {roomTeams.map((team, idx) => {
+                            {roomTeams.map((team) => {
                               const isMyTeam = team.id === myTeam?.id;
                               const playerIds = [
                                 team.leader_id,
@@ -600,34 +671,34 @@ const JoinSchoolTournament = () => {
                                   key={team.id} 
                                   className={isMyTeam ? 'border-primary bg-primary/5' : ''}
                                 >
-                                  <CardContent className="p-3">
+                                  <CardContent className="p-2.5">
                                     <div className="flex items-center gap-2 mb-2">
-                                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
-                                        {idx + 1}
+                                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
+                                        {team.slot_number || '-'}
                                       </div>
-                                      <span className="font-medium flex-1">{team.team_name}</span>
+                                      <span className="font-medium text-xs flex-1 truncate">{team.team_name}</span>
                                       {isMyTeam && (
-                                        <Badge variant="secondary" className="text-xs">You</Badge>
+                                        <Badge variant="secondary" className="text-[10px]">You</Badge>
                                       )}
                                     </div>
-                                    <div className="space-y-1 text-xs">
+                                    <div className="space-y-1">
                                       {playerIds.map((pid, pIdx) => {
                                         const profile = playerProfiles[pid as string];
                                         return (
-                                          <div key={pid} className="flex items-center gap-2 p-1.5 bg-muted/50 rounded">
-                                            <span className="text-muted-foreground w-6">P{pIdx + 1}</span>
-                                            <div className="flex-1 flex items-center gap-2">
-                                              <span className="font-medium">
+                                          <div key={pid} className="flex items-center gap-2 p-1 bg-muted/50 rounded text-[10px]">
+                                            <span className="text-muted-foreground w-5">P{pIdx + 1}</span>
+                                            <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                                              <span className="font-medium truncate">
                                                 {profile?.in_game_name || profile?.username || `Player ${pIdx + 1}`}
                                               </span>
                                               {profile?.game_uid && (
-                                                <span className="text-muted-foreground">
+                                                <span className="text-muted-foreground truncate">
                                                   UID: {profile.game_uid}
                                                 </span>
                                               )}
                                             </div>
                                             {pIdx === 0 && (
-                                              <Badge variant="outline" className="text-xs py-0">Leader</Badge>
+                                              <Badge variant="outline" className="text-[9px] py-0 h-4">Leader</Badge>
                                             )}
                                           </div>
                                         );
@@ -647,7 +718,7 @@ const JoinSchoolTournament = () => {
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm">Tournament Format</CardTitle>
                       </CardHeader>
-                      <CardContent className="text-sm space-y-2">
+                      <CardContent className="text-xs space-y-1.5">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Game</span>
                           <span className="font-medium">{tournament.game}</span>
@@ -679,7 +750,7 @@ const JoinSchoolTournament = () => {
                   <Card className="text-center py-8">
                     <CardContent>
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground mb-3" />
-                      <p className="text-muted-foreground">Loading your room...</p>
+                      <p className="text-muted-foreground text-sm">Loading your room...</p>
                     </CardContent>
                   </Card>
                 )}
@@ -820,8 +891,8 @@ const JoinSchoolTournament = () => {
                             key={team.id}
                             onClick={() => hasEnoughMembers && handleTeamSelect(team.id)}
                             className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'bg-primary/10 border-primary'
+                              isSelected 
+                                ? 'bg-primary/10 border-primary' 
                                 : !hasEnoughMembers
                                 ? 'bg-muted/50 border-border opacity-60 cursor-not-allowed'
                                 : 'bg-card border-border hover:bg-muted/50'
@@ -837,7 +908,9 @@ const JoinSchoolTournament = () => {
                                   {teamMemberCount} members
                                 </Badge>
                                 {!hasEnoughMembers && (
-                                  <span className="text-[10px] text-destructive">Need 4+ members</span>
+                                  <span className="text-[10px] text-destructive">
+                                    Need 4+ members
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -847,13 +920,13 @@ const JoinSchoolTournament = () => {
                     </div>
                   </div>
 
-                  {/* Step 2: Select Teammates (only if team is selected) */}
+                  {/* Step 2: Select Teammates */}
                   {selectedTeamId && (
                     <div className="space-y-2">
                       <Label className="text-xs text-muted-foreground font-semibold">
                         Step 2: Select 3 Teammates • Entry ₹{entryFee} per player
                       </Label>
-                      <ScrollArea className="h-[200px]">
+                      <ScrollArea className="h-[180px]">
                         <div className="space-y-2">
                           {teamMembersList.map((member) => {
                             const isSelected = selectedTeamMembers.includes(member.user_id);
@@ -861,12 +934,12 @@ const JoinSchoolTournament = () => {
                             const maxSelected = selectedTeamMembers.length >= 3;
 
                             return (
-                              <div
+                              <div 
                                 key={member.user_id}
                                 onClick={() => !hasInsufficientBalance && toggleMemberSelection(member.user_id)}
                                 className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
-                                  isSelected
-                                    ? 'bg-primary/10 border-primary'
+                                  isSelected 
+                                    ? 'bg-primary/10 border-primary' 
                                     : hasInsufficientBalance
                                     ? 'bg-muted/50 border-border opacity-60 cursor-not-allowed'
                                     : maxSelected && !isSelected
@@ -875,8 +948,8 @@ const JoinSchoolTournament = () => {
                                 }`}
                               >
                                 <div className="flex items-center gap-3">
-                                  <Checkbox
-                                    checked={isSelected}
+                                  <Checkbox 
+                                    checked={isSelected} 
                                     disabled={hasInsufficientBalance || (maxSelected && !isSelected)}
                                   />
                                   <Avatar className="h-8 w-8">
@@ -967,47 +1040,47 @@ const JoinSchoolTournament = () => {
   function renderTournamentInfo() {
     return (
       <>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Stats Cards - Compact like regular tournament */}
+        <div className="grid grid-cols-2 gap-2">
           <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <Gamepad2 className="h-8 w-8 text-primary" />
+            <CardContent className="p-3 flex items-center gap-2">
+              <Gamepad2 className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Game</p>
-                <p className="font-bold">{tournament!.game}</p>
+                <p className="text-[10px] text-muted-foreground">Game</p>
+                <p className="font-bold text-xs">{tournament!.game}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
+            <CardContent className="p-3 flex items-center gap-2">
+              <Users className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Players</p>
-                <p className="font-bold">{tournament!.current_players}/{tournament!.max_players}</p>
+                <p className="text-[10px] text-muted-foreground">Players</p>
+                <p className="font-bold text-xs">{tournament!.current_players}/{tournament!.max_players}</p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-3">
-              <Calendar className="h-8 w-8 text-primary" />
+            <CardContent className="p-3 flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Date</p>
-                <p className="font-bold text-sm">
+                <p className="text-[10px] text-muted-foreground">Date</p>
+                <p className="font-bold text-xs">
                   {new Date(tournament!.tournament_date).toLocaleDateString()}
                 </p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 flex items-center gap-3">
+            <CardContent className="p-3 flex items-center gap-2">
               {tournament!.entry_type === 'free' ? (
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <CheckCircle className="h-6 w-6 text-green-500" />
               ) : (
-                <IndianRupee className="h-8 w-8 text-primary" />
+                <IndianRupee className="h-6 w-6 text-primary" />
               )}
               <div>
-                <p className="text-sm text-muted-foreground">Entry</p>
-                <p className="font-bold">
+                <p className="text-[10px] text-muted-foreground">Entry</p>
+                <p className="font-bold text-xs">
                   {tournament!.entry_type === 'free' ? 'FREE' : `₹${tournament!.entry_fee}`}
                 </p>
               </div>
@@ -1018,11 +1091,11 @@ const JoinSchoolTournament = () => {
         {/* Prize Pool */}
         {tournament!.prize_pool > 0 && (
           <Card className="border-yellow-500/30 bg-yellow-500/5">
-            <CardContent className="p-4 flex items-center justify-center gap-3">
-              <Trophy className="h-8 w-8 text-yellow-500" />
+            <CardContent className="p-3 flex items-center justify-center gap-3">
+              <Trophy className="h-6 w-6 text-yellow-500" />
               <div className="text-center">
-                <p className="text-sm text-muted-foreground">Prize Pool</p>
-                <p className="text-2xl font-bold text-yellow-500">₹{tournament!.prize_pool}</p>
+                <p className="text-[10px] text-muted-foreground">Prize Pool</p>
+                <p className="text-xl font-bold text-yellow-500">₹{tournament!.prize_pool}</p>
               </div>
             </CardContent>
           </Card>
@@ -1030,8 +1103,8 @@ const JoinSchoolTournament = () => {
 
         {/* Registration Deadline */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-sm">
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 text-xs">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">Registration Deadline:</span>
               <span className="font-medium">
@@ -1046,7 +1119,7 @@ const JoinSchoolTournament = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Tournament Format</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm space-y-2">
+          <CardContent className="text-xs space-y-1.5">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Mode</span>
               <span className="font-medium">Squad (4 Players)</span>
