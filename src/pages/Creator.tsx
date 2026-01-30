@@ -388,10 +388,10 @@ const Creator = () => {
       />
       <AppLayout>
       {/* Header */}
-      <div className="bg-card border-b-2 border-white/15 px-4 py-3">
+      <div className="bg-card border-b-2 border-white/30 px-3 py-2.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <BrandLogo className="h-10 w-10" alt="Vyuha" />
+          <div className="flex items-center gap-2">
+            <BrandLogo className="h-8 w-8" alt="Vyuha" />
           </div>
           <div className="flex items-center gap-1.5">
             <NotificationBell />
@@ -401,55 +401,55 @@ const Creator = () => {
 
       {/* Guest Login Banner */}
       {!user && showGuestBanner && (
-        <div className="mx-4 mt-4 relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 border-2 border-primary/30">
+        <div className="mx-3 mt-3 relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 border-2 border-primary/30">
           <button 
             onClick={() => setShowGuestBanner(false)}
-            className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-background/50 transition-colors z-10"
+            className="absolute top-2 right-2 p-1 rounded-full hover:bg-background/50 transition-colors z-10"
           >
-            <X className="h-5 w-5 text-muted-foreground" />
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
-          <div className="p-5">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-full bg-primary/20 shrink-0">
-                <Sparkles className="h-6 w-6 text-primary" />
+          <div className="p-3">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-full bg-primary/20 shrink-0">
+                <Sparkles className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-base mb-1.5">Join the Battle!</h3>
-                <p className="text-sm text-muted-foreground mb-4">
+                <h3 className="font-semibold text-sm mb-1">Join the Battle!</h3>
+                <p className="text-xs text-muted-foreground mb-2.5">
                   Sign up now to compete in tournaments, win real prizes, and become a champion!
                 </p>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     size="sm" 
                     onClick={() => navigate('/')}
-                    className="gap-2 text-sm h-10 px-5"
+                    className="gap-1.5 text-xs h-8 px-3"
                   >
-                    <LogIn className="h-4 w-4" />
+                    <LogIn className="h-3.5 w-3.5" />
                     Login
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
                     onClick={() => navigate('/')}
-                    className="gap-2 text-sm h-10 px-5"
+                    className="gap-1.5 text-xs h-8 px-3"
                   >
-                    <Gift className="h-4 w-4" />
+                    <Gift className="h-3.5 w-3.5" />
                     Sign Up Free
                   </Button>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-5 mt-4 pt-4 border-t border-border/50">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Trophy className="h-4 w-4 text-yellow-500" />
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <Trophy className="h-3 w-3 text-yellow-500" />
                 <span>Win Prizes</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4 text-blue-500" />
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <Users className="h-3 w-3 text-blue-500" />
                 <span>Join Teams</span>
               </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Sparkles className="h-4 w-4 text-purple-500" />
+              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-purple-500" />
                 <span>Free Entry</span>
               </div>
             </div>
@@ -457,14 +457,14 @@ const Creator = () => {
         </div>
       )}
 
-      {/* Mode Filter - Solo/Duo/Squad */}
-      <div className="px-4 py-3">
+      {/* Mode Filter */}
+      <div className="px-3 py-2.5">
         <div className="bg-muted/60 rounded-xl p-1 flex">
           {(['solo', 'duo', 'squad'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setActiveMode(mode)}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-colors capitalize ${
+              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors capitalize ${
                 activeMode === mode 
                   ? 'bg-primary text-primary-foreground shadow-sm' 
                   : 'text-muted-foreground hover:text-foreground'
@@ -477,21 +477,21 @@ const Creator = () => {
       </div>
 
       {/* Tournaments Section */}
-      <div className="px-4 pb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold text-base">Creator Tournaments</h2>
-          <span className="text-sm text-muted-foreground">{getFilteredTournaments().length} matches</span>
+      <div className="px-3 pb-6">
+        <div className="flex items-center justify-between mb-2.5">
+          <h2 className="font-semibold text-sm">Creator Tournaments</h2>
+          <span className="text-[10px] text-muted-foreground">{getFilteredTournaments().length} matches</span>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
           </div>
         ) : getFilteredTournaments().length === 0 ? (
-          <div className="bg-card rounded-xl border-2 border-white/20 p-6 text-center">
-            <Trophy className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground text-base">No creator tournaments available</p>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className="bg-card rounded-xl border-2 border-white/30 p-5 text-center">
+            <Trophy className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-muted-foreground text-xs">No creator tournaments available</p>
+            <p className="text-[10px] text-muted-foreground mt-1">
               {userProfile?.preferred_game 
                 ? `No ${userProfile.preferred_game} ${activeMode} tournaments`
                 : 'Check back later for new matches!'}

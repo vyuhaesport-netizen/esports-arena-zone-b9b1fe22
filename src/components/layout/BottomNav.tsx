@@ -18,8 +18,8 @@ const BottomNav = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 safe-area-bottom">
       <div className="max-w-lg mx-auto">
-        <div className="mx-2 mb-2 rounded-2xl glass-card border border-border/30 shadow-xl">
-          <div className="flex items-center justify-around h-16">
+        <div className="mx-2 mb-2 rounded-xl glass-card border-2 border-white/30 shadow-xl">
+          <div className="flex items-center justify-around h-14">
             {navItems.map((item) => {
               const active = isActive(item.path);
               return (
@@ -31,15 +31,15 @@ const BottomNav = () => {
                   }`}
                 >
                   {active && (
-                    <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-primary shadow-glow-primary" />
+                    <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-primary shadow-glow-primary" />
                   )}
                   <item.icon 
-                    className={`h-5 w-5 transition-all duration-300 ${
+                    className={`h-4 w-4 transition-all duration-300 ${
                       active ? 'stroke-[2.5px] scale-110' : ''
                     }`} 
                   />
                   <span 
-                    className={`text-[10px] mt-1 transition-all duration-300 ${
+                    className={`text-[9px] mt-0.5 transition-all duration-300 ${
                       active ? 'font-semibold' : ''
                     }`}
                   >

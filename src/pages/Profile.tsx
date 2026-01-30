@@ -350,30 +350,30 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      {/* Enhanced Profile Header with Animations */}
+      {/* Enhanced Profile Header */}
       <div className="relative overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-purple-500/10 to-pink-500/10" />
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-20 h-20 bg-purple-500/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
         
-        <div className="relative px-4 pt-4 pb-4">
+        <div className="relative px-4 pt-4 pb-3">
           {/* Avatar Section */}
           <div className="flex flex-col items-center mb-3">
             <div className="relative group">
               {/* Animated ring */}
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-purple-500 to-pink-500 rounded-full opacity-75 blur-sm group-hover:opacity-100 transition-opacity animate-pulse" />
               
-              <Avatar className="relative h-20 w-20 border-3 border-background shadow-xl ring-1 ring-primary/30">
+              <Avatar className="relative h-16 w-16 border-2 border-background shadow-lg ring-1 ring-primary/30">
                 <AvatarImage src={profile?.avatar_url || ''} className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-xl font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-lg font-bold">
                   {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               
               {/* Level badge */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-md border-2 border-background">
-                <span className="text-[8px] font-bold text-white">LV{Math.min(99, Math.floor(playerStats.totalMatches / 5) + 1)}</span>
+              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-md border-2 border-background">
+                <span className="text-[7px] font-bold text-white">LV{Math.min(99, Math.floor(playerStats.totalMatches / 5) + 1)}</span>
               </div>
             </div>
 
@@ -388,22 +388,22 @@ const ProfilePage = () => {
               {/* Role Badges */}
               <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
                 {isSuperAdmin && (
-                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] px-1.5 py-0 animate-fade-in">
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[7px] px-1.5 py-0">
                     <Crown className="h-2.5 w-2.5 mr-0.5" /> Owner
                   </Badge>
                 )}
                 {isAdmin && !isSuperAdmin && (
-                  <Badge className="bg-gradient-to-r from-primary to-purple-600 text-white text-[8px] px-1.5 py-0">
+                  <Badge className="bg-gradient-to-r from-primary to-purple-600 text-white text-[7px] px-1.5 py-0">
                     <Shield className="h-2.5 w-2.5 mr-0.5" /> Team
                   </Badge>
                 )}
                 {isOrganizer && (
-                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[8px] px-1.5 py-0">
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[7px] px-1.5 py-0">
                     <UserCheck className="h-2.5 w-2.5 mr-0.5" /> Organizer
                   </Badge>
                 )}
                 {isCreator && (
-                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[8px] px-1.5 py-0">
+                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[7px] px-1.5 py-0">
                     <Gamepad2 className="h-2.5 w-2.5 mr-0.5" /> Creator
                   </Badge>
                 )}
@@ -413,9 +413,9 @@ const ProfilePage = () => {
               {profile?.in_game_name && (
                 <div className="mt-1.5 inline-flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
                   <Gamepad2 className="h-2.5 w-2.5 text-primary" />
-                  <span className="text-[10px] font-medium">{profile.in_game_name}</span>
+                  <span className="text-[9px] font-medium">{profile.in_game_name}</span>
                   {profile.preferred_game && (
-                    <Badge variant="outline" className="text-[8px] px-1 py-0 ml-0.5">
+                    <Badge variant="outline" className="text-[7px] px-1 py-0 ml-0.5">
                       {profile.preferred_game}
                     </Badge>
                   )}
@@ -425,27 +425,27 @@ const ProfilePage = () => {
           </div>
 
           {/* Quick Stats Row */}
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border border-border/50 hover:border-primary/30 transition-colors">
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border-2 border-white/30 hover:border-primary/30 transition-colors">
               <div className="flex items-center justify-center gap-1 text-amber-500 mb-0.5">
                 <Target className="h-3 w-3" />
               </div>
               <p className="text-sm font-bold text-foreground">{playerStats.totalMatches}</p>
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Matches</p>
+              <p className="text-[8px] text-muted-foreground uppercase tracking-wide">Matches</p>
             </div>
-            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border border-border/50 hover:border-emerald-500/30 transition-colors">
+            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border-2 border-white/30 hover:border-emerald-500/30 transition-colors">
               <div className="flex items-center justify-center gap-1 text-emerald-500 mb-0.5">
                 <Medal className="h-3 w-3" />
               </div>
               <p className="text-sm font-bold text-foreground">{playerStats.wins}</p>
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Wins</p>
+              <p className="text-[8px] text-muted-foreground uppercase tracking-wide">Wins</p>
             </div>
-            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border border-border/50 hover:border-purple-500/30 transition-colors">
+            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border-2 border-white/30 hover:border-purple-500/30 transition-colors">
               <div className="flex items-center justify-center gap-1 text-purple-500 mb-0.5">
                 <Flame className="h-3 w-3" />
               </div>
               <p className="text-sm font-bold text-foreground">₹{playerStats.totalEarnings}</p>
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Earned</p>
+              <p className="text-[8px] text-muted-foreground uppercase tracking-wide">Earned</p>
             </div>
           </div>
 
