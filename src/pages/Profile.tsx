@@ -17,7 +17,7 @@ import {
   Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, 
   CreditCard, Users, Megaphone, Building2, BarChart3, Bell, 
   MessageCircle, Sparkles, Zap, Medal, Star, Target, TrendingUp,
-  Award, Flame
+  Flame
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -332,7 +332,6 @@ const ProfilePage = () => {
 
   const moreItems = [
     { icon: Megaphone, label: 'Broadcast Channel', onClick: () => navigate('/broadcast') },
-    { icon: Award, label: 'Achievements', onClick: () => navigate('/achievements') },
     { icon: FileText, label: 'Documentation', onClick: () => navigate('/docs') },
     { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
     { icon: Settings, label: 'Terms & Conditions', onClick: () => navigate('/terms') },
