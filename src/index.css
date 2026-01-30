@@ -230,11 +230,13 @@
   html {
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
+    font-size: 16px; /* Base size - increased from default */
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: var(--font-sans);
+    font-size: 1rem;
   }
 
   /* Improved scrollbar */
