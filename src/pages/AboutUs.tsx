@@ -119,18 +119,18 @@ const AboutUs = () => {
         url="https://vyuhaesport.in/about"
       />
       <AppLayout title="About Us" showBack>
-      <div className="p-3 pb-8 space-y-4">
+      <div className="p-4 pb-8 space-y-5">
         {/* Hero Section */}
-        <div className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-xl border border-border p-4 overflow-hidden">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-16 h-16 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-transparent rounded-xl border border-border p-5 overflow-hidden">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-20 h-20 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2" />
           
           <div className="relative text-center">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 border border-border mb-3 shadow-md">
-              <Swords className="h-7 w-7 text-primary" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-primary/10 border border-border mb-4 shadow-md">
+              <Swords className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-xl font-bold mb-2 tracking-tight">VYUHA ESPORT</h1>
-            <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
+            <h1 className="text-2xl font-bold mb-2.5 tracking-tight">VYUHA ESPORT</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
               India's Mobile-First Competitive Gaming Platform — Where Every Gamer Has a Stage
             </p>
           </div>
@@ -138,20 +138,20 @@ const AboutUs = () => {
 
         {/* The Meaning of Vyuha */}
         <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-          <div className="flex items-center gap-2 p-3 border-b border-border bg-primary/5">
-            <div className="p-1.5 rounded-lg bg-primary/10">
-              <Target className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-2.5 p-4 border-b border-border bg-primary/5">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Target className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-sm">The Vyuha Philosophy</h2>
-              <p className="text-[10px] text-muted-foreground">Ancient Strategy, Modern Gaming</p>
+              <h2 className="font-bold text-base">The Vyuha Philosophy</h2>
+              <p className="text-xs text-muted-foreground">Ancient Strategy, Modern Gaming</p>
             </div>
           </div>
-          <div className="p-3 space-y-2">
-            <p className="text-xs text-muted-foreground leading-relaxed">
+          <div className="p-4 space-y-2.5">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               In ancient warfare, a <strong className="text-foreground">"Vyuha"</strong> is a strategic formation — a deliberate arrangement of forces designed to secure victory. 
             </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Vyuha Esport embodies this philosophy as a digital battleground designed for the modern strategist. We are an ecosystem where <strong className="text-foreground">every gamer has a stage</strong>, and <strong className="text-foreground">every organizer has the tools to build an empire</strong>.
             </p>
           </div>
@@ -159,39 +159,39 @@ const AboutUs = () => {
 
         {/* What We Do */}
         <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-          <div className="flex items-center gap-2 p-3 border-b border-border bg-primary/5">
-            <div className="p-1.5 rounded-lg bg-primary/10">
-              <Gamepad2 className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-2.5 p-4 border-b border-border bg-primary/5">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Gamepad2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="font-bold text-sm">What We Do</h2>
-              <p className="text-[10px] text-muted-foreground">Tournaments for Everyone</p>
+              <h2 className="font-bold text-base">What We Do</h2>
+              <p className="text-xs text-muted-foreground">Tournaments for Everyone</p>
             </div>
           </div>
-          <div className="p-3 space-y-2">
-            <p className="text-xs text-muted-foreground leading-relaxed">
+          <div className="p-4 space-y-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               We organize competitive gaming tournaments for:
             </p>
-            <div className="grid grid-cols-1 gap-2">
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50 border border-border">
-                <Award className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="grid grid-cols-1 gap-2.5">
+              <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border">
+                <Award className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-medium">Daily Scrims & Community Cups</p>
-                  <p className="text-[10px] text-muted-foreground">One-click registration for instant action</p>
+                  <p className="text-sm font-medium">Daily Scrims & Community Cups</p>
+                  <p className="text-xs text-muted-foreground">One-click registration for instant action</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50 border border-border">
-                <Users2 className="h-4 w-4 text-primary flex-shrink-0" />
+              <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border">
+                <Users2 className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-medium">School & College Tournaments</p>
-                  <p className="text-[10px] text-muted-foreground">Campus-level competitive gaming events</p>
+                  <p className="text-sm font-medium">School & College Tournaments</p>
+                  <p className="text-xs text-muted-foreground">Campus-level competitive gaming events</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50 border border-border">
-                <Trophy className="h-4 w-4 text-primary flex-shrink-0" />
+              <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/50 border border-border">
+                <Trophy className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-medium">Local & Regional Events</p>
-                  <p className="text-[10px] text-muted-foreground">Community tournaments across India</p>
+                  <p className="text-sm font-medium">Local & Regional Events</p>
+                  <p className="text-xs text-muted-foreground">Community tournaments across India</p>
                 </div>
               </div>
             </div>
@@ -199,57 +199,57 @@ const AboutUs = () => {
         </div>
 
         {/* Platform Stats */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-card rounded-lg border border-border p-3 text-center">
-            <p className="text-lg font-bold text-primary">1000+</p>
-            <p className="text-[10px] text-muted-foreground">Tournaments</p>
+        <div className="grid grid-cols-3 gap-2.5">
+          <div className="bg-card rounded-lg border border-border p-4 text-center">
+            <p className="text-xl font-bold text-primary">1000+</p>
+            <p className="text-xs text-muted-foreground">Tournaments</p>
           </div>
-          <div className="bg-card rounded-lg border border-border p-3 text-center">
-            <p className="text-lg font-bold text-green-500">₹50L+</p>
-            <p className="text-[10px] text-muted-foreground">Prize Money</p>
+          <div className="bg-card rounded-lg border border-border p-4 text-center">
+            <p className="text-xl font-bold text-green-500">₹50L+</p>
+            <p className="text-xs text-muted-foreground">Prize Money</p>
           </div>
-          <div className="bg-card rounded-lg border border-border p-3 text-center">
-            <p className="text-lg font-bold text-blue-500">10K+</p>
-            <p className="text-[10px] text-muted-foreground">Players</p>
+          <div className="bg-card rounded-lg border border-border p-4 text-center">
+            <p className="text-xl font-bold text-blue-500">10K+</p>
+            <p className="text-xs text-muted-foreground">Players</p>
           </div>
         </div>
 
         {/* The Three Pillars */}
-        <div className="space-y-2">
-          <h2 className="font-bold text-sm px-1">Our Three Pillars</h2>
-          <div className="grid grid-cols-1 gap-2">
-            <div className="bg-card rounded-lg border border-border p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <Eye className="h-4 w-4 text-blue-600" />
+        <div className="space-y-3">
+          <h2 className="font-bold text-base px-1">Our Three Pillars</h2>
+          <div className="grid grid-cols-1 gap-2.5">
+            <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <Eye className="h-5 w-5 text-blue-600" />
                 </div>
-                <h3 className="font-bold text-xs">Transparency</h3>
+                <h3 className="font-bold text-sm">Transparency</h3>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Room details hidden until 30 min before match. Our <strong className="text-foreground">80/10/10 prize split</strong> is clear: 80% to players, 10% to organizers, 10% platform fee.
               </p>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
-                  <Users className="h-4 w-4 text-green-600" />
+            <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <Users className="h-5 w-5 text-green-600" />
                 </div>
-                <h3 className="font-bold text-xs">Community</h3>
+                <h3 className="font-bold text-sm">Community</h3>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 We don't just host matches — we build teams. Find teammates based on Role (Assaulter, Sniper, IGL) and Language with our Squad Finder.
               </p>
             </div>
 
-            <div className="bg-card rounded-lg border border-border p-3 shadow-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                  <Star className="h-4 w-4 text-amber-600" />
+            <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <Star className="h-5 w-5 text-amber-600" />
                 </div>
-                <h3 className="font-bold text-xs">Opportunity</h3>
+                <h3 className="font-bold text-sm">Opportunity</h3>
               </div>
-              <p className="text-[10px] text-muted-foreground leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 Whether you're a solo fragger or squad leader, the path to the leaderboard is open. Zero-fee community matches help beginners practice.
               </p>
             </div>

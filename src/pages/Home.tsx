@@ -375,12 +375,12 @@ const HomePage = () => {
       <PushNotificationPrompt />
       <AppLayout>
       {/* Header */}
-      <div className="bg-card/80 backdrop-blur-sm border-b border-border/30 px-4 py-2.5">
+      <div className="bg-card/80 backdrop-blur-sm border-b border-border/30 px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BrandLogo className="h-8 w-8" alt="Vyuha" />
+          <div className="flex items-center gap-2.5">
+            <BrandLogo className="h-10 w-10" alt="Vyuha" />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <TournamentScanner />
             <NotificationBell />
           </div>
@@ -389,39 +389,39 @@ const HomePage = () => {
 
       {/* Guest Login Banner */}
       {!user && showGuestBanner && (
-        <div className="mx-4 mt-3 relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/15 to-purple-500/15 border border-primary/30">
+        <div className="mx-4 mt-4 relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/15 to-purple-500/15 border border-primary/30">
           <button 
             onClick={() => setShowGuestBanner(false)}
-            className="absolute top-2 right-2 p-1 rounded-full hover:bg-background/50 transition-colors z-10"
+            className="absolute top-2.5 right-2.5 p-1.5 rounded-full hover:bg-background/50 transition-colors z-10"
           >
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
+            <X className="h-4 w-4 text-muted-foreground" />
           </button>
-          <div className="p-3">
-            <div className="flex items-start gap-3">
-              <div className="p-2 rounded-full bg-gradient-to-br from-primary to-purple-600 shrink-0">
-                <Sparkles className="h-4 w-4 text-white" />
+          <div className="p-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-full bg-gradient-to-br from-primary to-purple-600 shrink-0">
+                <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm mb-0.5 text-foreground">Join the Battle!</h3>
-                <p className="text-xs text-muted-foreground mb-2">
+                <h3 className="font-semibold text-base mb-1 text-foreground">Join the Battle!</h3>
+                <p className="text-sm text-muted-foreground mb-3">
                   Sign up to compete and win real prizes!
                 </p>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2.5">
                   <Button 
                     size="sm" 
                     onClick={() => navigate('/')}
-                    className="gap-1.5 text-xs h-7"
+                    className="gap-2 text-sm h-9 px-4"
                   >
-                    <LogIn className="h-3 w-3" />
+                    <LogIn className="h-4 w-4" />
                     Login
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
                     onClick={() => navigate('/')}
-                    className="gap-1.5 text-xs h-7"
+                    className="gap-2 text-sm h-9 px-4"
                   >
-                    <Gift className="h-3 w-3" />
+                    <Gift className="h-4 w-4" />
                     Sign Up
                   </Button>
                 </div>
@@ -432,13 +432,13 @@ const HomePage = () => {
       )}
 
       {/* Mode Filter */}
-      <div className="px-4 py-2">
-        <div className="bg-muted/50 rounded-lg p-0.5 flex">
+      <div className="px-4 py-3">
+        <div className="bg-muted/50 rounded-xl p-1 flex">
           {(['solo', 'duo', 'squad'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setActiveMode(mode)}
-              className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all capitalize ${
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
                 activeMode === mode 
                   ? 'bg-primary text-primary-foreground' 
                   : 'text-muted-foreground hover:text-foreground'
@@ -452,22 +452,22 @@ const HomePage = () => {
 
       {/* Tournaments Section */}
       <div className="px-4 pb-6">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-sm text-foreground">Live Tournaments</h2>
-          <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full">{getFilteredTournaments().length} matches</span>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold text-base text-foreground">Live Tournaments</h2>
+          <span className="text-xs text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">{getFilteredTournaments().length} matches</span>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : getFilteredTournaments().length === 0 ? (
-          <div className="glass-card rounded-xl p-6 text-center">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted/50 flex items-center justify-center">
-              <Trophy className="h-6 w-6 text-muted-foreground/50" />
+          <div className="glass-card rounded-xl p-8 text-center">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+              <Trophy className="h-7 w-7 text-muted-foreground/50" />
             </div>
-            <p className="text-muted-foreground text-xs font-medium">No tournaments available</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
+            <p className="text-muted-foreground text-sm font-medium">No tournaments available</p>
+            <p className="text-xs text-muted-foreground mt-1">
               {userProfile?.preferred_game 
                 ? `No ${userProfile.preferred_game} ${activeMode} matches found`
                 : 'Check back soon for exciting matches!'}
