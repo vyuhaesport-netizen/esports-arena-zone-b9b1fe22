@@ -11,50 +11,66 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-const PROMPT_DISMISSED_KEY = 'push_notification_prompt_dismissed';
-const PROMPT_DISMISS_EXPIRY_DAYS = 7;
+const PROMPT_DISMISSED_KEY = 'push_prompt_dismissed_v2';
+const PROMPT_ENABLED_KEY = 'push_enabled';
 
 export const PushNotificationPrompt: React.FC = () => {
   const { user } = useAuth();
   const [showPrompt, setShowPrompt] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   const checkAndShowPrompt = useCallback(async () => {
     if (!user) return;
     
-    // Check if user previously dismissed the prompt
+    // Check if already enabled
+    if (localStorage.getItem(PROMPT_ENABLED_KEY) === 'true') {
+      return;
+    }
+    
+    // Check native permission first
+    if ('Notification' in window) {
+      const nativePermission = Notification.permission;
+      if (nativePermission === 'granted') {
+        localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
+        return;
+      }
+      if (nativePermission === 'denied') {
+        return; // Don't show prompt if blocked
+      }
+    }
+    
+    // Check if dismissed within 7 days
     const dismissedData = localStorage.getItem(PROMPT_DISMISSED_KEY);
     if (dismissedData) {
       try {
         const { timestamp } = JSON.parse(dismissedData);
         const daysSinceDismiss = (Date.now() - timestamp) / (1000 * 60 * 60 * 24);
-        if (daysSinceDismiss < PROMPT_DISMISS_EXPIRY_DAYS) {
-          return; // Don't show if dismissed within expiry period
+        if (daysSinceDismiss < 7) {
+          return;
         }
       } catch {
-        // Invalid data, continue showing prompt
+        // Invalid data, continue
       }
     }
     
     // Initialize OneSignal
     await initOneSignal();
     
-    // Wait a bit for OneSignal to fully load
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Wait for SDK to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    setIsInitialized(true);
-    
-    // Check current permission status
+    // Final permission check
     const status = getPushPermissionStatus();
-    
-    // If permission already granted or denied permanently, don't show
-    if (status === 'granted' || status === 'denied') {
+    if (status === 'granted') {
+      localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
+      return;
+    }
+    if (status === 'denied') {
       return;
     }
     
-    // Show popup after small delay
-    setTimeout(() => setShowPrompt(true), 2000);
+    // Show prompt after delay
+    setTimeout(() => setShowPrompt(true), 1500);
     
     // Link user to OneSignal
     const { data: profile } = await supabase
@@ -74,54 +90,70 @@ export const PushNotificationPrompt: React.FC = () => {
     setIsLoading(true);
     
     try {
-      const granted = await requestPushPermission();
-      setShowPrompt(false);
+      // Try native browser permission first
+      if ('Notification' in window && Notification.permission === 'default') {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          await requestPushPermission();
+          localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
+          localStorage.removeItem(PROMPT_DISMISSED_KEY);
+          setShowPrompt(false);
+          toast.success('Notifications enabled!', {
+            description: 'You will receive tournament and prize alerts.',
+          });
+          return;
+        }
+      }
       
-      // Clear dismiss data on success
-      localStorage.removeItem(PROMPT_DISMISSED_KEY);
+      // Fallback to OneSignal
+      const granted = await requestPushPermission();
       
       if (granted) {
-        toast.success('Notifications enabled', {
+        localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
+        localStorage.removeItem(PROMPT_DISMISSED_KEY);
+        toast.success('Notifications enabled!', {
           description: 'You will receive tournament and prize alerts.',
         });
       }
+      
+      setShowPrompt(false);
     } catch (error) {
       console.error('Error enabling push:', error);
+      toast.error('Failed to enable notifications');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDismiss = () => {
-    // Store dismiss with timestamp
     localStorage.setItem(PROMPT_DISMISSED_KEY, JSON.stringify({
       timestamp: Date.now()
     }));
     setShowPrompt(false);
   };
 
-  // Don't render if not initialized, no user, or prompt shouldn't show
-  if (!isInitialized || !showPrompt || !user) return null;
+  // Don't render if no user or prompt shouldn't show
+  if (!showPrompt || !user) return null;
 
-  const notificationFeatures = [
-    { icon: Trophy, text: 'Tournament announcements' },
-    { icon: Swords, text: 'Match start reminders' },
-    { icon: Wallet, text: 'Prize and withdrawal updates' },
-    { icon: Gift, text: 'Special offers and rewards' },
+  const features = [
+    { icon: Trophy, text: 'Tournament alerts' },
+    { icon: Swords, text: 'Match reminders' },
+    { icon: Wallet, text: 'Prize updates' },
+    { icon: Gift, text: 'Special offers' },
   ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pb-24 bg-background/80 backdrop-blur-md animate-fade-in">
-      <div className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl animate-scale-in overflow-hidden">
-        {/* Header with gradient */}
-        <div className="bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 px-4 py-3 border-b border-border">
+      <div className="w-full max-w-sm bg-card border border-border rounded-xl shadow-2xl animate-scale-in overflow-hidden">
+        {/* Header */}
+        <div className="bg-primary/10 px-4 py-3 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
-                <Bell className="h-5 w-5 text-white" />
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Bell className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-foreground font-bold text-base">Stay in the Game</h3>
+                <h3 className="text-foreground font-semibold text-sm">Stay Updated</h3>
                 <p className="text-muted-foreground text-xs">Never miss a tournament</p>
               </div>
             </div>
@@ -141,33 +173,33 @@ export const PushNotificationPrompt: React.FC = () => {
           </p>
           
           <div className="grid grid-cols-2 gap-2">
-            {notificationFeatures.map((feature, i) => (
-              <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50 border border-border/50">
-                <feature.icon className="h-4 w-4 text-primary flex-shrink-0" />
+            {features.map((feature, i) => (
+              <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/50">
+                <feature.icon className="h-4 w-4 text-primary shrink-0" />
                 <span className="text-xs text-foreground font-medium">{feature.text}</span>
               </div>
             ))}
           </div>
           
-          <div className="flex gap-2.5 pt-2">
+          <div className="flex gap-2 pt-2">
             <Button
               variant="outline"
               onClick={handleDismiss}
-              className="flex-1 h-11 text-sm"
+              className="flex-1 h-10 text-sm"
             >
               Maybe Later
             </Button>
             <Button
               onClick={handleEnable}
               disabled={isLoading}
-              className="flex-1 h-11 text-sm bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+              className="flex-1 h-10 text-sm"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
                   <Bell className="h-4 w-4 mr-2" />
-                  Enable Alerts
+                  Enable
                 </>
               )}
             </Button>
