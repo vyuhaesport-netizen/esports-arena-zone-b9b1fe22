@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Bell, BellOff, BellRing, Sparkles, Check } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Bell, BellOff, BellRing, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -7,7 +7,6 @@ import {
   loginOneSignal, 
   logoutOneSignal, 
   requestPushPermission, 
-  isPushEnabled,
   getPushPermissionStatus 
 } from '@/lib/onesignal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,24 +17,40 @@ interface PushNotificationSetupProps {
   variant?: 'inline' | 'card';
 }
 
+const PROMPT_ENABLED_KEY = 'push_enabled';
+
 export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ variant = 'inline' }) => {
   const { user } = useAuth();
   const [permissionStatus, setPermissionStatus] = useState<'default' | 'granted' | 'denied'>('default');
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  const updatePermissionStatus = useCallback(() => {
+    if ('Notification' in window) {
+      const status = Notification.permission as 'default' | 'granted' | 'denied';
+      setPermissionStatus(status);
+      if (status === 'granted') {
+        localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
+      }
+      return status;
+    }
+    const osStatus = getPushPermissionStatus();
+    setPermissionStatus(osStatus);
+    return osStatus;
+  }, []);
 
   useEffect(() => {
     const setup = async () => {
+      setIsInitializing(true);
+      
       await initOneSignal();
       
-      // Update permission status from native API
-      if ('Notification' in window) {
-        setPermissionStatus(Notification.permission as 'default' | 'granted' | 'denied');
-      } else {
-        const status = getPushPermissionStatus();
-        setPermissionStatus(status);
-      }
+      // Wait for SDK
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // If user is logged in, link them to OneSignal
+      updatePermissionStatus();
+      
+      // Link user to OneSignal
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
@@ -45,13 +60,14 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
         
         await loginOneSignal(user.id, profile?.email);
       }
+      
+      setIsInitializing(false);
     };
 
     setup();
-  }, [user]);
+  }, [user, updatePermissionStatus]);
 
   useEffect(() => {
-    // Logout from OneSignal when user logs out
     if (!user) {
       logoutOneSignal();
     }
@@ -61,14 +77,14 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
     setIsLoading(true);
     
     try {
-      // First try native browser permission (this shows the actual prompt)
+      // Try native browser permission first
       if ('Notification' in window && Notification.permission === 'default') {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-          // Now also opt-in to OneSignal if available
           await requestPushPermission();
           setPermissionStatus('granted');
-          toast.success('🎉 Notifications enabled!', {
+          localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
+          toast.success('Notifications enabled!', {
             description: 'You will now receive important updates.',
           });
           return;
@@ -81,16 +97,17 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
         }
       }
       
-      // Fallback to OneSignal method
+      // Fallback to OneSignal
       const granted = await requestPushPermission();
       
       if (granted) {
         setPermissionStatus('granted');
-        toast.success('🎉 Notifications enabled!', {
+        localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
+        toast.success('Notifications enabled!', {
           description: 'You will now receive important updates.',
         });
       } else {
-        setPermissionStatus(getPushPermissionStatus());
+        updatePermissionStatus();
         if (Notification.permission === 'denied') {
           toast.error('Notifications blocked', {
             description: 'Please enable in browser settings.',
@@ -106,37 +123,51 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
   };
 
   // Don't render if not logged in
-  if (!user) {
-    return null;
+  if (!user) return null;
+
+  // Show loading state
+  if (isInitializing) {
+    return variant === 'card' ? (
+      <Card className="bg-muted/50 border-border">
+        <CardContent className="p-4 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    ) : (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span>Loading...</span>
+      </div>
+    );
   }
 
-  // Card variant - beautiful promotional card
+  // Card variant
   if (variant === 'card') {
-    // Already granted - show success card
-    if (permissionStatus === 'granted' && isPushEnabled()) {
+    // Enabled state
+    if (permissionStatus === 'granted') {
       return (
-        <Card className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30">
+        <Card className="bg-primary/10 border-primary/30">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-              <Check className="h-6 w-6 text-green-500" />
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <Check className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1">
               <p className="font-semibold text-sm text-foreground">Notifications Enabled</p>
-              <p className="text-xs text-muted-foreground">You'll receive tournament alerts & updates</p>
+              <p className="text-xs text-muted-foreground">You'll receive tournament & prize alerts</p>
             </div>
-            <BellRing className="h-5 w-5 text-green-500" />
+            <BellRing className="h-5 w-5 text-primary" />
           </CardContent>
         </Card>
       );
     }
 
-    // Denied - show info card
+    // Denied state
     if (permissionStatus === 'denied') {
       return (
-        <Card className="bg-gradient-to-r from-destructive/10 to-orange-500/10 border-destructive/30">
+        <Card className="bg-destructive/10 border-destructive/30">
           <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
-              <BellOff className="h-6 w-6 text-destructive" />
+            <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+              <BellOff className="h-5 w-5 text-destructive" />
             </div>
             <div className="flex-1">
               <p className="font-semibold text-sm text-foreground">Notifications Blocked</p>
@@ -147,34 +178,28 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
       );
     }
 
-    // Default - show enable card with CTA
+    // Default - show enable CTA
     return (
-      <Card className="bg-gradient-to-r from-primary/10 via-orange-500/10 to-yellow-500/10 border-primary/30 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-primary/20 to-transparent rounded-bl-full" />
+      <Card className="bg-primary/5 border-primary/20">
         <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shrink-0 shadow-lg">
-              <Bell className="h-6 w-6 text-white" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+              <Bell className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-1">
-                <p className="font-bold text-sm text-foreground">Enable Notifications</p>
-                <Sparkles className="h-3.5 w-3.5 text-yellow-500" />
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Get instant alerts for tournaments, match results, and prize updates!
-              </p>
+            <div className="flex-1">
+              <p className="font-semibold text-sm text-foreground">Enable Notifications</p>
+              <p className="text-xs text-muted-foreground">Get tournament, prize & match alerts</p>
             </div>
           </div>
           <Button 
             onClick={handleEnablePush}
             disabled={isLoading}
-            className="w-full mt-3 bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 text-white font-semibold"
+            className="w-full"
             size="sm"
           >
             {isLoading ? (
               <>
-                <span className="animate-spin mr-2">⏳</span>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Enabling...
               </>
             ) : (
@@ -189,9 +214,8 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
     );
   }
 
-  // Inline variant (original behavior)
-  // Already granted
-  if (permissionStatus === 'granted' && isPushEnabled()) {
+  // Inline variant
+  if (permissionStatus === 'granted') {
     return (
       <div className="flex items-center gap-2 text-sm text-primary">
         <BellRing className="h-4 w-4" />
@@ -200,17 +224,15 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
     );
   }
 
-  // Denied - show info
   if (permissionStatus === 'denied') {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <BellOff className="h-4 w-4" />
-        <span>Push notifications blocked. Enable in browser settings.</span>
+        <span>Notifications blocked. Enable in browser settings.</span>
       </div>
     );
   }
 
-  // Default - show enable button
   return (
     <Button
       variant="outline"
@@ -219,7 +241,11 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
       disabled={isLoading}
       className="gap-2"
     >
-      <Bell className="h-4 w-4" />
+      {isLoading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Bell className="h-4 w-4" />
+      )}
       {isLoading ? 'Enabling...' : 'Enable Push Notifications'}
     </Button>
   );

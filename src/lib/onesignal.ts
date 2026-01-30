@@ -66,83 +66,104 @@ interface NotificationEventData {
   };
 }
 
-// Get OneSignal App ID - this is a public/publishable key
-// It's safe to include in client-side code
-// The user should replace this with their actual App ID
-const ONESIGNAL_APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID || '';
+// OneSignal App ID - This is a PUBLIC/PUBLISHABLE key, safe to include in frontend
+const ONESIGNAL_APP_ID = '05070060-1672-4460-b1a2-51610beda417';
 
 let isInitialized = false;
+let initPromise: Promise<void> | null = null;
 
 export const initOneSignal = async (): Promise<void> => {
-  if (isInitialized || typeof window === 'undefined') {
+  if (isInitialized) {
     return;
   }
 
-  if (!ONESIGNAL_APP_ID) {
-    console.warn('OneSignal App ID not configured. Push notifications disabled.');
+  if (initPromise) {
+    return initPromise;
+  }
+
+  if (typeof window === 'undefined') {
     return;
   }
 
-  try {
-    // Load OneSignal SDK
-    window.OneSignalDeferred = window.OneSignalDeferred || [];
-    
-    // Add script if not already present
-    if (!document.querySelector('script[src*="onesignal"]')) {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
-      script.defer = true;
-      document.head.appendChild(script);
-    }
+  initPromise = new Promise<void>((resolve) => {
+    try {
+      // Initialize deferred array
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      
+      // Add script if not already present
+      if (!document.querySelector('script[src*="onesignal"]')) {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+        script.defer = true;
+        document.head.appendChild(script);
+      }
 
-    window.OneSignalDeferred.push(async (OneSignal) => {
-      await OneSignal.init({
-        appId: ONESIGNAL_APP_ID,
-        allowLocalhostAsSecureOrigin: true,
-        serviceWorkerPath: '/OneSignalSDKWorker.js',
-        notifyButton: {
-          enable: false,
-        },
-        welcomeNotification: {
-          disable: false,
-        },
-        promptOptions: {
-          slidedown: {
-            prompts: [
-              {
-                type: "push",
-                autoPrompt: false,
-                text: {
-                  actionMessage: "Get instant tournament alerts, match updates & prize notifications!",
-                  acceptButton: "Allow",
-                  cancelButton: "Later"
-                },
-                delay: {
-                  pageViews: 1,
-                  timeDelay: 3
-                }
+      window.OneSignalDeferred.push(async (OneSignal) => {
+        try {
+          await OneSignal.init({
+            appId: ONESIGNAL_APP_ID,
+            allowLocalhostAsSecureOrigin: true,
+            serviceWorkerPath: '/OneSignalSDKWorker.js',
+            notifyButton: {
+              enable: false,
+            },
+            welcomeNotification: {
+              disable: false,
+            },
+            promptOptions: {
+              slidedown: {
+                prompts: [
+                  {
+                    type: "push",
+                    autoPrompt: false,
+                    text: {
+                      actionMessage: "Get instant tournament alerts, match updates & prize notifications!",
+                      acceptButton: "Allow",
+                      cancelButton: "Later"
+                    },
+                    delay: {
+                      pageViews: 1,
+                      timeDelay: 3
+                    }
+                  }
+                ]
               }
-            ]
-          }
+            }
+          });
+
+          isInitialized = true;
+          console.log('OneSignal initialized successfully');
+          resolve();
+        } catch (error) {
+          console.error('OneSignal init error:', error);
+          resolve();
         }
       });
+    } catch (error) {
+      console.error('Failed to initialize OneSignal:', error);
+      resolve();
+    }
+  });
 
-      isInitialized = true;
-      console.log('OneSignal initialized successfully');
-    });
-  } catch (error) {
-    console.error('Failed to initialize OneSignal:', error);
-  }
+  return initPromise;
 };
 
 export const loginOneSignal = async (userId: string, email?: string): Promise<void> => {
-  if (!isInitialized || !window.OneSignal) {
+  if (!isInitialized) {
     await initOneSignal();
-    // Wait for initialization
-    await new Promise((resolve) => {
-      window.OneSignalDeferred?.push(() => resolve(true));
-    });
   }
+
+  // Wait for OneSignal to be available
+  await new Promise<void>((resolve) => {
+    const check = () => {
+      if (window.OneSignal) {
+        resolve();
+      } else {
+        setTimeout(check, 100);
+      }
+    };
+    check();
+  });
 
   try {
     if (window.OneSignal) {
@@ -171,8 +192,24 @@ export const logoutOneSignal = async (): Promise<void> => {
 };
 
 export const requestPushPermission = async (): Promise<boolean> => {
+  if (!isInitialized) {
+    await initOneSignal();
+  }
+
+  // Wait for OneSignal
+  await new Promise<void>((resolve) => {
+    const check = () => {
+      if (window.OneSignal) {
+        resolve();
+      } else {
+        setTimeout(check, 100);
+      }
+    };
+    check();
+  });
+
   if (!window.OneSignal) {
-    console.warn('OneSignal not initialized');
+    console.warn('OneSignal not available');
     return false;
   }
 
@@ -193,18 +230,33 @@ export const requestPushPermission = async (): Promise<boolean> => {
 };
 
 export const isPushEnabled = (): boolean => {
-  return window.OneSignal?.Notifications.permission ?? false;
+  if (typeof window !== 'undefined' && window.OneSignal) {
+    return window.OneSignal.Notifications.permission;
+  }
+  return false;
 };
 
 export const getPushPermissionStatus = (): 'default' | 'granted' | 'denied' => {
-  return window.OneSignal?.Notifications.permissionNative ?? 'default';
+  if (typeof window === 'undefined') return 'default';
+  
+  // First check native browser API
+  if ('Notification' in window) {
+    return Notification.permission as 'default' | 'granted' | 'denied';
+  }
+  
+  // Fallback to OneSignal
+  const win = window as Window & { OneSignal?: OneSignalType };
+  if (win.OneSignal) {
+    return win.OneSignal.Notifications.permissionNative;
+  }
+  return 'default';
 };
 
 export const addPushNotificationListener = (
   event: 'click' | 'foregroundWillDisplay',
   callback: (data: NotificationEventData) => void
 ): void => {
-  if (window.OneSignal) {
+  if (typeof window !== 'undefined' && window.OneSignal) {
     window.OneSignal.Notifications.addEventListener(event, callback);
   }
 };
@@ -213,7 +265,7 @@ export const removePushNotificationListener = (
   event: 'click' | 'foregroundWillDisplay',
   callback: (data: NotificationEventData) => void
 ): void => {
-  if (window.OneSignal) {
+  if (typeof window !== 'undefined' && window.OneSignal) {
     window.OneSignal.Notifications.removeEventListener(event, callback);
   }
 };
