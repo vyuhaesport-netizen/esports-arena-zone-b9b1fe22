@@ -357,65 +357,65 @@ const ProfilePage = () => {
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
         
-        <div className="relative px-4 pt-6 pb-5">
-          {/* Avatar Section - Larger with glow effect */}
-          <div className="flex flex-col items-center mb-4">
+        <div className="relative px-4 pt-4 pb-4">
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center mb-3">
             <div className="relative group">
               {/* Animated ring */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-purple-500 to-pink-500 rounded-full opacity-75 blur group-hover:opacity-100 transition-opacity animate-pulse" />
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-purple-500 to-pink-500 rounded-full opacity-75 blur-sm group-hover:opacity-100 transition-opacity animate-pulse" />
               
-              <Avatar className="relative h-24 w-24 border-4 border-background shadow-2xl ring-2 ring-primary/30">
+              <Avatar className="relative h-20 w-20 border-3 border-background shadow-xl ring-1 ring-primary/30">
                 <AvatarImage src={profile?.avatar_url || ''} className="object-cover" />
-                <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-2xl font-bold">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-xl font-bold">
                   {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               
               {/* Level badge */}
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-2 border-background">
-                <span className="text-[10px] font-bold text-white">LV{Math.min(99, Math.floor(playerStats.totalMatches / 5) + 1)}</span>
+              <div className="absolute -bottom-0.5 -right-0.5 w-6 h-6 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-md border-2 border-background">
+                <span className="text-[8px] font-bold text-white">LV{Math.min(99, Math.floor(playerStats.totalMatches / 5) + 1)}</span>
               </div>
             </div>
 
             {/* Username & Name */}
-            <div className="text-center mt-3">
-              <h1 className="font-bold text-lg text-foreground flex items-center justify-center gap-1.5">
+            <div className="text-center mt-2">
+              <h1 className="font-bold text-sm text-foreground flex items-center justify-center gap-1">
                 @{profile?.username || 'username'}
-                {(isAdmin || isOrganizer) && <Sparkles className="h-4 w-4 text-primary animate-pulse" />}
+                {(isAdmin || isOrganizer) && <Sparkles className="h-3 w-3 text-primary animate-pulse" />}
               </h1>
-              <p className="text-sm text-muted-foreground">{profile?.full_name || 'Gamer'}</p>
+              <p className="text-xs text-muted-foreground">{profile?.full_name || 'Gamer'}</p>
               
               {/* Role Badges */}
-              <div className="flex items-center justify-center gap-1.5 mt-2 flex-wrap">
+              <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
                 {isSuperAdmin && (
-                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] px-2 py-0.5 animate-fade-in">
-                    <Crown className="h-3 w-3 mr-1" /> Owner
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[8px] px-1.5 py-0 animate-fade-in">
+                    <Crown className="h-2.5 w-2.5 mr-0.5" /> Owner
                   </Badge>
                 )}
                 {isAdmin && !isSuperAdmin && (
-                  <Badge className="bg-gradient-to-r from-primary to-purple-600 text-white text-[10px] px-2 py-0.5">
-                    <Shield className="h-3 w-3 mr-1" /> Team
+                  <Badge className="bg-gradient-to-r from-primary to-purple-600 text-white text-[8px] px-1.5 py-0">
+                    <Shield className="h-2.5 w-2.5 mr-0.5" /> Team
                   </Badge>
                 )}
                 {isOrganizer && (
-                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[10px] px-2 py-0.5">
-                    <UserCheck className="h-3 w-3 mr-1" /> Organizer
+                  <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[8px] px-1.5 py-0">
+                    <UserCheck className="h-2.5 w-2.5 mr-0.5" /> Organizer
                   </Badge>
                 )}
                 {isCreator && (
-                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[10px] px-2 py-0.5">
-                    <Gamepad2 className="h-3 w-3 mr-1" /> Creator
+                  <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[8px] px-1.5 py-0">
+                    <Gamepad2 className="h-2.5 w-2.5 mr-0.5" /> Creator
                   </Badge>
                 )}
               </div>
 
               {/* In-Game Name */}
               {profile?.in_game_name && (
-                <div className="mt-2 inline-flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full">
-                  <Gamepad2 className="h-3 w-3 text-primary" />
-                  <span className="text-xs font-medium">{profile.in_game_name}</span>
+                <div className="mt-1.5 inline-flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
+                  <Gamepad2 className="h-2.5 w-2.5 text-primary" />
+                  <span className="text-[10px] font-medium">{profile.in_game_name}</span>
                   {profile.preferred_game && (
-                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-1">
+                    <Badge variant="outline" className="text-[8px] px-1 py-0 ml-0.5">
                       {profile.preferred_game}
                     </Badge>
                   )}
@@ -425,36 +425,36 @@ const ProfilePage = () => {
           </div>
 
           {/* Quick Stats Row */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="bg-card/80 backdrop-blur-sm rounded-xl p-3 text-center border border-border/50 hover:border-primary/30 transition-colors">
-              <div className="flex items-center justify-center gap-1 text-amber-500 mb-1">
-                <Target className="h-3.5 w-3.5" />
+          <div className="grid grid-cols-3 gap-1.5 mb-3">
+            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border border-border/50 hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-center gap-1 text-amber-500 mb-0.5">
+                <Target className="h-3 w-3" />
               </div>
-              <p className="text-lg font-bold text-foreground">{playerStats.totalMatches}</p>
-              <p className="text-[10px] text-muted-foreground">Matches</p>
+              <p className="text-sm font-bold text-foreground">{playerStats.totalMatches}</p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Matches</p>
             </div>
-            <div className="bg-card/80 backdrop-blur-sm rounded-xl p-3 text-center border border-border/50 hover:border-emerald-500/30 transition-colors">
-              <div className="flex items-center justify-center gap-1 text-emerald-500 mb-1">
-                <Medal className="h-3.5 w-3.5" />
+            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border border-border/50 hover:border-emerald-500/30 transition-colors">
+              <div className="flex items-center justify-center gap-1 text-emerald-500 mb-0.5">
+                <Medal className="h-3 w-3" />
               </div>
-              <p className="text-lg font-bold text-foreground">{playerStats.wins}</p>
-              <p className="text-[10px] text-muted-foreground">Wins</p>
+              <p className="text-sm font-bold text-foreground">{playerStats.wins}</p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Wins</p>
             </div>
-            <div className="bg-card/80 backdrop-blur-sm rounded-xl p-3 text-center border border-border/50 hover:border-purple-500/30 transition-colors">
-              <div className="flex items-center justify-center gap-1 text-purple-500 mb-1">
-                <Flame className="h-3.5 w-3.5" />
+            <div className="bg-card/80 backdrop-blur-sm rounded-lg p-2 text-center border border-border/50 hover:border-purple-500/30 transition-colors">
+              <div className="flex items-center justify-center gap-1 text-purple-500 mb-0.5">
+                <Flame className="h-3 w-3" />
               </div>
-              <p className="text-lg font-bold text-foreground">₹{playerStats.totalEarnings}</p>
-              <p className="text-[10px] text-muted-foreground">Earned</p>
+              <p className="text-sm font-bold text-foreground">₹{playerStats.totalEarnings}</p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Earned</p>
             </div>
           </div>
 
           {/* Edit Profile Button */}
           <button 
             onClick={() => setEditDialogOpen(true)} 
-            className="w-full py-2.5 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-sm font-semibold rounded-xl transition-all text-white shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
+            className="w-full py-2 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-xs font-semibold rounded-lg transition-all text-white shadow-lg shadow-primary/25 flex items-center justify-center gap-1.5"
           >
-            <Edit2 className="h-4 w-4" />
+            <Edit2 className="h-3.5 w-3.5" />
             Edit Profile
           </button>
         </div>
@@ -463,36 +463,36 @@ const ProfilePage = () => {
       <div className="h-2 bg-muted/40" />
 
       {/* Account Section */}
-      <div className="px-4 pt-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 flex items-center gap-2">
-          <Zap className="h-3 w-3 text-primary" />
+      <div className="px-4 pt-3">
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Zap className="h-2.5 w-2.5 text-primary" />
           Account
         </h3>
-        <div className="glass-card rounded-2xl overflow-hidden divide-y divide-border/50">
+        <div className="glass-card rounded-xl overflow-hidden divide-y divide-border/50">
           
           {/* Admin Panel */}
           {isAdmin && (
             <button 
               onClick={() => navigate('/admin')} 
-              className="w-full bg-gradient-to-r from-primary/10 to-orange-500/10 hover:from-primary/15 hover:to-orange-500/15 p-4 flex items-center gap-3 transition-all hover:scale-[1.01]"
+              className="w-full bg-gradient-to-r from-primary/10 to-orange-500/10 hover:from-primary/15 hover:to-orange-500/15 p-3 flex items-center gap-2.5 transition-all"
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shadow-lg">
-                <Shield className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-orange-500 flex items-center justify-center shadow-md">
+                <Shield className="h-4 w-4 text-white" />
               </div>
               <div className="flex-1 text-left">
-                <div className="flex items-center gap-2">
-                  <p className="font-semibold text-sm text-foreground">Admin Panel</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-medium text-xs text-foreground">Admin Panel</p>
                   {isSuperAdmin ? (
-                    <Badge className="bg-gradient-to-r from-primary to-orange-500 text-white text-[9px] px-1.5 py-0">Super Admin</Badge>
+                    <Badge className="bg-gradient-to-r from-primary to-orange-500 text-white text-[8px] px-1 py-0">Super Admin</Badge>
                   ) : (
-                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Team</Badge>
+                    <Badge variant="secondary" className="text-[8px] px-1 py-0">Team</Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-[10px] text-muted-foreground">
                   {isSuperAdmin ? 'Full access to all features' : 'Access your sections'}
                 </p>
               </div>
-              <ChevronRight className="h-5 w-5 text-primary" />
+              <ChevronRight className="h-4 w-4 text-primary" />
             </button>
           )}
 
@@ -500,16 +500,16 @@ const ProfilePage = () => {
           {isOrganizer && (
             <button 
               onClick={() => navigate('/organizer')} 
-              className="w-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/15 hover:to-pink-500/15 p-4 flex items-center gap-3 transition-all hover:scale-[1.01]"
+              className="w-full bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/15 hover:to-pink-500/15 p-3 flex items-center gap-2.5 transition-all"
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                <Trophy className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
+                <Trophy className="h-4 w-4 text-white" />
               </div>
               <div className="flex-1 text-left">
-                <p className="font-semibold text-sm text-foreground">Organizer Dashboard</p>
-                <p className="text-xs text-muted-foreground">Manage tournaments & earnings</p>
+                <p className="font-medium text-xs text-foreground">Organizer Dashboard</p>
+                <p className="text-[10px] text-muted-foreground">Manage tournaments & earnings</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-purple-500" />
+              <ChevronRight className="h-4 w-4 text-purple-500" />
             </button>
           )}
 
@@ -517,83 +517,83 @@ const ProfilePage = () => {
           {isCreator && (
             <button 
               onClick={() => navigate('/creator')} 
-              className="w-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/15 hover:to-cyan-500/15 p-4 flex items-center gap-3 transition-all hover:scale-[1.01]"
+              className="w-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 hover:from-blue-500/15 hover:to-cyan-500/15 p-3 flex items-center gap-2.5 transition-all"
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
-                <Gamepad2 className="h-5 w-5 text-white" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-md">
+                <Gamepad2 className="h-4 w-4 text-white" />
               </div>
               <div className="flex-1 text-left">
-                <p className="font-semibold text-sm text-foreground">Creator Dashboard</p>
-                <p className="text-xs text-muted-foreground">Manage creator tournaments</p>
+                <p className="font-medium text-xs text-foreground">Creator Dashboard</p>
+                <p className="text-[10px] text-muted-foreground">Manage creator tournaments</p>
               </div>
-              <ChevronRight className="h-5 w-5 text-blue-500" />
+              <ChevronRight className="h-4 w-4 text-blue-500" />
             </button>
           )}
 
           {/* Local Tournament */}
           <button 
             onClick={() => navigate('/local-tournament')} 
-            className="w-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/15 hover:to-emerald-500/15 p-4 flex items-center gap-3 transition-all hover:scale-[1.01]"
+            className="w-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 hover:from-green-500/15 hover:to-emerald-500/15 p-3 flex items-center gap-2.5 transition-all"
           >
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
-              <Building2 className="h-5 w-5 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-md">
+              <Building2 className="h-4 w-4 text-white" />
             </div>
             <div className="flex-1 text-left">
-              <p className="font-semibold text-sm">Local Tournament</p>
-              <p className="text-xs text-muted-foreground">Organize in Schools & Colleges</p>
+              <p className="font-medium text-xs">Local Tournament</p>
+              <p className="text-[10px] text-muted-foreground">Organize in Schools & Colleges</p>
             </div>
-            <ChevronRight className="h-5 w-5 text-green-500" />
+            <ChevronRight className="h-4 w-4 text-green-500" />
           </button>
         </div>
       </div>
 
       {/* Menu Items */}
-      <div className="px-4 pt-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-          <Star className="h-3 w-3 text-amber-500" />
+      <div className="px-4 pt-3">
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <Star className="h-2.5 w-2.5 text-amber-500" />
           Menu
         </h3>
-        <div className="glass-card rounded-2xl divide-y divide-border/50 overflow-hidden">
+        <div className="glass-card rounded-xl divide-y divide-border/50 overflow-hidden">
           {menuItems.map((item, index) => (
             <button 
               key={item.label} 
               onClick={item.onClick} 
-              className="w-full flex items-center gap-3.5 p-4 hover:bg-muted/50 transition-all hover:scale-[1.01]"
+              className="w-full flex items-center gap-2.5 p-3 hover:bg-muted/50 transition-all"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <div className={`w-10 h-10 rounded-xl bg-muted/70 flex items-center justify-center`}>
-                <item.icon className={`h-5 w-5 ${item.color}`} />
+              <div className={`w-8 h-8 rounded-lg bg-muted/70 flex items-center justify-center`}>
+                <item.icon className={`h-4 w-4 ${item.color}`} />
               </div>
-              <span className="flex-1 text-left text-sm font-semibold text-foreground">{item.label}</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <span className="flex-1 text-left text-xs font-medium text-foreground">{item.label}</span>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           ))}
         </div>
       </div>
 
       {/* Push Notification Card */}
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-3">
         <PushNotificationSetup variant="card" />
       </div>
 
       {/* More Section */}
-      <div className="px-4 pt-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-          <TrendingUp className="h-3 w-3 text-blue-500" />
+      <div className="px-4 pt-3">
+        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <TrendingUp className="h-2.5 w-2.5 text-blue-500" />
           More
         </h3>
-        <div className="glass-card rounded-2xl divide-y divide-border/50 overflow-hidden">
+        <div className="glass-card rounded-xl divide-y divide-border/50 overflow-hidden">
           {moreItems.map((item) => (
             <button 
               key={item.label} 
               onClick={item.onClick} 
-              className="w-full flex items-center gap-3.5 p-4 hover:bg-muted/50 transition-all hover:scale-[1.01]"
+              className="w-full flex items-center gap-2.5 p-3 hover:bg-muted/50 transition-all"
             >
-              <div className="w-10 h-10 rounded-xl bg-muted/70 flex items-center justify-center">
-                <item.icon className="h-5 w-5 text-muted-foreground" />
+              <div className="w-8 h-8 rounded-lg bg-muted/70 flex items-center justify-center">
+                <item.icon className="h-4 w-4 text-muted-foreground" />
               </div>
-              <span className="flex-1 text-left text-sm font-semibold text-foreground">{item.label}</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <span className="flex-1 text-left text-xs font-medium text-foreground">{item.label}</span>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           ))}
         </div>
