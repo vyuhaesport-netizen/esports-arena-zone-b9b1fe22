@@ -10,7 +10,7 @@ import {
   UserCheck, CreditCard, Award, Clock, ArrowRight,
   Zap, Lock, RefreshCw, Bell, FileText,
   ChevronDown, ChevronUp, User, Settings, MessageSquare,
-  Scale, Building2, Star, Target, TrendingUp, Gift
+  Scale, Building2, Star, Target, TrendingUp, Gift, MapPin, AlertTriangle
 } from 'lucide-react';
 import vyuhaLogo from '@/assets/vyuha-logo.png';
 
@@ -329,27 +329,59 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
     // Platform Features
     {
       id: 'local-tournaments',
-      title: 'Local Tournaments (Schools/Colleges)',
+      title: 'Private Tournaments (Schools/Colleges)',
       category: 'Features',
       icon: <Building2 className="h-5 w-5 text-orange-500" />,
-      content: `**What are Local Tournaments?**
-- Institution-specific tournaments
-- Private code-based access
-- For schools, colleges, organizations
+      content: `**What are Private Tournaments?**
+- Institution-specific tournaments for schools, colleges, organizations
+- Private code-based access via QR scan
+- Supports up to 10,000 players with automated bracket system
 
-**Applying for Local Tournament:**
-1. Go to Local Tournament page
-2. Click "Apply for Local Tournament"
-3. Fill institution details, contact, game
-4. Submit for admin approval
+**Two Registration Types:**
+• **Online Only**: Teams register online, no physical verification needed
+• **Spot Verification**: Teams must visit institution for physical ID verification after online registration
+
+**Spot Verification Process:**
+1. Team registers online via QR code
+2. Team visits school/college location (full address provided)
+3. Organizer verifies Government ID & collects signatures
+4. Team marked as "Verified" in system
+5. Unverified teams by deadline = AUTO ELIMINATED (NO REFUND)
+
+**Multi-Round Bracket System:**
+- Round 1 → Round 2 → Finale
+- BGMI: 100 players/25 teams per room
+- Free Fire: 50 players/12 teams per room
+- Top team from each room advances`,
+      keywords: ['local', 'private', 'tournament', 'school', 'college', 'institution', 'spot', 'verification', 'qr']
+    },
+    {
+      id: 'spot-verification',
+      title: 'Spot Verification (Physical ID Check)',
+      category: 'Features',
+      icon: <UserCheck className="h-5 w-5 text-orange-500" />,
+      content: `**Spot Verification System:**
+
+For institutions requiring physical presence verification.
 
 **How It Works:**
-- Admin approves application
-- Private code generated
-- Share code with participants
-- Players join using code via QR scan or manual entry
-- Same tournament flow (join → play → winners)`,
-      keywords: ['local', 'tournament', 'school', 'college', 'institution', 'private', 'code']
+1. School/college selects "Spot Verification" when applying
+2. Must provide FULL ADDRESS for verification location
+3. Teams register online first
+4. Teams visit location to complete verification
+5. Organizer checks Government ID of all team members
+6. All members sign physical verification form
+7. Organizer marks team as "Verified" in system
+
+**Auto-Elimination Policy:**
+⚠️ Teams that fail to complete verification by registration deadline are AUTOMATICALLY ELIMINATED. No refunds issued for unverified teams.
+
+**Printable PDF Form:**
+- Organizers can generate PDF verification forms
+- Contains: Team Name, Member Names, Game UIDs, Government ID fields
+- Signature boxes for all members
+- Used for physical record-keeping`,
+      keywords: ['spot', 'verification', 'physical', 'id', 'check', 'government', 'signature', 'elimination']
     },
     {
       id: 'achievements',
@@ -417,6 +449,40 @@ UPCOMING → ONGOING → COMPLETED → Winners Declared
 - Higher positions = more points
 - Consistent performance rewards`,
       keywords: ['leaderboard', 'ranking', 'points', 'top', 'player', 'winner', 'stats']
+    },
+    {
+      id: 'auto-elimination',
+      title: 'Auto-Elimination (No Refund Policy)',
+      category: 'Features',
+      icon: <AlertTriangle className="h-5 w-5 text-red-500" />,
+      content: `**Auto-Elimination Policy:**
+
+For Private Tournaments with Spot Verification:
+
+**What Happens:**
+- Teams that fail to complete physical verification by registration deadline are AUTOMATICALLY ELIMINATED
+- No refunds are issued for eliminated teams
+- Entry fees are forfeited
+
+**Why This Policy:**
+- Ensures committed players only
+- Prevents seat blocking
+- Fair to verified teams
+- Maintains tournament integrity
+
+**How to Avoid:**
+1. Register early
+2. Visit verification location before deadline
+3. Bring valid Government ID
+4. Ensure all team members present
+5. Complete signature process
+
+**Organizer Responsibility:**
+- Set clear deadlines
+- Provide complete address
+- Be available for verification
+- Mark verified teams promptly`,
+      keywords: ['auto', 'elimination', 'refund', 'policy', 'verification', 'deadline', 'forfeit']
     }
   ];
 

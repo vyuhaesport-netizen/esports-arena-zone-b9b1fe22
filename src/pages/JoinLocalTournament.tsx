@@ -407,13 +407,13 @@ const JoinLocalTournamentPage = () => {
 
   return (
     <AppLayout>
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border px-4 py-3">
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-white/10 px-4 py-3">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-sm font-bold">Join Local Tournament</h1>
+            <h1 className="text-sm font-semibold">Join Local Tournament</h1>
             <p className="text-[10px] text-muted-foreground">Private school/college event</p>
           </div>
         </div>
@@ -421,7 +421,7 @@ const JoinLocalTournamentPage = () => {
 
       <div className="p-3 space-y-3">
         {!code && (
-          <Card>
+          <Card variant="glass" className="border-2 border-white/30">
             <CardContent className="p-4 text-center">
               <p className="text-xs text-muted-foreground">Scan a tournament QR code to join</p>
             </CardContent>
@@ -429,11 +429,11 @@ const JoinLocalTournamentPage = () => {
         )}
 
         {tournament && (
-          <Card>
+          <Card variant="glass" className="border-2 border-white/30">
             <CardHeader className="pb-2">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-sm">{tournament.tournament_name}</CardTitle>
+                  <CardTitle className="text-sm font-semibold">{tournament.tournament_name}</CardTitle>
                   <p className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
                     <Building2 className="h-3 w-3" />
                     {tournament.institution_name}
@@ -441,11 +441,11 @@ const JoinLocalTournamentPage = () => {
                 </div>
                 <div className="flex gap-1">
                   <Badge variant={tournament.status === 'ongoing' ? 'default' : 'outline'}
-                    className={`text-[10px] ${tournament.status === 'ongoing' ? 'bg-green-500' : ''}`}>
+                    className={`text-[10px] ${tournament.status === 'ongoing' ? 'bg-green-500 text-white' : 'border-white/30'}`}>
                     {tournament.status}
                   </Badge>
                   {tournament.tournament_mode && tournament.tournament_mode !== 'solo' && (
-                    <Badge variant="outline" className="capitalize text-[10px]">
+                    <Badge variant="outline" className="capitalize text-[10px] border-white/30">
                       {tournament.tournament_mode}
                     </Badge>
                   )}
@@ -459,10 +459,10 @@ const JoinLocalTournamentPage = () => {
 
               {/* Team Mode Info */}
               {tournament.tournament_mode && tournament.tournament_mode !== 'solo' && (
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2">
+                <div className="bg-blue-500/10 border-2 border-blue-500/30 rounded-lg p-2">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <UserPlus className="h-3 w-3 text-blue-500" />
-                    <span className="font-semibold text-xs text-blue-600">Team Mode: {tournament.tournament_mode}</span>
+                    <span className="font-semibold text-xs text-blue-400">Team Mode: {tournament.tournament_mode}</span>
                   </div>
                   <p className="text-[10px] text-muted-foreground">
                     {tournament.tournament_mode === 'duo' 
@@ -492,49 +492,47 @@ const JoinLocalTournamentPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between bg-muted/50 rounded-lg p-2">
+              <div className="flex items-center justify-between bg-muted/30 rounded-lg p-2.5 border border-white/10">
                 <span className="text-xs text-muted-foreground">Entry Fee</span>
-                <span className="font-bold text-sm">₹{tournament.entry_fee}</span>
+                <span className="font-bold text-sm text-primary">₹{tournament.entry_fee}</span>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between px-1">
                 <span className="text-xs text-muted-foreground">Players</span>
                 <span className="font-medium text-xs">{tournament.joined_users?.length || 0} / {tournament.max_participants}</span>
               </div>
 
               {hasJoined && tournament.status === 'ongoing' && (tournament.room_id || tournament.room_password) && (
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="p-3 space-y-1.5">
-                    <h4 className="font-semibold text-xs flex items-center gap-1.5">
-                      <Key className="h-3 w-3 text-primary" />
-                      Room Details
-                    </h4>
-                    {tournament.room_id && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground">Room ID:</span>
-                        <span className="font-mono font-bold text-xs">{tournament.room_id}</span>
-                      </div>
-                    )}
-                    {tournament.room_password && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground">Password:</span>
-                        <span className="font-mono font-bold text-xs">{tournament.room_password}</span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <div className="bg-primary/10 border-2 border-primary/30 rounded-lg p-3 space-y-1.5">
+                  <h4 className="font-semibold text-xs flex items-center gap-1.5">
+                    <Key className="h-3 w-3 text-primary" />
+                    Room Details
+                  </h4>
+                  {tournament.room_id && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground">Room ID:</span>
+                      <span className="font-mono font-bold text-xs">{tournament.room_id}</span>
+                    </div>
+                  )}
+                  {tournament.room_password && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground">Password:</span>
+                      <span className="font-mono font-bold text-xs">{tournament.room_password}</span>
+                    </div>
+                  )}
+                </div>
               )}
 
               {hasJoined ? (
-                <div className="flex items-center justify-center gap-1.5 text-green-600 bg-green-500/10 rounded-lg p-2">
+                <div className="flex items-center justify-center gap-1.5 text-green-400 bg-green-500/10 border border-green-500/30 rounded-lg p-2.5">
                   <CheckCircle className="h-4 w-4" />
                   <span className="font-medium text-xs">You've Joined This Tournament</span>
                 </div>
               ) : tournament.status === 'upcoming' ? (
                 <>
-                  <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center justify-between text-xs px-1">
                     <span className="text-muted-foreground">Your Wallet Balance</span>
-                    <span className={walletBalance < tournament.entry_fee ? 'text-destructive' : 'text-green-600'}>
+                    <span className={walletBalance < tournament.entry_fee ? 'text-destructive' : 'text-green-400'}>
                       ₹{walletBalance}
                     </span>
                   </div>
@@ -543,13 +541,13 @@ const JoinLocalTournamentPage = () => {
                     {!user ? 'Login to Join' : walletBalance < tournament.entry_fee ? 'Insufficient Balance' : `Join Tournament (₹${tournament.entry_fee}${tournament.tournament_mode !== 'solo' ? ' per player' : ''})`}
                   </Button>
                   {walletBalance < tournament.entry_fee && user && (
-                    <Button variant="outline" className="w-full text-xs h-9" onClick={() => navigate('/wallet')}>
+                    <Button variant="outline" className="w-full text-xs h-9 border-white/30" onClick={() => navigate('/wallet')}>
                       Add Money to Wallet
                     </Button>
                   )}
                 </>
               ) : (
-                <div className="flex items-center justify-center gap-1.5 text-muted-foreground bg-muted rounded-lg p-2">
+                <div className="flex items-center justify-center gap-1.5 text-muted-foreground bg-muted/30 border border-white/10 rounded-lg p-2.5">
                   <Lock className="h-4 w-4" />
                   <span className="text-xs">Registration Closed</span>
                 </div>
@@ -559,7 +557,7 @@ const JoinLocalTournamentPage = () => {
         )}
 
         {!user && (
-          <Card>
+          <Card variant="glass" className="border-2 border-white/30">
             <CardContent className="p-4 text-center">
               <p className="text-xs text-muted-foreground mb-3">Please login to join tournaments</p>
               <Button size="sm" className="text-xs" onClick={() => navigate('/auth')}>Login</Button>
