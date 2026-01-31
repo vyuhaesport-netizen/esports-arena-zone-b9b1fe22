@@ -35,7 +35,9 @@ import {
   Eye,
   EyeOff,
   Radio,
-  Hash
+  Hash,
+  UserCheck,
+  Globe
 } from 'lucide-react';
 
 interface Tournament {
@@ -57,6 +59,7 @@ interface Tournament {
   entry_fee: number;
   prize_pool: number;
   total_rooms: number;
+  verification_type?: 'online' | 'spot';
 }
 
 interface MyTeam {
@@ -162,7 +165,10 @@ const JoinSchoolTournament = () => {
         .single();
 
       if (error) throw error;
-      setTournament(data);
+      setTournament({
+        ...data,
+        verification_type: (data.verification_type as 'online' | 'spot') || 'online'
+      });
     } catch (error) {
       console.error('Error fetching tournament:', error);
     } finally {
@@ -536,6 +542,24 @@ const JoinSchoolTournament = () => {
               </Badge>
             )}
           </div>
+
+          {/* Spot Verification Notice */}
+          {tournament.verification_type === 'spot' && (
+            <Card className="border-orange-500/30 bg-orange-500/5 mb-4">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-2">
+                  <UserCheck className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-orange-500">Spot Verification Required</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      After online registration, you must visit {tournament.school_name} for physical ID verification. 
+                      Bring your Government ID and all team members must be present.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Tabs for Joined Users */}
           {alreadyJoined ? (

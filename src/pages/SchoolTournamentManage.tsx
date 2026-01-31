@@ -36,7 +36,12 @@ import {
   RefreshCw,
   Lock,
   Timer,
-  FileText
+  FileText,
+  UserCheck,
+  AlertCircle,
+  ClipboardCheck,
+  Phone,
+  IdCard
 } from 'lucide-react';
 import RoundProgressionChart from '@/components/RoundProgressionChart';
 
@@ -63,6 +68,7 @@ interface Tournament {
   prize_pool: number;
   total_collected: number;
   players_per_room: number;
+  verification_type: 'online' | 'spot';
 }
 
 interface PlayerProfile {
@@ -85,6 +91,12 @@ interface Team {
   final_rank?: number;
   registration_method: string;
   registered_at: string;
+  is_verified?: boolean;
+  verified_at?: string;
+  verified_by?: string;
+  verification_notes?: string;
+  govt_id_number?: string;
+  contact_number?: string;
 }
 
 interface Room {
@@ -130,6 +142,15 @@ const SchoolTournamentManage = () => {
   const [tournamentStats, setTournamentStats] = useState<{
     roomsByRound: Record<number, { total: number; completed: number }>;
   }>({ roomsByRound: {} });
+  
+  // Verification states
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+  const [selectedTeamForVerification, setSelectedTeamForVerification] = useState<Team | null>(null);
+  const [verificationForm, setVerificationForm] = useState({
+    govtIdNumber: '',
+    contactNumber: '',
+    notes: ''
+  });
 
   useEffect(() => {
     if (id) {
@@ -154,7 +175,10 @@ const SchoolTournamentManage = () => {
           .order('room_number', { ascending: true }),
       ]);
 
-      if (tournamentRes.data) setTournament(tournamentRes.data);
+      if (tournamentRes.data) setTournament({
+        ...tournamentRes.data,
+        verification_type: (tournamentRes.data.verification_type as 'online' | 'spot') || 'online'
+      });
       if (teamsRes.data) setTeams(teamsRes.data);
       if (roomsRes.data) {
         setRooms(roomsRes.data);
@@ -489,6 +513,257 @@ const SchoolTournamentManage = () => {
     setSelectedRoomIds(prev => 
       prev.includes(roomId) ? prev.filter(id => id !== roomId) : [...prev, roomId]
     );
+  };
+
+  // Verification Functions
+  const handleOpenVerification = (team: Team) => {
+    setSelectedTeamForVerification(team);
+    setVerificationForm({
+      govtIdNumber: team.govt_id_number || '',
+      contactNumber: team.contact_number || '',
+      notes: team.verification_notes || ''
+    });
+    setVerificationDialogOpen(true);
+  };
+
+  const handleVerifyTeam = async () => {
+    if (!selectedTeamForVerification || !verificationForm.govtIdNumber || !verificationForm.contactNumber) {
+      toast.error('Please fill Govt ID and Contact Number');
+      return;
+    }
+    
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('school_tournament_teams')
+        .update({
+          is_verified: true,
+          verified_at: new Date().toISOString(),
+          verified_by: user?.id,
+          govt_id_number: verificationForm.govtIdNumber,
+          contact_number: verificationForm.contactNumber,
+          verification_notes: verificationForm.notes || null
+        })
+        .eq('id', selectedTeamForVerification.id);
+
+      if (error) throw error;
+
+      toast.success('Team verified successfully!');
+      setVerificationDialogOpen(false);
+      setSelectedTeamForVerification(null);
+      setVerificationForm({ govtIdNumber: '', contactNumber: '', notes: '' });
+      fetchTournamentData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to verify team');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleUnverifyTeam = async (teamId: string) => {
+    setProcessing(true);
+    try {
+      const { error } = await supabase
+        .from('school_tournament_teams')
+        .update({
+          is_verified: false,
+          verified_at: null,
+          verified_by: null
+        })
+        .eq('id', teamId);
+
+      if (error) throw error;
+      toast.success('Verification removed');
+      fetchTournamentData();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to remove verification');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const generateVerificationFormPDF = () => {
+    if (!tournament) return;
+    
+    const content = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Team Verification Form - ${tournament.tournament_name}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; padding: 30px; background: white; }
+    .header { text-align: center; border-bottom: 3px solid #f97316; padding-bottom: 15px; margin-bottom: 25px; }
+    .header h1 { color: #1a1a1a; font-size: 20px; margin-bottom: 5px; }
+    .header h2 { color: #666; font-size: 14px; font-weight: normal; }
+    .brand { color: #f97316; font-weight: bold; font-size: 12px; margin-top: 8px; }
+    .info-box { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .info-box p { font-size: 12px; margin-bottom: 5px; }
+    .info-box strong { color: #333; }
+    .section { margin-bottom: 25px; }
+    .section-title { background: #333; color: white; padding: 8px 12px; font-size: 13px; font-weight: bold; margin-bottom: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 10px; font-size: 11px; text-align: left; }
+    th { background: #f5f5f5; font-weight: bold; }
+    .fill-field { height: 35px; background: #fafafa; }
+    .signature-box { display: flex; gap: 20px; margin-top: 20px; }
+    .signature-item { flex: 1; border: 1px solid #ddd; padding: 15px; text-align: center; }
+    .signature-item p { font-size: 10px; color: #666; margin-bottom: 40px; }
+    .signature-line { border-top: 1px solid #333; padding-top: 5px; font-size: 11px; }
+    .rules { background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #f97316; }
+    .rules h4 { color: #e65100; font-size: 12px; margin-bottom: 10px; }
+    .rules ul { font-size: 11px; color: #666; padding-left: 20px; }
+    .rules li { margin-bottom: 5px; }
+    .footer { text-align: center; margin-top: 30px; color: #999; font-size: 10px; }
+    .checkbox { width: 14px; height: 14px; border: 2px solid #333; display: inline-block; margin-right: 8px; vertical-align: middle; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${tournament.tournament_name}</h1>
+    <h2>${tournament.school_name}, ${tournament.school_city}</h2>
+    <p class="brand">VYUHA ESPORT - TEAM VERIFICATION FORM</p>
+  </div>
+
+  <div class="info-box">
+    <p><strong>Game:</strong> ${tournament.game} | <strong>Date:</strong> ${new Date(tournament.tournament_date).toLocaleDateString()}</p>
+    <p><strong>Registration Code:</strong> ${tournament.private_code}</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">TEAM DETAILS</div>
+    <table>
+      <tr>
+        <th style="width: 25%;">Team Name</th>
+        <td class="fill-field" colspan="3"></td>
+      </tr>
+      <tr>
+        <th>Team Number</th>
+        <td class="fill-field"></td>
+        <th>Date</th>
+        <td class="fill-field"></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">MEMBER DETAILS (Fill with Pen)</div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 8%;">Role</th>
+          <th style="width: 20%;">In-Game Name (IGN)</th>
+          <th style="width: 18%;">Game UID</th>
+          <th style="width: 12%;">Level</th>
+          <th style="width: 22%;">Govt ID Number</th>
+          <th style="width: 20%;">Contact Number</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Leader</strong></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+        </tr>
+        <tr>
+          <td>Member 2</td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+        </tr>
+        <tr>
+          <td>Member 3</td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+        </tr>
+        <tr>
+          <td>Member 4</td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+          <td class="fill-field"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-title">MEMBER SIGNATURES</div>
+    <div class="signature-box">
+      <div class="signature-item">
+        <p>Leader Signature</p>
+        <div class="signature-line">Name: _________________</div>
+      </div>
+      <div class="signature-item">
+        <p>Member 2 Signature</p>
+        <div class="signature-line">Name: _________________</div>
+      </div>
+      <div class="signature-item">
+        <p>Member 3 Signature</p>
+        <div class="signature-line">Name: _________________</div>
+      </div>
+      <div class="signature-item">
+        <p>Member 4 Signature</p>
+        <div class="signature-line">Name: _________________</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules">
+    <h4>⚠️ MANDATORY RULES</h4>
+    <ul>
+      <li>All members must bring valid Government ID proof (Aadhaar/School ID)</li>
+      <li>IGN and UID must match the registered details exactly</li>
+      <li>All team members must be present during verification</li>
+      <li>Fake details will result in immediate disqualification</li>
+      <li>Tournament entry only allowed after successful verification</li>
+    </ul>
+  </div>
+
+  <div class="section" style="margin-top: 25px;">
+    <div class="section-title">ORGANIZER VERIFICATION</div>
+    <table>
+      <tr>
+        <td style="width: 50%;">
+          <p style="margin-bottom: 40px;">
+            <span class="checkbox"></span> All documents verified
+          </p>
+          <p>
+            <span class="checkbox"></span> All members present
+          </p>
+        </td>
+        <td style="width: 50%; text-align: center;">
+          <p style="margin-bottom: 50px; color: #666; font-size: 10px;">Organizer Signature & Stamp</p>
+          <div style="border-top: 1px solid #333; padding-top: 5px;">
+            Verified By: _________________
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>Generated on ${new Date().toLocaleString()} | © VYUHA ESPORT</p>
+  </div>
+</body>
+</html>
+    `;
+
+    const blob = new Blob([content], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) printWindow.onload = () => printWindow.print();
   };
 
   // PDF Generation Functions
@@ -853,10 +1128,15 @@ const SchoolTournamentManage = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="px-2">
-          <TabsList className="grid w-full grid-cols-3 h-9">
+          <TabsList className={`grid w-full h-9 ${tournament.verification_type === 'spot' ? 'grid-cols-4' : 'grid-cols-3'}`}>
             <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
             <TabsTrigger value="teams" className="text-xs">Teams ({teams.length})</TabsTrigger>
             <TabsTrigger value="rooms" className="text-xs">Rooms ({rooms.length})</TabsTrigger>
+            {tournament.verification_type === 'spot' && (
+              <TabsTrigger value="verify" className="text-xs">
+                Verify ({teams.filter(t => !t.is_verified).length})
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Overview Tab */}
@@ -885,6 +1165,16 @@ const SchoolTournamentManage = () => {
                     <span className="font-medium text-green-500">₹{tournament.total_collected}</span>
                   </div>
                 )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Verification</span>
+                  <span className={`font-medium flex items-center gap-1 ${tournament.verification_type === 'spot' ? 'text-orange-500' : 'text-blue-500'}`}>
+                    {tournament.verification_type === 'spot' ? (
+                      <><UserCheck className="h-3 w-3" /> Spot</>
+                    ) : (
+                      <><CheckCircle className="h-3 w-3" /> Online</>
+                    )}
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
@@ -1242,8 +1532,199 @@ const SchoolTournamentManage = () => {
               </>
             )}
           </TabsContent>
+
+          {/* Verification Tab (Spot Verification Only) */}
+          {tournament.verification_type === 'spot' && (
+            <TabsContent value="verify" className="mt-3 space-y-3">
+              {/* Verification Header */}
+              <Card className="border-orange-500/30 bg-orange-500/5">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <UserCheck className="h-4 w-4 text-orange-500" />
+                    <h3 className="font-semibold text-sm">Spot Verification Required</h3>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mb-3">
+                    Teams must visit {tournament.school_name} for physical ID verification before they can participate.
+                  </p>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="h-8 text-xs" onClick={generateVerificationFormPDF}>
+                      <FileText className="h-3 w-3 mr-1" /> Print Verification Form
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Verification Stats */}
+              <div className="grid grid-cols-3 gap-2">
+                <Card className="p-2.5 text-center">
+                  <p className="text-lg font-bold text-green-500">{teams.filter(t => t.is_verified).length}</p>
+                  <p className="text-[10px] text-muted-foreground">Verified</p>
+                </Card>
+                <Card className="p-2.5 text-center">
+                  <p className="text-lg font-bold text-orange-500">{teams.filter(t => !t.is_verified).length}</p>
+                  <p className="text-[10px] text-muted-foreground">Pending</p>
+                </Card>
+                <Card className="p-2.5 text-center">
+                  <p className="text-lg font-bold">{teams.length}</p>
+                  <p className="text-[10px] text-muted-foreground">Total</p>
+                </Card>
+              </div>
+
+              {/* Teams to Verify */}
+              <ScrollArea className="h-[50vh]">
+                <div className="space-y-2">
+                  {teams
+                    .sort((a, b) => {
+                      if (a.is_verified === b.is_verified) return 0;
+                      return a.is_verified ? 1 : -1;
+                    })
+                    .map((team, idx) => {
+                      const leader = playerProfiles[team.leader_id];
+                      const teamNumber = teams
+                        .sort((a, b) => new Date(a.registered_at).getTime() - new Date(b.registered_at).getTime())
+                        .findIndex(t => t.id === team.id) + 1;
+                      
+                      return (
+                        <Card 
+                          key={team.id} 
+                          className={`p-3 ${team.is_verified ? 'border-green-500/30 bg-green-500/5' : 'border-orange-500/30'}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                                team.is_verified ? 'bg-green-500 text-white' : 'bg-orange-500/20 text-orange-500'
+                              }`}>
+                                {teamNumber}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-xs truncate">{team.team_name}</p>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {leader?.in_game_name || leader?.username || 'Unknown'}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5">
+                              {team.is_verified ? (
+                                <>
+                                  <Badge className="bg-green-500 text-white text-[9px]">
+                                    <CheckCircle className="h-2.5 w-2.5 mr-0.5" /> Verified
+                                  </Badge>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    className="h-7 text-[10px]"
+                                    onClick={() => handleUnverifyTeam(team.id)}
+                                    disabled={processing}
+                                  >
+                                    Undo
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  className="h-7 text-[10px] bg-orange-500 hover:bg-orange-600"
+                                  onClick={() => handleOpenVerification(team)}
+                                >
+                                  <ClipboardCheck className="h-3 w-3 mr-1" /> Verify
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {team.is_verified && team.govt_id_number && (
+                            <div className="mt-2 pt-2 border-t border-border/30 grid grid-cols-2 gap-2 text-[10px]">
+                              <div className="flex items-center gap-1">
+                                <IdCard className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-muted-foreground">ID:</span>
+                                <span className="font-mono">{team.govt_id_number}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Phone className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-muted-foreground">Phone:</span>
+                                <span className="font-mono">{team.contact_number}</span>
+                              </div>
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
+
+      {/* Verification Dialog */}
+      <Dialog open={verificationDialogOpen} onOpenChange={setVerificationDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-2">
+              <UserCheck className="h-4 w-4 text-orange-500" />
+              Verify Team
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {selectedTeamForVerification?.team_name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="p-2.5 bg-muted/30 rounded-lg text-[10px] text-muted-foreground">
+              <p className="font-medium text-foreground text-xs mb-1">Verification Checklist:</p>
+              <ul className="space-y-0.5">
+                <li>• Check Government ID proof (Aadhaar/School ID)</li>
+                <li>• Verify IGN and UID match registered details</li>
+                <li>• Confirm all team members are present</li>
+                <li>• Collect signatures on verification form</li>
+              </ul>
+            </div>
+            
+            <div>
+              <Label className="text-xs">Government ID Number *</Label>
+              <Input
+                placeholder="Aadhaar / School ID Number"
+                className="h-9 text-xs"
+                value={verificationForm.govtIdNumber}
+                onChange={(e) => setVerificationForm(prev => ({ ...prev, govtIdNumber: e.target.value }))}
+              />
+            </div>
+            
+            <div>
+              <Label className="text-xs">Contact Number *</Label>
+              <Input
+                placeholder="Leader's Phone Number"
+                className="h-9 text-xs"
+                maxLength={10}
+                value={verificationForm.contactNumber}
+                onChange={(e) => setVerificationForm(prev => ({ ...prev, contactNumber: e.target.value.replace(/\D/g, '') }))}
+              />
+            </div>
+            
+            <div>
+              <Label className="text-xs">Notes (Optional)</Label>
+              <Input
+                placeholder="Any additional notes..."
+                className="h-9 text-xs"
+                value={verificationForm.notes}
+                onChange={(e) => setVerificationForm(prev => ({ ...prev, notes: e.target.value }))}
+              />
+            </div>
+            
+            <Button 
+              className="w-full h-9 text-xs bg-green-500 hover:bg-green-600"
+              onClick={handleVerifyTeam}
+              disabled={processing || !verificationForm.govtIdNumber || !verificationForm.contactNumber}
+            >
+              {processing ? (
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+              ) : (
+                <CheckCircle className="h-3 w-3 mr-1" />
+              )}
+              Confirm Verification
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* QR Code Dialog */}
       <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>

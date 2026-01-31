@@ -1495,6 +1495,7 @@ export type Database = {
           tournament_name: string
           updated_at: string
           user_id: string
+          verification_type: string
         }
         Insert: {
           admin_notes?: string | null
@@ -1522,6 +1523,7 @@ export type Database = {
           tournament_name: string
           updated_at?: string
           user_id: string
+          verification_type?: string
         }
         Update: {
           admin_notes?: string | null
@@ -1549,6 +1551,7 @@ export type Database = {
           tournament_name?: string
           updated_at?: string
           user_id?: string
+          verification_type?: string
         }
         Relationships: []
       }
@@ -1659,12 +1662,15 @@ export type Database = {
       }
       school_tournament_teams: {
         Row: {
+          contact_number: string | null
           created_at: string
           current_round: number | null
           eliminated_at_round: number | null
           final_rank: number | null
+          govt_id_number: string | null
           id: string
           is_eliminated: boolean | null
+          is_verified: boolean | null
           leader_id: string
           member_1_id: string | null
           member_2_id: string | null
@@ -1674,14 +1680,20 @@ export type Database = {
           team_name: string
           tournament_id: string
           updated_at: string
+          verification_notes: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
+          contact_number?: string | null
           created_at?: string
           current_round?: number | null
           eliminated_at_round?: number | null
           final_rank?: number | null
+          govt_id_number?: string | null
           id?: string
           is_eliminated?: boolean | null
+          is_verified?: boolean | null
           leader_id: string
           member_1_id?: string | null
           member_2_id?: string | null
@@ -1691,14 +1703,20 @@ export type Database = {
           team_name: string
           tournament_id: string
           updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
+          contact_number?: string | null
           created_at?: string
           current_round?: number | null
           eliminated_at_round?: number | null
           final_rank?: number | null
+          govt_id_number?: string | null
           id?: string
           is_eliminated?: boolean | null
+          is_verified?: boolean | null
           leader_id?: string
           member_1_id?: string | null
           member_2_id?: string | null
@@ -1708,6 +1726,9 @@ export type Database = {
           team_name?: string
           tournament_id?: string
           updated_at?: string
+          verification_notes?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -1753,6 +1774,7 @@ export type Database = {
           tournament_date: string
           tournament_name: string
           updated_at: string
+          verification_type: string
         }
         Insert: {
           application_id: string
@@ -1787,6 +1809,7 @@ export type Database = {
           tournament_date: string
           tournament_name: string
           updated_at?: string
+          verification_type?: string
         }
         Update: {
           application_id?: string
@@ -1821,6 +1844,7 @@ export type Database = {
           tournament_date?: string
           tournament_name?: string
           updated_at?: string
+          verification_type?: string
         }
         Relationships: [
           {

@@ -32,7 +32,9 @@ import {
   Loader2,
   QrCode,
   Share2,
-  Eye
+  Eye,
+  Globe,
+  UserCheck
 } from 'lucide-react';
 
 interface Application {
@@ -95,6 +97,7 @@ const SchoolTournament = () => {
     schoolCity: '',
     schoolState: '',
     schoolDistrict: '',
+    verificationType: 'online' as 'online' | 'spot',
     
     // Organizer Info (Step 2)
     organizerName: '',
@@ -232,6 +235,7 @@ const SchoolTournament = () => {
         prize_pool: formData.prizePool,
         tournament_date: formData.tournamentDate,
         registration_deadline: formData.registrationDeadline,
+        verification_type: formData.verificationType,
       });
 
       if (error) throw error;
@@ -243,6 +247,7 @@ const SchoolTournament = () => {
         schoolCity: '',
         schoolState: '',
         schoolDistrict: '',
+        verificationType: 'online',
         organizerName: '',
         primaryPhone: '',
         alternatePhone: '',
@@ -371,6 +376,49 @@ const SchoolTournament = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  {/* Verification Type */}
+                  <div>
+                    <Label className="text-xs mb-2 block">Registration Type *</Label>
+                    <RadioGroup
+                      value={formData.verificationType}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, verificationType: value as 'online' | 'spot' }))}
+                      className="grid grid-cols-1 gap-2"
+                    >
+                      <Label
+                        className={`flex items-start gap-2.5 p-2.5 border-2 rounded-lg cursor-pointer ${
+                          formData.verificationType === 'online' ? 'border-primary bg-primary/10' : 'border-white/30'
+                        }`}
+                      >
+                        <RadioGroupItem value="online" className="h-3.5 w-3.5 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <Globe className="h-3.5 w-3.5 text-primary" />
+                            <span className="text-xs font-semibold">Online Only</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            Teams register online. No physical verification needed.
+                          </p>
+                        </div>
+                      </Label>
+                      <Label
+                        className={`flex items-start gap-2.5 p-2.5 border-2 rounded-lg cursor-pointer ${
+                          formData.verificationType === 'spot' ? 'border-primary bg-primary/10' : 'border-white/30'
+                        }`}
+                      >
+                        <RadioGroupItem value="spot" className="h-3.5 w-3.5 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <UserCheck className="h-3.5 w-3.5 text-orange-500" />
+                            <span className="text-xs font-semibold">Spot Verification</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-0.5">
+                            After online registration, teams must visit institution for physical ID verification with signature.
+                          </p>
+                        </div>
+                      </Label>
+                    </RadioGroup>
                   </div>
                   
                   <Button
