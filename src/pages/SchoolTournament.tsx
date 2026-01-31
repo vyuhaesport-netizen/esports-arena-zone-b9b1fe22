@@ -393,12 +393,21 @@ const SchoolTournament = () => {
                       onValueChange={(value) => setFormData(prev => ({ ...prev, verificationType: value as 'online' | 'spot' }))}
                       className="grid grid-cols-1 gap-2"
                     >
-                      <Label
-                        className={`flex items-start gap-2.5 p-2.5 border-2 rounded-lg cursor-pointer ${
-                          formData.verificationType === 'online' ? 'border-primary bg-primary/10' : 'border-white/30'
+                      <div
+                        onClick={() => setFormData(prev => ({ ...prev, verificationType: 'online' }))}
+                        className={`flex items-start gap-2.5 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.verificationType === 'online' 
+                            ? 'border-primary bg-primary/10' 
+                            : 'border-white/20 bg-transparent'
                         }`}
                       >
-                        <RadioGroupItem value="online" className="h-3.5 w-3.5 mt-0.5" />
+                        <div className={`h-3.5 w-3.5 mt-0.5 rounded-full border-2 flex items-center justify-center ${
+                          formData.verificationType === 'online' ? 'border-primary' : 'border-muted-foreground'
+                        }`}>
+                          {formData.verificationType === 'online' && (
+                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                          )}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
                             <Globe className="h-3.5 w-3.5 text-primary" />
@@ -408,23 +417,32 @@ const SchoolTournament = () => {
                             Teams register online. No physical verification needed.
                           </p>
                         </div>
-                      </Label>
-                      <Label
-                        className={`flex items-start gap-2.5 p-2.5 border-2 rounded-lg cursor-pointer ${
-                          formData.verificationType === 'spot' ? 'border-primary bg-primary/10' : 'border-white/30'
+                      </div>
+                      <div
+                        onClick={() => setFormData(prev => ({ ...prev, verificationType: 'spot' }))}
+                        className={`flex items-start gap-2.5 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.verificationType === 'spot' 
+                            ? 'border-orange-500 bg-orange-500/10' 
+                            : 'border-white/20 bg-transparent'
                         }`}
                       >
-                        <RadioGroupItem value="spot" className="h-3.5 w-3.5 mt-0.5" />
+                        <div className={`h-3.5 w-3.5 mt-0.5 rounded-full border-2 flex items-center justify-center ${
+                          formData.verificationType === 'spot' ? 'border-orange-500' : 'border-muted-foreground'
+                        }`}>
+                          {formData.verificationType === 'spot' && (
+                            <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                          )}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
                             <UserCheck className="h-3.5 w-3.5 text-orange-500" />
                             <span className="text-xs font-semibold">Spot Verification</span>
                           </div>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
-                            After online registration, teams must visit institution for physical ID verification with signature. Teams not verified by deadline will be auto-eliminated (NO REFUND).
+                            After online registration, teams must visit institution for physical ID verification. Teams not verified by deadline will be auto-eliminated (NO REFUND).
                           </p>
                         </div>
-                      </Label>
+                      </div>
                     </RadioGroup>
                   </div>
                   
