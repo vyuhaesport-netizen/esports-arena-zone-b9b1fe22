@@ -178,21 +178,28 @@ const AboutUs = () => {
                 <Award className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium">Daily Scrims & Community Cups</p>
-                  <p className="text-xs text-muted-foreground">One-click registration for instant action</p>
+                  <p className="text-xs text-muted-foreground">One-click registration, instant prize distribution</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/40 border-2 border-borderStrong">
                 <Users2 className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium">School & College Tournaments</p>
-                  <p className="text-xs text-muted-foreground">Campus-level competitive gaming events</p>
+                  <p className="text-xs text-muted-foreground">Private events with QR registration & spot verification</p>
                 </div>
               </div>
               <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/40 border-2 border-borderStrong">
                 <Trophy className="h-5 w-5 text-primary flex-shrink-0" />
                 <div>
                   <p className="text-sm font-medium">Local & Regional Events</p>
-                  <p className="text-xs text-muted-foreground">Community tournaments across India</p>
+                  <p className="text-xs text-muted-foreground">Multi-round bracket system up to 10,000 players</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 p-3 rounded-lg bg-secondary/40 border-2 border-borderStrong">
+                <Zap className="h-5 w-5 text-green-500 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium">Player Stats & Milestones</p>
+                  <p className="text-xs text-muted-foreground">Earn stats points, claim bonuses, climb leaderboards</p>
                 </div>
               </div>
             </div>
@@ -200,18 +207,22 @@ const AboutUs = () => {
         </Card>
 
         {/* Platform Stats */}
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-4 gap-2">
           <div className="stat-card text-center">
-            <p className="text-lg font-bold text-primary">1000+</p>
-            <p className="text-xs text-muted-foreground">Tournaments</p>
+            <p className="text-base font-bold text-primary">1000+</p>
+            <p className="text-[10px] text-muted-foreground">Tournaments</p>
           </div>
           <div className="stat-card text-center">
-            <p className="text-lg font-bold text-success">₹50L+</p>
-            <p className="text-xs text-muted-foreground">Prize Money</p>
+            <p className="text-base font-bold text-success">₹50L+</p>
+            <p className="text-[10px] text-muted-foreground">Prizes</p>
           </div>
           <div className="stat-card text-center">
-            <p className="text-lg font-bold text-gaming-blue">10K+</p>
-            <p className="text-xs text-muted-foreground">Players</p>
+            <p className="text-base font-bold text-gaming-blue">15K+</p>
+            <p className="text-[10px] text-muted-foreground">Players</p>
+          </div>
+          <div className="stat-card text-center">
+            <p className="text-base font-bold text-gaming-purple">100+</p>
+            <p className="text-[10px] text-muted-foreground">Schools</p>
           </div>
         </div>
 
@@ -227,7 +238,7 @@ const AboutUs = () => {
                 <h3 className="font-bold text-sm">Transparency</h3>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Room details hidden until 30 min before match. Our <strong className="text-foreground">80/10/10 prize split</strong> is clear: 80% to players, 10% to organizers, 10% platform fee.
+                Room details hidden until 30 min before match. Our <strong className="text-foreground">80/10/10 prize split</strong> is clear: 80% to players, 10% to organizers, 10% platform fee. Instant prize distribution after winner declaration.
               </p>
             </div>
 
@@ -239,7 +250,7 @@ const AboutUs = () => {
                 <h3 className="font-bold text-sm">Community</h3>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                We don't just host matches — we build teams. Find teammates based on Role (Assaulter, Sniper, IGL) and Language with our Squad Finder.
+                We don't just host matches — we build teams. Create squads, join duo/squad tournaments, earn stats points, and unlock milestone bonuses!
               </p>
             </div>
 
@@ -251,7 +262,7 @@ const AboutUs = () => {
                 <h3 className="font-bold text-sm">Opportunity</h3>
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Whether you're a solo fragger or squad leader, the path to the leaderboard is open. Zero-fee community matches help beginners practice.
+                From free community matches to paid tournaments. Earn stats points based on rank (1st = 10pts). Claim cash bonuses at milestones (50pts = ₹10, 1000pts = ₹500).
               </p>
             </div>
           </div>

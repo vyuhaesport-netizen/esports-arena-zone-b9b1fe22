@@ -98,6 +98,7 @@ const SchoolTournament = () => {
     schoolState: '',
     schoolDistrict: '',
     verificationType: 'online' as 'online' | 'spot',
+    fullAddress: '', // Full address for spot verification
     
     // Organizer Info (Step 2)
     organizerName: '',
@@ -183,6 +184,10 @@ const SchoolTournament = () => {
           toast.error('Please fill all school details');
           return false;
         }
+        if (formData.verificationType === 'spot' && !formData.fullAddress.trim()) {
+          toast.error('Full address is required for spot verification');
+          return false;
+        }
         break;
       case 2:
         if (!formData.organizerName || !formData.primaryPhone) {
@@ -236,6 +241,7 @@ const SchoolTournament = () => {
         tournament_date: formData.tournamentDate,
         registration_deadline: formData.registrationDeadline,
         verification_type: formData.verificationType,
+        full_address: formData.verificationType === 'spot' ? formData.fullAddress : null,
       });
 
       if (error) throw error;
@@ -248,6 +254,7 @@ const SchoolTournament = () => {
         schoolState: '',
         schoolDistrict: '',
         verificationType: 'online',
+        fullAddress: '',
         organizerName: '',
         primaryPhone: '',
         alternatePhone: '',
@@ -414,12 +421,31 @@ const SchoolTournament = () => {
                             <span className="text-xs font-semibold">Spot Verification</span>
                           </div>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
-                            After online registration, teams must visit institution for physical ID verification with signature.
+                            After online registration, teams must visit institution for physical ID verification with signature. Teams not verified by deadline will be auto-eliminated (NO REFUND).
                           </p>
                         </div>
                       </Label>
                     </RadioGroup>
                   </div>
+                  
+                  {/* Full Address for Spot Verification */}
+                  {formData.verificationType === 'spot' && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs flex items-center gap-1">
+                        <MapPin className="h-3 w-3 text-orange-500" />
+                        Full Verification Address *
+                      </Label>
+                      <Textarea
+                        placeholder="Enter complete address where teams will come for physical verification (e.g., Building Name, Street, Landmark, City, Pincode)"
+                        value={formData.fullAddress}
+                        onChange={(e) => setFormData(prev => ({ ...prev, fullAddress: e.target.value }))}
+                        className="text-xs min-h-[70px] resize-none"
+                      />
+                      <p className="text-[9px] text-orange-400">
+                        ⚠️ Teams that fail to verify by registration deadline will be automatically eliminated. No refunds for unverified teams.
+                      </p>
+                    </div>
+                  )}
                   
                   <Button
                     className="w-full h-8 text-xs" 

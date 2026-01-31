@@ -1475,6 +1475,7 @@ export type Database = {
           created_at: string
           entry_fee: number | null
           entry_type: string
+          full_address: string | null
           game: string
           id: string
           max_players: number
@@ -1503,6 +1504,7 @@ export type Database = {
           created_at?: string
           entry_fee?: number | null
           entry_type?: string
+          full_address?: string | null
           game: string
           id?: string
           max_players: number
@@ -1531,6 +1533,7 @@ export type Database = {
           created_at?: string
           entry_fee?: number | null
           entry_type?: string
+          full_address?: string | null
           game?: string
           id?: string
           max_players?: number
@@ -1750,6 +1753,7 @@ export type Database = {
           entry_fee: number | null
           entry_type: string
           first_place_prize: number | null
+          full_address: string | null
           game: string
           id: string
           max_players: number
@@ -1785,6 +1789,7 @@ export type Database = {
           entry_fee?: number | null
           entry_type?: string
           first_place_prize?: number | null
+          full_address?: string | null
           game: string
           id?: string
           max_players: number
@@ -1820,6 +1825,7 @@ export type Database = {
           entry_fee?: number | null
           entry_type?: string
           first_place_prize?: number | null
+          full_address?: string | null
           game?: string
           id?: string
           max_players?: number
