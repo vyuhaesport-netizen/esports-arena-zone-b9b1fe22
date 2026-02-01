@@ -12,12 +12,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Loader2, Medal, Award, Crown, TrendingUp, Target, 
   Gamepad2, Gift, ChevronRight, Users, Trophy, Calendar,
-  BarChart3, PieChart, Activity, Swords, Star
+  BarChart3, PieChart, Activity, Swords, Star, Crosshair
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart as RechartsPieChart, Pie, Cell, Legend
 } from 'recharts';
+import { usePlayerGameStats } from '@/hooks/usePlayerGameStats';
+import GameStatsForm from '@/components/GameStatsForm';
+import GameStatsDisplay from '@/components/GameStatsDisplay';
 
 interface UserStats {
   first_place_count: number;
@@ -55,8 +58,18 @@ const PlayerStatsPage = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showGameStatsForm, setShowGameStatsForm] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Game stats hook
+  const { 
+    stats: gameStats, 
+    history: gameStatsHistory, 
+    loading: gameStatsLoading,
+    needsUpdate,
+    getDaysSinceUpdate 
+  } = usePlayerGameStats();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -330,8 +343,9 @@ const PlayerStatsPage = () => {
             border: '1px solid rgba(255,255,255,0.1)',
           }}
         >
-          <div className="flex gap-1">
+        <div className="flex gap-1">
             <GlassTab label="Overview" value="overview" isActive={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={BarChart3} />
+            <GlassTab label="In-Game" value="ingame" isActive={activeTab === 'ingame'} onClick={() => setActiveTab('ingame')} icon={Crosshair} />
             <GlassTab label="History" value="history" isActive={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={Calendar} />
             <GlassTab label="Team" value="team" isActive={activeTab === 'team'} onClick={() => setActiveTab('team')} icon={Users} />
           </div>
@@ -403,6 +417,16 @@ const PlayerStatsPage = () => {
                 </div>
               </GlassCard>
             </div>
+          )}
+
+          {activeTab === 'ingame' && (
+            <GameStatsDisplay
+              stats={gameStats}
+              history={gameStatsHistory}
+              needsUpdate={needsUpdate()}
+              daysSinceUpdate={getDaysSinceUpdate()}
+              onEditStats={() => setShowGameStatsForm(true)}
+            />
           )}
 
           {activeTab === 'history' && (
@@ -521,6 +545,13 @@ const PlayerStatsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Game Stats Form Dialog */}
+      <GameStatsForm
+        open={showGameStatsForm}
+        onOpenChange={setShowGameStatsForm}
+        existingStats={gameStats}
+      />
     </AppLayout>
   );
 };

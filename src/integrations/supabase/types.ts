@@ -1242,6 +1242,171 @@ export type Database = {
           },
         ]
       }
+      player_game_stats: {
+        Row: {
+          accuracy: number | null
+          avg_damage_per_match: number | null
+          avg_survival_time_minutes: number | null
+          created_at: string
+          current_level: number | null
+          current_tier: string | null
+          game_uid: string | null
+          headshot_kills: number | null
+          headshot_percentage: number | null
+          highest_damage_single_match: number | null
+          id: string
+          in_game_name: string | null
+          is_verified: boolean | null
+          kd_ratio: number | null
+          last_updated_at: string | null
+          longest_kill_distance: number | null
+          most_kills_single_match: number | null
+          preferred_map: string | null
+          preferred_mode: string | null
+          top_10_finishes: number | null
+          total_damage: number | null
+          total_deaths: number | null
+          total_kills: number | null
+          total_matches: number | null
+          total_survival_time_seconds: number | null
+          update_reminder_sent: boolean | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+          win_rate: number | null
+          wins: number | null
+        }
+        Insert: {
+          accuracy?: number | null
+          avg_damage_per_match?: number | null
+          avg_survival_time_minutes?: number | null
+          created_at?: string
+          current_level?: number | null
+          current_tier?: string | null
+          game_uid?: string | null
+          headshot_kills?: number | null
+          headshot_percentage?: number | null
+          highest_damage_single_match?: number | null
+          id?: string
+          in_game_name?: string | null
+          is_verified?: boolean | null
+          kd_ratio?: number | null
+          last_updated_at?: string | null
+          longest_kill_distance?: number | null
+          most_kills_single_match?: number | null
+          preferred_map?: string | null
+          preferred_mode?: string | null
+          top_10_finishes?: number | null
+          total_damage?: number | null
+          total_deaths?: number | null
+          total_kills?: number | null
+          total_matches?: number | null
+          total_survival_time_seconds?: number | null
+          update_reminder_sent?: boolean | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+          win_rate?: number | null
+          wins?: number | null
+        }
+        Update: {
+          accuracy?: number | null
+          avg_damage_per_match?: number | null
+          avg_survival_time_minutes?: number | null
+          created_at?: string
+          current_level?: number | null
+          current_tier?: string | null
+          game_uid?: string | null
+          headshot_kills?: number | null
+          headshot_percentage?: number | null
+          highest_damage_single_match?: number | null
+          id?: string
+          in_game_name?: string | null
+          is_verified?: boolean | null
+          kd_ratio?: number | null
+          last_updated_at?: string | null
+          longest_kill_distance?: number | null
+          most_kills_single_match?: number | null
+          preferred_map?: string | null
+          preferred_mode?: string | null
+          top_10_finishes?: number | null
+          total_damage?: number | null
+          total_deaths?: number | null
+          total_kills?: number | null
+          total_matches?: number | null
+          total_survival_time_seconds?: number | null
+          update_reminder_sent?: boolean | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+          win_rate?: number | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
+      player_game_stats_history: {
+        Row: {
+          avg_damage_per_match: number | null
+          current_level: number | null
+          current_tier: string | null
+          headshot_percentage: number | null
+          id: string
+          kd_growth: number | null
+          kd_ratio: number | null
+          kills_growth: number | null
+          period_type: string | null
+          recorded_at: string
+          tier_change: string | null
+          total_deaths: number | null
+          total_kills: number | null
+          total_matches: number | null
+          user_id: string
+          win_rate: number | null
+          wins: number | null
+        }
+        Insert: {
+          avg_damage_per_match?: number | null
+          current_level?: number | null
+          current_tier?: string | null
+          headshot_percentage?: number | null
+          id?: string
+          kd_growth?: number | null
+          kd_ratio?: number | null
+          kills_growth?: number | null
+          period_type?: string | null
+          recorded_at?: string
+          tier_change?: string | null
+          total_deaths?: number | null
+          total_kills?: number | null
+          total_matches?: number | null
+          user_id: string
+          win_rate?: number | null
+          wins?: number | null
+        }
+        Update: {
+          avg_damage_per_match?: number | null
+          current_level?: number | null
+          current_tier?: string | null
+          headshot_percentage?: number | null
+          id?: string
+          kd_growth?: number | null
+          kd_ratio?: number | null
+          kills_growth?: number | null
+          period_type?: string | null
+          recorded_at?: string
+          tier_change?: string | null
+          total_deaths?: number | null
+          total_kills?: number | null
+          total_matches?: number | null
+          user_id?: string
+          win_rate?: number | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
       player_team_members: {
         Row: {
           id: string
