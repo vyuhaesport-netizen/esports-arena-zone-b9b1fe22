@@ -5,7 +5,8 @@ import {
   initOneSignal, 
   loginOneSignal, 
   requestPushPermission, 
-  getPushPermissionStatus 
+  getPushPermissionStatus,
+  canUsePushNotifications
 } from '@/lib/onesignal';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -21,6 +22,12 @@ export const PushNotificationPrompt: React.FC = () => {
 
   const checkAndShowPrompt = useCallback(async () => {
     if (!user) return;
+    
+    // Check if push notifications can work on this domain
+    if (!canUsePushNotifications()) {
+      console.log('Push notifications not available on this domain');
+      return;
+    }
     
     // Check if already enabled
     if (localStorage.getItem(PROMPT_ENABLED_KEY) === 'true') {
@@ -53,11 +60,8 @@ export const PushNotificationPrompt: React.FC = () => {
       }
     }
     
-    // Initialize OneSignal
-    await initOneSignal();
-    
-    // Wait for SDK to load
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Initialize OneSignal (with timeout handling)
+    const initialized = await initOneSignal();
     
     // Final permission check
     const status = getPushPermissionStatus();
@@ -72,14 +76,16 @@ export const PushNotificationPrompt: React.FC = () => {
     // Show prompt after delay
     setTimeout(() => setShowPrompt(true), 1500);
     
-    // Link user to OneSignal
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    
-    await loginOneSignal(user.id, profile?.email);
+    // Link user to OneSignal only if initialized
+    if (initialized) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      await loginOneSignal(user.id, profile?.email);
+    }
   }, [user]);
 
   useEffect(() => {
@@ -89,24 +95,17 @@ export const PushNotificationPrompt: React.FC = () => {
   const handleEnable = async () => {
     setIsLoading(true);
     
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+      toast.error('Request timed out. Please try again.');
+      setShowPrompt(false);
+    }, 15000);
+    
     try {
-      // Try native browser permission first
-      if ('Notification' in window && Notification.permission === 'default') {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          await requestPushPermission();
-          localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
-          localStorage.removeItem(PROMPT_DISMISSED_KEY);
-          setShowPrompt(false);
-          toast.success('Notifications enabled!', {
-            description: 'You will receive tournament and prize alerts.',
-          });
-          return;
-        }
-      }
-      
-      // Fallback to OneSignal
       const granted = await requestPushPermission();
+      
+      clearTimeout(timeoutId);
       
       if (granted) {
         localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
@@ -114,12 +113,18 @@ export const PushNotificationPrompt: React.FC = () => {
         toast.success('Notifications enabled!', {
           description: 'You will receive tournament and prize alerts.',
         });
+      } else {
+        toast.info('Notifications not enabled', {
+          description: 'You can enable them later from settings.',
+        });
       }
       
       setShowPrompt(false);
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Error enabling push:', error);
       toast.error('Failed to enable notifications');
+      setShowPrompt(false);
     } finally {
       setIsLoading(false);
     }
