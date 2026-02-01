@@ -6,12 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { 
   Trophy, Target, Gamepad2, Users, Shield, Star, 
-  Zap, Eye, Heart, Smartphone, Lock, Scale, 
+  Zap, Eye, Smartphone, Lock, Scale, 
   Users2, MessageSquare, Award, Swords, Instagram, Youtube,
-  ExternalLink, Mail, Phone, Code, Sparkles
+  ExternalLink, Mail, Phone
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import abhishekImage from '@/assets/abhishek-shukla.jpg';
 const AboutUs = () => {
   const [socialLinks, setSocialLinks] = useState({
     discord: '',
@@ -448,58 +447,6 @@ const AboutUs = () => {
           </Card>
         )}
 
-        {/* Founder Section - Moved to bottom */}
-        <div className="bg-gradient-to-br from-primary/10 to-transparent rounded-xl border-2 border-borderStrong overflow-hidden">
-          <div className="flex items-center gap-2 p-3 border-b border-border bg-primary/5">
-            <div className="p-1.5 rounded-lg bg-primary/10">
-              <Sparkles className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-bold text-sm">Meet The Creator</h2>
-              <p className="text-xs text-muted-foreground">The Mind Behind Vyuha</p>
-            </div>
-          </div>
-          <div className="p-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20 border-2 border-borderStrong shadow-lg">
-                <AvatarImage src={abhishekImage} alt="Abhishek Shukla - Founder of Vyuha Esport" />
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">AS</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="font-bold text-base" itemProp="name">Abhishek Shukla</h3>
-                <p className="text-xs text-muted-foreground font-medium" itemProp="jobTitle">Founder & Creator of Vyuha Esport</p>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-secondary/40 text-foreground border border-borderStrong">
-                    🎓 Engineering Student
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-secondary/40 text-foreground border border-borderStrong">
-                    18 Years Old
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-secondary/40 text-foreground border border-borderStrong">
-                    🧠 Tech Genius
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-muted/50 rounded-lg border border-border">
-              <p className="text-xs text-muted-foreground leading-relaxed" itemProp="description">
-                Built this entire platform <strong className="text-foreground">from 0 to 100 in record time</strong> with a vision to revolutionize Indian esports. Created specifically for <strong className="text-foreground">esport players</strong> who deserve a fair, transparent, and professional platform to compete.
-              </p>
-            </div>
-            <div className="mt-3 flex items-center justify-center">
-              <a
-                href="https://www.instagram.com/abhishek.shhh?igsh=dmozNHE1dzl3dTN4"
-                target="_blank"
-                rel="noopener noreferrer"
-                itemProp="sameAs"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/40 border-2 border-borderStrong hover:bg-secondary/60 transition-colors"
-              >
-                <Instagram className="h-4 w-4 text-primary" />
-                <span className="text-xs font-medium text-foreground">Follow @abhishek.shhh</span>
-              </a>
-            </div>
-          </div>
-        </div>
 
         <p className="text-center text-xs text-muted-foreground pt-1">
           Join thousands of gamers. Compete. Win. Rise. 🎮
