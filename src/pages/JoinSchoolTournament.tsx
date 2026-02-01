@@ -773,8 +773,25 @@ const JoinSchoolTournament = () => {
                 ) : (
                   <Card className="text-center py-8">
                     <CardContent>
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground mb-3" />
-                      <p className="text-muted-foreground text-sm">Loading your room...</p>
+                      <Clock className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                      <h3 className="font-semibold text-sm mb-1">Room Not Assigned Yet</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {tournament.status === 'registration' 
+                          ? "Rooms will be assigned when the organizer starts the tournament."
+                          : tournament.status === 'ongoing' && myTeam?.is_eliminated
+                            ? "You have been eliminated from this tournament."
+                            : "Waiting for room assignment by the organizer."}
+                      </p>
+                      {myTeam && (
+                        <div className="mt-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
+                          <p className="text-xs font-medium">Your Team: {myTeam.team_name}</p>
+                          {myTeamNumber && (
+                            <Badge variant="outline" className="mt-1 text-[10px]">
+                              #{myTeamNumber}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}
