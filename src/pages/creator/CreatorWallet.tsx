@@ -563,7 +563,7 @@ const CreatorWallet = () => {
             <Button 
               className="bg-green-600 hover:bg-green-700"
               onClick={handleWithdraw}
-              disabled={withdrawing || withdrawRequest.amount < 50 || !withdrawRequest.upi_id.trim()}
+              disabled={withdrawing || withdrawRequest.amount < 10 || !withdrawRequest.upi_id.trim()}
             >
               {withdrawing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
               Withdraw ₹{withdrawRequest.amount || 0}
