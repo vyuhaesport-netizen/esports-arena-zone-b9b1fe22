@@ -33,6 +33,10 @@ export interface PlayerGameStats {
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+  // Monthly tracking fields
+  stats_month: string | null;
+  stats_valid_until: string | null;
+  is_expired: boolean;
 }
 
 export interface StatsHistoryEntry {
@@ -213,11 +217,11 @@ export const usePlayerGameStats = () => {
   const needsUpdate = (): boolean => {
     if (!stats) return true;
     
-    const lastUpdate = new Date(stats.last_updated_at);
-    const now = new Date();
-    const daysSinceUpdate = (now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24);
+    // Check if stats are expired (new month)
+    if (stats.is_expired) return true;
+    if (stats.stats_valid_until && new Date(stats.stats_valid_until) <= new Date()) return true;
     
-    return daysSinceUpdate >= 7; // Needs update after 7 days
+    return false;
   };
 
   const getDaysSinceUpdate = (): number => {
@@ -226,6 +230,26 @@ export const usePlayerGameStats = () => {
     const lastUpdate = new Date(stats.last_updated_at);
     const now = new Date();
     return Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const isStatsExpired = (): boolean => {
+    if (!stats) return true;
+    if (stats.is_expired) return true;
+    if (stats.stats_valid_until && new Date(stats.stats_valid_until) <= new Date()) return true;
+    return false;
+  };
+
+  const getStatsMonth = (): string | null => {
+    if (!stats?.stats_month) return null;
+    return new Date(stats.stats_month).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  };
+
+  const getDaysUntilExpiry = (): number => {
+    if (!stats?.stats_valid_until) return 0;
+    const validUntil = new Date(stats.stats_valid_until);
+    const now = new Date();
+    const diff = validUntil.getTime() - now.getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   };
 
   useEffect(() => {
@@ -242,6 +266,9 @@ export const usePlayerGameStats = () => {
     saveStats,
     needsUpdate,
     getDaysSinceUpdate,
+    isStatsExpired,
+    getStatsMonth,
+    getDaysUntilExpiry,
     refetch: fetchStats,
   };
 };

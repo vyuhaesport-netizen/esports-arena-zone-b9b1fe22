@@ -17,10 +17,13 @@ interface GameStatsDisplayProps {
   history: StatsHistoryEntry[];
   needsUpdate: boolean;
   daysSinceUpdate: number;
+  isExpired?: boolean;
+  statsMonth?: string | null;
+  daysUntilExpiry?: number;
   onEditStats: () => void;
 }
 
-const GameStatsDisplay = ({ stats, history, needsUpdate, daysSinceUpdate, onEditStats }: GameStatsDisplayProps) => {
+const GameStatsDisplay = ({ stats, history, needsUpdate, daysSinceUpdate, isExpired, statsMonth, daysUntilExpiry, onEditStats }: GameStatsDisplayProps) => {
   // Glass Card Component
   const GlassCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
     <div 
@@ -75,8 +78,32 @@ const GameStatsDisplay = ({ stats, history, needsUpdate, daysSinceUpdate, onEdit
 
   return (
     <div className="space-y-3">
-      {/* Update Reminder Banner */}
-      {needsUpdate && (
+      {/* Stats Expired Banner */}
+      {isExpired && (
+        <div 
+          className="rounded-xl p-3 flex items-center gap-3"
+          style={{
+            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+          }}
+        >
+          <Clock className="h-5 w-5 text-destructive shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-destructive">Stats Expired - New Month!</p>
+            <p className="text-[10px] text-muted-foreground">
+              Update your stats to keep your player resume active
+            </p>
+          </div>
+          <Button size="sm" variant="destructive" onClick={onEditStats} className="shrink-0 h-7 text-xs gap-1">
+            <Edit2 className="h-3 w-3" />
+            Update Now
+          </Button>
+        </div>
+      )}
+
+      {/* Update Reminder Banner (only if not expired) */}
+      {!isExpired && needsUpdate && (
         <div 
           className="rounded-xl p-3 flex items-center gap-3"
           style={{
@@ -96,6 +123,20 @@ const GameStatsDisplay = ({ stats, history, needsUpdate, daysSinceUpdate, onEdit
             <Edit2 className="h-3 w-3" />
             Update
           </Button>
+        </div>
+      )}
+
+      {/* Stats Month & Expiry Info */}
+      {statsMonth && !isExpired && (
+        <div className="flex items-center justify-between text-[10px] px-1">
+          <span className="text-muted-foreground">
+            Stats for: <span className="font-medium text-foreground">{statsMonth}</span>
+          </span>
+          {daysUntilExpiry !== undefined && daysUntilExpiry <= 7 && (
+            <Badge variant="outline" className="text-[9px] border-warning/30 text-warning bg-warning/10">
+              Expires in {daysUntilExpiry} days
+            </Badge>
+          )}
         </div>
       )}
 

@@ -69,6 +69,9 @@ const PlayerStatsPage = () => {
     loading: gameStatsLoading,
     needsUpdate,
     getDaysSinceUpdate,
+    isStatsExpired,
+    getStatsMonth,
+    getDaysUntilExpiry,
     refetch: refetchGameStats
   } = usePlayerGameStats();
 
@@ -426,6 +429,9 @@ const PlayerStatsPage = () => {
               history={gameStatsHistory}
               needsUpdate={needsUpdate()}
               daysSinceUpdate={getDaysSinceUpdate()}
+              isExpired={isStatsExpired()}
+              statsMonth={getStatsMonth()}
+              daysUntilExpiry={getDaysUntilExpiry()}
               onEditStats={() => setShowGameStatsForm(true)}
             />
           )}

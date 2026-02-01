@@ -65,6 +65,7 @@ import {
   Palette
 } from 'lucide-react';
 import { TeamAvatarGallery } from '@/components/TeamAvatarGallery';
+import { PlayerStatsPreview } from '@/components/PlayerStatsPreview';
 import { copyToClipboard, tryNativeShare } from '@/utils/share';
 
 interface PlayerTeam {
@@ -109,6 +110,24 @@ interface JoinRequest {
     in_game_name: string | null;
     game_uid: string | null;
   };
+  gameStats?: {
+    game_uid: string | null;
+    in_game_name: string | null;
+    current_tier: string | null;
+    current_level: number | null;
+    total_kills: number | null;
+    total_deaths: number | null;
+    total_matches: number | null;
+    wins: number | null;
+    kd_ratio: number | null;
+    win_rate: number | null;
+    headshot_percentage: number | null;
+    avg_damage_per_match: number | null;
+    is_expired: boolean | null;
+    stats_valid_until: string | null;
+    stats_month: string | null;
+    is_verified: boolean | null;
+  } | null;
 }
 
 const TeamPage = () => {
@@ -321,12 +340,21 @@ const TeamPage = () => {
       if (requests) {
         const requestsWithProfiles = await Promise.all(
           requests.map(async (request) => {
+            // Fetch profile
             const { data: profile } = await supabase
               .from('profiles')
               .select('username, full_name, avatar_url, in_game_name, game_uid')
               .eq('user_id', request.user_id)
               .single();
-            return { ...request, profile };
+            
+            // Fetch game stats
+            const { data: gameStats } = await supabase
+              .from('player_game_stats')
+              .select('game_uid, in_game_name, current_tier, current_level, total_kills, total_deaths, total_matches, wins, kd_ratio, win_rate, headshot_percentage, avg_damage_per_match, is_expired, stats_valid_until, stats_month, is_verified')
+              .eq('user_id', request.user_id)
+              .maybeSingle();
+            
+            return { ...request, profile, gameStats };
           })
         );
         setJoinRequests(requestsWithProfiles);
@@ -1273,6 +1301,12 @@ const TeamPage = () => {
                             </p>
                           </div>
                         </div>
+
+                        {/* Player Game Stats Preview */}
+                        <div className="mt-3">
+                          <PlayerStatsPreview stats={request.gameStats || null} />
+                        </div>
+
                         <div className="flex gap-2 mt-4">
                           <Button
                             size="sm"

@@ -1256,6 +1256,7 @@ export type Database = {
           highest_damage_single_match: number | null
           id: string
           in_game_name: string | null
+          is_expired: boolean | null
           is_verified: boolean | null
           kd_ratio: number | null
           last_updated_at: string | null
@@ -1263,6 +1264,8 @@ export type Database = {
           most_kills_single_match: number | null
           preferred_map: string | null
           preferred_mode: string | null
+          stats_month: string | null
+          stats_valid_until: string | null
           top_10_finishes: number | null
           total_damage: number | null
           total_deaths: number | null
@@ -1290,6 +1293,7 @@ export type Database = {
           highest_damage_single_match?: number | null
           id?: string
           in_game_name?: string | null
+          is_expired?: boolean | null
           is_verified?: boolean | null
           kd_ratio?: number | null
           last_updated_at?: string | null
@@ -1297,6 +1301,8 @@ export type Database = {
           most_kills_single_match?: number | null
           preferred_map?: string | null
           preferred_mode?: string | null
+          stats_month?: string | null
+          stats_valid_until?: string | null
           top_10_finishes?: number | null
           total_damage?: number | null
           total_deaths?: number | null
@@ -1324,6 +1330,7 @@ export type Database = {
           highest_damage_single_match?: number | null
           id?: string
           in_game_name?: string | null
+          is_expired?: boolean | null
           is_verified?: boolean | null
           kd_ratio?: number | null
           last_updated_at?: string | null
@@ -1331,6 +1338,8 @@ export type Database = {
           most_kills_single_match?: number | null
           preferred_map?: string | null
           preferred_mode?: string | null
+          stats_month?: string | null
+          stats_valid_until?: string | null
           top_10_finishes?: number | null
           total_damage?: number | null
           total_deaths?: number | null

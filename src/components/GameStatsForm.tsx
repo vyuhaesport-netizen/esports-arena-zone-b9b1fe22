@@ -82,6 +82,14 @@ const GameStatsForm = ({ open, onOpenChange, existingStats, onSaveSuccess }: Gam
     try {
       setSaving(true);
       
+      // Calculate the current month and next month for expiry
+      const currentMonth = new Date();
+      currentMonth.setDate(1);
+      currentMonth.setHours(0, 0, 0, 0);
+      
+      const nextMonth = new Date(currentMonth);
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      
       if (existingStats) {
         // Update existing stats
         const { error } = await supabase
@@ -90,6 +98,9 @@ const GameStatsForm = ({ open, onOpenChange, existingStats, onSaveSuccess }: Gam
             ...formData,
             last_updated_at: new Date().toISOString(),
             update_reminder_sent: false,
+            stats_month: currentMonth.toISOString().split('T')[0],
+            stats_valid_until: nextMonth.toISOString().split('T')[0],
+            is_expired: false,
           })
           .eq('user_id', user.id);
         
@@ -102,6 +113,9 @@ const GameStatsForm = ({ open, onOpenChange, existingStats, onSaveSuccess }: Gam
             user_id: user.id,
             ...formData,
             last_updated_at: new Date().toISOString(),
+            stats_month: currentMonth.toISOString().split('T')[0],
+            stats_valid_until: nextMonth.toISOString().split('T')[0],
+            is_expired: false,
           });
         
         if (error) throw error;
