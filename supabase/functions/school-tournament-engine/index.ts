@@ -148,17 +148,36 @@ Deno.serve(async (req) => {
         
         const teamsPerRoom = tournament.game === "BGMI" ? 25 : 12;
         
+        // CRITICAL: For Round 1, set all teams to current_round = 1 first
+        // This fixes the bug where teams registered with current_round = 0 or NULL
+        if (roundNumber === 1) {
+          console.log("Round 1: Setting all teams to current_round = 1");
+          const { error: updateError } = await supabase
+            .from("school_tournament_teams")
+            .update({ current_round: 1, updated_at: new Date().toISOString() })
+            .eq("tournament_id", tournamentId)
+            .eq("is_eliminated", false)
+            .or("current_round.is.null,current_round.eq.0");
+          
+          if (updateError) {
+            console.error("Failed to update teams for round 1:", updateError);
+          }
+        }
+        
         // Get active teams for this round
         const { data: activeTeams, error: teamsError } = await supabase
           .from("school_tournament_teams")
           .select("id")
           .eq("tournament_id", tournamentId)
           .eq("is_eliminated", false)
-          .eq("current_round", roundNumber);
+          .eq("current_round", roundNumber)
+          .range(0, 10000); // Ensure we get ALL teams (bypass 1000 limit)
         
         if (teamsError) {
           throw new Error("Failed to fetch teams: " + teamsError.message);
         }
+        
+        console.log(`Found ${activeTeams?.length || 0} active teams for round ${roundNumber}`);
         
         if (!activeTeams || activeTeams.length === 0) {
           throw new Error("No active teams found for this round");
