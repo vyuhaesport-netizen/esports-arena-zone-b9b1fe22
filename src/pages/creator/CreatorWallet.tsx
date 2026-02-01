@@ -529,6 +529,13 @@ const CreatorWallet = () => {
                 max={balance?.available_dhana || 0}
                 min={10}
               />
+              {withdrawRequest.amount > (balance?.available_dhana || 0) ? (
+                <p className="text-xs text-destructive">
+                  Amount exceeds available balance ({balance?.available_dhana || 0} Dhana).
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">Max: {balance?.available_dhana || 0} Dhana</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>UPI ID *</Label>
