@@ -3,8 +3,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Medal, Crown, Users, Target, ChevronDown, ChevronUp, Gamepad2 } from 'lucide-react';
-import vyuhaLogo from '@/assets/vyuha-logo.png';
+import { Loader2, Medal, Crown, Users, Target, ChevronDown, ChevronUp, Gamepad2, Trophy } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface TeamMember {
@@ -224,8 +223,8 @@ const Leaderboard = () => {
     if (topTeams.length === 0) {
       return (
         <div className="text-center py-12">
-          <img src={vyuhaLogo} alt="Vyuha" className="h-12 w-12 mx-auto opacity-50 mb-3 rounded-full bg-white" />
-          <p className="text-muted-foreground">No teams available yet</p>
+          <Users className="h-10 w-10 mx-auto opacity-50 mb-3 text-muted-foreground" />
+          <p className="text-muted-foreground text-sm">No teams available yet</p>
           <p className="text-xs text-muted-foreground mt-1">Create a team to appear here!</p>
         </div>
       );
@@ -327,8 +326,8 @@ const Leaderboard = () => {
     if (topPlayers.length === 0) {
       return (
         <div className="text-center py-12">
-          <img src={vyuhaLogo} alt="Vyuha" className="h-12 w-12 mx-auto opacity-50 mb-3 rounded-full bg-white" />
-          <p className="text-muted-foreground">No data available yet</p>
+          <Target className="h-10 w-10 mx-auto opacity-50 mb-3 text-muted-foreground" />
+          <p className="text-muted-foreground text-sm">No data available yet</p>
           <p className="text-xs text-muted-foreground mt-1">Earn stats points to climb the ranks!</p>
         </div>
       );
@@ -376,11 +375,13 @@ const Leaderboard = () => {
 
   return (
     <AppLayout title="Leaderboard" showBack>
-      {/* Header Banner */}
+      {/* Header Banner - Clean text-only design */}
       <div className="bg-gradient-to-br from-primary/15 to-primary/5 p-4 text-center">
-        <img src={vyuhaLogo} alt="Vyuha" className="w-12 h-12 mx-auto mb-2 rounded-full object-cover" />
-        <h1 className="text-lg font-bold">Leaderboard</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Top performers on Vyuha Esport</p>
+        <div className="flex items-center justify-center gap-2 mb-1">
+          <Trophy className="h-5 w-5 text-primary" />
+          <h1 className="text-lg font-bold">Leaderboard</h1>
+        </div>
+        <p className="text-xs text-muted-foreground">Top performers on Vyuha Esport</p>
       </div>
 
       {/* Tab Selector */}
