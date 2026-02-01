@@ -193,6 +193,8 @@ const OrganizerDashboard = () => {
         .from('tournaments')
         .select('*')
         .eq('created_by', user.id)
+        .neq('status', 'completed')
+        .neq('status', 'cancelled')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
