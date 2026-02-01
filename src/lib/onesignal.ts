@@ -69,12 +69,27 @@ interface NotificationEventData {
 // OneSignal App ID - This is a PUBLIC/PUBLISHABLE key, safe to include in frontend
 const ONESIGNAL_APP_ID = '05070060-1672-4460-b1a2-51610beda417';
 
-let isInitialized = false;
-let initPromise: Promise<void> | null = null;
+// Allowed domains for OneSignal
+const ALLOWED_DOMAINS = ['vyuhaesport.in', 'esports-arena-zone.lovable.app'];
 
-export const initOneSignal = async (): Promise<void> => {
+let isInitialized = false;
+let initFailed = false;
+let initPromise: Promise<boolean> | null = null;
+
+// Check if current domain is allowed
+const isAllowedDomain = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname;
+  return ALLOWED_DOMAINS.some(domain => hostname.includes(domain)) || hostname === 'localhost';
+};
+
+export const initOneSignal = async (): Promise<boolean> => {
   if (isInitialized) {
-    return;
+    return true;
+  }
+
+  if (initFailed) {
+    return false;
   }
 
   if (initPromise) {
@@ -82,10 +97,23 @@ export const initOneSignal = async (): Promise<void> => {
   }
 
   if (typeof window === 'undefined') {
-    return;
+    return false;
   }
 
-  initPromise = new Promise<void>((resolve) => {
+  // Check domain before attempting to initialize
+  if (!isAllowedDomain()) {
+    console.log('OneSignal: Domain not allowed, skipping initialization');
+    initFailed = true;
+    return false;
+  }
+
+  initPromise = new Promise<boolean>((resolve) => {
+    const timeout = setTimeout(() => {
+      console.warn('OneSignal initialization timed out');
+      initFailed = true;
+      resolve(false);
+    }, 10000); // 10 second timeout
+
     try {
       // Initialize deferred array
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -95,6 +123,11 @@ export const initOneSignal = async (): Promise<void> => {
         const script = document.createElement('script');
         script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
         script.defer = true;
+        script.onerror = () => {
+          clearTimeout(timeout);
+          initFailed = true;
+          resolve(false);
+        };
         document.head.appendChild(script);
       }
 
@@ -131,39 +164,69 @@ export const initOneSignal = async (): Promise<void> => {
             }
           });
 
+          clearTimeout(timeout);
           isInitialized = true;
           console.log('OneSignal initialized successfully');
-          resolve();
+          resolve(true);
         } catch (error) {
+          clearTimeout(timeout);
           console.error('OneSignal init error:', error);
-          resolve();
+          initFailed = true;
+          resolve(false);
         }
       });
     } catch (error) {
+      clearTimeout(timeout);
       console.error('Failed to initialize OneSignal:', error);
-      resolve();
+      initFailed = true;
+      resolve(false);
     }
   });
 
   return initPromise;
 };
 
+export const isOneSignalAvailable = (): boolean => {
+  return isInitialized && !initFailed;
+};
+
+export const canUsePushNotifications = (): boolean => {
+  return isAllowedDomain() && 'Notification' in window;
+};
+
 export const loginOneSignal = async (userId: string, email?: string): Promise<void> => {
   if (!isInitialized) {
-    await initOneSignal();
+    const success = await initOneSignal();
+    if (!success) return;
   }
 
-  // Wait for OneSignal to be available
-  await new Promise<void>((resolve) => {
-    const check = () => {
-      if (window.OneSignal) {
-        resolve();
-      } else {
-        setTimeout(check, 100);
-      }
-    };
-    check();
-  });
+  if (!isInitialized) return;
+
+  // Wait for OneSignal with timeout
+  const waitForOneSignal = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 50; // 5 seconds max
+      
+      const check = () => {
+        if (window.OneSignal) {
+          resolve(true);
+        } else if (attempts >= maxAttempts) {
+          resolve(false);
+        } else {
+          attempts++;
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  };
+
+  const available = await waitForOneSignal();
+  if (!available) {
+    console.warn('OneSignal not available after waiting');
+    return;
+  }
 
   try {
     if (window.OneSignal) {
@@ -192,24 +255,51 @@ export const logoutOneSignal = async (): Promise<void> => {
 };
 
 export const requestPushPermission = async (): Promise<boolean> => {
-  if (!isInitialized) {
-    await initOneSignal();
+  // First try native browser permission if OneSignal isn't available
+  if (!isInitialized || initFailed) {
+    if ('Notification' in window && Notification.permission === 'default') {
+      try {
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+      } catch {
+        return false;
+      }
+    }
+    return Notification.permission === 'granted';
   }
 
-  // Wait for OneSignal
-  await new Promise<void>((resolve) => {
-    const check = () => {
-      if (window.OneSignal) {
-        resolve();
-      } else {
-        setTimeout(check, 100);
-      }
-    };
-    check();
-  });
+  // Wait for OneSignal with timeout
+  const waitForOneSignal = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 30; // 3 seconds max
+      
+      const check = () => {
+        if (window.OneSignal) {
+          resolve(true);
+        } else if (attempts >= maxAttempts) {
+          resolve(false);
+        } else {
+          attempts++;
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  };
 
-  if (!window.OneSignal) {
-    console.warn('OneSignal not available');
+  const available = await waitForOneSignal();
+  
+  if (!available || !window.OneSignal) {
+    console.warn('OneSignal not available, using native permission');
+    if ('Notification' in window) {
+      try {
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+      } catch {
+        return false;
+      }
+    }
     return false;
   }
 

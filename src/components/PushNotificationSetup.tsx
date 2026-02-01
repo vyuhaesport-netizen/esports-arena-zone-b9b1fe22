@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Bell, BellOff, BellRing, Check, Loader2 } from 'lucide-react';
+import { Bell, BellOff, BellRing, Check, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -7,7 +7,8 @@ import {
   loginOneSignal, 
   logoutOneSignal, 
   requestPushPermission, 
-  getPushPermissionStatus 
+  getPushPermissionStatus,
+  canUsePushNotifications
 } from '@/lib/onesignal';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
   const [permissionStatus, setPermissionStatus] = useState<'default' | 'granted' | 'denied'>('default');
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [isAvailable, setIsAvailable] = useState(true);
 
   const updatePermissionStatus = useCallback(() => {
     if ('Notification' in window) {
@@ -43,15 +45,19 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
     const setup = async () => {
       setIsInitializing(true);
       
-      await initOneSignal();
+      // Check if push notifications are available on this domain
+      if (!canUsePushNotifications()) {
+        setIsAvailable(false);
+        setIsInitializing(false);
+        return;
+      }
       
-      // Wait for SDK
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const initialized = await initOneSignal();
       
       updatePermissionStatus();
       
-      // Link user to OneSignal
-      if (user) {
+      // Link user to OneSignal only if initialized
+      if (user && initialized) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('email')
@@ -76,29 +82,16 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
   const handleEnablePush = async () => {
     setIsLoading(true);
     
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+      toast.error('Request timed out. Please try again.');
+    }, 15000);
+    
     try {
-      // Try native browser permission first
-      if ('Notification' in window && Notification.permission === 'default') {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          await requestPushPermission();
-          setPermissionStatus('granted');
-          localStorage.setItem(PROMPT_ENABLED_KEY, 'true');
-          toast.success('Notifications enabled!', {
-            description: 'You will now receive important updates.',
-          });
-          return;
-        } else if (permission === 'denied') {
-          setPermissionStatus('denied');
-          toast.error('Notifications blocked', {
-            description: 'Please enable in browser settings.',
-          });
-          return;
-        }
-      }
-      
-      // Fallback to OneSignal
       const granted = await requestPushPermission();
+      
+      clearTimeout(timeoutId);
       
       if (granted) {
         setPermissionStatus('granted');
@@ -108,13 +101,18 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
         });
       } else {
         updatePermissionStatus();
-        if (Notification.permission === 'denied') {
+        if ('Notification' in window && Notification.permission === 'denied') {
           toast.error('Notifications blocked', {
             description: 'Please enable in browser settings.',
+          });
+        } else {
+          toast.info('Notifications not enabled', {
+            description: 'You can try again later.',
           });
         }
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Error enabling push:', error);
       toast.error('Failed to enable notifications');
     } finally {
@@ -124,6 +122,28 @@ export const PushNotificationSetup: React.FC<PushNotificationSetupProps> = ({ va
 
   // Don't render if not logged in
   if (!user) return null;
+
+  // Show unavailable state for unsupported domains
+  if (!isAvailable) {
+    return variant === 'card' ? (
+      <Card className="bg-muted/50 border-border">
+        <CardContent className="p-4 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+            <AlertCircle className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-sm text-foreground">Push Not Available</p>
+            <p className="text-xs text-muted-foreground">Available on published app only</p>
+          </div>
+        </CardContent>
+      </Card>
+    ) : (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <AlertCircle className="h-4 w-4" />
+        <span>Push available on published app</span>
+      </div>
+    );
+  }
 
   // Show loading state
   if (isInitializing) {
