@@ -192,6 +192,8 @@ const CreatorDashboard = () => {
         .select('*')
         .eq('created_by', user.id)
         .eq('tournament_type', 'creator')
+        .neq('status', 'completed')
+        .neq('status', 'cancelled')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
