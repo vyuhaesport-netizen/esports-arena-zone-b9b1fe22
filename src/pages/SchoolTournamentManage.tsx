@@ -420,18 +420,13 @@ const SchoolTournamentManage = () => {
   };
 
   const handleEndRoom = async (roomId: string) => {
-    setProcessing(true);
-    try {
-      await supabase
-        .from('school_tournament_rooms')
-        .update({ status: 'completed' })
-        .eq('id', roomId);
-      toast.success('Room ended!');
-      fetchTournamentData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to end room');
-    } finally {
-      setProcessing(false);
+    // IMPORTANT: Rooms can ONLY be completed by declaring a winner
+    // This prevents broken progression where rooms are "completed" without advancing teams
+    const room = rooms.find(r => r.id === roomId);
+    if (room) {
+      setSelectedRoom(room);
+      setDeclareWinnerDialogOpen(true);
+      toast.info('Please select a winner to end this room');
     }
   };
 
@@ -461,20 +456,10 @@ const SchoolTournamentManage = () => {
       toast.error('Select at least one room');
       return;
     }
-    setProcessing(true);
-    try {
-      await supabase
-        .from('school_tournament_rooms')
-        .update({ status: 'completed' })
-        .in('id', selectedRoomIds);
-      toast.success(`${selectedRoomIds.length} rooms ended!`);
-      setSelectedRoomIds([]);
-      fetchTournamentData();
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to end rooms');
-    } finally {
-      setProcessing(false);
-    }
+    // IMPORTANT: Bulk ending rooms is NOT supported - each room needs a winner declared
+    // This prevents broken progression where rooms are "completed" without advancing teams
+    toast.error('Cannot bulk end rooms. Please declare winner for each room individually to ensure proper progression.');
+    setSelectedRoomIds([]);
   };
 
   const handleDeclareRoomWinner = async () => {
