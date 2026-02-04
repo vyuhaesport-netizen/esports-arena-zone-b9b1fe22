@@ -2,9 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Paperclip, X, Send, MessageSquare, Clock, Bot, Loader2, 
-  Ticket, ChevronRight, Sparkles, CheckCircle, AlertCircle, ArrowRight,
-  Mic, MicOff, Image, Volume2, VolumeX, ThumbsUp, ThumbsDown, Plus,
-  HelpCircle, FileText, Shield, Wallet, Trophy, Users, Headphones
+  ChevronRight, Sparkles, CheckCircle, AlertCircle,
+  Volume2, VolumeX, ThumbsUp, ThumbsDown, Plus,
+  FileText, Headphones
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -49,12 +49,6 @@ interface Profile {
 
 type ViewType = 'main' | 'ticket' | 'history';
 
-const quickActions = [
-  { icon: Trophy, label: 'Tournament Help', query: 'How do I join a tournament?' },
-  { icon: Wallet, label: 'Wallet Issues', query: 'Help with my wallet balance' },
-  { icon: Shield, label: 'Account Security', query: 'My account was banned' },
-  { icon: Users, label: 'Team Support', query: 'How do I create a team?' },
-];
 
 const HelpSupport = () => {
   const navigate = useNavigate();
@@ -78,15 +72,9 @@ const HelpSupport = () => {
   const [isFocused, setIsFocused] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Voice & Media state
-  const [isRecording, setIsRecording] = useState(false);
+  // Voice state (for text-to-speech)
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -159,25 +147,6 @@ const HelpSupport = () => {
     setAttachments(prev => [...prev, ...validFiles]);
   };
 
-  const handleChatImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    if (!file.type.startsWith('image/')) {
-      toast({ title: 'Invalid file', description: 'Please select an image', variant: 'destructive' });
-      return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ title: 'Image too large', description: 'Maximum 5MB allowed', variant: 'destructive' });
-      return;
-    }
-    
-    setSelectedImage(file);
-    const reader = new FileReader();
-    reader.onload = (e) => setImagePreview(e.target?.result as string);
-    reader.readAsDataURL(file);
-  };
 
   const removeAttachment = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index));
@@ -241,42 +210,6 @@ const HelpSupport = () => {
   const scrollToBottom = () => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => { scrollToBottom(); }, [chatMessages]);
 
-  // Voice Recording
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        
-        // For now, we'll show a message that voice is being processed
-        setChatInput('🎤 [Voice message recorded - processing...]');
-        toast({ title: 'Voice Recorded', description: 'Voice message captured. AI will process your query.' });
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      toast({ title: 'Recording...', description: 'Speak now. Tap again to stop.' });
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-      toast({ title: 'Microphone Error', description: 'Could not access microphone', variant: 'destructive' });
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
 
   // Text-to-Speech for AI responses
   const speakResponse = (text: string) => {
@@ -301,39 +234,15 @@ const HelpSupport = () => {
   };
 
   const handleAiChat = async () => {
-    if ((!chatInput.trim() && !selectedImage) || isAiTyping) return;
-
-    let messageContent = chatInput.trim();
-    let imageUrl: string | undefined;
-
-    // Upload image if selected
-    if (selectedImage && user) {
-      try {
-        const fileName = `ai-chat/${user.id}/${Date.now()}_${selectedImage.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('chat-media')
-          .upload(fileName, selectedImage);
-        
-        if (!uploadError && uploadData) {
-          const { data: urlData } = supabase.storage.from('chat-media').getPublicUrl(uploadData.path);
-          imageUrl = urlData.publicUrl;
-          messageContent = messageContent || '[Image shared for context]';
-        }
-      } catch (err) {
-        console.error('Image upload error:', err);
-      }
-    }
+    if (!chatInput.trim() || isAiTyping) return;
 
     const userMessage: ChatMessage = { 
       role: 'user', 
-      content: messageContent, 
-      timestamp: new Date(),
-      imageUrl 
+      content: chatInput.trim(), 
+      timestamp: new Date()
     };
     setChatMessages(prev => [...prev, userMessage]);
     setChatInput('');
-    setSelectedImage(null);
-    setImagePreview(null);
     setIsAiTyping(true);
 
     try {
@@ -629,25 +538,6 @@ const HelpSupport = () => {
                   </p>
                 </div>
 
-                {/* Quick Actions Grid */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  {quickActions.map((action, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setChatInput(action.query);
-                        inputRef.current?.focus();
-                      }}
-                      className="group flex flex-col items-center gap-2 p-4 bg-card/50 hover:bg-card border border-border/50 hover:border-primary/30 rounded-2xl text-center transition-all hover:shadow-lg hover:shadow-primary/5"
-                    >
-                      <div className="p-2.5 bg-primary/10 group-hover:bg-primary/20 rounded-xl transition-colors">
-                        <action.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <span className="text-xs font-medium text-foreground">{action.label}</span>
-                    </button>
-                  ))}
-                </div>
-
                 {/* Capabilities Info */}
                 <div className="bg-gradient-to-r from-primary/5 via-primary/3 to-transparent rounded-2xl p-4 border border-primary/10">
                   <div className="flex items-start gap-3">
@@ -753,53 +643,12 @@ const HelpSupport = () => {
           </div>
         </ScrollArea>
 
-        {/* Image Preview */}
-        {imagePreview && (
-          <div className="px-4 pb-2">
-            <div className="relative inline-block">
-              <img src={imagePreview} alt="Preview" className="h-20 rounded-xl border border-border/50" />
-              <button
-                onClick={() => { setSelectedImage(null); setImagePreview(null); }}
-                className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Modern Input Box */}
         <div className="p-4 pt-2">
           <div className={`relative bg-card/80 backdrop-blur-xl border rounded-2xl transition-all duration-200 ${
             isFocused ? 'border-primary/50 shadow-xl shadow-primary/5' : 'border-border/50'
           }`}>
-            {/* Media Buttons */}
-            <div className="absolute left-3 bottom-3 flex items-center gap-1">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleChatImageSelect}
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
-              >
-                <Image className="h-4 w-4" />
-              </button>
-              <button
-                onClick={isRecording ? stopRecording : startRecording}
-                className={`p-2 rounded-lg transition-colors ${
-                  isRecording 
-                    ? 'bg-red-500/20 text-red-500 animate-pulse' 
-                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </button>
-            </div>
-            
             <Textarea
               ref={inputRef}
               value={chatInput}
@@ -815,12 +664,12 @@ const HelpSupport = () => {
               placeholder="Ask me anything..."
               disabled={isAiTyping}
               rows={1}
-              className="w-full bg-transparent border-0 resize-none py-4 pl-24 pr-14 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:outline-none min-h-[56px] max-h-32"
+              className="w-full bg-transparent border-0 resize-none py-4 px-4 pr-14 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:outline-none min-h-[56px] max-h-32"
               style={{ fieldSizing: 'content' } as React.CSSProperties}
             />
             <Button
               onClick={handleAiChat}
-              disabled={(!chatInput.trim() && !selectedImage) || isAiTyping}
+              disabled={!chatInput.trim() || isAiTyping}
               size="icon"
               className="absolute right-3 bottom-3 h-8 w-8 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-30 transition-all"
             >
@@ -828,7 +677,7 @@ const HelpSupport = () => {
             </Button>
           </div>
           <p className="text-center text-[10px] text-muted-foreground/60 mt-2">
-            Vyuha AI • Voice & Image Support • Powered by DeepSeek R1
+            Vyuha AI • Powered by DeepSeek R1
           </p>
         </div>
       </div>
