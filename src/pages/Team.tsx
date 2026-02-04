@@ -182,6 +182,7 @@ const TeamPage = () => {
   const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [myRequests, setMyRequests] = useState<(JoinRequest & { teamName: string })[]>([]);
   const [requirements, setRequirements] = useState<TeamRequirement[]>([]);
+  const [userPreferredGame, setUserPreferredGame] = useState<string | null>(null);
   const [myTeamRequirements, setMyTeamRequirements] = useState<TeamRequirement[]>([]);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
@@ -233,12 +234,35 @@ const TeamPage = () => {
 
   useEffect(() => {
     if (user) {
+      fetchUserPreferredGame();
       fetchMyTeam();
-      fetchOpenTeams();
       fetchMyRequests();
-      fetchRequirements();
     }
   }, [user]);
+
+  // Fetch open teams and requirements after we know user's preferred game
+  useEffect(() => {
+    if (user && userPreferredGame !== null) {
+      fetchOpenTeams();
+      fetchRequirements();
+    }
+  }, [user, userPreferredGame]);
+
+  const fetchUserPreferredGame = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('preferred_game')
+        .eq('user_id', user.id)
+        .single();
+      
+      setUserPreferredGame(data?.preferred_game || '');
+    } catch (error) {
+      console.error('Error fetching user preferred game:', error);
+      setUserPreferredGame('');
+    }
+  };
 
   // Handle join team from shared link
   useEffect(() => {
@@ -447,11 +471,18 @@ const TeamPage = () => {
 
   const fetchOpenTeams = async () => {
     try {
-      const { data: teams } = await supabase
+      let query = supabase
         .from('player_teams')
         .select('*')
         .eq('is_open_for_players', true)
         .order('created_at', { ascending: false });
+      
+      // Filter by user's preferred game
+      if (userPreferredGame) {
+        query = query.eq('game', userPreferredGame);
+      }
+
+      const { data: teams } = await query;
 
       if (teams) {
         const teamsWithDetails = await Promise.all(
@@ -489,11 +520,18 @@ const TeamPage = () => {
 
   const fetchRequirements = async () => {
     try {
-      const { data: reqs } = await supabase
+      let query = supabase
         .from('team_requirements')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
+      
+      // Filter by user's preferred game
+      if (userPreferredGame) {
+        query = query.eq('game', userPreferredGame);
+      }
+
+      const { data: reqs } = await query;
 
       if (reqs) {
         const requirementsWithDetails = await Promise.all(
@@ -1060,8 +1098,7 @@ const TeamPage = () => {
             <img src={vyuhaLogo} alt="Vyuha" className="w-10 h-10 rounded-full shadow-lg relative z-10 border-2 border-primary/30" />
           </div>
           <div className="flex-1">
-            <h1 className="font-bold text-lg">Teams</h1>
-            <p className="text-[11px] text-muted-foreground">Build your squad for duo/squad matches</p>
+            <h1 className="font-bold text-lg">Build Your Team</h1>
           </div>
           
           {/* Post Requirement Button (for leaders with space) */}
@@ -1298,48 +1335,35 @@ const TeamPage = () => {
                 </div>
               </div>
 
-              {/* Post Requirement Section for Leaders */}
-              {canPostRequirements && teamMembers.length < (myTeam.max_members || 4) && (
+              {/* My Recruitment Posts (display only - no button) */}
+              {myTeamRequirements.length > 0 && (
                 <div 
                   className="p-4 rounded-xl border border-primary/30 bg-primary/5"
                   style={{ backdropFilter: 'blur(8px)' }}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Megaphone className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-semibold">Recruitment Posts</span>
-                    </div>
-                    <Button
-                      size="sm"
-                      onClick={() => setCreateRequirementDialogOpen(true)}
-                      className="h-8 text-xs gap-1 rounded-lg"
-                    >
-                      <Plus className="h-3 w-3" /> Post Requirement
-                    </Button>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Megaphone className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold">Recruitment Posts</span>
                   </div>
                   
-                  {myTeamRequirements.length === 0 ? (
-                    <p className="text-[11px] text-muted-foreground text-center py-4">
-                      Post a recruitment requirement to find teammates. It will appear in the "Requirements" section for other players.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {myTeamRequirements.map((req) => {
-                        const RoleIcon = getRoleIcon(req.role_needed);
-                        return (
-                          <div key={req.id} className="p-3 rounded-lg bg-card/80 border border-border/30">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                  <RoleIcon className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <Badge variant="secondary" className="text-[9px]">{req.role_needed}</Badge>
-                                  {req.description && (
-                                    <p className="text-[10px] text-muted-foreground mt-1">{req.description}</p>
-                                  )}
-                                </div>
+                  <div className="space-y-2">
+                    {myTeamRequirements.map((req) => {
+                      const RoleIcon = getRoleIcon(req.role_needed);
+                      return (
+                        <div key={req.id} className="p-3 rounded-lg bg-card/80 border border-border/30">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                <RoleIcon className="h-4 w-4 text-primary" />
                               </div>
+                              <div>
+                                <Badge variant="secondary" className="text-[9px]">{req.role_needed}</Badge>
+                                {req.description && (
+                                  <p className="text-[10px] text-muted-foreground mt-1">{req.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            {canPostRequirements && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1348,12 +1372,12 @@ const TeamPage = () => {
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
-                            </div>
+                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
