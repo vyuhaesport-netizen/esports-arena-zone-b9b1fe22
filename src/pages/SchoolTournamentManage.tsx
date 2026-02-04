@@ -155,16 +155,52 @@ const SchoolTournamentManage = () => {
 
   const fetchTournamentData = async () => {
     try {
-      const [tournamentRes, teamsRes, roomsRes] = await Promise.all([
+      // NOTE: PostgREST can still cap responses to 1000 rows even when using .range().
+      // So we page manually for teams/assignments to reliably load 2500+ rows.
+      const fetchAllTeams = async (tournamentId: string, expectedMaxTeams?: number) => {
+        const PAGE_SIZE = 1000;
+        const hardCap = Math.max(expectedMaxTeams ?? 0, 5000); // safety
+
+        const all: Team[] = [];
+        for (let from = 0; from < hardCap; from += PAGE_SIZE) {
+          const to = from + PAGE_SIZE - 1;
+          const { data, error } = await supabase
+            .from('school_tournament_teams')
+            .select('*')
+            .eq('tournament_id', tournamentId)
+            .order('registered_at', { ascending: true })
+            .range(from, to);
+
+          if (error) throw error;
+          if (data?.length) all.push(...(data as Team[]));
+          if (!data || data.length < PAGE_SIZE) break;
+        }
+
+        return all;
+      };
+
+      const fetchAllAssignments = async (roomIds: string[]) => {
+        const PAGE_SIZE = 1000;
+        const all: Array<{ room_id: string; team_id: string }> = [];
+
+        for (let from = 0; from < 10000; from += PAGE_SIZE) {
+          const to = from + PAGE_SIZE - 1;
+          const { data, error } = await supabase
+            .from('school_tournament_room_assignments')
+            .select('room_id, team_id')
+            .in('room_id', roomIds)
+            .range(from, to);
+
+          if (error) throw error;
+          if (data?.length) all.push(...(data as any));
+          if (!data || data.length < PAGE_SIZE) break;
+        }
+
+        return all;
+      };
+
+      const [tournamentRes, roomsRes] = await Promise.all([
         supabase.from('school_tournaments').select('*').eq('id', id).single(),
-        supabase
-          .from('school_tournament_teams')
-          .select('*')
-          .eq('tournament_id', id)
-          // Supabase default limit is 1000 rows; this tournament can have up to 2500 teams.
-          // Fetch enough rows so UI stats (Teams/Active/Round Progression) stay accurate.
-          .order('registered_at', { ascending: true })
-          .range(0, 5000),
         supabase
           .from('school_tournament_rooms')
           .select('*')
@@ -173,13 +209,19 @@ const SchoolTournamentManage = () => {
           .order('room_number', { ascending: true }),
       ]);
 
+      const expectedTeams = tournamentRes.data?.max_players
+        ? Math.ceil(tournamentRes.data.max_players / 4)
+        : undefined;
+
+      const allTeams = await fetchAllTeams(id, expectedTeams);
+
       if (tournamentRes.data) setTournament({
         ...tournamentRes.data,
         verification_type: (tournamentRes.data.verification_type as 'online' | 'spot') || 'online'
       });
       
-      console.log(`[DEBUG] Teams fetched: ${teamsRes.data?.length || 0} teams`);
-      if (teamsRes.data) setTeams(teamsRes.data);
+      console.log(`[DEBUG] Teams fetched: ${allTeams.length} teams`);
+      setTeams(allTeams);
       if (roomsRes.data) {
         setRooms(roomsRes.data);
         const roomStats: Record<number, { total: number; completed: number }> = {};
@@ -198,30 +240,25 @@ const SchoolTournamentManage = () => {
       // Build room -> team_ids mapping
       const roomIds = (roomsRes.data || []).map((r: any) => r.id);
       if (roomIds.length > 0) {
-        const { data: assignments, error: assignmentsError } = await supabase
-          .from('school_tournament_room_assignments')
-          .select('room_id, team_id')
-          .in('room_id', roomIds)
-          .range(0, 5000);
-
-        if (assignmentsError) {
-          console.warn('Failed to fetch room assignments:', assignmentsError);
+        try {
+          const assignments = await fetchAllAssignments(roomIds);
+          const mapping: Record<string, string[]> = {};
+          (assignments || []).forEach((a: any) => {
+            if (!mapping[a.room_id]) mapping[a.room_id] = [];
+            mapping[a.room_id].push(a.team_id);
+          });
+          setRoomAssignments(mapping);
+        } catch (e) {
+          console.warn('Failed to fetch room assignments:', e);
         }
-
-        const mapping: Record<string, string[]> = {};
-        (assignments || []).forEach((a: any) => {
-          if (!mapping[a.room_id]) mapping[a.room_id] = [];
-          mapping[a.room_id].push(a.team_id);
-        });
-        setRoomAssignments(mapping);
       } else {
         setRoomAssignments({});
       }
 
       // Fetch all player profiles for teams in batches (Supabase .in() has URL length limits)
-      if (teamsRes.data && teamsRes.data.length > 0) {
+      if (allTeams.length > 0) {
         const allPlayerIds: string[] = [];
-        teamsRes.data.forEach((team: any) => {
+        allTeams.forEach((team: any) => {
           if (team.leader_id) allPlayerIds.push(team.leader_id);
           if (team.member_1_id) allPlayerIds.push(team.member_1_id);
           if (team.member_2_id) allPlayerIds.push(team.member_2_id);
