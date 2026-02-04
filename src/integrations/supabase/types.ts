@@ -2174,6 +2174,47 @@ export type Database = {
           },
         ]
       }
+      team_requirements: {
+        Row: {
+          created_at: string | null
+          description: string
+          game: string
+          id: string
+          is_active: boolean | null
+          role_needed: string
+          team_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          game: string
+          id?: string
+          is_active?: boolean | null
+          role_needed: string
+          team_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          game?: string
+          id?: string
+          is_active?: boolean | null
+          role_needed?: string
+          team_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_requirements_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "player_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tournament_registrations: {
         Row: {
           id: string
