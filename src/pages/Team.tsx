@@ -200,7 +200,6 @@ const TeamPage = () => {
   const [teamForm, setTeamForm] = useState({
     name: '',
     slogan: '',
-    game: '',
     is_open_for_players: true,
     requires_approval: true,
     max_members: 4,
@@ -216,7 +215,6 @@ const TeamPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const games = ['BGMI', 'Free Fire'];
   const maxMemberOptions = [4, 6, 8];
 
   // Get roles based on team's game
@@ -603,7 +601,7 @@ const TeamPage = () => {
         .insert({
           name: teamForm.name.trim(),
           slogan: teamForm.slogan.trim() || null,
-          game: teamForm.game || null,
+          game: userPreferredGame || null,
           leader_id: user.id,
           is_open_for_players: teamForm.is_open_for_players,
           requires_approval: teamForm.requires_approval,
@@ -626,7 +624,7 @@ const TeamPage = () => {
 
       toast({ title: 'Team Created!', description: `Your team "${newTeam.name}" has been created.` });
       setCreateDialogOpen(false);
-      setTeamForm({ name: '', slogan: '', game: '', is_open_for_players: true, requires_approval: true, max_members: 4 });
+      setTeamForm({ name: '', slogan: '', is_open_for_players: true, requires_approval: true, max_members: 4 });
       fetchMyTeam();
       fetchOpenTeams();
     } catch (error: any) {
@@ -1840,22 +1838,18 @@ const TeamPage = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>Primary Game</Label>
-              <Select
-                value={teamForm.game}
-                onValueChange={(value) => setTeamForm({ ...teamForm, game: value })}
-              >
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Select game" />
-                </SelectTrigger>
-                <SelectContent>
-                  {games.map((game) => (
-                    <SelectItem key={game} value={game}>{game}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Game is auto-set from profile */}
+            {userPreferredGame && (
+              <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <Gamepad2 className="h-4 w-4 text-primary" />
+                  <div>
+                    <p className="text-xs font-medium">Team Game: {userPreferredGame}</p>
+                    <p className="text-[10px] text-muted-foreground">Based on your profile's preferred game</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               <Label>Maximum Players</Label>
