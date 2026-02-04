@@ -12,12 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Edit2, ChevronRight, Shield, LogOut, Trophy, Wallet, Settings, 
-  HelpCircle, FileText, Loader2, Info, Phone, Calendar, MapPin, 
-  Gamepad2, User, Hash, Crown, UserCheck, Instagram, Youtube, 
-  CreditCard, Users, Megaphone, Building2, BarChart3, Bell, 
-  MessageCircle, Sparkles, Zap, Medal, Star, Target, TrendingUp,
-  Flame
+  ChevronRight, Shield, LogOut, Trophy, Settings, 
+  HelpCircle, FileText, Loader2, Info,
+  Gamepad2, Crown, UserCheck, Instagram, Youtube, 
+  CreditCard, Users, Megaphone, Building2, BarChart3,
+  MessageCircle, Sparkles, Zap, Star, TrendingUp
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -348,84 +347,84 @@ const ProfilePage = () => {
 
   return (
     <AppLayout>
-      {/* Enhanced Profile Header */}
+      {/* Instagram-style Profile Header */}
       <div className="relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/10 to-transparent" />
-        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/15 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-0 left-0 w-20 h-20 bg-primary/10 rounded-full blur-2xl animate-pulse" />
-        
-        <div className="relative px-4 pt-4 pb-3">
-          {/* Avatar Section */}
-          <div className="flex flex-col items-center mb-3">
-            <div className="relative group">
-              {/* Animated ring */}
-              <div className="absolute -inset-0.5 bg-primary/20 rounded-full opacity-80 blur-sm group-hover:opacity-100 transition-opacity animate-pulse" />
-              
-              <Avatar className="relative h-16 w-16 border-2 border-background shadow-lg ring-1 ring-primary/30">
+        <div className="relative px-4 pt-5 pb-4">
+          {/* Top Row: Avatar + Username/Name */}
+          <div className="flex items-center gap-4 mb-4">
+            {/* Avatar */}
+            <div className="relative group shrink-0">
+              <div className="absolute -inset-1 bg-gradient-to-tr from-primary via-purple-500 to-pink-500 rounded-full opacity-70 blur-sm" />
+              <Avatar className="relative h-20 w-20 border-3 border-background shadow-xl">
                 <AvatarImage src={profile?.avatar_url || ''} className="object-cover" />
-                <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
+                <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
                   {profile?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              
-              {/* Level badge */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 bg-warning rounded-full flex items-center justify-center shadow-md border-2 border-background">
-                <span className="text-[9px] font-bold text-warning-foreground">LV{Math.min(99, Math.floor(playerStats.totalMatches / 5) + 1)}</span>
-              </div>
             </div>
 
-            {/* Username & Name */}
-            <div className="text-center mt-2">
-              <h1 className="font-bold text-sm text-foreground flex items-center justify-center gap-1">
-                @{profile?.username || 'username'}
-                {(isAdmin || isOrganizer) && <Sparkles className="h-3 w-3 text-primary animate-pulse" />}
-              </h1>
-              <p className="text-xs text-muted-foreground">{profile?.full_name || 'Gamer'}</p>
+            {/* User Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <h1 className="font-bold text-base text-foreground truncate">
+                  {profile?.username || 'username'}
+                </h1>
+                {(isAdmin || isOrganizer) && <Sparkles className="h-4 w-4 text-primary shrink-0" />}
+              </div>
+              <p className="text-sm text-muted-foreground truncate">{profile?.full_name || 'Gamer'}</p>
               
               {/* Role Badges */}
-              <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                 {isSuperAdmin && (
-                  <Badge variant="secondary" className="text-[9px] px-2 py-0.5">
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
                     <Crown className="h-3 w-3 mr-1" /> Owner
                   </Badge>
                 )}
                 {isAdmin && !isSuperAdmin && (
-                  <Badge variant="secondary" className="text-[9px] px-2 py-0.5">
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
                     <Shield className="h-3 w-3 mr-1" /> Team
                   </Badge>
                 )}
                 {isOrganizer && (
-                  <Badge variant="secondary" className="text-[9px] px-2 py-0.5">
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
                     <UserCheck className="h-3 w-3 mr-1" /> Organizer
                   </Badge>
                 )}
                 {isCreator && (
-                  <Badge variant="secondary" className="text-[9px] px-2 py-0.5">
+                  <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
                     <Gamepad2 className="h-3 w-3 mr-1" /> Creator
                   </Badge>
                 )}
               </div>
+            </div>
+          </div>
 
-              {/* In-Game Name */}
+          {/* Bio / In-Game Name Section */}
+          {(profile?.bio || profile?.in_game_name) && (
+            <div className="mb-4">
               {profile?.in_game_name && (
-                <div className="mt-1.5 inline-flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-full">
-                  <Gamepad2 className="h-2.5 w-2.5 text-primary" />
-                  <span className="text-[9px] font-medium">{profile.in_game_name}</span>
+                <div className="inline-flex items-center gap-1.5 bg-muted/50 px-2.5 py-1 rounded-full mb-2">
+                  <Gamepad2 className="h-3 w-3 text-primary" />
+                  <span className="text-xs font-medium">{profile.in_game_name}</span>
                   {profile.preferred_game && (
-                    <Badge variant="outline" className="text-[7px] px-1 py-0 ml-0.5">
+                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 ml-0.5">
                       {profile.preferred_game}
                     </Badge>
                   )}
                 </div>
               )}
+              {profile?.bio && (
+                <p className="text-xs text-muted-foreground leading-relaxed">{profile.bio}</p>
+              )}
             </div>
-          </div>
-
+          )}
 
           {/* Edit Profile Button */}
-          <Button variant="gaming" className="w-full" onClick={() => setEditDialogOpen(true)}>
-            <Edit2 className="h-4 w-4" />
+          <Button 
+            variant="outline" 
+            className="w-full h-9 text-sm font-semibold border-border/50 hover:bg-muted/50" 
+            onClick={() => setEditDialogOpen(true)}
+          >
             Edit Profile
           </Button>
         </div>
