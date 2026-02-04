@@ -421,8 +421,7 @@ const ProfilePage = () => {
 
           {/* Edit Profile Button */}
           <Button 
-            variant="outline" 
-            className="w-full h-9 text-sm font-semibold border-border/50 hover:bg-muted/50" 
+            className="w-full h-9 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/30" 
             onClick={() => setEditDialogOpen(true)}
           >
             Edit Profile
