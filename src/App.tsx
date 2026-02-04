@@ -294,8 +294,9 @@ const AppRoutes = () => {
       {/* Profile Completion */}
       <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
       
-      {/* School Tournaments */}
+      {/* School/Local Tournaments - Local Tournament routes redirect to School Tournament */}
       <Route path="/school-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
+      <Route path="/local-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
       <Route path="/school-tournament/:id" element={<ProtectedRoute><SchoolTournamentManage /></ProtectedRoute>} />
       <Route path="/join-school-tournament/:code" element={<JoinSchoolTournament />} />
       <Route path="/admin/school-tournaments" element={<ProtectedRoute><AdminSchoolTournaments /></ProtectedRoute>} />
