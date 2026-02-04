@@ -6,7 +6,6 @@ interface AdminCounts {
   pendingWithdrawals: number;
   pendingDhanaWithdrawals: number;
   pendingOrganizerApps: number;
-  pendingLocalTournamentApps: number;
   pendingSupport: number;
   pendingReports: number;
   unreadBroadcasts: number;
@@ -19,7 +18,6 @@ export const useAdminCounts = () => {
     pendingWithdrawals: 0,
     pendingDhanaWithdrawals: 0,
     pendingOrganizerApps: 0,
-    pendingLocalTournamentApps: 0,
     pendingSupport: 0,
     pendingReports: 0,
     unreadBroadcasts: 0,
@@ -35,7 +33,6 @@ export const useAdminCounts = () => {
         withdrawalsRes,
         dhanaWithdrawalsRes,
         organizerAppsRes,
-        localTournamentAppsRes,
         supportRes,
         reportsRes,
       ] = await Promise.all([
@@ -43,7 +40,6 @@ export const useAdminCounts = () => {
         supabase.from('wallet_transactions').select('id', { count: 'exact', head: true }).eq('type', 'withdrawal').eq('status', 'pending'),
         supabase.from('dhana_withdrawals').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('organizer_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('local_tournament_applications').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
         supabase.from('tournament_reports').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       ]);
@@ -53,7 +49,6 @@ export const useAdminCounts = () => {
         pendingWithdrawals: withdrawalsRes.count || 0,
         pendingDhanaWithdrawals: dhanaWithdrawalsRes.count || 0,
         pendingOrganizerApps: organizerAppsRes.count || 0,
-        pendingLocalTournamentApps: localTournamentAppsRes.count || 0,
         pendingSupport: supportRes.count || 0,
         pendingReports: reportsRes.count || 0,
         unreadBroadcasts: 0,
@@ -65,7 +60,6 @@ export const useAdminCounts = () => {
         newCounts.pendingWithdrawals + 
         newCounts.pendingDhanaWithdrawals + 
         newCounts.pendingOrganizerApps + 
-        newCounts.pendingLocalTournamentApps + 
         newCounts.pendingSupport +
         newCounts.pendingReports;
 
@@ -86,7 +80,6 @@ export const useAdminCounts = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'wallet_transactions' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'dhana_withdrawals' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'organizer_applications' }, fetchCounts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'local_tournament_applications' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, fetchCounts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tournament_reports' }, fetchCounts)
       .subscribe();

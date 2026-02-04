@@ -454,7 +454,10 @@ const JoinSchoolTournament = () => {
     tournament.status === 'registration' && 
     new Date(tournament.registration_deadline) > new Date();
 
-  const isFull = tournament && tournament.current_players >= tournament.max_players;
+  // Hard cap: 10,000 players = 2,500 teams (squad mode, 4 players/team)
+  const MAX_TEAMS = 2500;
+  const currentTeams = Math.ceil((tournament?.current_players || 0) / 4);
+  const isFull = tournament && (tournament.current_players >= tournament.max_players || currentTeams >= MAX_TEAMS);
   const canAfford = tournament?.entry_type === 'free' || walletBalance >= (tournament?.entry_fee || 0);
   const teamsPerRoom = tournament?.game === 'BGMI' ? 25 : 12;
   const entryFee = tournament?.entry_fee || 0;

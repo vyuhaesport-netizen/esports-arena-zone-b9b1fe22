@@ -24,7 +24,6 @@ import {
   Palette,
   Megaphone,
   FileText,
-  Building2,
   CreditCard,
   Coins,
   Search,
@@ -47,7 +46,7 @@ interface MenuItem {
   path: string;
   permission?: string;
   superAdminOnly?: boolean;
-  countKey?: 'pendingDeposits' | 'pendingWithdrawals' | 'pendingDhanaWithdrawals' | 'pendingOrganizerApps' | 'pendingLocalTournamentApps' | 'pendingSupport' | 'pendingReports';
+  countKey?: 'pendingDeposits' | 'pendingWithdrawals' | 'pendingDhanaWithdrawals' | 'pendingOrganizerApps' | 'pendingSupport' | 'pendingReports';
 }
 
 const menuItems: MenuItem[] = [
@@ -68,7 +67,6 @@ const menuItems: MenuItem[] = [
   { icon: Megaphone, label: 'Broadcast Channel', path: '/admin/messages', permission: 'notifications:view' },
   { icon: Ban, label: 'Ban Management', path: '/admin/bans', permission: 'bans:view', countKey: 'pendingReports' },
   { icon: Settings, label: 'Settings', path: '/admin/settings', permission: 'settings:view' },
-  { icon: Building2, label: 'Local Tournaments', path: '/admin/local-tournaments', permission: 'local_tournaments:view', countKey: 'pendingLocalTournamentApps' },
   { icon: School, label: 'School Tournaments', path: '/admin/school-tournaments', permission: 'local_tournaments:view' },
   { icon: ScrollText, label: 'Tournament Rules', path: '/admin/rules', superAdminOnly: true },
   { icon: Brain, label: 'DeepSeek R1', path: '/admin/ai', superAdminOnly: true },

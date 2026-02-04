@@ -81,15 +81,6 @@ const pagePermissionGroups: PagePermissionGroup[] = [
     ],
   },
   {
-    page: 'Local Tournaments',
-    icon: '📍',
-    description: 'Manage offline/local tournament applications',
-    permissions: [
-      { id: 'local_tournaments:view', label: 'View Applications', description: 'View local tournament applications' },
-      { id: 'local_tournaments:manage', label: 'Manage Applications', description: 'Approve/reject local tournament requests' },
-    ],
-  },
-  {
     page: 'Organizer Management',
     icon: '🎯',
     description: 'Handle organizer applications and verification',

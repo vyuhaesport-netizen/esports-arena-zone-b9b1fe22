@@ -66,8 +66,6 @@ import RefundPolicy from "./pages/RefundPolicy";
 import AboutUs from "./pages/AboutUs";
 import Documentation from "./pages/Documentation";
 import TournamentDetails from "./pages/TournamentDetails";
-import JoinLocalTournament from "./pages/JoinLocalTournament";
-import AdminLocalTournaments from "./pages/admin/AdminLocalTournaments";
 import SchoolTournament from "./pages/SchoolTournament";
 import SchoolTournamentManage from "./pages/SchoolTournamentManage";
 import JoinSchoolTournament from "./pages/JoinSchoolTournament";
@@ -267,7 +265,6 @@ const AppRoutes = () => {
       <Route path="/admin/wallet-audit" element={<ProtectedRoute><AdminWalletAudit /></ProtectedRoute>} />
       <Route path="/admin/bans" element={<ProtectedRoute><AdminBanManagement /></ProtectedRoute>} />
       <Route path="/admin/dhana-withdrawals" element={<ProtectedRoute><AdminDhanaWithdrawals /></ProtectedRoute>} />
-      <Route path="/admin/local-tournaments" element={<ProtectedRoute><AdminLocalTournaments /></ProtectedRoute>} />
       <Route path="/admin/api-payment" element={<ProtectedRoute><AdminApiPayment /></ProtectedRoute>} />
       <Route path="/admin/seo" element={<ProtectedRoute><AdminSEO /></ProtectedRoute>} />
       <Route path="/admin/zapupi-monitor" element={<ProtectedRoute><AdminZapupiMonitor /></ProtectedRoute>} />
@@ -297,13 +294,10 @@ const AppRoutes = () => {
       {/* Profile Completion */}
       <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
       
-      {/* Local/School Tournaments - now unified */}
-      <Route path="/local-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
-      <Route path="/join-local" element={<JoinLocalTournament />} />
+      {/* School Tournaments */}
       <Route path="/school-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
       <Route path="/school-tournament/:id" element={<ProtectedRoute><SchoolTournamentManage /></ProtectedRoute>} />
       <Route path="/join-school-tournament/:code" element={<JoinSchoolTournament />} />
-      <Route path="/admin/local-tournaments" element={<ProtectedRoute><AdminLocalTournaments /></ProtectedRoute>} />
       <Route path="/admin/school-tournaments" element={<ProtectedRoute><AdminSchoolTournaments /></ProtectedRoute>} />
       
       {/* Public Routes */}

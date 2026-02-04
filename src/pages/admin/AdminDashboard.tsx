@@ -15,26 +15,23 @@ import {
   UserCheck,
   IndianRupee,
   Palette,
-  MapPin
 } from 'lucide-react';
-import { format, subDays, eachDayOfInterval, parseISO, startOfDay } from 'date-fns';
+import { format, subDays, eachDayOfInterval, parseISO } from 'date-fns';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface DashboardStats {
   totalUsers: number;
   activeToday: number;
   totalTournaments: number;
-  localTournaments: number;
   totalRevenue: number;
   platformEarnings: number;
   organizerRevenue: number;
   creatorRevenue: number;
-  localTournamentRevenue: number;
   totalOrganizers: number;
   totalCreators: number;
 }
@@ -44,7 +41,6 @@ interface RevenueDataPoint {
   displayDate: string;
   organizer: number;
   creator: number;
-  local: number;
   total: number;
 }
 
@@ -57,10 +53,6 @@ const chartConfig = {
     label: "Creators", 
     color: "hsl(330, 81%, 60%)",
   },
-  local: {
-    label: "Local",
-    color: "hsl(187, 85%, 43%)",
-  },
   total: {
     label: "Total",
     color: "hsl(var(--primary))",
@@ -72,12 +64,10 @@ const AdminDashboard = () => {
     totalUsers: 0,
     activeToday: 0,
     totalTournaments: 0,
-    localTournaments: 0,
     totalRevenue: 0,
     platformEarnings: 0,
     organizerRevenue: 0,
     creatorRevenue: 0,
-    localTournamentRevenue: 0,
     totalOrganizers: 0,
     totalCreators: 0,
   });
@@ -132,13 +122,6 @@ const AdminDashboard = () => {
         .gte('created_at', fromDate)
         .lte('created_at', toDate + 'T23:59:59');
 
-      // Fetch local tournaments with revenue data
-      const { data: localTournaments } = await supabase
-        .from('local_tournaments')
-        .select('total_fees_collected, platform_earnings, organizer_earnings, created_at')
-        .gte('created_at', fromDate)
-        .lte('created_at', toDate + 'T23:59:59');
-
       // Calculate revenue from organizer tournaments
       const organizerTournaments = tournaments?.filter(t => t.tournament_type === 'organizer') || [];
       const organizerRevenue = organizerTournaments.reduce((sum, t) => sum + (t.platform_earnings || 0), 0);
@@ -147,16 +130,11 @@ const AdminDashboard = () => {
       const creatorTournaments = tournaments?.filter(t => t.tournament_type === 'creator') || [];
       const creatorRevenue = creatorTournaments.reduce((sum, t) => sum + (t.platform_earnings || 0), 0);
 
-      // Calculate revenue from local tournaments
-      const localTournamentRevenue = localTournaments?.reduce((sum, t) => sum + (t.platform_earnings || 0), 0) || 0;
-
       // Total platform earnings
-      const totalPlatformEarnings = organizerRevenue + creatorRevenue + localTournamentRevenue;
+      const totalPlatformEarnings = organizerRevenue + creatorRevenue;
 
       // Total fees collected (overall revenue)
-      const totalFeesFromTournaments = tournaments?.reduce((sum, t) => sum + (t.total_fees_collected || 0), 0) || 0;
-      const totalFeesFromLocal = localTournaments?.reduce((sum, t) => sum + (t.total_fees_collected || 0), 0) || 0;
-      const totalRevenue = totalFeesFromTournaments + totalFeesFromLocal;
+      const totalRevenue = tournaments?.reduce((sum, t) => sum + (t.total_fees_collected || 0), 0) || 0;
 
       // Generate revenue data for chart
       const dateRange = eachDayOfInterval({
@@ -166,7 +144,6 @@ const AdminDashboard = () => {
 
       const chartData: RevenueDataPoint[] = dateRange.map(date => {
         const dateStr = format(date, 'yyyy-MM-dd');
-        const dayStart = startOfDay(date);
         
         const dayOrganizerRevenue = organizerTournaments
           .filter(t => format(parseISO(t.created_at), 'yyyy-MM-dd') === dateStr)
@@ -175,18 +152,13 @@ const AdminDashboard = () => {
         const dayCreatorRevenue = creatorTournaments
           .filter(t => format(parseISO(t.created_at), 'yyyy-MM-dd') === dateStr)
           .reduce((sum, t) => sum + (t.platform_earnings || 0), 0);
-        
-        const dayLocalRevenue = (localTournaments || [])
-          .filter(t => format(parseISO(t.created_at), 'yyyy-MM-dd') === dateStr)
-          .reduce((sum, t) => sum + (t.platform_earnings || 0), 0);
 
         return {
           date: dateStr,
           displayDate: format(date, 'MMM dd'),
           organizer: dayOrganizerRevenue,
           creator: dayCreatorRevenue,
-          local: dayLocalRevenue,
-          total: dayOrganizerRevenue + dayCreatorRevenue + dayLocalRevenue,
+          total: dayOrganizerRevenue + dayCreatorRevenue,
         };
       });
 
@@ -196,12 +168,10 @@ const AdminDashboard = () => {
         totalUsers: userCount || 0,
         activeToday: Math.floor((userCount || 0) * 0.3),
         totalTournaments: tournaments?.length || 0,
-        localTournaments: localTournaments?.length || 0,
         totalRevenue,
         platformEarnings: totalPlatformEarnings,
         organizerRevenue,
         creatorRevenue,
-        localTournamentRevenue,
         totalOrganizers: organizerCount || 0,
         totalCreators: creatorCount || 0,
       });
@@ -312,19 +282,6 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-cyan-500/10 to-cyan-600/5">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                  <MapPin className="h-5 w-5 text-cyan-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.localTournaments}</p>
-                  <p className="text-xs text-muted-foreground">Local Tournaments</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5">
             <CardContent className="p-4">
@@ -376,10 +333,6 @@ const AdminDashboard = () => {
                     <stop offset="5%" stopColor="hsl(330, 81%, 60%)" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="hsl(330, 81%, 60%)" stopOpacity={0}/>
                   </linearGradient>
-                  <linearGradient id="colorLocal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(187, 85%, 43%)" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(187, 85%, 43%)" stopOpacity={0}/>
-                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
@@ -421,16 +374,6 @@ const AdminDashboard = () => {
                   fill="url(#colorCreator)"
                   stackId="1"
                 />
-                <Area
-                  type="monotone"
-                  dataKey="local"
-                  name="Local"
-                  stroke="hsl(187, 85%, 43%)"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorLocal)"
-                  stackId="1"
-                />
               </AreaChart>
             </ChartContainer>
             
@@ -443,10 +386,6 @@ const AdminDashboard = () => {
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-pink-500" />
                 <span className="text-xs text-muted-foreground">Creators</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-cyan-500" />
-                <span className="text-xs text-muted-foreground">Local</span>
               </div>
             </div>
           </CardContent>
@@ -471,13 +410,6 @@ const AdminDashboard = () => {
                 <span className="text-sm">From Creators</span>
               </div>
               <span className="font-bold text-pink-600">₹{stats.creatorRevenue.toFixed(0)}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-cyan-500/10">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-cyan-500" />
-                <span className="text-sm">From Local Tournaments</span>
-              </div>
-              <span className="font-bold text-cyan-600">₹{stats.localTournamentRevenue.toFixed(0)}</span>
             </div>
           </CardContent>
         </Card>
