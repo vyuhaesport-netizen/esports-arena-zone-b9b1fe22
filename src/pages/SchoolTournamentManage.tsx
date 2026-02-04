@@ -177,6 +177,8 @@ const SchoolTournamentManage = () => {
         ...tournamentRes.data,
         verification_type: (tournamentRes.data.verification_type as 'online' | 'spot') || 'online'
       });
+      
+      console.log(`[DEBUG] Teams fetched: ${teamsRes.data?.length || 0} teams`);
       if (teamsRes.data) setTeams(teamsRes.data);
       if (roomsRes.data) {
         setRooms(roomsRes.data);
@@ -216,7 +218,7 @@ const SchoolTournamentManage = () => {
         setRoomAssignments({});
       }
 
-      // Fetch all player profiles for teams
+      // Fetch all player profiles for teams in batches (Supabase .in() has URL length limits)
       if (teamsRes.data && teamsRes.data.length > 0) {
         const allPlayerIds: string[] = [];
         teamsRes.data.forEach((team: any) => {
@@ -226,17 +228,24 @@ const SchoolTournamentManage = () => {
           if (team.member_3_id) allPlayerIds.push(team.member_3_id);
         });
         const uniqueIds = [...new Set(allPlayerIds)];
-        if (uniqueIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('user_id, username, full_name, in_game_name, game_uid')
-            .in('user_id', uniqueIds);
-          if (profiles) {
-            const profileMap: Record<string, PlayerProfile> = {};
-            profiles.forEach(p => { profileMap[p.user_id] = p; });
-            setPlayerProfiles(profileMap);
+        
+        // Batch fetch profiles to avoid URL length limits (max ~300 UUIDs per batch)
+        const BATCH_SIZE = 300;
+        const profileMap: Record<string, PlayerProfile> = {};
+        
+        for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
+          const batch = uniqueIds.slice(i, i + BATCH_SIZE);
+          if (batch.length > 0) {
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('user_id, username, full_name, in_game_name, game_uid')
+              .in('user_id', batch);
+            if (profiles) {
+              profiles.forEach(p => { profileMap[p.user_id] = p; });
+            }
           }
         }
+        setPlayerProfiles(profileMap);
       }
     } catch (error) {
       console.error('Error fetching tournament:', error);
