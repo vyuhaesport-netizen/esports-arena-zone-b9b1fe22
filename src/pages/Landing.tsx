@@ -648,50 +648,37 @@ const Landing = () => {
                 {authDialog === 'signup' && (
                   <div className="space-y-1.5">
                     <label className="text-xs text-muted-foreground font-medium">Full Name</label>
-                    <div className="relative">
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                        <User className="h-4 w-4" />
-                      </div>
-                      <Input 
-                        value={fullName}
-                        onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
-                        placeholder="Enter your name"
-                        className={`h-10 pl-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.fullName ? 'border-destructive' : ''}`}
-                      />
-                    </div>
+                    <Input 
+                      value={fullName}
+                      onChange={(e) => { setFullName(e.target.value); setErrors(p => ({...p, fullName: undefined})); }}
+                      placeholder="Enter your name"
+                      className={`h-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.fullName ? 'border-destructive' : ''}`}
+                    />
                     {errors.fullName && <p className="text-[10px] text-destructive">{errors.fullName}</p>}
                   </div>
                 )}
                 
                 <div className="space-y-1.5">
                   <label className="text-xs text-muted-foreground font-medium">Email</label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      <span className="text-sm">@</span>
-                    </div>
-                    <Input 
-                      type="email"
-                      value={email}
-                      onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
-                      placeholder="Enter your email"
-                      className={`h-10 pl-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.email ? 'border-destructive' : ''}`}
-                    />
-                  </div>
+                  <Input 
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setErrors(p => ({...p, email: undefined})); }}
+                    placeholder="Enter your email"
+                    className={`h-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.email ? 'border-destructive' : ''}`}
+                  />
                   {errors.email && <p className="text-[10px] text-destructive">{errors.email}</p>}
                 </div>
                 
                 <div className="space-y-1.5">
                   <label className="text-xs text-muted-foreground font-medium">Password</label>
                   <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      <Shield className="h-4 w-4" />
-                    </div>
                     <Input 
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => { setPassword(e.target.value); setErrors(p => ({...p, password: undefined})); }}
                       placeholder="••••••••"
-                      className={`h-10 pl-10 pr-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.password ? 'border-destructive' : ''}`}
+                      className={`h-10 pr-10 text-sm bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-primary ${errors.password ? 'border-destructive' : ''}`}
                     />
                     <button
                       type="button"
