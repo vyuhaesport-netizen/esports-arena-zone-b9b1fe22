@@ -80,6 +80,7 @@ interface Tournament {
   entry_type: string;
   entry_fee: number;
   total_collected: number;
+  created_at?: string;
 }
 
 const INDIAN_STATES = [
