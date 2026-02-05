@@ -21,8 +21,8 @@ interface TournamentStructure {
   roundBreakdown: { round: number; rooms: number; teams: number }[];
 }
 
-// Calculate tournament structure based on game and player count
-function calculateTournamentStructure(game: string, maxPlayers: number): TournamentStructure {
+// Calculate tournament structure based on game, player count, and winners per room
+function calculateTournamentStructure(game: string, maxPlayers: number, winnersPerRoom: number = 1): TournamentStructure {
   const playersPerRoom = game === "BGMI" ? 100 : 50;
   const teamsPerRoom = game === "BGMI" ? 25 : 12;
   const finaleMaxTeams = teamsPerRoom;
@@ -31,7 +31,7 @@ function calculateTournamentStructure(game: string, maxPlayers: number): Tournam
   const totalTeams = Math.ceil(maxPlayers / 4);
   const initialRooms = Math.ceil(totalTeams / teamsPerRoom);
   
-  // Calculate rounds needed
+  // Calculate rounds needed with variable winners per room
   const roundBreakdown: { round: number; rooms: number; teams: number }[] = [];
   let currentTeams = totalTeams;
   let roundNum = 1;
@@ -39,7 +39,7 @@ function calculateTournamentStructure(game: string, maxPlayers: number): Tournam
   while (currentTeams > finaleMaxTeams) {
     const roomsNeeded = Math.ceil(currentTeams / teamsPerRoom);
     roundBreakdown.push({ round: roundNum, rooms: roomsNeeded, teams: currentTeams });
-    currentTeams = roomsNeeded; // Top 1 from each room advances
+    currentTeams = roomsNeeded * winnersPerRoom; // winnersPerRoom teams from each room advances
     roundNum++;
   }
   
