@@ -1745,17 +1745,23 @@ export type Database = {
       }
       school_tournament_applications: {
         Row: {
+          address_line_1: string | null
+          address_line_2: string | null
           admin_notes: string | null
           alternate_phone: string | null
           created_at: string
+          discord_link: string | null
           entry_fee: number | null
           entry_type: string
           full_address: string | null
           game: string
           id: string
+          instagram_link: string | null
           max_players: number
           organizer_name: string
+          pincode: string | null
           primary_phone: string
+          prize_distribution_mode: string | null
           prize_pool: number | null
           registration_deadline: string
           rejection_reason: string | null
@@ -1772,19 +1778,28 @@ export type Database = {
           updated_at: string
           user_id: string
           verification_type: string
+          whatsapp_link: string | null
+          winners_per_room: number | null
+          youtube_link: string | null
         }
         Insert: {
+          address_line_1?: string | null
+          address_line_2?: string | null
           admin_notes?: string | null
           alternate_phone?: string | null
           created_at?: string
+          discord_link?: string | null
           entry_fee?: number | null
           entry_type?: string
           full_address?: string | null
           game: string
           id?: string
+          instagram_link?: string | null
           max_players: number
           organizer_name: string
+          pincode?: string | null
           primary_phone: string
+          prize_distribution_mode?: string | null
           prize_pool?: number | null
           registration_deadline: string
           rejection_reason?: string | null
@@ -1801,19 +1816,28 @@ export type Database = {
           updated_at?: string
           user_id: string
           verification_type?: string
+          whatsapp_link?: string | null
+          winners_per_room?: number | null
+          youtube_link?: string | null
         }
         Update: {
+          address_line_1?: string | null
+          address_line_2?: string | null
           admin_notes?: string | null
           alternate_phone?: string | null
           created_at?: string
+          discord_link?: string | null
           entry_fee?: number | null
           entry_type?: string
           full_address?: string | null
           game?: string
           id?: string
+          instagram_link?: string | null
           max_players?: number
           organizer_name?: string
+          pincode?: string | null
           primary_phone?: string
+          prize_distribution_mode?: string | null
           prize_pool?: number | null
           registration_deadline?: string
           rejection_reason?: string | null
@@ -1830,6 +1854,9 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verification_type?: string
+          whatsapp_link?: string | null
+          winners_per_room?: number | null
+          youtube_link?: string | null
         }
         Relationships: []
       }
@@ -1892,6 +1919,7 @@ export type Database = {
           tournament_id: string
           updated_at: string
           winner_team_id: string | null
+          winners_per_room: number | null
         }
         Insert: {
           created_at?: string
@@ -1906,6 +1934,7 @@ export type Database = {
           tournament_id: string
           updated_at?: string
           winner_team_id?: string | null
+          winners_per_room?: number | null
         }
         Update: {
           created_at?: string
@@ -1920,6 +1949,7 @@ export type Database = {
           tournament_id?: string
           updated_at?: string
           winner_team_id?: string | null
+          winners_per_room?: number | null
         }
         Relationships: [
           {
@@ -2020,10 +2050,13 @@ export type Database = {
       }
       school_tournaments: {
         Row: {
+          address_line_1: string | null
+          address_line_2: string | null
           application_id: string
           created_at: string
           current_players: number | null
           current_round: number | null
+          discord_link: string | null
           ended_at: string | null
           entry_fee: number | null
           entry_type: string
@@ -2031,10 +2064,13 @@ export type Database = {
           full_address: string | null
           game: string
           id: string
+          instagram_link: string | null
           max_players: number
           organizer_id: string
+          pincode: string | null
           players_per_room: number
           private_code: string
+          prize_distribution_mode: string | null
           prize_pool: number | null
           qr_code_url: string | null
           registration_deadline: string
@@ -2054,12 +2090,18 @@ export type Database = {
           tournament_name: string
           updated_at: string
           verification_type: string
+          whatsapp_link: string | null
+          winners_per_room: number | null
+          youtube_link: string | null
         }
         Insert: {
+          address_line_1?: string | null
+          address_line_2?: string | null
           application_id: string
           created_at?: string
           current_players?: number | null
           current_round?: number | null
+          discord_link?: string | null
           ended_at?: string | null
           entry_fee?: number | null
           entry_type?: string
@@ -2067,10 +2109,13 @@ export type Database = {
           full_address?: string | null
           game: string
           id?: string
+          instagram_link?: string | null
           max_players: number
           organizer_id: string
+          pincode?: string | null
           players_per_room?: number
           private_code: string
+          prize_distribution_mode?: string | null
           prize_pool?: number | null
           qr_code_url?: string | null
           registration_deadline: string
@@ -2090,12 +2135,18 @@ export type Database = {
           tournament_name: string
           updated_at?: string
           verification_type?: string
+          whatsapp_link?: string | null
+          winners_per_room?: number | null
+          youtube_link?: string | null
         }
         Update: {
+          address_line_1?: string | null
+          address_line_2?: string | null
           application_id?: string
           created_at?: string
           current_players?: number | null
           current_round?: number | null
+          discord_link?: string | null
           ended_at?: string | null
           entry_fee?: number | null
           entry_type?: string
@@ -2103,10 +2154,13 @@ export type Database = {
           full_address?: string | null
           game?: string
           id?: string
+          instagram_link?: string | null
           max_players?: number
           organizer_id?: string
+          pincode?: string | null
           players_per_room?: number
           private_code?: string
+          prize_distribution_mode?: string | null
           prize_pool?: number | null
           qr_code_url?: string | null
           registration_deadline?: string
@@ -2126,6 +2180,9 @@ export type Database = {
           tournament_name?: string
           updated_at?: string
           verification_type?: string
+          whatsapp_link?: string | null
+          winners_per_room?: number | null
+          youtube_link?: string | null
         }
         Relationships: [
           {
