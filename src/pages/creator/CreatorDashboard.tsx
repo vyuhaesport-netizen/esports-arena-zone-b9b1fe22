@@ -1343,6 +1343,29 @@ const CreatorDashboard = () => {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-green-500" /> WhatsApp Link
+                </Label>
+                <Input 
+                  value={formData.whatsapp_link} 
+                  onChange={(e) => setFormData({ ...formData, whatsapp_link: e.target.value })} 
+                  placeholder="https://chat.whatsapp.com/..." 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <DiscordIcon className="h-4 w-4 text-indigo-400" /> Discord Link
+                </Label>
+                <Input 
+                  value={formData.discord_link} 
+                  onChange={(e) => setFormData({ ...formData, discord_link: e.target.value })} 
+                  placeholder="https://discord.gg/..." 
+                />
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
