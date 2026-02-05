@@ -8,9 +8,11 @@
  import { format, differenceInMinutes } from 'date-fns';
  import ChatHeader from '@/components/chat/ChatHeader';
  import MessageBubble from '@/components/chat/MessageBubble';
- import ChatComposer from '@/components/chat/ChatComposer';
- import TypingIndicator from '@/components/chat/TypingIndicator';
- import DateDivider from '@/components/chat/DateDivider';
+import ChatComposer from '@/components/chat/ChatComposer';
+import TypingIndicator from '@/components/chat/TypingIndicator';
+import DateDivider from '@/components/chat/DateDivider';
+import SeenByDialog from '@/components/chat/SeenByDialog';
+import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicker';
  
  interface TeamMessage {
    id: string;
@@ -70,6 +72,10 @@
    const [replyingTo, setReplyingTo] = useState<TeamMessage | null>(null);
    const [myTeam, setMyTeam] = useState<PlayerTeam | null>(null);
    const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [seenByDialogOpen, setSeenByDialogOpen] = useState(false);
+  const [selectedMessageForSeenBy, setSelectedMessageForSeenBy] = useState<TeamMessage | null>(null);
+  const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
+  const [chatBackground, setChatBackground] = useState('default');
    const scrollRef = useRef<HTMLDivElement>(null);
    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
    const lastTypingBroadcast = useRef<number>(0);
@@ -408,10 +414,37 @@
  
      const messageToSend = trimmedMessage;
      const replyToSend = replyingTo;
+    
+    // Optimistic update - add message to UI immediately
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMessage: TeamMessage = {
+      id: tempId,
+      team_id: myTeam.id,
+      sender_id: user.id,
+      content: messageToSend,
+      created_at: new Date().toISOString(),
+      reactions: {},
+      seen_by: [user.id],
+      reply_to: replyToSend?.id || null,
+      sender: {
+        username: user.user_metadata?.username || null,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || null,
+        avatar_url: user.user_metadata?.avatar_url || null,
+      },
+    };
+    
+    setMessages((prev) => [...prev, optimisticMessage]);
      setNewMessage('');
      setReplyingTo(null);
      setSending(true);
  
+    // Scroll immediately
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 50);
+
      try {
       const insertData = {
          team_id: myTeam.id,
@@ -421,24 +454,37 @@
         reply_to: replyToSend?.id || null,
        };
  
-      const { error } = await supabase.from('team_messages').insert([insertData]);
+     const { data, error } = await supabase.from('team_messages').insert([insertData]).select().single();
  
        if (error) throw error;
-       
-       setTimeout(() => {
-         if (scrollRef.current) {
-           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-         }
-       }, 100);
+      
+      // Replace temp message with real one
+      if (data) {
+        setMessages((prev) => prev.map(msg => 
+          msg.id === tempId ? { ...msg, id: data.id } : msg
+        ));
+      }
      } catch (error) {
        console.error('Error sending message:', error);
-       setNewMessage(messageToSend);
+      // Remove optimistic message on error
+      setMessages((prev) => prev.filter(msg => msg.id !== tempId));
+      setNewMessage(messageToSend); // Restore message
        toast({ title: 'Error', description: 'Failed to send message.', variant: 'destructive' });
      } finally {
        setSending(false);
      }
    };
  
+  const handleViewSeenBy = (msg: TeamMessage) => {
+    setSelectedMessageForSeenBy(msg);
+    setSeenByDialogOpen(true);
+  };
+
+  const getBackgroundStyle = () => {
+    const bg = BACKGROUNDS.find(b => b.id === chatBackground);
+    return bg ? bg.style : 'bg-background';
+  };
+
    const canModifyMessage = (msg: TeamMessage) => {
      if (msg.sender_id !== user?.id) return false;
      const minutesDiff = differenceInMinutes(new Date(), new Date(msg.created_at));
@@ -595,17 +641,15 @@
          memberCount={teamMembers.length}
          teamAvatars={teamAvatars}
          onBack={() => navigate(-1)}
-         onViewMembers={() => navigate('/team')}
-       />
+        onViewMembers={() => navigate('/team')}
+        onChangeBackground={() => setBackgroundPickerOpen(true)}
+      />
  
-       {/* Messages Area with chat background pattern */}
-       <div 
-         ref={scrollRef}
-         className="flex-1 overflow-y-auto"
-         style={{
-           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-         }}
-       >
+      {/* Messages Area with selected background */}
+      <div 
+        ref={scrollRef}
+        className={`flex-1 overflow-y-auto ${getBackgroundStyle()}`}
+      >
          {messages.length === 0 ? (
            <div className="flex flex-col items-center justify-center h-full text-center py-12 px-6">
              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -652,6 +696,7 @@
                          onEdit={() => handleStartEdit(msg)}
                          onDelete={() => handleDeleteMessage(msg.id)}
                          onReact={(emoji) => handleReaction(msg.id, emoji)}
+                         onViewSeenBy={() => handleViewSeenBy(msg)}
                          isEditing={isEditing}
                          editContent={editContent}
                          onEditChange={setEditContent}
@@ -685,6 +730,23 @@
          onCancelReply={cancelReply}
          placeholder="Type a message..."
        />
+
+      {/* Seen By Dialog */}
+      <SeenByDialog
+        open={seenByDialogOpen}
+        onOpenChange={setSeenByDialogOpen}
+        seenBy={selectedMessageForSeenBy?.seen_by || []}
+        teamMembers={teamMembers}
+        senderId={selectedMessageForSeenBy?.sender_id || ''}
+      />
+
+      {/* Background Picker */}
+      <BackgroundPicker
+        open={backgroundPickerOpen}
+        onOpenChange={setBackgroundPickerOpen}
+        currentBackground={chatBackground}
+        onSelectBackground={setChatBackground}
+      />
      </div>
    );
  };
