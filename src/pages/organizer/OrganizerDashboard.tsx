@@ -52,6 +52,14 @@ import {
   FileText,
   Gift
 } from 'lucide-react';
+
+ // Discord icon component
+ const DiscordIcon = ({ className }: { className?: string }) => (
+   <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+     <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189z"/>
+   </svg>
+ );
+
 import { format, differenceInMinutes } from 'date-fns';
 import PrizeDistributionInput from '@/components/PrizeDistributionInput';
 import CountdownTimer from '@/components/CountdownTimer';
@@ -120,6 +128,8 @@ const OrganizerDashboard = () => {
     prize_pool: '',
     youtube_link: '',
     instagram_link: '',
+     whatsapp_link: '',
+     discord_link: '',
     is_giveaway: false,
     giveaway_prize_pool: '',
   });
@@ -223,6 +233,8 @@ const OrganizerDashboard = () => {
       prize_pool: '',
       youtube_link: '',
       instagram_link: '',
+       whatsapp_link: '',
+       discord_link: '',
       is_giveaway: false,
       giveaway_prize_pool: '',
     });
@@ -296,6 +308,8 @@ const OrganizerDashboard = () => {
         prize_distribution: prizeDistribution,
         youtube_link: formData.youtube_link || null,
         instagram_link: formData.instagram_link || null,
+         whatsapp_link: formData.whatsapp_link || null,
+         discord_link: formData.discord_link || null,
         is_giveaway: formData.is_giveaway,
         giveaway_prize_pool: formData.is_giveaway ? prizePoolValue : null,
         current_prize_pool: formData.is_giveaway ? prizePoolValue : 0,
@@ -941,13 +955,121 @@ const OrganizerDashboard = () => {
                               is_giveaway: (t as any).is_giveaway || false,
                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
                             });
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
                             setDialogOpen(true);
                           }}>
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
+                         {t.status === 'upcoming' && (
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
+                             setDialogOpen(true);
+                           }}>
+                             <Edit2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
                         {/* Cancel Tournament - for upcoming or ongoing */}
+                         {t.status === 'upcoming' && (
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
+                             setDialogOpen(true);
+                           }}>
+                             <Edit2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                         {/* Cancel Tournament - for upcoming or ongoing */}
                         {(t.status === 'upcoming' || t.status === 'ongoing') && (
+                       <div className="flex flex-wrap gap-2">
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openViewPlayers(t)}>
+                           <Users className="h-3.5 w-3.5 mr-1" /> Players
+                         </Button>
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditRoom(t)}>
+                           <Key className="h-3.5 w-3.5 mr-1" /> Room
+                         </Button>
+                         {t.status === 'upcoming' && (
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
+                             setDialogOpen(true);
+                           }}>
+                             <Edit2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                         {/* Cancel Tournament - for upcoming or ongoing */}
+                         {(t.status === 'upcoming' || t.status === 'ongoing') && (
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -960,8 +1082,156 @@ const OrganizerDashboard = () => {
                       </div>
 
                       {/* Start/End Tournament Buttons */}
+                       <div className="flex flex-wrap gap-2">
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openViewPlayers(t)}>
+                           <Users className="h-3.5 w-3.5 mr-1" /> Players
+                         </Button>
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditRoom(t)}>
+                           <Key className="h-3.5 w-3.5 mr-1" /> Room
+                         </Button>
+                         {t.status === 'upcoming' && (
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
+                             setDialogOpen(true);
+                           }}>
+                             <Edit2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                         {/* Cancel Tournament - for upcoming or ongoing */}
+                         {(t.status === 'upcoming' || t.status === 'ongoing') && (
+                           <Button 
+                             variant="outline" 
+                             size="sm" 
+                             className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                             onClick={() => openCancelDialog(t)}
+                           >
+                             <XCircle className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                       </div>
+
+                       {/* Start/End Tournament Buttons */}
                       {t.status === 'upcoming' && canStartTournament(t) && (
+                       </div>
+ 
+                       <div className="flex flex-wrap gap-2">
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openViewPlayers(t)}>
+                           <Users className="h-3.5 w-3.5 mr-1" /> Players
+                         </Button>
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditRoom(t)}>
+                           <Key className="h-3.5 w-3.5 mr-1" /> Room
+                         </Button>
+                         {t.status === 'upcoming' && (
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
+                             setDialogOpen(true);
+                           }}>
+                             <Edit2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                         {/* Cancel Tournament - for upcoming or ongoing */}
+                         {(t.status === 'upcoming' || t.status === 'ongoing') && (
+                           <Button 
+                             variant="outline" 
+                             size="sm" 
+                             className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                             onClick={() => openCancelDialog(t)}
+                           >
+                             <XCircle className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                       </div>
+ 
+                       {/* Start/End Tournament Buttons */}
+                       {t.status === 'upcoming' && canStartTournament(t) && (
                         <Button 
+                       </div>
+
+                       <div className="flex flex-wrap gap-2">
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openViewPlayers(t)}>
+                           <Users className="h-3.5 w-3.5 mr-1" /> Players
+                         </Button>
+                         <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditRoom(t)}>
+                           <Key className="h-3.5 w-3.5 mr-1" /> Room
+                         </Button>
+                         {t.status === 'upcoming' && (
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
+                             setDialogOpen(true);
+                           }}>
+                             <Edit2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                         {/* Cancel Tournament - for upcoming or ongoing */}
+                         {(t.status === 'upcoming' || t.status === 'ongoing') && (
+                           <Button 
+                             variant="outline" 
+                             size="sm" 
+                             className="text-destructive border-destructive/50 hover:bg-destructive/10"
+                             onClick={() => openCancelDialog(t)}
+                           >
+                             <XCircle className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
+                       </div>
+
+                       {/* Start/End Tournament Buttons */}
+                       {t.status === 'upcoming' && canStartTournament(t) && (
+                         <Button 
                           className="w-full mt-2 bg-gradient-to-r from-green-500 to-emerald-500"
                           size="sm"
                           onClick={() => handleStartTournament(t)}

@@ -2416,6 +2416,7 @@ export type Database = {
           created_by: string | null
           current_prize_pool: number | null
           description: string | null
+          discord_link: string | null
           end_date: string | null
           entry_fee: number | null
           game: string
@@ -2441,6 +2442,7 @@ export type Database = {
           tournament_mode: string | null
           tournament_type: string
           updated_at: string
+          whatsapp_link: string | null
           winner_declared_at: string | null
           winner_user_id: string | null
           youtube_link: string | null
@@ -2450,6 +2452,7 @@ export type Database = {
           created_by?: string | null
           current_prize_pool?: number | null
           description?: string | null
+          discord_link?: string | null
           end_date?: string | null
           entry_fee?: number | null
           game: string
@@ -2475,6 +2478,7 @@ export type Database = {
           tournament_mode?: string | null
           tournament_type?: string
           updated_at?: string
+          whatsapp_link?: string | null
           winner_declared_at?: string | null
           winner_user_id?: string | null
           youtube_link?: string | null
@@ -2484,6 +2488,7 @@ export type Database = {
           created_by?: string | null
           current_prize_pool?: number | null
           description?: string | null
+          discord_link?: string | null
           end_date?: string | null
           entry_fee?: number | null
           game?: string
@@ -2509,6 +2514,7 @@ export type Database = {
           tournament_mode?: string | null
           tournament_type?: string
           updated_at?: string
+          whatsapp_link?: string | null
           winner_declared_at?: string | null
           winner_user_id?: string | null
           youtube_link?: string | null
