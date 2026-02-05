@@ -136,11 +136,12 @@ const SchoolTournamentManage = () => {
   
   // Form states
   const [roomCredentials, setRoomCredentials] = useState({ roomId: '', password: '', scheduledTime: '' });
-  const [selectedWinnerTeam, setSelectedWinnerTeam] = useState<string>('');
+  const [selectedWinnerTeams, setSelectedWinnerTeams] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
   const [tournamentStats, setTournamentStats] = useState<{
     roomsByRound: Record<number, { total: number; completed: number }>;
   }>({ roomsByRound: {} });
+  const [currentWinnersPerRoom, setCurrentWinnersPerRoom] = useState<number>(1);
   
   // Verification states
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
