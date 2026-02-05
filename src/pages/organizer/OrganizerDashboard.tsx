@@ -219,18 +219,31 @@ const OrganizerDashboard = () => {
     if (!user) return;
 
     try {
+      // Fetch all tournaments except cancelled, then filter completed ones client-side
       const { data, error } = await supabase
         .from('tournaments')
         .select('*')
         .eq('created_by', user.id)
-        .neq('status', 'completed')
         .neq('status', 'cancelled')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTournaments(data || []);
+      
+      // Filter: show active tournaments + completed ones within 3 days of winner declaration
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      const filteredTournaments = (data || []).filter(t => {
+        if (t.status !== 'completed') return true;
+        // Show completed tournaments for 3 days after winner_declared_at
+        if (t.winner_declared_at) {
+          return new Date(t.winner_declared_at) > threeDaysAgo;
+        }
+        return false;
+      });
+      setTournaments(filteredTournaments);
 
-      const earnings = (data || []).reduce((sum, t) => sum + (t.organizer_earnings || 0), 0);
+      const earnings = filteredTournaments.reduce((sum, t) => sum + (t.organizer_earnings || 0), 0);
       setTotalEarnings(earnings);
     } catch (error) {
       console.error('Error fetching tournaments:', error);
