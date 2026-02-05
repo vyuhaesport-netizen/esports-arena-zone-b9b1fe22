@@ -228,17 +228,16 @@ const CreatorDashboard = () => {
 
       if (error) throw error;
       
-      // Filter: show active tournaments + completed ones within 3 days of winner declaration
+      // Filter: show active tournaments + completed ones until winner is declared, then keep for 3 days after declaration
       const threeDaysAgo = new Date();
       threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-      
-      const filteredTournaments = (data || []).filter(t => {
+
+      const filteredTournaments = (data || []).filter((t) => {
         if (t.status !== 'completed') return true;
-        // Show completed tournaments for 3 days after winner_declared_at
-        if (t.winner_declared_at) {
-          return new Date(t.winner_declared_at) > threeDaysAgo;
-        }
-        return false;
+        // If winner not declared yet, keep it visible
+        if (!t.winner_declared_at) return true;
+        // After winner declared, keep visible for 3 days
+        return new Date(t.winner_declared_at) > threeDaysAgo;
       });
       
       setTournaments(filteredTournaments);
