@@ -114,8 +114,8 @@ const Wallet = () => {
 
       setTransactions(txns || []);
 
-      // Calculate total earned (ONLY prize winnings)
-      const prizeTypes = ['winning', 'prize', 'prize_won'];
+      // Calculate total earned (prize winnings + commissions)
+      const prizeTypes = ['winning', 'prize', 'prize_won', 'commission'];
       const earningTxns = (txns || []).filter(t => prizeTypes.includes(t.type) && t.status === 'completed');
       const earned = earningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
       
@@ -306,7 +306,6 @@ const Wallet = () => {
               <span className="text-sm text-success">₹</span>
               <span className="text-xl font-bold text-success">{balance.toFixed(0)}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5">For tournaments</p>
           </div>
 
           <button

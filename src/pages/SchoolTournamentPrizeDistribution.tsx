@@ -286,32 +286,18 @@ import {
        
        if (updateError) throw updateError;
        
-        // Credit organizer earnings to their normal wallet
+        // Credit organizer earnings to Total Earned (withdrawable balance)
         const { error: walletTxError } = await supabase
           .from('wallet_transactions')
-         .insert({
-           user_id: tournament?.organizer_id,
-           amount: organizerEarnings,
-            type: 'credit',
-           status: 'completed',
-            description: `Local Tournament Commission: ${tournament?.tournament_name}`
-         });
-       
+          .insert({
+            user_id: tournament?.organizer_id,
+            amount: organizerEarnings,
+            type: 'commission',
+            status: 'completed',
+            description: `Tournament Commission: ${tournament?.tournament_name}`
+          });
+        
         if (walletTxError) console.error('Error crediting organizer:', walletTxError);
-       
-        // Update organizer wallet balance
-        const { data: organizerProfile } = await supabase
-          .from('profiles')
-          .select('wallet_balance')
-         .eq('user_id', tournament?.organizer_id)
-         .maybeSingle();
-       
-        await supabase
-          .from('profiles')
-          .update({
-            wallet_balance: (organizerProfile?.wallet_balance || 0) + organizerEarnings
-          })
-          .eq('user_id', tournament?.organizer_id);
        
        // Award stats points to winners
        const rankEntries = prizeEntries.filter(e => e.awardType === 'rank' && e.rank && e.rank <= 10);
