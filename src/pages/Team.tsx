@@ -26,7 +26,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import vyuhaLogo from '@/assets/vyuha-logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1169,12 +1168,8 @@ const TeamPage = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="relative">
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg scale-150" />
-            <img src={vyuhaLogo} alt="Vyuha" className="w-10 h-10 rounded-full shadow-lg relative z-10 border-2 border-primary/30" />
-          </div>
           <div className="flex-1">
-            <h1 className="font-bold text-lg">Build Your Team</h1>
+            <h1 className="font-bold text-lg">Team</h1>
           </div>
           
           {/* Post Requirement Button (for leaders with space) */}
