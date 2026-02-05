@@ -139,7 +139,8 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
          .select('user_id')
          .eq('team_id', myTeam.id);
  
-       const memberIds = members?.map(m => m.user_id) || [];
+       // Filter out leader from members to avoid duplication
+       const memberIds = (members?.map(m => m.user_id) || []).filter(id => id !== myTeam.leader_id);
        
        let memberProfiles: TeamMember[] = [];
        if (memberIds.length > 0) {
