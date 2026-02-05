@@ -486,13 +486,32 @@ serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { messages, type = 'support', userId, adminCommand } = await req.json();
+    const { messages, type = 'support', userId, adminCommand, healthCheck } = await req.json();
+
+    // Handle health check requests
+    if (healthCheck) {
+      if (!DEEPSEEK_API_KEY) {
+        throw new Error('DEEPSEEK_API_KEY is not configured');
+      }
+      return new Response(
+        JSON.stringify({ success: true, message: 'DeepSeek AI configured', model: 'deepseek-r1' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!DEEPSEEK_API_KEY) {
       console.error('DEEPSEEK_API_KEY is not configured');
       return new Response(
         JSON.stringify({ error: 'DeepSeek R1 API key not configured. Please add your API key in admin settings.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate messages array
+    if (!messages || !Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({ error: 'Messages array is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
