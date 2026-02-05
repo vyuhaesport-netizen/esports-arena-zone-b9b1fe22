@@ -178,14 +178,16 @@ export default {
   				}
   			}
   		},
-  		animation: {
-  			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out',
-  			'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
-  			'slide-in-right': 'slide-in-right 0.3s ease-out',
-  			'slide-in-up': 'slide-in-up 0.4s ease-out',
-  			'bounce-soft': 'bounce-soft 2s ease-in-out infinite'
-  		},
+		animation: {
+			'accordion-down': 'accordion-down 0.2s ease-out',
+			'accordion-up': 'accordion-up 0.2s ease-out',
+			'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+			'slide-in-right': 'slide-in-right 0.3s ease-out',
+			'slide-in-up': 'slide-in-up 0.4s ease-out',
+			'bounce-soft': 'bounce-soft 2s ease-in-out infinite',
+			'neon-pulse': 'neon-pulse 2s ease-in-out infinite',
+			'neon-glow': 'neon-glow 2s ease-in-out infinite'
+		},
   		boxShadow: {
   			'2xs': 'var(--shadow-2xs)',
   			xs: 'var(--shadow-xs)',
