@@ -27,10 +27,12 @@ import {
   Trash2,
   Download,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Link2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { generateOrganizersReportPDF } from '@/utils/pdfGenerator';
+import GiveCollabLinkDialog from '@/components/GiveCollabLinkDialog';
 
 interface Organizer {
   user_id: string;
@@ -53,6 +55,8 @@ const AdminOrganizers = () => {
   const [selectedOrganizer, setSelectedOrganizer] = useState<Organizer | null>(null);
   const [actionDialog, setActionDialog] = useState<'view-organizer' | 'remove-organizer' | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [giveLinkDialog, setGiveLinkDialog] = useState(false);
+  const [linkOrganizer, setLinkOrganizer] = useState<Organizer | null>(null);
 
   const { user, loading: authLoading, hasPermission } = useAuth();
   const { toast } = useToast();
@@ -484,6 +488,17 @@ const AdminOrganizers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Give Collab Link Dialog */}
+      {linkOrganizer && (
+        <GiveCollabLinkDialog
+          open={giveLinkDialog}
+          onOpenChange={setGiveLinkDialog}
+          userId={linkOrganizer.user_id}
+          userType="organizer"
+          userName={linkOrganizer.name}
+        />
+      )}
     </AdminLayout>
   );
 };
