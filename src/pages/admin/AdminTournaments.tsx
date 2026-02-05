@@ -320,11 +320,13 @@ const AdminTournaments = () => {
     const organizerRevenue = tournaments.filter(t => t.type === 'organizer').reduce((sum, t) => sum + t.platform_commission, 0);
     const creatorRevenue = tournaments.filter(t => t.type === 'creator').reduce((sum, t) => sum + t.platform_commission, 0);
     const localRevenue = tournaments.filter(t => t.type === 'local').reduce((sum, t) => sum + t.platform_commission, 0);
+    const schoolRevenue = tournaments.filter(t => t.type === 'school').reduce((sum, t) => sum + t.platform_commission, 0);
     
     return [
       { name: 'Organizer', value: organizerRevenue, color: 'hsl(25, 95%, 53%)' },
       { name: 'Creator', value: creatorRevenue, color: 'hsl(330, 80%, 60%)' },
       { name: 'Local', value: localRevenue, color: 'hsl(217, 91%, 60%)' },
+      { name: 'School/College', value: schoolRevenue, color: 'hsl(142, 76%, 36%)' },
     ].filter(d => d.value > 0);
   };
 
