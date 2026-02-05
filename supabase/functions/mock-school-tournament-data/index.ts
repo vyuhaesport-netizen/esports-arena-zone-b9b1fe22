@@ -85,9 +85,16 @@ serve(async (req) => {
       console.log(`Inserted batch ${batch + 1}: ${teams.length} teams (Total: ${totalInserted})`);
     }
 
-    // Update tournament stats
+    // Get tournament entry fee
+    const { data: tournament } = await supabase
+      .from('school_tournaments')
+      .select('entry_fee')
+      .eq('id', tournament_id)
+      .single();
+
+    const entryFee = tournament?.entry_fee || 25;
     const totalPlayers = team_count * 4;
-    const totalCollected = team_count * 400; // Assuming 100 per player x 4 players
+    const totalCollected = totalPlayers * entryFee; // Actual: players x entry_fee
 
     const { error: updateError } = await supabase
       .from('school_tournaments')
