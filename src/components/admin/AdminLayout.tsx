@@ -33,6 +33,7 @@ import {
   Brain,
   Smartphone,
   School,
+  Server,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -74,6 +75,7 @@ const menuItems: MenuItem[] = [
   { icon: Link2, label: 'Creator Invites', path: '/admin/creator-invites', superAdminOnly: true },
   { icon: Link2, label: 'Collab Links', path: '/admin/collab-links', superAdminOnly: true },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },
+  { icon: Server, label: 'Backend Status', path: '/admin/backend-status', superAdminOnly: true },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
 ];
 
