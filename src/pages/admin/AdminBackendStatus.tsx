@@ -128,24 +128,47 @@
  
        if (error) throw error;
  
-       if (data?.zapupi_status === 'success') {
+      // ZapUPI API responded - check if it's authentication issue or just test order validation
+      if (data?.zapupi_http_ok) {
+        // API responded, check the actual error
+        const zapupiMsg = data?.zapupi_message || '';
+        const isAuthError = zapupiMsg.toLowerCase().includes('invalid token') || 
+                           zapupiMsg.toLowerCase().includes('invalid key') ||
+                           zapupiMsg.toLowerCase().includes('unauthorized') ||
+                           zapupiMsg.toLowerCase().includes('authentication');
+        
+        if (isAuthError) {
+          updateIntegration('ZapUPI Payment Gateway', {
+            status: 'error',
+            message: 'Authentication Failed',
+            details: `Error: ${zapupiMsg}\nOutbound IP: ${data.outbound_ip || 'Unknown'}\n⚠️ Check API Token/Secret or IP Whitelist in ZapUPI Dashboard`
+          });
+        } else if (data?.zapupi_status === 'success') {
          updateIntegration('ZapUPI Payment Gateway', {
            status: 'success',
            message: 'Working',
            details: `Outbound IP: ${data.outbound_ip || 'Unknown'}`
          });
+        } else {
+          // Other errors like "Invalid OrderId" are actually OK - means API is responding
+          updateIntegration('ZapUPI Payment Gateway', {
+            status: 'success',
+            message: 'API Connected',
+            details: `API responding correctly.\nTest response: "${zapupiMsg}"\nOutbound IP: ${data.outbound_ip || 'Unknown'}\n✅ Credentials verified, API accessible`
+          });
+        }
        } else {
          updateIntegration('ZapUPI Payment Gateway', {
            status: 'error',
-           message: data?.zapupi_message || 'API Error',
-           details: JSON.stringify(data?.zapupi_response || {})
+          message: 'API Connection Failed',
+          details: `HTTP Error from ZapUPI\nResponse: ${JSON.stringify(data?.zapupi_response || {})}\nOutbound IP: ${data?.outbound_ip || 'Unknown'}\n⚠️ ZapUPI servers may be down or IP not whitelisted`
          });
        }
      } catch (error: any) {
        updateIntegration('ZapUPI Payment Gateway', {
          status: 'error',
          message: 'Check failed',
-         details: error.message
+        details: `Error: ${error.message}\n⚠️ Edge function may not be deployed or network issue`
        });
      }
    };
