@@ -682,13 +682,15 @@ const SchoolTournament = () => {
                         <p className="text-[10px] text-muted-foreground mt-1">Min ₹25 per player</p>
                       </div>
                       <div>
-                        <Label className="text-xs">Prize Pool (₹)</Label>
+                        <Label className="text-xs">Prize Pool (₹) - Auto</Label>
                         <Input
                           type="number"
-                          value={formData.prizePool || ''}
-                          onChange={(e) => setFormData(prev => ({ ...prev, prizePool: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
-                          className="h-9 text-sm"
+                          value={Math.floor(formData.maxPlayers * formData.entryFee * 0.8)}
+                          readOnly
+                          disabled
+                          className="h-9 text-sm bg-muted/50"
                         />
+                        <p className="text-[10px] text-muted-foreground mt-1">80% of total collection</p>
                       </div>
                     </div>
                      
