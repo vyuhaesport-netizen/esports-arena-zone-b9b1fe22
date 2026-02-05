@@ -1,4 +1,4 @@
-import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
+ import { ArrowLeft, MoreVertical, Users, Search, Palette } from 'lucide-react';
  import { Button } from '@/components/ui/button';
  import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
  import {
@@ -17,6 +17,7 @@ import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
    onViewMembers?: () => void;
    onSearch?: () => void;
    isOnline?: boolean;
+   onChangeBackground?: () => void;
  }
  
  const ChatHeader = ({
@@ -27,14 +28,15 @@ import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
    onViewMembers,
    onSearch,
    isOnline = true,
+   onChangeBackground,
  }: ChatHeaderProps) => {
    return (
-     <header className="sticky top-0 z-50 bg-gradient-to-r from-primary/95 to-primary/85 backdrop-blur-xl text-primary-foreground shadow-lg">
-       <div className="flex items-center gap-2 px-2 py-2">
+     <header className="sticky top-0 z-50 bg-background border-b border-border">
+       <div className="flex items-center gap-2 px-2 py-2.5">
          <Button
            variant="ghost"
            size="icon"
-           className="h-9 w-9 text-primary-foreground hover:bg-white/10 shrink-0"
+           className="h-9 w-9 text-foreground hover:bg-muted shrink-0"
            onClick={onBack}
          >
            <ArrowLeft className="h-5 w-5" />
@@ -44,30 +46,30 @@ import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
          <div className="relative flex items-center cursor-pointer" onClick={onViewMembers}>
            <div className="flex -space-x-2">
              {teamAvatars.slice(0, 3).map((url, i) => (
-               <Avatar key={i} className="h-9 w-9 border-2 border-primary ring-2 ring-primary">
+               <Avatar key={i} className="h-9 w-9 border-2 border-background ring-2 ring-primary/50">
                  <AvatarImage src={url} />
-                 <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground text-xs font-bold">
+                 <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
                    {String.fromCharCode(65 + i)}
                  </AvatarFallback>
                </Avatar>
              ))}
              {teamAvatars.length === 0 && (
-               <Avatar className="h-9 w-9 border-2 border-primary">
-                 <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground">
+               <Avatar className="h-9 w-9 border-2 border-background">
+                 <AvatarFallback className="bg-primary/20 text-primary">
                    <Users className="h-4 w-4" />
                  </AvatarFallback>
                </Avatar>
              )}
            </div>
            {isOnline && (
-             <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-green-400 border-2 border-primary rounded-full animate-pulse" />
+             <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 bg-green-500 border-2 border-background rounded-full animate-pulse" />
            )}
          </div>
  
          {/* Team Info */}
          <div className="flex-1 min-w-0 ml-1 cursor-pointer" onClick={onViewMembers}>
-           <h1 className="text-base font-bold truncate leading-tight">{teamName}</h1>
-           <div className="flex items-center gap-1.5 text-xs text-primary-foreground/70">
+           <h1 className="text-base font-bold truncate leading-tight text-foreground">{teamName}</h1>
+           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
              <span className="flex items-center gap-1">
                <Users className="h-3 w-3" />
                {memberCount} members
@@ -75,7 +77,7 @@ import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
              {isOnline && (
                <>
                  <span>•</span>
-                 <span className="text-green-300">online</span>
+                 <span className="text-green-500">online</span>
                </>
              )}
            </div>
@@ -86,7 +88,7 @@ import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
            <Button
              variant="ghost"
              size="icon"
-             className="h-9 w-9 text-primary-foreground hover:bg-white/10"
+             className="h-9 w-9 text-foreground hover:bg-muted"
              onClick={onSearch}
            >
              <Search className="h-5 w-5" />
@@ -97,7 +99,7 @@ import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
                <Button
                  variant="ghost"
                  size="icon"
-                 className="h-9 w-9 text-primary-foreground hover:bg-white/10"
+                 className="h-9 w-9 text-foreground hover:bg-muted"
                >
                  <MoreVertical className="h-5 w-5" />
                </Button>
@@ -107,16 +109,18 @@ import { ArrowLeft, MoreVertical, Users, Search } from 'lucide-react';
                  <Users className="h-4 w-4 mr-2" />
                  View Members
                </DropdownMenuItem>
-               <DropdownMenuItem>
+               <DropdownMenuItem onClick={onSearch}>
                  <Search className="h-4 w-4 mr-2" />
                  Search Messages
                </DropdownMenuItem>
                <DropdownMenuSeparator />
+               <DropdownMenuItem onClick={onChangeBackground}>
+                 <Palette className="h-4 w-4 mr-2" />
+                 Change Wallpaper
+               </DropdownMenuItem>
+               <DropdownMenuSeparator />
                <DropdownMenuItem>
                  Mute Notifications
-               </DropdownMenuItem>
-               <DropdownMenuItem>
-                 Clear Chat
                </DropdownMenuItem>
              </DropdownMenuContent>
            </DropdownMenu>
