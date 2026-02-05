@@ -340,19 +340,21 @@ const AdminTournaments = () => {
     }
   };
 
-  const getTypeColor = (type: 'organizer' | 'creator' | 'local') => {
+  const getTypeColor = (type: 'organizer' | 'creator' | 'local' | 'school') => {
     switch (type) {
       case 'organizer': return 'bg-orange-500/10 text-orange-600';
       case 'creator': return 'bg-pink-500/10 text-pink-600';
       case 'local': return 'bg-blue-500/10 text-blue-600';
+      case 'school': return 'bg-emerald-500/10 text-emerald-600';
     }
   };
 
-  const getTypeIcon = (type: 'organizer' | 'creator' | 'local') => {
+  const getTypeIcon = (type: 'organizer' | 'creator' | 'local' | 'school') => {
     switch (type) {
       case 'organizer': return <Building2 className="h-4 w-4" />;
       case 'creator': return <Palette className="h-4 w-4" />;
       case 'local': return <MapPin className="h-4 w-4" />;
+      case 'school': return <GraduationCap className="h-4 w-4" />;
     }
   };
 
