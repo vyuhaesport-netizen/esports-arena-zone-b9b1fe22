@@ -285,7 +285,7 @@ const SchoolTournament = () => {
          whatsapp_link: formData.whatsappLink || null,
          discord_link: formData.discordLink || null,
          prize_distribution_mode: formData.prizeDistributionMode,
-         winners_per_room: formData.winnersPerRoom,
+         winners_per_room: 1, // Default, organizer sets per-round in manage page
       });
 
       if (error) throw error;
@@ -729,29 +729,6 @@ const SchoolTournament = () => {
                            </div>
                          </Label>
                        </RadioGroup>
-                     </div>
-                     
-                     {/* Winners Per Room */}
-                     <div>
-                       <Label className="text-xs">Winners Per Room (1-5)</Label>
-                       <Select
-                         value={formData.winnersPerRoom.toString()}
-                         onValueChange={(value) => setFormData(prev => ({ ...prev, winnersPerRoom: parseInt(value) }))}
-                       >
-                         <SelectTrigger className="h-9 text-sm">
-                           <SelectValue placeholder="Select winners per room" />
-                         </SelectTrigger>
-                         <SelectContent>
-                           <SelectItem value="1">1 Winner (Single)</SelectItem>
-                           <SelectItem value="2">2 Winners (Double)</SelectItem>
-                           <SelectItem value="3">3 Winners (Triple)</SelectItem>
-                           <SelectItem value="4">4 Winners</SelectItem>
-                           <SelectItem value="5">5 Winners</SelectItem>
-                         </SelectContent>
-                       </Select>
-                       <p className="text-[10px] text-muted-foreground mt-1">
-                         Number of teams that advance from each room per round
-                       </p>
                      </div>
                     
                     <div className="grid grid-cols-2 gap-3">
