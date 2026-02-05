@@ -337,15 +337,26 @@ const AdminCreators = () => {
                       </Button>
                       {hasPermission('creators:manage') && (
                         <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setLinkCreator(creator);
+                            setGiveLinkDialog(true);
+                          }}
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {hasPermission('creators:manage') && (
+                        <Button
                           variant="destructive"
                           size="sm"
-                          className="flex-1"
                           onClick={() => {
                             setSelectedCreator(creator);
                             setActionDialog('remove-creator');
                           }}
                         >
-                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
                     </div>
