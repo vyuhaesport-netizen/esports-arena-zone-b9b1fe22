@@ -298,6 +298,20 @@ import {
           });
         
         if (walletTxError) console.error('Error crediting organizer:', walletTxError);
+        
+        // Update organizer's withdrawable_balance (Total Earned)
+        const { data: organizerProfile } = await supabase
+          .from('profiles')
+          .select('withdrawable_balance')
+          .eq('user_id', tournament?.organizer_id)
+          .maybeSingle();
+        
+        await supabase
+          .from('profiles')
+          .update({
+            withdrawable_balance: (organizerProfile?.withdrawable_balance || 0) + organizerEarnings
+          })
+          .eq('user_id', tournament?.organizer_id);
        
        // Award stats points to winners
        const rankEntries = prizeEntries.filter(e => e.awardType === 'rank' && e.rank && e.rank <= 10);
