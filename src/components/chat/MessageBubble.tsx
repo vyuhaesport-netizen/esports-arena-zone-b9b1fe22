@@ -1,8 +1,7 @@
 import { useRef, useEffect } from 'react';
-import { Check, CheckCheck, Reply, Trash2, Pencil, MoreVertical, Copy, X, Eye } from 'lucide-react';
+import { Check, CheckCheck, Reply, Trash2, Pencil, MoreVertical, Copy, Eye } from 'lucide-react';
  import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
  import { Button } from '@/components/ui/button';
- import { Input } from '@/components/ui/input';
  import {
    DropdownMenu,
    DropdownMenuContent,
