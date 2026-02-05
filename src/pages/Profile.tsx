@@ -86,6 +86,7 @@ const ProfilePage = () => {
   const { user, isAdmin, isSuperAdmin, isOrganizer, signOut, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { teamChat, broadcasts, hasTeam } = useUnreadCounts();
 
   useEffect(() => {
     if (!authLoading && !user) {
