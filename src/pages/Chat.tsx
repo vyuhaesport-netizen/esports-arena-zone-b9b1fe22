@@ -714,12 +714,10 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
                           senderName: repliedMessage.sender?.in_game_name || repliedMessage.sender?.username || 'Player',
                            content: repliedMessage.content,
                          } : null}
-                         reactions={msg.reactions}
                          canModify={canModify}
                          onReply={() => handleReply(msg)}
                          onEdit={() => handleStartEdit(msg)}
                          onDelete={() => handleDeleteMessage(msg.id)}
-                         onReact={(emoji) => handleReaction(msg.id, emoji)}
                          onViewSeenBy={() => handleViewSeenBy(msg)}
                          isEditing={isEditing}
                          editContent={editContent}
