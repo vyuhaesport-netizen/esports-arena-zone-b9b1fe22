@@ -230,6 +230,10 @@ const OrganizerDashboard = () => {
   };
 
   const getPrizePool = () => {
+    // For giveaway, use giveaway_prize_pool; for regular, use prize_pool
+    if (formData.is_giveaway) {
+      return parseFloat(formData.giveaway_prize_pool) || 0;
+    }
     return parseFloat(formData.prize_pool) || 0;
   };
 
@@ -1251,6 +1255,19 @@ const OrganizerDashboard = () => {
               </div>
             )}
 
+            {/* Giveaway Prize Pool Display */}
+            {formData.is_giveaway && parseFloat(formData.giveaway_prize_pool) > 0 && (
+              <div className="space-y-2">
+                <Label>Configured Prize Pool</Label>
+                <div className="p-3 bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/30 rounded-lg">
+                  <p className="text-xl font-bold text-emerald-600">₹{parseFloat(formData.giveaway_prize_pool).toLocaleString()}</p>
+                  <p className="text-xs text-emerald-600/80 mt-1">
+                    ✓ This amount will be used for prize distribution
+                  </p>
+                </div>
+              </div>
+            )}
+
             <PrizeDistributionInput
               value={formData.prize_distribution}
               onChange={(value) => setFormData({ ...formData, prize_distribution: value })}
@@ -1260,11 +1277,6 @@ const OrganizerDashboard = () => {
             <div className="space-y-2">
               <Label>Start Date & Time *</Label>
               <Input type="datetime-local" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Tournament details..." rows={3} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
