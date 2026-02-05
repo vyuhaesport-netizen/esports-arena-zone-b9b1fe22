@@ -7,27 +7,48 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, 
   MessageSquare,
-  Eye,
   Phone,
   Clock,
   CheckCircle,
-  XCircle,
-  Send
+  Send,
+  Search,
+  AlertTriangle,
+  Inbox,
+  CheckCheck,
+  RotateCcw,
+  User,
+  Wallet,
+  Gamepad2,
+  Calendar,
+  Mail,
+  Hash,
+  ArrowRight,
+  Filter,
+  RefreshCw
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 interface SupportTicket {
   id: string;
@@ -57,9 +78,11 @@ const AdminSupport = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('open');
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [viewDialog, setViewDialog] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [responseText, setResponseText] = useState('');
   const [processing, setProcessing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [topicFilter, setTopicFilter] = useState('all');
 
   const { user, loading: authLoading, hasPermission } = useAuth();
   const { toast } = useToast();
@@ -90,7 +113,6 @@ const AdminSupport = () => {
 
       if (error) throw error;
 
-      // Fetch user details for each ticket
       const userIds = [...new Set(data?.map(t => t.user_id) || [])];
       const { data: profiles } = await supabase
         .from('profiles')
@@ -132,30 +154,84 @@ const AdminSupport = () => {
     }
   };
 
+  // Stats
+  const openCount = tickets.filter(t => t.status === 'open').length;
+  const inProgressCount = tickets.filter(t => t.status === 'in_progress').length;
+  const resolvedCount = tickets.filter(t => t.status === 'resolved').length;
+  const callbackCount = tickets.filter(t => t.request_callback && t.status !== 'resolved').length;
+
   const getFilteredTickets = () => {
-    if (activeTab === 'all') return tickets;
-    return tickets.filter(t => t.status === activeTab);
+    let filtered = tickets;
+    
+    // Status filter
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(t => t.status === activeTab);
+    }
+    
+    // Topic filter
+    if (topicFilter !== 'all') {
+      filtered = filtered.filter(t => t.topic === topicFilter);
+    }
+    
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(t => 
+        t.user_name?.toLowerCase().includes(query) ||
+        t.user_email?.toLowerCase().includes(query) ||
+        t.user_username?.toLowerCase().includes(query) ||
+        t.description.toLowerCase().includes(query) ||
+        t.id.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'open': return <Badge className="bg-yellow-500/10 text-yellow-600 text-[10px]">Open</Badge>;
-      case 'in_progress': return <Badge className="bg-blue-500/10 text-blue-600 text-[10px]">In Progress</Badge>;
-      case 'resolved': return <Badge className="bg-green-500/10 text-green-600 text-[10px]">Resolved</Badge>;
-      case 'closed': return <Badge variant="secondary" className="text-[10px]">Closed</Badge>;
-      default: return <Badge variant="secondary" className="text-[10px]">{status}</Badge>;
+      case 'open': 
+        return { 
+          color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', 
+          icon: Inbox,
+          label: 'Open'
+        };
+      case 'in_progress': 
+        return { 
+          color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', 
+          icon: RotateCcw,
+          label: 'In Progress'
+        };
+      case 'resolved': 
+        return { 
+          color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', 
+          icon: CheckCheck,
+          label: 'Resolved'
+        };
+      case 'closed': 
+        return { 
+          color: 'bg-muted text-muted-foreground border-border', 
+          icon: CheckCircle,
+          label: 'Closed'
+        };
+      default: 
+        return { 
+          color: 'bg-muted text-muted-foreground border-border', 
+          icon: MessageSquare,
+          label: status
+        };
     }
   };
 
-  const getTopicLabel = (topic: string) => {
-    const topics: Record<string, string> = {
-      payment: 'Payment Issue',
-      tournament: 'Tournament Bug',
-      account: 'Account Problem',
-      organizer: 'Organizer Report',
-      other: 'Other',
+  const getTopicConfig = (topic: string) => {
+    const configs: Record<string, { label: string; color: string; priority: number }> = {
+      payment: { label: 'Payment Issue', color: 'bg-red-500/10 text-red-600', priority: 1 },
+      tournament: { label: 'Tournament Bug', color: 'bg-purple-500/10 text-purple-600', priority: 2 },
+      account: { label: 'Account Problem', color: 'bg-orange-500/10 text-orange-600', priority: 3 },
+      organizer: { label: 'Organizer Report', color: 'bg-blue-500/10 text-blue-600', priority: 4 },
+      other: { label: 'Other', color: 'bg-muted text-muted-foreground', priority: 5 },
     };
-    return topics[topic] || topic;
+    return configs[topic] || configs.other;
   };
 
   const handleRespond = async (newStatus: string) => {
@@ -185,7 +261,7 @@ const AdminSupport = () => {
       if (error) throw error;
 
       toast({ title: 'Success', description: 'Ticket updated successfully.' });
-      setViewDialog(false);
+      setSheetOpen(false);
       setSelectedTicket(null);
       setResponseText('');
       fetchTickets();
@@ -195,6 +271,12 @@ const AdminSupport = () => {
     } finally {
       setProcessing(false);
     }
+  };
+
+  const openTicketSheet = (ticket: SupportTicket) => {
+    setSelectedTicket(ticket);
+    setResponseText(ticket.admin_response || '');
+    setSheetOpen(true);
   };
 
   if (authLoading || loading) {
@@ -207,205 +289,381 @@ const AdminSupport = () => {
     );
   }
 
+  const filteredTickets = getFilteredTickets();
+
   return (
-    <AdminLayout title="Support Tickets">
+    <AdminLayout title="Support Center">
       <div className="p-4 space-y-4">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-4 gap-2">
+          <Card 
+            className={`cursor-pointer transition-all ${activeTab === 'open' ? 'ring-2 ring-amber-500' : ''}`}
+            onClick={() => setActiveTab('open')}
+          >
+            <CardContent className="p-3 text-center">
+              <div className="w-8 h-8 mx-auto rounded-full bg-amber-500/10 flex items-center justify-center mb-1">
+                <Inbox className="h-4 w-4 text-amber-600" />
+              </div>
+              <p className="text-xl font-bold">{openCount}</p>
+              <p className="text-[10px] text-muted-foreground">Open</p>
+            </CardContent>
+          </Card>
+          
+          <Card 
+            className={`cursor-pointer transition-all ${activeTab === 'in_progress' ? 'ring-2 ring-blue-500' : ''}`}
+            onClick={() => setActiveTab('in_progress')}
+          >
+            <CardContent className="p-3 text-center">
+              <div className="w-8 h-8 mx-auto rounded-full bg-blue-500/10 flex items-center justify-center mb-1">
+                <RotateCcw className="h-4 w-4 text-blue-600" />
+              </div>
+              <p className="text-xl font-bold">{inProgressCount}</p>
+              <p className="text-[10px] text-muted-foreground">In Progress</p>
+            </CardContent>
+          </Card>
+          
+          <Card 
+            className={`cursor-pointer transition-all ${activeTab === 'resolved' ? 'ring-2 ring-emerald-500' : ''}`}
+            onClick={() => setActiveTab('resolved')}
+          >
+            <CardContent className="p-3 text-center">
+              <div className="w-8 h-8 mx-auto rounded-full bg-emerald-500/10 flex items-center justify-center mb-1">
+                <CheckCheck className="h-4 w-4 text-emerald-600" />
+              </div>
+              <p className="text-xl font-bold">{resolvedCount}</p>
+              <p className="text-[10px] text-muted-foreground">Resolved</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer" onClick={() => setActiveTab('all')}>
+            <CardContent className="p-3 text-center">
+              <div className="w-8 h-8 mx-auto rounded-full bg-destructive/10 flex items-center justify-center mb-1">
+                <Phone className="h-4 w-4 text-destructive" />
+              </div>
+              <p className="text-xl font-bold">{callbackCount}</p>
+              <p className="text-[10px] text-muted-foreground">Callbacks</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tickets, users, emails..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={topicFilter} onValueChange={setTopicFilter}>
+            <SelectTrigger className="w-32 bg-background">
+              <Filter className="h-3 w-3 mr-1" />
+              <SelectValue placeholder="Topic" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border z-50">
+              <SelectItem value="all">All Topics</SelectItem>
+              <SelectItem value="payment">Payment</SelectItem>
+              <SelectItem value="tournament">Tournament</SelectItem>
+              <SelectItem value="account">Account</SelectItem>
+              <SelectItem value="organizer">Organizer</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="icon" onClick={fetchTickets}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="open" className="text-xs">Open</TabsTrigger>
-            <TabsTrigger value="in_progress" className="text-xs">In Progress</TabsTrigger>
-            <TabsTrigger value="resolved" className="text-xs">Resolved</TabsTrigger>
-            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-4 h-9">
+            <TabsTrigger value="open" className="text-xs data-[state=active]:bg-amber-500/20">
+              Open ({openCount})
+            </TabsTrigger>
+            <TabsTrigger value="in_progress" className="text-xs data-[state=active]:bg-blue-500/20">
+              Progress ({inProgressCount})
+            </TabsTrigger>
+            <TabsTrigger value="resolved" className="text-xs data-[state=active]:bg-emerald-500/20">
+              Resolved ({resolvedCount})
+            </TabsTrigger>
+            <TabsTrigger value="all" className="text-xs">
+              All ({tickets.length})
+            </TabsTrigger>
           </TabsList>
         </Tabs>
 
         {/* Tickets List */}
-        <div className="space-y-3">
-          {getFilteredTickets().map((ticket) => (
-            <Card key={ticket.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <MessageSquare className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{getTopicLabel(ticket.topic)}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {ticket.user_name} • {format(new Date(ticket.created_at), 'MMM dd, yyyy HH:mm')}
+        <div className="space-y-2">
+          {filteredTickets.map((ticket) => {
+            const statusConfig = getStatusConfig(ticket.status);
+            const topicConfig = getTopicConfig(ticket.topic);
+            const StatusIcon = statusConfig.icon;
+            
+            return (
+              <Card 
+                key={ticket.id}
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => openTicketSheet(ticket)}
+              >
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-3">
+                    {/* Avatar */}
+                    <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                        {ticket.user_name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm truncate">
+                          {ticket.user_name}
+                        </span>
+                        <Badge variant="outline" className={`text-[9px] px-1.5 py-0 ${topicConfig.color}`}>
+                          {topicConfig.label}
+                        </Badge>
+                        {ticket.request_callback && (
+                          <Badge className="bg-destructive/10 text-destructive text-[9px] px-1.5 py-0">
+                            <Phone className="h-2.5 w-2.5 mr-0.5" />
+                            Callback
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                        {ticket.description}
                       </p>
+                      
+                      <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}
+                        </span>
+                        <span className="truncate">{ticket.user_email}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Status & Arrow */}
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge 
+                        variant="outline" 
+                        className={`text-[10px] px-2 py-0.5 ${statusConfig.color}`}
+                      >
+                        <StatusIcon className="h-3 w-3 mr-1" />
+                        {statusConfig.label}
+                      </Badge>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
                     </div>
                   </div>
-                  {getStatusBadge(ticket.status)}
-                </div>
+                </CardContent>
+              </Card>
+            );
+          })}
 
-                <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
-                  {ticket.description}
-                </p>
-
-                <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                  <span>{ticket.user_email}</span>
-                  {ticket.request_callback && ticket.user_phone && (
-                    <span className="flex items-center gap-1 text-primary">
-                      <Phone className="h-3 w-3" /> Callback requested
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex gap-2 mt-3 pt-3 border-t">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => {
-                      setSelectedTicket(ticket);
-                      setResponseText(ticket.admin_response || '');
-                      setViewDialog(true);
-                    }}
-                  >
-                    <Eye className="h-3 w-3 mr-1" /> View & Respond
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {getFilteredTickets().length === 0 && (
-            <div className="text-center py-12">
-              <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">No tickets found</p>
+          {filteredTickets.length === 0 && (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
+                <MessageSquare className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground font-medium">No tickets found</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {searchQuery ? 'Try a different search term' : 'All caught up!'}
+              </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* View & Respond Dialog */}
-      <Dialog open={viewDialog} onOpenChange={() => {
-        setViewDialog(false);
-        setSelectedTicket(null);
-        setResponseText('');
-      }}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Ticket Details</DialogTitle>
-          </DialogHeader>
+      {/* Ticket Detail Sheet */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetHeader className="pb-4 border-b">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-base">Ticket Details</SheetTitle>
+              {selectedTicket && (
+                <Badge 
+                  variant="outline" 
+                  className={getStatusConfig(selectedTicket.status).color}
+                >
+                  {getStatusConfig(selectedTicket.status).label}
+                </Badge>
+              )}
+            </div>
+          </SheetHeader>
+          
           {selectedTicket && (
-            <div className="space-y-4 pt-4">
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">{getTopicLabel(selectedTicket.topic)}</Badge>
-                {getStatusBadge(selectedTicket.status)}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">User</Label>
-                  <p className="font-medium">{selectedTicket.user_name}</p>
-                  <p className="text-xs text-muted-foreground">@{selectedTicket.user_username || 'N/A'}</p>
-                  <p className="text-xs text-muted-foreground">{selectedTicket.user_email}</p>
+            <ScrollArea className="h-[calc(100vh-100px)]">
+              <div className="space-y-4 py-4">
+                {/* Ticket ID & Topic */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Hash className="h-4 w-4 text-muted-foreground" />
+                    <code className="text-xs bg-muted px-2 py-1 rounded">
+                      {selectedTicket.id.slice(0, 8)}
+                    </code>
+                  </div>
+                  <Badge className={getTopicConfig(selectedTicket.topic).color}>
+                    {getTopicConfig(selectedTicket.topic).label}
+                  </Badge>
                 </div>
+
+                {/* User Info Card */}
+                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 border-2 border-primary/30">
+                        <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+                          {selectedTicket.user_name?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold">{selectedTicket.user_name}</p>
+                        <p className="text-xs text-muted-foreground">@{selectedTicket.user_username || 'N/A'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-primary/20">
+                      <div className="flex items-center gap-2 text-xs">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="truncate">{selectedTicket.user_email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>{selectedTicket.user_phone || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Gamepad2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>{selectedTicket.user_ign || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Hash className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>{selectedTicket.user_uid || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="font-medium">₹{selectedTicket.user_wallet?.toFixed(0) || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span>
+                          {selectedTicket.user_joined 
+                            ? format(new Date(selectedTicket.user_joined), 'MMM dd, yyyy')
+                            : 'N/A'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Callback Warning */}
+                {selectedTicket.request_callback && selectedTicket.user_phone && (
+                  <Card className="bg-destructive/5 border-destructive/30">
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                        <Phone className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-destructive">Callback Requested</p>
+                        <p className="text-xs text-muted-foreground">
+                          User wants a call on: <span className="font-medium">{selectedTicket.user_phone}</span>
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Description */}
                 <div>
-                  <Label className="text-muted-foreground">Submitted</Label>
-                  <p className="font-medium text-sm flex items-center gap-1">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Issue Description</Label>
+                  <div className="bg-muted/50 rounded-lg p-4 border">
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                      {selectedTicket.description}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    {format(new Date(selectedTicket.created_at), 'MMM dd, yyyy HH:mm')}
+                    Submitted {format(new Date(selectedTicket.created_at), 'MMMM dd, yyyy • HH:mm')}
                   </p>
                 </div>
-              </div>
 
-              {/* User Details Card */}
-              <div className="bg-muted/50 rounded-lg p-3 space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">User Details</p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                {/* Attachments */}
+                {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
                   <div>
-                    <span className="text-muted-foreground">Phone: </span>
-                    <span className="font-medium">{selectedTicket.user_phone || 'N/A'}</span>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Attachments</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTicket.attachments.map((url, i) => (
+                        <a 
+                          key={i} 
+                          href={String(url)}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs hover:bg-primary/20 transition-colors"
+                        >
+                          Attachment {i + 1}
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Game: </span>
-                    <span className="font-medium">{selectedTicket.user_game || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">IGN: </span>
-                    <span className="font-medium">{selectedTicket.user_ign || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">UID: </span>
-                    <span className="font-medium">{selectedTicket.user_uid || 'N/A'}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Wallet: </span>
-                    <span className="font-medium">₹{selectedTicket.user_wallet?.toFixed(0) || 0}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Joined: </span>
-                    <span className="font-medium">{selectedTicket.user_joined ? format(new Date(selectedTicket.user_joined), 'MMM dd, yyyy') : 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
+                )}
 
-              <div>
-                <Label className="text-muted-foreground">Description</Label>
-                <p className="mt-1 text-sm whitespace-pre-wrap bg-muted p-3 rounded-lg">
-                  {selectedTicket.description}
-                </p>
-              </div>
-
-              {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
-                <div>
-                  <Label className="text-muted-foreground">Attachments</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedTicket.attachments.map((url, i) => (
-                      <a 
-                        key={i} 
-                        href={String(url)}
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
-                      >
-                        Attachment {i + 1}
-                      </a>
-                    ))}
+                {/* Previous Response */}
+                {selectedTicket.admin_response && selectedTicket.responded_at && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Previous Response</Label>
+                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-4">
+                      <p className="text-sm whitespace-pre-wrap">{selectedTicket.admin_response}</p>
+                      <p className="text-[10px] text-muted-foreground mt-2">
+                        Responded {format(new Date(selectedTicket.responded_at), 'MMM dd, yyyy • HH:mm')}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {hasPermission('support:manage') && (
-                <>
-                  <div className="space-y-2">
-                    <Label>Admin Response</Label>
+                {/* Admin Response */}
+                {hasPermission('support:manage') && (
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label className="text-sm font-medium">Your Response</Label>
                     <Textarea
                       value={responseText}
                       onChange={(e) => setResponseText(e.target.value)}
                       placeholder="Type your response to the user..."
-                      className="min-h-[100px]"
+                      className="min-h-[120px] resize-none"
                     />
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={() => handleRespond('in_progress')}
+                        disabled={processing}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        In Progress
+                      </Button>
+                      <Button
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                        onClick={() => handleRespond('resolved')}
+                        disabled={processing}
+                      >
+                        {processing ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <CheckCheck className="h-4 w-4 mr-2" />
+                        )}
+                        Resolve Ticket
+                      </Button>
+                    </div>
                   </div>
-
-                  <DialogFooter className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => handleRespond('in_progress')}
-                      disabled={processing}
-                    >
-                      <Clock className="h-4 w-4 mr-1" />
-                      Mark In Progress
-                    </Button>
-                    <Button
-                      onClick={() => handleRespond('resolved')}
-                      disabled={processing}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-1" />}
-                      Resolve
-                    </Button>
-                  </DialogFooter>
-                </>
-              )}
-            </div>
+                )}
+              </div>
+            </ScrollArea>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </AdminLayout>
   );
 };
