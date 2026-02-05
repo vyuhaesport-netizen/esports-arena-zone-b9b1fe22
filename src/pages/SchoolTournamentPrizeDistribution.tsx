@@ -10,8 +10,14 @@
  import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  import { Badge } from '@/components/ui/badge';
  import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
  import {
-   ArrowLeft,
    Trophy,
    Search,
    Check,
@@ -502,14 +508,26 @@
              {awardType === 'rank' ? (
                <div>
                  <Label className="text-xs">Rank (1-10)</Label>
-                 <Input
-                   type="number"
-                   placeholder="Enter rank"
-                   value={prizeRank}
-                   onChange={(e) => setPrizeRank(e.target.value)}
-                   min={1}
-                   max={10}
-                 />
+                <Select value={prizeRank} onValueChange={(value) => setPrizeRank(value)}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue placeholder="Select rank" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border z-50">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rank) => {
+                      const isAssigned = prizeEntries.some(e => e.awardType === 'rank' && e.rank === rank);
+                      return (
+                        <SelectItem 
+                          key={rank} 
+                          value={rank.toString()}
+                          disabled={isAssigned}
+                          className="cursor-pointer"
+                        >
+                          Rank #{rank} {isAssigned && '(Assigned)'}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
                </div>
              ) : (
                <div>
