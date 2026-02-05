@@ -123,8 +123,8 @@ const SchoolTournament = () => {
     tournamentName: '',
     game: 'BGMI' as 'BGMI' | 'Free Fire',
     maxPlayers: 400,
-    entryType: 'free' as 'free' | 'paid',
-    entryFee: 0,
+    entryType: 'paid' as 'paid',
+    entryFee: 25,
     prizePool: 0,
     tournamentDate: '',
     registrationDeadline: '',
@@ -175,7 +175,7 @@ const SchoolTournament = () => {
   };
 
   const calculateStructure = () => {
-    const { game, maxPlayers } = formData;
+    const { game, maxPlayers, winnersPerRoom } = formData;
     const playersPerRoom = game === 'BGMI' ? 100 : 50;
     const teamsPerRoom = game === 'BGMI' ? 25 : 12;
     const totalTeams = Math.ceil(maxPlayers / 4);
@@ -186,7 +186,7 @@ const SchoolTournament = () => {
     
     while (currentTeams > finaleTeams) {
       const rooms = Math.ceil(currentTeams / teamsPerRoom);
-      currentTeams = rooms; // Top 1 from each room
+      currentTeams = rooms * winnersPerRoom; // Winners from each room advance
       rounds++;
     }
     rounds++; // Add finale round
@@ -197,7 +197,8 @@ const SchoolTournament = () => {
       totalTeams,
       initialRooms: Math.ceil(totalTeams / teamsPerRoom),
       totalRounds: rounds,
-      finaleTeams
+      finaleTeams,
+      winnersPerRoom
     };
   };
 
@@ -238,8 +239,8 @@ const SchoolTournament = () => {
           toast.error('Max players must be between 100 and 10,000');
           return false;
         }
-        if (formData.entryType === 'paid' && formData.entryFee <= 0) {
-          toast.error('Please set entry fee');
+        if (formData.entryFee < 25) {
+          toast.error('Minimum entry fee is ₹25 per player');
           return false;
         }
         break;
@@ -269,8 +270,8 @@ const SchoolTournament = () => {
         tournament_name: formData.tournamentName,
         game: formData.game,
         max_players: formData.maxPlayers,
-        entry_type: formData.entryType,
-        entry_fee: formData.entryType === 'paid' ? formData.entryFee : 0,
+        entry_type: 'paid',
+        entry_fee: formData.entryFee,
         prize_pool: formData.prizePool,
         tournament_date: formData.tournamentDate,
         registration_deadline: formData.registrationDeadline,
@@ -306,8 +307,8 @@ const SchoolTournament = () => {
         tournamentName: '',
         game: 'BGMI',
         maxPlayers: 400,
-        entryType: 'free',
-        entryFee: 0,
+        entryType: 'paid',
+        entryFee: 25,
         prizePool: 0,
         tournamentDate: '',
         registrationDeadline: '',
@@ -667,61 +668,29 @@ const SchoolTournament = () => {
                       />
                     </div>
 
-                    <div>
-                      <Label className="text-xs">Entry Type *</Label>
-                      <RadioGroup
-                        value={formData.entryType}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, entryType: value as 'free' | 'paid' }))}
-                        className="grid grid-cols-2 gap-3 mt-2"
-                      >
-                        <Label
-                          className={`flex items-center gap-2.5 p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                            formData.entryType === 'free' ? 'border-primary bg-primary/10' : 'border-white/20'
-                          }`}
-                        >
-                          <RadioGroupItem value="free" className="h-4 w-4" />
-                          <div>
-                            <p className="text-sm font-medium">Free Entry</p>
-                            <p className="text-xs text-muted-foreground">No registration fee</p>
-                          </div>
-                        </Label>
-                        <Label
-                          className={`flex items-center gap-2.5 p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                            formData.entryType === 'paid' ? 'border-primary bg-primary/10' : 'border-white/20'
-                          }`}
-                        >
-                          <RadioGroupItem value="paid" className="h-4 w-4" />
-                          <div>
-                            <p className="text-sm font-medium">Paid Entry</p>
-                            <p className="text-xs text-muted-foreground">Per team fee</p>
-                          </div>
-                        </Label>
-                      </RadioGroup>
-                    </div>
-
-                    {formData.entryType === 'paid' && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Entry Fee (₹/team) *</Label>
-                          <Input
-                            type="number"
-                            min={10}
-                             value={formData.entryFee || ''}
-                             onChange={(e) => setFormData(prev => ({ ...prev, entryFee: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
-                            className="h-9 text-sm"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Prize Pool (₹)</Label>
-                          <Input
-                            type="number"
-                             value={formData.prizePool || ''}
-                             onChange={(e) => setFormData(prev => ({ ...prev, prizePool: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
-                            className="h-9 text-sm"
-                          />
-                        </div>
+                    {/* Entry Fee - Now always paid */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Entry Fee (₹/player) *</Label>
+                        <Input
+                          type="number"
+                          min={25}
+                          value={formData.entryFee || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, entryFee: Math.max(25, e.target.value === '' ? 25 : parseInt(e.target.value) || 25) }))}
+                          className="h-9 text-sm"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">Min ₹25 per player</p>
                       </div>
-                    )}
+                      <div>
+                        <Label className="text-xs">Prize Pool (₹)</Label>
+                        <Input
+                          type="number"
+                          value={formData.prizePool || ''}
+                          onChange={(e) => setFormData(prev => ({ ...prev, prizePool: e.target.value === '' ? 0 : parseInt(e.target.value) || 0 }))}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    </div>
                      
                      {/* Prize Distribution Mode */}
                      <div>
