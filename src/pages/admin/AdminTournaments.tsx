@@ -37,7 +37,7 @@ interface UnifiedTournament {
   title: string;
   game: string;
   status: string | null;
-  type: 'organizer' | 'creator' | 'local';
+  type: 'organizer' | 'creator' | 'local' | 'school';
   creator_id: string;
   creator_name: string;
   prize_pool: number;
