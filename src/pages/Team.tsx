@@ -195,6 +195,8 @@ const TeamPage = () => {
   const [createRequirementDialogOpen, setCreateRequirementDialogOpen] = useState(false);
   const [selectedRequirementForRequest, setSelectedRequirementForRequest] = useState<TeamRequirement | null>(null);
   const [requirementRequestDialogOpen, setRequirementRequestDialogOpen] = useState(false);
+  const [statsAlertDialogOpen, setStatsAlertDialogOpen] = useState(false);
+  const [userHasStats, setUserHasStats] = useState<boolean | null>(null);
   
   const [teamForm, setTeamForm] = useState({
     name: '',
