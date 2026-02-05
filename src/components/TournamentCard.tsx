@@ -3,7 +3,8 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import OrganizerProfilePreview from '@/components/OrganizerProfilePreview';
-import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronLeft, Clock, Youtube, Instagram, Gift, ScrollText } from 'lucide-react';
+ import SocialLinksDrawer from '@/components/SocialLinksDrawer';
+ import { Trophy, Users, Wallet, Share2, Calendar, Eye, ChevronLeft, Clock, Gift, ScrollText } from 'lucide-react';
 
 interface Tournament {
   id: string;
@@ -27,6 +28,8 @@ interface Tournament {
   instagram_link?: string | null;
   is_giveaway?: boolean | null;
   rules?: string | null;
+   whatsapp_link?: string | null;
+   discord_link?: string | null;
 }
 
 interface TournamentCardProps {
@@ -247,34 +250,6 @@ const TournamentCard = ({
         )}
 
         {/* Social Links */}
-        {(tournament.youtube_link || tournament.instagram_link) && (
-          <div className="flex items-center gap-2 mb-2">
-            {tournament.youtube_link && (
-              <a 
-                href={tournament.youtube_link} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-red-500/15 text-red-500 text-[10px] font-semibold hover:bg-red-500/25 transition-colors border border-red-500/25"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Youtube className="h-3 w-3" />
-                YouTube
-              </a>
-            )}
-            {tournament.instagram_link && (
-              <a 
-                href={tournament.instagram_link} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-pink-500/15 text-pink-500 text-[10px] font-semibold hover:bg-pink-500/25 transition-colors border border-pink-500/25"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Instagram className="h-3 w-3" />
-                Instagram
-              </a>
-            )}
-          </div>
-        )}
 
         {/* Actions */}
         <div className="flex items-center gap-1.5">
@@ -320,6 +295,16 @@ const TournamentCard = ({
             <ScrollText className="h-3.5 w-3.5" />
           </Button>
           
+           <SocialLinksDrawer
+             links={{
+               youtube_link: tournament.youtube_link,
+               instagram_link: tournament.instagram_link,
+               whatsapp_link: tournament.whatsapp_link,
+               discord_link: tournament.discord_link,
+             }}
+             tournamentTitle={tournament.title}
+           />
+           
           <Button 
             variant="outline" 
             onClick={onPrizeClick} 
