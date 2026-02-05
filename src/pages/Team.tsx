@@ -216,6 +216,7 @@ const TeamPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const maxMemberOptions = [4, 6, 8];
+  const [onlineMembers, setOnlineMembers] = useState<Set<string>>(new Set());
 
   // Get roles based on team's game
   const getRolesForGame = (game: string | null) => {
@@ -245,6 +246,58 @@ const TeamPage = () => {
       fetchRequirements();
     }
   }, [user, userPreferredGame]);
+
+  // Track online status for team members using Supabase Presence
+  useEffect(() => {
+    if (!myTeam || !user) return;
+
+    const channelName = `team_presence_${myTeam.id}`;
+    const presenceChannel = supabase.channel(channelName);
+
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const state = presenceChannel.presenceState();
+        const onlineUserIds = new Set<string>();
+        Object.values(state).forEach((presences) => {
+          (presences as { user_id?: string }[]).forEach((presence) => {
+            if (presence.user_id) {
+              onlineUserIds.add(presence.user_id);
+            }
+          });
+        });
+        setOnlineMembers(onlineUserIds);
+      })
+      .on('presence', { event: 'join' }, ({ newPresences }) => {
+        setOnlineMembers(prev => {
+          const updated = new Set(prev);
+          (newPresences as unknown as { user_id?: string }[]).forEach((p) => {
+            if (p.user_id) updated.add(p.user_id);
+          });
+          return updated;
+        });
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        setOnlineMembers(prev => {
+          const updated = new Set(prev);
+          (leftPresences as unknown as { user_id?: string }[]).forEach((p) => {
+            if (p.user_id) updated.delete(p.user_id);
+          });
+          return updated;
+        });
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await presenceChannel.track({
+            user_id: user.id,
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  }, [myTeam?.id, user?.id]);
 
   const fetchUserPreferredGame = async () => {
     if (!user) return;
@@ -1446,12 +1499,17 @@ const TeamPage = () => {
                             : 'bg-muted/30 hover:bg-muted/50 border border-border/30'
                       }`}
                     >
-                      <Avatar className="h-10 w-10 border border-border/50">
-                        <AvatarImage src={member.profile?.avatar_url || ''} />
-                        <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
-                          {member.profile?.username?.charAt(0).toUpperCase() || 'P'}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-10 w-10 border border-border/50">
+                          <AvatarImage src={member.profile?.avatar_url || ''} />
+                          <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                            {member.profile?.username?.charAt(0).toUpperCase() || 'P'}
+                          </AvatarFallback>
+                        </Avatar>
+                        {onlineMembers.has(member.user_id) && (
+                          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-green-500 border-2 border-background rounded-full" />
+                        )}
+                      </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-medium text-xs truncate">
