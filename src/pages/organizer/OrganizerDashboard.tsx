@@ -229,8 +229,18 @@ const OrganizerDashboard = () => {
 
       if (error) throw error;
       
-      // Show all tournaments (except cancelled) - never auto-hide
-      const filteredTournaments = data || [];
+      // Filter: show active tournaments + completed ones within 3 days of winner declaration
+      const threeDaysAgo = new Date();
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      const filteredTournaments = (data || []).filter(t => {
+        if (t.status !== 'completed') return true;
+        // Show completed tournaments for 3 days after winner_declared_at
+        if (t.winner_declared_at) {
+          return new Date(t.winner_declared_at) > threeDaysAgo;
+        }
+        return false;
+      });
       setTournaments(filteredTournaments);
 
       const earnings = filteredTournaments.reduce((sum, t) => sum + (t.organizer_earnings || 0), 0);

@@ -379,16 +379,8 @@ const HomePage = () => {
       />
       <PushNotificationPrompt />
       <AppLayout>
-      {/* Header - Cyber Style */}
-      <div 
-        className="px-4 py-3"
-        style={{
-          background: 'linear-gradient(180deg, hsl(210 30% 8% / 0.95) 0%, hsl(210 30% 6% / 0.9) 100%)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid hsl(187 100% 50% / 0.1)',
-          boxShadow: '0 0 20px hsl(187 100% 50% / 0.05)'
-        }}
-      >
+      {/* Header */}
+      <div className="bg-card/80 backdrop-blur-sm border-b-2 border-white/30 px-4 py-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <BrandLogo className="h-8 w-8" alt="Vyuha" />
@@ -400,49 +392,30 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Guest Login Banner - Cyber Style */}
+      {/* Guest Login Banner */}
       {!user && showGuestBanner && (
-        <div 
-          className="mx-3 mt-3 relative overflow-hidden rounded-2xl"
-          style={{
-            background: 'linear-gradient(135deg, hsl(187 100% 50% / 0.1) 0%, hsl(270 100% 65% / 0.1) 100%)',
-            border: '1px solid hsl(187 100% 50% / 0.2)',
-            boxShadow: '0 4px 20px hsl(0 0% 0% / 0.3)'
-          }}
-        >
+        <div className="mx-3 mt-3 relative overflow-hidden rounded-xl bg-gradient-to-r from-primary/15 to-purple-500/15 border-2 border-primary/30">
           <button 
             onClick={() => setShowGuestBanner(false)}
-            className="absolute top-3 right-3 p-1.5 rounded-full transition-all duration-200 hover:bg-destructive/20 group z-10"
-            style={{ border: '1px solid hsl(var(--muted) / 0.3)' }}
+            className="absolute top-2 right-2 p-1 rounded-full hover:bg-background/50 transition-colors z-10"
           >
-            <X className="h-3.5 w-3.5 text-muted-foreground group-hover:text-destructive transition-colors" />
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
-          <div className="p-4">
+          <div className="p-3">
             <div className="flex items-start gap-3">
-              <div 
-                className="p-2.5 rounded-xl shrink-0"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(187 100% 50%) 0%, hsl(270 100% 65%) 100%)',
-                  boxShadow: '0 4px 15px hsl(187 100% 50% / 0.3)'
-                }}
-              >
-                <Sparkles className="h-4 w-4 text-[hsl(210_25%_5%)]" />
+              <div className="p-2 rounded-full bg-gradient-to-br from-primary to-purple-600 shrink-0">
+                <Sparkles className="h-4 w-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-sm mb-1 text-foreground uppercase tracking-wide" style={{ fontFamily: 'Rajdhani, sans-serif' }}>Join the Battle!</h3>
-                <p className="text-xs text-muted-foreground mb-3">
+                <h3 className="font-semibold text-sm mb-1 text-foreground">Join the Battle!</h3>
+                <p className="text-xs text-muted-foreground mb-2">
                   Sign up to compete and win real prizes!
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button 
                     size="sm" 
                     onClick={() => navigate('/')}
-                    className="gap-1.5 text-xs h-8 px-4 font-semibold uppercase tracking-wider"
-                    style={{
-                      background: 'linear-gradient(135deg, hsl(187 100% 50%) 0%, hsl(270 100% 65%) 100%)',
-                      color: 'hsl(210 25% 5%)',
-                      boxShadow: '0 4px 15px hsl(187 100% 50% / 0.3)'
-                    }}
+                    className="gap-1.5 text-xs h-8 px-3"
                   >
                     <LogIn className="h-3.5 w-3.5" />
                     Login
@@ -451,12 +424,7 @@ const HomePage = () => {
                     size="sm" 
                     variant="outline"
                     onClick={() => navigate('/')}
-                    className="gap-1.5 text-xs h-8 px-4 font-medium uppercase tracking-wider"
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid hsl(187 100% 50% / 0.3)',
-                      color: 'hsl(var(--foreground))'
-                    }}
+                    className="gap-1.5 text-xs h-8 px-3"
                   >
                     <Gift className="h-3.5 w-3.5" />
                     Sign Up
@@ -468,29 +436,18 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Mode Filter - Cyber Tabs */}
-      <div className="px-3 py-3">
-        <div 
-          className="rounded-xl p-1 flex"
-          style={{
-            background: 'hsl(var(--muted) / 0.2)',
-            border: '1px solid hsl(187 100% 50% / 0.1)'
-          }}
-        >
+      {/* Mode Filter */}
+      <div className="px-3 py-2.5">
+        <div className="bg-muted/50 rounded-xl p-1 flex">
           {(['solo', 'duo', 'squad'] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setActiveMode(mode)}
-              className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all uppercase tracking-wider ${
+              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all capitalize ${
                 activeMode === mode 
-                  ? '' 
+                  ? 'bg-primary text-primary-foreground' 
                   : 'text-muted-foreground hover:text-foreground'
               }`}
-              style={activeMode === mode ? {
-                background: 'hsl(187 100% 50% / 0.2)',
-                color: 'hsl(187 100% 50%)',
-                boxShadow: '0 0 15px hsl(187 100% 50% / 0.2)'
-              } : {}}
             >
               {mode}
             </button>
