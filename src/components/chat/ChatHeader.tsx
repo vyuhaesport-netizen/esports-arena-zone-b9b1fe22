@@ -74,7 +74,7 @@ import { ArrowLeft, MoreVertical, Users, Search, Palette, FlaskConical } from 'l
            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
              <span className="flex items-center gap-1">
                <Users className="h-3 w-3" />
-               {memberCount} members
+               {memberCount} {memberCount === 1 ? 'member' : 'members'}
              </span>
              {isOnline && (
                <>
