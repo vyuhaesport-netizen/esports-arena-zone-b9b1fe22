@@ -103,15 +103,20 @@ const HomePage = () => {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'tournaments',
         },
         (payload) => {
-          // Update the specific tournament in state
-          setTournaments(prev => prev.map(t => 
-            t.id === payload.new.id ? { ...t, ...payload.new } as Tournament : t
-          ));
+          // Refetch to ensure we have accurate filtered data
+          if (payload.eventType === 'INSERT' || payload.eventType === 'DELETE') {
+            fetchTournaments();
+          } else if (payload.eventType === 'UPDATE') {
+            // Update the specific tournament in state
+            setTournaments(prev => prev.map(t => 
+              t.id === payload.new.id ? { ...t, ...payload.new } as Tournament : t
+            ));
+          }
         }
       )
       .subscribe();

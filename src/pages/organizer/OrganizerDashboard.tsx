@@ -160,6 +160,26 @@ const OrganizerDashboard = () => {
       fetchMyTournaments();
       fetchCommissionSettings();
       fetchOrganizerBalance();
+      
+      // Subscribe to realtime updates
+      const channel = supabase
+        .channel('organizer-tournaments-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'tournaments' },
+          (payload) => {
+            // Only refetch if the tournament belongs to this organizer
+            const record = payload.new as any || payload.old as any;
+            if (record?.created_by === user.id) {
+              fetchMyTournaments();
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [isOrganizer, user]);
 

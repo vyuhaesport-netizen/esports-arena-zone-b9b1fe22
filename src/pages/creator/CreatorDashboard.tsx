@@ -162,6 +162,26 @@ const CreatorDashboard = () => {
       fetchMyTournaments();
       fetchCommissionSettings();
       fetchCreatorBalance();
+      
+      // Subscribe to realtime updates
+      const channel = supabase
+        .channel('creator-tournaments-realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'tournaments' },
+          (payload) => {
+            // Only refetch if the tournament belongs to this creator
+            const record = payload.new as any || payload.old as any;
+            if (record?.created_by === user.id) {
+              fetchMyTournaments();
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [isCreator, user]);
 

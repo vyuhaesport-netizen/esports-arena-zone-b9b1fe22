@@ -70,6 +70,25 @@ const AdminSchoolTournaments = () => {
 
   useEffect(() => {
     fetchApplications();
+    
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('admin-school-tournaments-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'school_tournament_applications' },
+        () => fetchApplications()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'school_tournaments' },
+        () => fetchApplications()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchApplications = async () => {
