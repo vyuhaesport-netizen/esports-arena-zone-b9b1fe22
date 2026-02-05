@@ -26,10 +26,12 @@ import {
   Palette,
   Download,
   TrendingUp,
-  Phone
+  Phone,
+  Link2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { generateCreatorsReportPDF } from '@/utils/pdfGenerator';
+import GiveCollabLinkDialog from '@/components/GiveCollabLinkDialog';
 
 interface Creator {
   id: string;
@@ -54,6 +56,8 @@ const AdminCreators = () => {
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [actionDialog, setActionDialog] = useState<'view-creator' | 'remove-creator' | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [giveLinkDialog, setGiveLinkDialog] = useState(false);
+  const [linkCreator, setLinkCreator] = useState<Creator | null>(null);
 
   const { user, hasPermission, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -333,15 +337,26 @@ const AdminCreators = () => {
                       </Button>
                       {hasPermission('creators:manage') && (
                         <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setLinkCreator(creator);
+                            setGiveLinkDialog(true);
+                          }}
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {hasPermission('creators:manage') && (
+                        <Button
                           variant="destructive"
                           size="sm"
-                          className="flex-1"
                           onClick={() => {
                             setSelectedCreator(creator);
                             setActionDialog('remove-creator');
                           }}
                         >
-                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
                     </div>
@@ -477,6 +492,17 @@ const AdminCreators = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Give Collab Link Dialog */}
+      {linkCreator && (
+        <GiveCollabLinkDialog
+          open={giveLinkDialog}
+          onOpenChange={setGiveLinkDialog}
+          userId={linkCreator.user_id}
+          userType="creator"
+          userName={linkCreator.full_name || linkCreator.username || 'Creator'}
+        />
+      )}
     </AdminLayout>
   );
 };

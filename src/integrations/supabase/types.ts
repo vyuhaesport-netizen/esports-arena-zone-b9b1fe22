@@ -239,6 +239,104 @@ export type Database = {
         }
         Relationships: []
       }
+      collab_links: {
+        Row: {
+          commission_per_registration: number
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          link_code: string
+          total_clicks: number
+          total_earned: number
+          total_qualified: number
+          total_signups: number
+          updated_at: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          commission_per_registration?: number
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_code: string
+          total_clicks?: number
+          total_earned?: number
+          total_qualified?: number
+          total_signups?: number
+          updated_at?: string
+          user_id: string
+          user_type: string
+        }
+        Update: {
+          commission_per_registration?: number
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          link_code?: string
+          total_clicks?: number
+          total_earned?: number
+          total_qualified?: number
+          total_signups?: number
+          updated_at?: string
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
+      collab_referrals: {
+        Row: {
+          commission_amount: number | null
+          commission_credited: boolean
+          created_at: string
+          id: string
+          link_id: string
+          qualification_type: string | null
+          qualified_at: string | null
+          referred_user_id: string
+          registered_at: string
+          status: string
+        }
+        Insert: {
+          commission_amount?: number | null
+          commission_credited?: boolean
+          created_at?: string
+          id?: string
+          link_id: string
+          qualification_type?: string | null
+          qualified_at?: string | null
+          referred_user_id: string
+          registered_at?: string
+          status?: string
+        }
+        Update: {
+          commission_amount?: number | null
+          commission_credited?: boolean
+          created_at?: string
+          id?: string
+          link_id?: string
+          qualification_type?: string | null
+          qualified_at?: string | null
+          referred_user_id?: string
+          registered_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collab_referrals_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "collab_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creator_custom_rules: {
         Row: {
           created_at: string | null
@@ -2662,6 +2760,10 @@ export type Database = {
         Args: { p_application_id: string }
         Returns: string
       }
+      credit_collab_commission: {
+        Args: { p_qualification_type: string; p_referral_id: string }
+        Returns: boolean
+      }
       credit_dhana_commission: {
         Args: {
           p_amount: number
@@ -2693,6 +2795,7 @@ export type Database = {
         Args: { p_room_id: string; p_winner_team_id: string }
         Returns: boolean
       }
+      generate_collab_link_code: { Args: never; Returns: string }
       generate_private_code: { Args: never; Returns: string }
       generate_tournament_round_rooms: {
         Args: { p_round_number: number; p_tournament_id: string }
@@ -2801,6 +2904,10 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: Json
       }
+      record_collab_referral: {
+        Args: { p_link_code: string; p_user_id: string }
+        Returns: boolean
+      }
       register_school_tournament_team: {
         Args: {
           p_leader_id: string
@@ -2825,6 +2932,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      track_collab_link_click: {
+        Args: { p_link_code: string }
+        Returns: undefined
       }
       update_local_tournament_prize_distribution: {
         Args: {

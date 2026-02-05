@@ -72,6 +72,7 @@ const menuItems: MenuItem[] = [
   { icon: Brain, label: 'DeepSeek R1', path: '/admin/ai', superAdminOnly: true },
   { icon: Smartphone, label: 'Push Notifications', path: '/admin/push-notifications', permission: 'notifications:manage' },
   { icon: Link2, label: 'Creator Invites', path: '/admin/creator-invites', superAdminOnly: true },
+  { icon: Link2, label: 'Collab Links', path: '/admin/collab-links', superAdminOnly: true },
   { icon: FileText, label: 'Documentation', path: '/admin/docs', superAdminOnly: true },
   { icon: UsersRound, label: 'Team', path: '/admin/team', superAdminOnly: true },
 ];

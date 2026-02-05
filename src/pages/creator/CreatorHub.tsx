@@ -13,7 +13,9 @@ import {
   ArrowLeft,
   Loader2,
   ChevronRight,
-  ScrollText
+  ScrollText,
+  Link2,
+  Copy
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -23,6 +25,13 @@ interface DashboardStats {
   pendingReports: number;
 }
 
+interface CollabLinkData {
+  link_code: string;
+  total_qualified: number;
+  total_earned: number;
+  is_active: boolean;
+}
+
 const CreatorHub = () => {
   const [stats, setStats] = useState<DashboardStats>({
     totalTournaments: 0,
@@ -30,6 +39,7 @@ const CreatorHub = () => {
     availableBalance: 0,
     pendingReports: 0
   });
+  const [collabLink, setCollabLink] = useState<CollabLinkData | null>(null);
   const [loading, setLoading] = useState(true);
   const { user, isCreator, loading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -49,8 +59,32 @@ const CreatorHub = () => {
   useEffect(() => {
     if (isCreator && user) {
       fetchStats();
+      fetchCollabLink();
     }
   }, [isCreator, user]);
+
+  const fetchCollabLink = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('collab_links')
+        .select('link_code, total_qualified, total_earned, is_active')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      setCollabLink(data);
+    } catch (error) {
+      console.error('Error fetching collab link:', error);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!collabLink) return;
+    const fullUrl = `${window.location.origin}/?ref=${collabLink.link_code}`;
+    navigator.clipboard.writeText(fullUrl);
+    toast({ title: 'Copied!', description: 'Referral link copied to clipboard' });
+  };
 
   const fetchStats = async () => {
     if (!user) return;
@@ -167,24 +201,57 @@ const CreatorHub = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="p-4 grid grid-cols-2 gap-3">
-        <Card className="bg-card border border-border">
-          <CardContent className="p-4">
-            <span className="text-xs text-muted-foreground">Total Earnings</span>
-            <p className="text-2xl font-bold text-foreground mt-1">
-              ₹{stats.totalEarnings}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border border-border">
-          <CardContent className="p-4">
-            <span className="text-xs text-muted-foreground">Available</span>
-            <p className="text-2xl font-bold text-foreground mt-1">
-              ₹{stats.availableBalance}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {collabLink ? (
+        <div className="p-4">
+          <Card className="bg-gradient-to-br from-pink-500/10 to-purple-500/10 border-pink-500/30">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Link2 className="h-5 w-5 text-pink-500" />
+                  <span className="font-medium text-foreground">Collab Link</span>
+                </div>
+                <Button size="sm" variant="outline" onClick={handleCopyLink}>
+                  <Copy className="h-4 w-4 mr-1" /> Copy
+                </Button>
+              </div>
+              <div className="flex items-center gap-2 p-2 bg-background/50 rounded-lg">
+                <code className="text-xs font-mono text-muted-foreground flex-1 truncate">
+                  {window.location.origin}/?ref={collabLink.link_code}
+                </code>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-2 bg-background/50 rounded-lg">
+                  <p className="text-xl font-bold text-pink-500">{collabLink.total_qualified}</p>
+                  <p className="text-xs text-muted-foreground">Qualified Referrals</p>
+                </div>
+                <div className="text-center p-2 bg-background/50 rounded-lg">
+                  <p className="text-xl font-bold text-green-500">₹{collabLink.total_earned}</p>
+                  <p className="text-xs text-muted-foreground">Earned</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="p-4 grid grid-cols-2 gap-3">
+          <Card className="bg-card border border-border">
+            <CardContent className="p-4">
+              <span className="text-xs text-muted-foreground">Total Earnings</span>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                ₹{stats.totalEarnings}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border border-border">
+            <CardContent className="p-4">
+              <span className="text-xs text-muted-foreground">Available</span>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                ₹{stats.availableBalance}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Menu Items */}
       <div className="p-4 space-y-3">

@@ -27,10 +27,12 @@ import {
   Trash2,
   Download,
   Calendar,
-  TrendingUp
+  TrendingUp,
+  Link2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { generateOrganizersReportPDF } from '@/utils/pdfGenerator';
+import GiveCollabLinkDialog from '@/components/GiveCollabLinkDialog';
 
 interface Organizer {
   user_id: string;
@@ -53,6 +55,8 @@ const AdminOrganizers = () => {
   const [selectedOrganizer, setSelectedOrganizer] = useState<Organizer | null>(null);
   const [actionDialog, setActionDialog] = useState<'view-organizer' | 'remove-organizer' | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [giveLinkDialog, setGiveLinkDialog] = useState(false);
+  const [linkOrganizer, setLinkOrganizer] = useState<Organizer | null>(null);
 
   const { user, loading: authLoading, hasPermission } = useAuth();
   const { toast } = useToast();
@@ -338,15 +342,26 @@ const AdminOrganizers = () => {
                       </Button>
                       {hasPermission('organizers:manage') && (
                         <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            setLinkOrganizer(organizer);
+                            setGiveLinkDialog(true);
+                          }}
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {hasPermission('organizers:manage') && (
+                        <Button
                           variant="destructive"
                           size="sm"
-                          className="flex-1"
                           onClick={() => {
                             setSelectedOrganizer(organizer);
                             setActionDialog('remove-organizer');
                           }}
                         >
-                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Remove
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
                     </div>
@@ -484,6 +499,17 @@ const AdminOrganizers = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Give Collab Link Dialog */}
+      {linkOrganizer && (
+        <GiveCollabLinkDialog
+          open={giveLinkDialog}
+          onOpenChange={setGiveLinkDialog}
+          userId={linkOrganizer.user_id}
+          userType="organizer"
+          userName={linkOrganizer.name}
+        />
+      )}
     </AdminLayout>
   );
 };
