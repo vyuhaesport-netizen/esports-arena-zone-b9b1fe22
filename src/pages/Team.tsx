@@ -291,14 +291,6 @@ const TeamPage = () => {
         return;
       }
       
-      const { data: leaderProfile } = await supabase
-        .from('profiles')
-        .select('full_name, username')
-        .eq('user_id', teamToJoin.leader_id)
-        .single();
-      
-      // Note: teamWithDetails was for display but we just need to check requires_approval
-      
       if (teamToJoin.requires_approval) {
         setSelectedTeamForRequest(teamToJoin as PlayerTeam);
         setRequestDialogOpen(true);
@@ -341,9 +333,9 @@ const TeamPage = () => {
     }
   }, [myTeam, loading]);
 
-  const fetchMyTeam = async () => {
+  const fetchMyTeam = async (showLoadingState = true) => {
     if (!user) return;
-    setLoading(true);
+    if (showLoadingState) setLoading(true);
 
     try {
       const { data: membership } = await supabase
@@ -361,11 +353,19 @@ const TeamPage = () => {
 
         if (team) {
           setMyTeam(team as PlayerTeam);
-          fetchTeamMembers(team.id);
-          fetchMyTeamRequirements(team.id);
+          await fetchTeamMembers(team.id);
+          await fetchMyTeamRequirements(team.id);
           if (team.leader_id === user.id || team.acting_leader_id === user.id) {
-            fetchJoinRequests(team.id);
+            await fetchJoinRequests(team.id);
           }
+          // Auto-switch to My Team tab when team is found
+          setActiveTab('my-team');
+        } else {
+          // Team found in membership but not in player_teams - clear membership
+          setMyTeam(null);
+          setTeamMembers([]);
+          setJoinRequests([]);
+          setMyTeamRequirements([]);
         }
       } else {
         setMyTeam(null);
@@ -375,8 +375,13 @@ const TeamPage = () => {
       }
     } catch (error) {
       console.error('Error fetching team:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'Failed to load team data. Please refresh.', 
+        variant: 'destructive' 
+      });
     } finally {
-      setLoading(false);
+      if (showLoadingState) setLoading(false);
     }
   };
 
@@ -625,11 +630,31 @@ const TeamPage = () => {
       toast({ title: 'Team Created!', description: `Your team "${newTeam.name}" has been created.` });
       setCreateDialogOpen(false);
       setTeamForm({ name: '', slogan: '', is_open_for_players: true, requires_approval: true, max_members: 4 });
-      fetchMyTeam();
-      fetchOpenTeams();
+      
+      // Immediately set the new team to avoid loading delay
+      setMyTeam(newTeam as PlayerTeam);
+      setTeamMembers([{
+        id: 'temp-leader',
+        team_id: newTeam.id,
+        user_id: user.id,
+        role: 'leader',
+        joined_at: new Date().toISOString(),
+        profile: undefined
+      }]);
+      setActiveTab('my-team');
+      
+      // Then fetch full data in background
+      setTimeout(() => {
+        fetchMyTeam(false);
+        fetchOpenTeams();
+      }, 500);
     } catch (error: any) {
       console.error('Error creating team:', error);
-      toast({ title: 'Error', description: 'Failed to create team.', variant: 'destructive' });
+      if (error.code === '23505') {
+        toast({ title: 'Error', description: 'A team with this name already exists.', variant: 'destructive' });
+      } else {
+        toast({ title: 'Error', description: 'Failed to create team. Please try again.', variant: 'destructive' });
+      }
     } finally {
       setSaving(false);
     }

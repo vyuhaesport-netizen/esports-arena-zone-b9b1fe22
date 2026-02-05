@@ -23,6 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface TicketType {
   id: string;
@@ -48,6 +54,42 @@ interface Profile {
 }
 
 type ViewType = 'main' | 'ticket' | 'history';
+
+// FAQ Data
+const FAQ_DATA = [
+  {
+    question: "Team banane ke baad access nahi ho raha?",
+    answer: "Agar team create karne ke baad dikhai nahi de raha, toh page refresh karo ya logout/login karo. Kabhi kabhi network slow hone se data load nahi hota. Agar phir bhi issue ho toh ticket raise karo."
+  },
+  {
+    question: "Tournament join karne ke liye team zaroori hai?",
+    answer: "Solo tournaments mein team ki zaroorat nahi. Lekin Duo aur Squad tournaments ke liye pehle team banana padega. Team page pe jaake team create ya join karo."
+  },
+  {
+    question: "Wallet mein paisa kab aata hai?",
+    answer: "Tournament jeetne ke baad 24-48 hours mein prize automatically credit ho jata hai. Withdrawal request ke baad 3-5 working days lagta hai UPI mein transfer hone mein."
+  },
+  {
+    question: "Account ban ho gaya, kya karu?",
+    answer: "Agar account ban hai toh ban screen pe reason dikhai dega. Temporary ban ke liye wait karo, permanent ban ke liye AI se baat karo jo appeal process guide karega."
+  },
+  {
+    question: "Room ID/Password kab milega?",
+    answer: "Tournament start hone se 10-15 minutes pehle My Match page pe Room ID aur Password dikhai dega. Notification bhi aayega."
+  },
+  {
+    question: "Payment fail ho gaya lekin paisa kat gaya?",
+    answer: "Payment fail pe auto-refund 24-48 hours mein hota hai. Agar nahi aaya toh ticket raise karo transaction ID ke saath."
+  },
+  {
+    question: "Profile photo ya username kaise change karu?",
+    answer: "Profile page pe jaake edit button pe click karo. Avatar change karne ke liye avatar gallery se select karo. Username ek baar set hone ke baad change nahi hota."
+  },
+  {
+    question: "Tournament cancel kyun hua?",
+    answer: "Minimum players join nahi hone pe tournament auto-cancel ho jata hai. Entry fee automatically refund ho jayega wallet mein."
+  }
+];
 
 
 const HelpSupport = () => {
@@ -304,6 +346,32 @@ const HelpSupport = () => {
 
   const recentTicket = tickets[0];
 
+  // FAQ View
+  const renderFAQ = () => (
+    <div className="mt-6">
+      <div className="flex items-center gap-2 mb-4">
+        <FileText className="h-5 w-5 text-primary" />
+        <h2 className="text-lg font-semibold text-foreground">Frequently Asked Questions</h2>
+      </div>
+      <Accordion type="single" collapsible className="space-y-2">
+        {FAQ_DATA.map((faq, index) => (
+          <AccordionItem 
+            key={index} 
+            value={`faq-${index}`}
+            className="border border-border/50 rounded-xl px-4 bg-card/30 backdrop-blur"
+          >
+            <AccordionTrigger className="text-left text-sm font-medium py-4 hover:no-underline">
+              {faq.question}
+            </AccordionTrigger>
+            <AccordionContent className="text-sm text-muted-foreground pb-4">
+              {faq.answer}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+    </div>
+  );
+
   // Ticket Form View
   if (currentView === 'ticket') {
     return (
@@ -553,6 +621,9 @@ const HelpSupport = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* FAQ Section */}
+                {renderFAQ()}
               </div>
             ) : (
               <>
