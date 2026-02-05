@@ -139,7 +139,8 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
          .select('user_id')
          .eq('team_id', myTeam.id);
  
-       const memberIds = members?.map(m => m.user_id) || [];
+       // Filter out leader from members to avoid duplication
+       const memberIds = (members?.map(m => m.user_id) || []).filter(id => id !== myTeam.leader_id);
        
        let memberProfiles: TeamMember[] = [];
        if (memberIds.length > 0) {
@@ -581,17 +582,17 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
  
    if (loading) {
      return (
-       <div className="h-screen bg-background flex flex-col max-w-lg mx-auto">
-         <header className="sticky top-0 z-40 bg-primary text-primary-foreground px-3 py-3 flex items-center gap-2">
+       <div className="h-screen bg-background flex flex-col max-w-lg mx-auto overflow-hidden">
+         <header className="sticky top-0 z-50 bg-background border-b border-border px-3 py-3 flex items-center gap-2">
            <Button
              variant="ghost"
              size="icon"
-             className="h-8 w-8 shrink-0 text-primary-foreground hover:bg-white/10"
+             className="h-8 w-8 shrink-0 text-foreground hover:bg-muted"
              onClick={() => navigate(-1)}
            >
              <ArrowLeft className="h-4 w-4" />
            </Button>
-           <h1 className="text-base font-bold">Team Chat</h1>
+           <h1 className="text-base font-bold text-foreground">Team Chat</h1>
          </header>
          <div className="flex items-center justify-center flex-1">
            <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -602,17 +603,17 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
  
    if (!myTeam) {
      return (
-       <div className="h-screen bg-background flex flex-col max-w-lg mx-auto">
-         <header className="sticky top-0 z-40 bg-primary text-primary-foreground px-3 py-3 flex items-center gap-2">
+       <div className="h-screen bg-background flex flex-col max-w-lg mx-auto overflow-hidden">
+         <header className="sticky top-0 z-50 bg-background border-b border-border px-3 py-3 flex items-center gap-2">
            <Button
              variant="ghost"
              size="icon"
-             className="h-8 w-8 shrink-0 text-primary-foreground hover:bg-white/10"
+             className="h-8 w-8 shrink-0 text-foreground hover:bg-muted"
              onClick={() => navigate(-1)}
            >
              <ArrowLeft className="h-4 w-4" />
            </Button>
-           <h1 className="text-base font-bold">Team Chat</h1>
+           <h1 className="text-base font-bold text-foreground">Team Chat</h1>
          </header>
          <div className="flex flex-col items-center justify-center flex-1 p-4 text-center">
            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -634,7 +635,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
    const groupedMessages = groupMessagesByDate(messages);
  
    return (
-     <div className="h-screen bg-gradient-to-b from-muted/30 to-background flex flex-col max-w-lg mx-auto overflow-hidden">
+     <div className="h-screen bg-background flex flex-col max-w-lg mx-auto overflow-hidden">
        {/* WhatsApp-style Header */}
        <ChatHeader
          teamName={myTeam.name}
