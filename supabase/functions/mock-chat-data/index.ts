@@ -6,13 +6,14 @@
  };
  
  // Mock team members (6 members - max for a team)
+// Using actual gaming avatars from the project
  const MOCK_MEMBERS = [
-   { user_id: 'member-1', username: 'DragonSlayer', full_name: 'Arjun Sharma', avatar_url: null },
-   { user_id: 'member-2', username: 'PhoenixRising', full_name: 'Priya Patel', avatar_url: null },
-   { user_id: 'member-3', username: 'ShadowNinja', full_name: 'Rahul Kumar', avatar_url: null },
-   { user_id: 'member-4', username: 'ThunderBolt', full_name: 'Sneha Reddy', avatar_url: null },
-   { user_id: 'member-5', username: 'IceQueen', full_name: 'Anjali Gupta', avatar_url: null },
-   { user_id: 'member-6', username: 'FireMage', full_name: 'Vikram Singh', avatar_url: null },
+  { user_id: 'member-1', username: 'DragonSlayer', in_game_name: 'DRAGON•SLAYER', avatar_url: '/src/assets/avatars/anime-dragonslayer.png' },
+  { user_id: 'member-2', username: 'PhoenixRising', in_game_name: 'PHOENIXツRISING', avatar_url: '/src/assets/avatars/anime-firemage.png' },
+  { user_id: 'member-3', username: 'ShadowNinja', in_game_name: 'SHADOW•NINJA', avatar_url: '/src/assets/avatars/anime-ninja.png' },
+  { user_id: 'member-4', username: 'ThunderBolt', in_game_name: 'THUNDERxBOLT', avatar_url: '/src/assets/avatars/anime-lightningmage.png' },
+  { user_id: 'member-5', username: 'IceQueen', in_game_name: 'ICE•QUEEN', avatar_url: '/src/assets/avatars/anime-icequeen.png' },
+  { user_id: 'member-6', username: 'FireMage', in_game_name: 'FIREツMAGE', avatar_url: '/src/assets/avatars/anime-warrior.png' },
  ];
  
  // Sample messages for realistic chat
@@ -100,7 +101,7 @@
          seen_by: MOCK_MEMBERS.map(m => m.user_id).slice(0, Math.floor(Math.random() * 6) + 1),
          sender: {
            username: randomMember.username,
-           full_name: randomMember.full_name,
+          in_game_name: randomMember.in_game_name,
            avatar_url: randomMember.avatar_url,
          },
        });
