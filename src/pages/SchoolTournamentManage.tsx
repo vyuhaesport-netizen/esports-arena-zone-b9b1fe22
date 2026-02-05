@@ -223,7 +223,9 @@ const SchoolTournamentManage = () => {
         ...tournamentRes.data,
          verification_type: (tournamentRes.data.verification_type as 'online' | 'spot') || 'online',
          prize_distribution_mode: (tournamentRes.data.prize_distribution_mode as 'online' | 'local_venue') || 'online',
-         winners_per_room: tournamentRes.data.winners_per_room || 1
+         winners_per_room: tournamentRes.data.winners_per_room || 1,
+         prizes_distributed: tournamentRes.data.prizes_distributed || false,
+         organizer_id: tournamentRes.data.organizer_id
       });
       
       console.log(`[DEBUG] Teams fetched: ${allTeams.length} teams`);
