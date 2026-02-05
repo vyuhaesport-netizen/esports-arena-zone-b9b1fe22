@@ -287,9 +287,53 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
          async (payload) => {
            if (payload.eventType === 'INSERT') {
              const newMsg = payload.new as Record<string, unknown>;
+             
+             // Check if message already exists (from optimistic update)
+             const messageId = newMsg.id as string;
+             const senderId = newMsg.sender_id as string;
+             
+             // If this is our own message, update the temp ID to real ID instead of adding duplicate
+             if (senderId === user?.id) {
+               setMessages((prev) => {
+                 // Check if we have a temp message with same content and timestamp (within 1 second)
+                 const hasTempVersion = prev.some(msg => 
+                   msg.sender_id === senderId && 
+                   msg.content === newMsg.content as string &&
+                   msg.id.startsWith('temp-')
+                 );
+                 
+                 if (hasTempVersion) {
+                   // Replace temp message with real one
+                   return prev.map(msg => 
+                     msg.sender_id === senderId && 
+                     msg.content === newMsg.content as string &&
+                     msg.id.startsWith('temp-')
+                       ? { ...msg, id: messageId }
+                       : msg
+                   );
+                 }
+                 
+                 // Check if real message already exists
+                 if (prev.some(msg => msg.id === messageId)) {
+                   return prev;
+                 }
+                 
+                 return prev;
+               });
+               return;
+             }
+             
+             // For other users' messages, check if already exists
+             setMessages((prev) => {
+               if (prev.some(msg => msg.id === messageId)) {
+                 return prev;
+               }
+               return prev; // Will be added below
+             });
+             
              const { data: profile } = await supabase
                .from('profiles')
-               .select('username, full_name, avatar_url')
+               .select('username, full_name, in_game_name, avatar_url')
                .eq('user_id', newMsg.sender_id as string)
                .single();
              
@@ -306,7 +350,14 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
                seen_by: parseSeenBy(newMsg.seen_by),
                sender: profile || undefined,
              };
-             setMessages((prev) => [...prev, messageWithSender]);
+             
+             // Add message only if it doesn't exist
+             setMessages((prev) => {
+               if (prev.some(msg => msg.id === messageWithSender.id)) {
+                 return prev;
+               }
+               return [...prev, messageWithSender];
+             });
              setTypingUsers((prev) => prev.filter((u) => u.id !== newMsg.sender_id));
              
              if (newMsg.sender_id !== user?.id) {
