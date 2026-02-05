@@ -80,7 +80,7 @@ const AdminTournaments = () => {
   const [tournaments, setTournaments] = useState<UnifiedTournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'organizer' | 'creator' | 'local'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'organizer' | 'creator' | 'local' | 'school'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [commissionSettings, setCommissionSettings] = useState<CommissionSettings>({
