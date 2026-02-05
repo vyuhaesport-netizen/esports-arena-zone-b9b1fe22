@@ -934,11 +934,22 @@ const SchoolTournament = () => {
 
           {/* Tournaments Tab */}
           <TabsContent value="tournaments" className="mt-3">
-            {tournaments.length === 0 ? (
+            {(() => {
+              // Filter tournaments: show all non-completed + completed within 3 days
+              const threeDaysAgo = new Date();
+              threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+              
+              const visibleTournaments = tournaments.filter(t => {
+                if (t.status !== 'completed') return true;
+                // Show completed tournaments for 3 days
+                return new Date(t.created_at) > threeDaysAgo;
+              });
+
+              return visibleTournaments.length === 0 ? (
               <Card className="glass-card border-2 border-white/30 text-center py-8">
                 <CardContent className="pt-0">
                   <Trophy className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">No active tournaments</p>
+                  <p className="text-sm text-muted-foreground">No tournaments</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     Submit an application and wait for approval
                   </p>
