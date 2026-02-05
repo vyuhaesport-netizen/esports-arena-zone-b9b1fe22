@@ -1,234 +1,366 @@
- # Vyuha Esports - Self-Hosting Deployment Guide
+ # Vyuha Esports - Complete Self-Hosting Deployment Guide
  
- This guide covers deploying Vyuha Esports to your own Supabase account and Vercel.
- 
- ---
- 
- ## 📋 Prerequisites
- 
- - GitHub account with this repository forked/cloned
- - Supabase account (free tier works)
- - Vercel account (free tier works)
- - VS Code with GitHub Codespaces (for tablet users)
+ Yeh guide step-by-step batayegi kaise Vyuha Esports ko apne Supabase account aur Vercel pe deploy karna hai.
  
  ---
  
- ## 🗄️ Step 1: Supabase Project Setup
+ ## 📋 Prerequisites (Zaruratein)
  
- ### 1.1 Create Supabase Project
- 
- 1. Go to [supabase.com](https://supabase.com) and sign in
- 2. Click "New Project"
- 3. Choose organization, enter project name (e.g., "vyuha-esports")
- 4. Set a strong database password (save this!)
- 5. Select region closest to your users
- 6. Click "Create new project" and wait ~2 minutes
- 
- ### 1.2 Get Your Supabase Credentials
- 
- After project creation, go to **Settings → API**:
- 
- | Credential | Where to Find | Used For |
- |------------|---------------|----------|
- | `SUPABASE_URL` | Project URL | API calls |
- | `SUPABASE_ANON_KEY` | anon/public key | Frontend auth |
- | `SUPABASE_SERVICE_ROLE_KEY` | service_role key | Edge functions (KEEP SECRET!) |
- 
- ### 1.3 Run Database Migrations
- 
- **Option A: Using Supabase Dashboard (Recommended for Tablet)**
- 
- 1. Go to **SQL Editor** in Supabase Dashboard
- 2. Open each file in `supabase/migrations/` folder (in order by filename)
- 3. Copy-paste and run each migration
- 
- **Option B: Using Supabase CLI (VS Code/Terminal)**
- 
- ```bash
- # Install Supabase CLI
- npm install -g supabase
- 
- # Login to Supabase
- supabase login
- 
- # Link to your project
- supabase link --project-ref YOUR_PROJECT_ID
- 
- # Push migrations
- supabase db push
- ```
+ - GitHub account (free)
+ - Supabase account (free tier works) - [supabase.com](https://supabase.com)
+ - Vercel account (free tier works) - [vercel.com](https://vercel.com)
+ - VS Code installed (ya GitHub Codespaces use karo tablet ke liye)
+ - Node.js installed (v18+)
  
  ---
  
- ## 🔐 Step 2: Configure Secrets in Supabase
+ # 🗄️ STEP 1: Supabase Project Setup
  
- Go to **Settings → Edge Functions → Secrets** in Supabase Dashboard.
+ ## 1.1 Create Supabase Project
  
- ### Required Secrets
+ 1. Go to [supabase.com](https://supabase.com) → Sign Up/Login
+ 2. Click **"New Project"** (green button)
+ 3. Fill details:
+    - **Organization**: Select or create one
+    - **Project name**: `vyuha-esports`
+    - **Database Password**: Strong password (SAVE THIS!)
+    - **Region**: Select closest to your users (e.g., Mumbai)
+ 4. Click **"Create new project"** → Wait 2-3 minutes
  
- | Secret Name | Where to Get | Purpose |
- |-------------|--------------|---------|
- | `DEEPSEEK_API_KEY` | [platform.deepseek.com](https://platform.deepseek.com) | AI Chat functionality |
- | `ONESIGNAL_APP_ID` | [onesignal.com](https://onesignal.com) | Push notifications |
- | `ONESIGNAL_REST_API_KEY` | OneSignal Dashboard → Settings → Keys | Push notifications |
+ ## 1.2 Get Your Supabase Credentials
  
- ### ZapUPI Payment Gateway
+ Jab project ready ho jaye:
  
- ZapUPI credentials are stored in **database**, not secrets:
+ 1. Go to **Settings** (gear icon left sidebar)
+ 2. Click **"API"** section
+ 3. Note down these values:
  
- 1. Go to SQL Editor and run:
+ | Credential | Kaha Milega | Kya Hai |
+ |------------|-------------|---------|
+ | **Project URL** | Project URL field | `https://xxxx.supabase.co` |
+ | **anon public key** | anon key (public) | Frontend ke liye |
+ | **service_role key** | service_role key (SECRET!) | Edge functions ke liye - SHARE MAT KARO! |
+ | **Project Reference ID** | URL mein `xxxx` part | e.g., `drwxtjgtjejwegsneutq` |
+ 
+ ---
+ 
+ # 🔑 STEP 2: Supabase Access Token Banana
+ 
+ Edge functions deploy karne ke liye Access Token chahiye:
+ 
+ 1. Go to [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
+ 2. Click **"Generate new token"**
+ 3. Name: `vyuha-deploy` (kuch bhi)
+ 4. Click **"Generate Token"**
+ 5. **COPY karke SAVE karo** - sirf ek baar dikhega!
+ 
+ ⚠️ **IMPORTANT**: Yeh token dobara nahi dikhega, kahin safe jagah save karo!
+ 
+ ---
+ 
+ # 🔐 STEP 3: Supabase Secrets Add Karna
+ 
+ ## 3.1 Dashboard Se Secrets Add Karo
+ 
+ 1. Go to Supabase Dashboard → **Project Settings** (gear icon)
+ 2. Click **"Edge Functions"** (left sidebar)
+ 3. Click **"Manage Secrets"** button
+ 4. Add these secrets one by one:
+ 
+ | Secret Name | Value Kahan Se Milega |
+ |-------------|----------------------|
+ | `DEEPSEEK_API_KEY` | [platform.deepseek.com](https://platform.deepseek.com) → API Keys → Create |
+ | `ONESIGNAL_APP_ID` | [onesignal.com](https://onesignal.com) → Your App → Settings → Keys & IDs |
+ | `ONESIGNAL_REST_API_KEY` | OneSignal → Settings → Keys & IDs → REST API Key |
+ 
+ ### DeepSeek API Key Kaise Banaye:
+ 1. Go to [platform.deepseek.com](https://platform.deepseek.com)
+ 2. Sign up/Login
+ 3. Go to **API Keys** section
+ 4. Click **"Create API Key"**
+ 5. Copy the key (starts with `sk-`)
+ 
+ ### OneSignal Setup:
+ 1. Go to [onesignal.com](https://onesignal.com)
+ 2. Create account → Create new app
+ 3. Select **"Web"** platform
+ 4. Follow setup wizard
+ 5. Go to **Settings → Keys & IDs**
+ 6. Copy **OneSignal App ID** and **REST API Key**
+ 
+ ---
+ 
+ # 💳 STEP 4: ZapUPI Payment Setup
+ 
+ ZapUPI credentials database mein store hote hain:
+ 
+ 1. Go to Supabase Dashboard → **SQL Editor** (left sidebar)
+ 2. Click **"New Query"**
+ 3. Paste this SQL (apne credentials daalo):
+ 
  ```sql
  INSERT INTO payment_gateway_config (gateway_name, display_name, api_key_id, api_key_secret, is_enabled)
  VALUES ('zapupi', 'ZapUPI', 'YOUR_ZAPUPI_TOKEN', 'YOUR_ZAPUPI_SECRET', true)
  ON CONFLICT (gateway_name) 
- DO UPDATE SET api_key_id = EXCLUDED.api_key_id, api_key_secret = EXCLUDED.api_key_secret;
+ DO UPDATE SET api_key_id = EXCLUDED.api_key_id, api_key_secret = EXCLUDED.api_key_secret, is_enabled = true;
  ```
  
- 2. Get ZapUPI credentials from [zapupi.com](https://zapupi.com) dashboard
+ 4. Replace `YOUR_ZAPUPI_TOKEN` and `YOUR_ZAPUPI_SECRET` with your actual ZapUPI credentials
+ 5. Click **"Run"** (green button)
  
- ### Adding Secrets via CLI
- 
- ```bash
- supabase secrets set DEEPSEEK_API_KEY=sk-xxxxx
- supabase secrets set ONESIGNAL_APP_ID=xxxxx
- supabase secrets set ONESIGNAL_REST_API_KEY=xxxxx
- ```
+ ### ZapUPI Credentials Kahan Se Milenge:
+ 1. Go to [zapupi.com](https://zapupi.com)
+ 2. Login to merchant dashboard
+ 3. Go to **API Settings** or **Integration**
+ 4. Copy **Token** and **Secret Key**
  
  ---
  
- ## ⚡ Step 3: Deploy Edge Functions
+ # 💻 STEP 5: VS Code Terminal Se Deploy
  
- ### Option A: Using GitHub Actions (Automatic)
+ ## 5.1 Repository Clone Karo
  
- Create `.github/workflows/deploy-functions.yml`:
- 
- ```yaml
- name: Deploy Edge Functions
- 
- on:
-   push:
-     branches: [main]
-     paths:
-       - 'supabase/functions/**'
- 
- jobs:
-   deploy:
-     runs-on: ubuntu-latest
-     steps:
-       - uses: actions/checkout@v4
-       
-       - uses: supabase/setup-cli@v1
-         with:
-           version: latest
-       
-       - run: supabase functions deploy --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
-         env:
-           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
- ```
- 
- Add these GitHub Secrets:
- - `SUPABASE_PROJECT_ID`: Your project reference ID
- - `SUPABASE_ACCESS_TOKEN`: From [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
- 
- ### Option B: Manual Deploy via CLI
+ Terminal open karo (VS Code mein `Ctrl+`` ya `View → Terminal`):
  
  ```bash
- # Deploy all functions
- supabase functions deploy --project-ref YOUR_PROJECT_ID
+ # Clone repository
+ git clone https://github.com/YOUR_USERNAME/vyuha-esports.git
  
- # Or deploy specific function
- supabase functions deploy zapupi-create-order --project-ref YOUR_PROJECT_ID
- supabase functions deploy ai-chat --project-ref YOUR_PROJECT_ID
+ # Folder mein jao
+ cd vyuha-esports
+ 
+ # Dependencies install karo
+ npm install
  ```
  
- ### Option C: Using npx (No Global Install)
+ ## 5.2 Supabase CLI Login
  
  ```bash
+ # Supabase CLI login (browser open hoga)
  npx supabase login
+ ```
+ 
+ Browser mein Supabase login page khulega. Login karo aur authorize karo.
+ 
+ ## 5.3 Project Link Karo
+ 
+ ```bash
+ # Apna Project ID daalo (jo Step 1.2 mein note kiya)
  npx supabase link --project-ref YOUR_PROJECT_ID
+ ```
+ 
+ Example:
+ ```bash
+ npx supabase link --project-ref drwxtjgtjejwegsneutq
+ ```
+ 
+ ## 5.4 Database Migrations Push Karo
+ 
+ ```bash
+ # Saare tables aur policies database mein create hojayenge
+ npx supabase db push
+ ```
+ 
+ Type `y` and press Enter jab confirmation maange.
+ 
+ ## 5.5 Edge Functions Deploy Karo
+ 
+ ```bash
+ # Saare edge functions deploy karo
  npx supabase functions deploy
  ```
  
+ Ya specific function deploy karo:
+ ```bash
+ npx supabase functions deploy zapupi-create-order
+ npx supabase functions deploy zapupi-webhook
+ npx supabase functions deploy ai-chat
+ npx supabase functions deploy send-push-notification
+ ```
+ 
+ ## 5.6 Secrets CLI Se Add Karo (Alternative Method)
+ 
+ Agar dashboard se nahi kiya, terminal se bhi kar sakte ho:
+ 
+ ```bash
+ # DeepSeek API Key
+ npx supabase secrets set DEEPSEEK_API_KEY=sk-your-deepseek-key-here
+ 
+ # OneSignal App ID
+ npx supabase secrets set ONESIGNAL_APP_ID=your-onesignal-app-id
+ 
+ # OneSignal REST API Key
+ npx supabase secrets set ONESIGNAL_REST_API_KEY=your-onesignal-rest-api-key
+ ```
+ 
  ---
  
- ## 🌐 Step 4: Deploy to Vercel
+ # 🌐 STEP 6: Vercel Deployment
  
- ### 4.1 Connect GitHub Repository
+ ## 6.1 GitHub Pe Push Karo
  
- 1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
- 2. Click "Add New Project"
- 3. Import your forked/cloned repository
- 4. Configure build settings:
-    - Framework: Vite
-    - Build Command: `npm run build`
-    - Output Directory: `dist`
+ Agar changes kiye hain:
+ ```bash
+ git add .
+ git commit -m "Ready for deployment"
+ git push origin main
+ ```
  
- ### 4.2 Add Environment Variables in Vercel
+ ## 6.2 Vercel Pe Import Karo
  
- Go to Project Settings → Environment Variables:
+ 1. Go to [vercel.com](https://vercel.com) → Login with GitHub
+ 2. Click **"Add New..."** → **"Project"**
+ 3. Select your `vyuha-esports` repository
+ 4. **Framework Preset**: Vite (auto-detect hona chahiye)
+ 5. **Build Command**: `npm run build`
+ 6. **Output Directory**: `dist`
  
- | Variable | Value |
- |----------|-------|
- | `VITE_SUPABASE_URL` | Your Supabase project URL |
- | `VITE_SUPABASE_PUBLISHABLE_KEY` | Your Supabase anon key |
- | `VITE_SUPABASE_PROJECT_ID` | Your Supabase project ID |
+ ## 6.3 Environment Variables Add Karo
+ 
+ Vercel project settings mein:
+ 
+ 1. Go to **Settings** → **Environment Variables**
+ 2. Add these variables:
+ 
+ | Name | Value |
+ |------|-------|
+ | `VITE_SUPABASE_URL` | `https://YOUR_PROJECT_ID.supabase.co` |
+ | `VITE_SUPABASE_PUBLISHABLE_KEY` | Your anon key (long string) |
+ | `VITE_SUPABASE_PROJECT_ID` | Your project ID (e.g., `drwxtjgtjejwegsneutq`) |
  | `VITE_ONESIGNAL_APP_ID` | Your OneSignal App ID |
  
- ### 4.3 Deploy
+ 3. Click **"Save"** for each variable
  
- Click "Deploy" - Vercel will build and deploy automatically.
+ ## 6.4 Deploy Karo
  
- ---
- 
- ## 🔗 Step 5: Configure Webhooks
- 
- ### ZapUPI Webhook
- 
- 1. Webhook URL: `https://YOUR_PROJECT_ID.supabase.co/functions/v1/zapupi-webhook`
- 2. Go to ZapUPI Dashboard → Settings → Webhooks
- 3. Add the webhook URL and save
+ 1. Click **"Deploy"** button
+ 2. Wait 2-3 minutes for build
+ 3. Done! Your app is live! 🎉
  
  ---
  
- ## ✅ Step 6: Verify Everything Works
+ # 🔗 STEP 7: Webhooks Configure Karo
  
- After deployment, go to `/admin/backend-status` in your app to check all integrations.
+ ## ZapUPI Webhook
  
- ### Manual Verification
- 
- | Integration | How to Test |
- |-------------|-------------|
- | Database | Sign up/login works |
- | ZapUPI | Try adding money to wallet |
- | DeepSeek AI | Use AI chat feature |
- | Push Notifications | Send test notification |
- 
- ---
- 
- ## 🛠️ Troubleshooting
- 
- ### Edge Functions Not Working
- - Check logs: Supabase Dashboard → Edge Functions → Logs
- - Verify secrets are set
- - Redeploy: `npx supabase functions deploy`
- 
- ### ZapUPI "Unauthorized" Error
- - Check credentials in `payment_gateway_config` table
- - Verify IP whitelist in ZapUPI dashboard
- 
- ### Database Connection Failed
- - Verify env vars in Vercel
- - Check if database is paused (free tier)
+ 1. Go to ZapUPI Dashboard → **Settings** → **Webhooks**
+ 2. Add this URL:
+ ```
+ https://YOUR_PROJECT_ID.supabase.co/functions/v1/zapupi-webhook
+ ```
+ 3. Example:
+ ```
+ https://drwxtjgtjejwegsneutq.supabase.co/functions/v1/zapupi-webhook
+ ```
+ 4. Save the webhook
  
  ---
  
- ## 📱 Tablet Development
+ # ✅ STEP 8: Verify Everything Works
  
- ### GitHub Codespaces
+ 1. Open your deployed app URL
+ 2. Go to `/admin/backend-status`
+ 3. Login as admin
+ 4. Click **"Run All Checks"**
+ 5. All should show **green ✓**
+ 
+ ---
+ 
+ # 📋 Quick Command Reference (Copy-Paste Ready)
+ 
+ ```bash
+ # ===== FULL DEPLOYMENT SEQUENCE =====
+ 
+ # 1. Clone and setup
+ git clone https://github.com/YOUR_USERNAME/vyuha-esports.git
+ cd vyuha-esports
+ npm install
+ 
+ # 2. Supabase login
+ npx supabase login
+ 
+ # 3. Link project (apna PROJECT_ID daalo)
+ npx supabase link --project-ref YOUR_PROJECT_ID
+ 
+ # 4. Push database
+ npx supabase db push
+ 
+ # 5. Deploy functions
+ npx supabase functions deploy
+ 
+ # 6. Set secrets (optional - dashboard se bhi ho sakta hai)
+ npx supabase secrets set DEEPSEEK_API_KEY=sk-xxxxx
+ npx supabase secrets set ONESIGNAL_APP_ID=xxxxx
+ npx supabase secrets set ONESIGNAL_REST_API_KEY=xxxxx
+ 
+ # 7. Push to GitHub
+ git add .
+ git commit -m "Deployment ready"
+ git push origin main
+ ```
+ 
+ ---
+ 
+ # 🛠️ Troubleshooting
+ 
+ ## "Command not found: supabase"
+ ```bash
+ # Use npx instead
+ npx supabase login
+ ```
+ 
+ ## "Project not linked"
+ ```bash
+ npx supabase link --project-ref YOUR_PROJECT_ID
+ ```
+ 
+ ## "Functions not deployed"
+ ```bash
+ npx supabase functions deploy --project-ref YOUR_PROJECT_ID
+ ```
+ 
+ ## "Database migrations failed"
+ ```bash
+ # Check status
+ npx supabase db remote commit
+ 
+ # Force push
+ npx supabase db push --include-all
+ ```
+ 
+ ## Vercel "Page not found" on refresh
+ Already fixed with `vercel.json` in project root.
+ 
+ ## ZapUPI "Unauthorized" Error
+ 1. Check credentials in `payment_gateway_config` table
+ 2. Whitelist your server IP in ZapUPI dashboard
+ 3. Go to `/admin/backend-status` and check Outbound IP
+ 
+ ---
+ 
+ # 📱 Tablet Development (GitHub Codespaces)
+ 
  1. Go to your GitHub repository
- 2. Click "Code" → "Codespaces" tab
- 3. Click "Create codespace on main"
+ 2. Click **"Code"** button → **"Codespaces"** tab
+ 3. Click **"Create codespace on main"**
  4. VS Code opens in browser!
+ 5. Use terminal as normal
  
- ### Gitpod
- Prefix URL: `gitpod.io/#https://github.com/yourusername/vyuha-esports`
+ ---
+ 
+ # 🎯 Summary Checklist
+ 
+ - [ ] Supabase project created
+ - [ ] Credentials noted (URL, anon key, service key, project ID)
+ - [ ] Access token generated
+ - [ ] Secrets added (DEEPSEEK_API_KEY, ONESIGNAL_APP_ID, ONESIGNAL_REST_API_KEY)
+ - [ ] ZapUPI credentials in database
+ - [ ] Supabase CLI logged in
+ - [ ] Project linked
+ - [ ] Database pushed
+ - [ ] Edge functions deployed
+ - [ ] Vercel project created
+ - [ ] Environment variables added
+ - [ ] Deployed successfully
+ - [ ] Webhooks configured
+ - [ ] Backend status all green ✓
