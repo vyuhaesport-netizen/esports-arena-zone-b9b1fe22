@@ -237,8 +237,30 @@ const TeamPage = () => {
       fetchUserPreferredGame();
       fetchMyTeam();
       fetchMyRequests();
+      checkUserStats();
     }
   }, [user]);
+
+  const checkUserStats = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('player_game_stats')
+        .select('id, is_expired, stats_valid_until')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      // User has valid stats if data exists, not expired, and valid_until hasn't passed
+      const isValid = data && 
+        !data.is_expired && 
+        (!data.stats_valid_until || new Date(data.stats_valid_until) > new Date());
+      
+      setUserHasStats(!!isValid);
+    } catch (error) {
+      console.error('Error checking user stats:', error);
+      setUserHasStats(false);
+    }
+  };
 
   // Fetch open teams and requirements after we know user's preferred game
   useEffect(() => {
