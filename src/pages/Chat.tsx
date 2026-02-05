@@ -28,6 +28,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
    sender?: {
      username: string | null;
      full_name: string | null;
+    in_game_name?: string | null;
      avatar_url: string | null;
    };
  }
@@ -48,6 +49,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
    user_id: string;
    username: string | null;
    full_name: string | null;
+  in_game_name?: string | null;
    avatar_url: string | null;
  }
  
@@ -131,7 +133,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
  
        const { data: leaderProfile } = await supabase
          .from('profiles')
-         .select('user_id, username, full_name, avatar_url')
+        .select('user_id, username, full_name, in_game_name, avatar_url')
          .eq('user_id', myTeam.leader_id)
          .single();
  
@@ -147,7 +149,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
        if (memberIds.length > 0) {
          const { data: profiles } = await supabase
            .from('profiles')
-           .select('user_id, username, full_name, avatar_url')
+          .select('user_id, username, full_name, in_game_name, avatar_url')
            .in('user_id', memberIds);
          memberProfiles = profiles || [];
        }
@@ -379,11 +381,11 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
          const senderIds = [...new Set(data.map((m) => m.sender_id))];
          const { data: profiles } = await supabase
            .from('profiles')
-           .select('user_id, username, full_name, avatar_url')
+          .select('user_id, username, full_name, in_game_name, avatar_url')
            .in('user_id', senderIds);
  
          const profileMap = new Map(
-           profiles?.map((p) => [p.user_id, { username: p.username, full_name: p.full_name, avatar_url: p.avatar_url }])
+          profiles?.map((p) => [p.user_id, { username: p.username, full_name: p.full_name, in_game_name: p.in_game_name, avatar_url: p.avatar_url }])
          );
  
          const messagesWithSenders: TeamMessage[] = data.map((msg: Record<string, unknown>) => ({
@@ -701,7 +703,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
                          id={msg.id}
                          content={msg.content}
                          senderId={msg.sender_id}
-                         senderName={msg.sender?.full_name || msg.sender?.username || 'Player'}
+                        senderName={msg.sender?.in_game_name || msg.sender?.username || 'Player'}
                          senderAvatar={msg.sender?.avatar_url || undefined}
                          timestamp={msg.created_at}
                          isOwn={isOwnMessage}
@@ -709,7 +711,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
                          seenCount={seenCount}
                          totalMembers={teamMembers.length}
                          replyTo={repliedMessage ? {
-                           senderName: repliedMessage.sender?.full_name || repliedMessage.sender?.username || 'Player',
+                          senderName: repliedMessage.sender?.in_game_name || repliedMessage.sender?.username || 'Player',
                            content: repliedMessage.content,
                          } : null}
                          reactions={msg.reactions}
@@ -746,7 +748,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
          disabled={sending}
          replyingTo={replyingTo ? {
            id: replyingTo.id,
-           senderName: replyingTo.sender?.full_name || replyingTo.sender?.username || 'Player',
+          senderName: replyingTo.sender?.in_game_name || replyingTo.sender?.username || 'Player',
            content: replyingTo.content,
          } : null}
          onCancelReply={cancelReply}
