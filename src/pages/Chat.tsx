@@ -76,6 +76,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
   const [selectedMessageForSeenBy, setSelectedMessageForSeenBy] = useState<TeamMessage | null>(null);
   const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
   const [chatBackground, setChatBackground] = useState('default');
+  const [mockMode, setMockMode] = useState(false);
    const scrollRef = useRef<HTMLDivElement>(null);
    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
    const lastTypingBroadcast = useRef<number>(0);
@@ -486,6 +487,25 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
     return bg ? bg.style : 'bg-background';
   };
 
+  // Load mock data for testing
+  const loadMockData = async () => {
+    try {
+      const response = await supabase.functions.invoke('mock-chat-data', {
+        body: { teamId: myTeam?.id || 'mock-team', messageCount: 50 },
+      });
+      
+      if (response.data) {
+        setMessages(response.data.messages);
+        setTeamMembers(response.data.members);
+        setMockMode(true);
+        toast({ title: 'Mock Data Loaded', description: '50 messages with 6 members loaded for preview' });
+      }
+    } catch (error) {
+      console.error('Error loading mock data:', error);
+      toast({ title: 'Error', description: 'Failed to load mock data', variant: 'destructive' });
+    }
+  };
+
    const canModifyMessage = (msg: TeamMessage) => {
      if (msg.sender_id !== user?.id) return false;
      const minutesDiff = differenceInMinutes(new Date(), new Date(msg.created_at));
@@ -644,6 +664,7 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
          onBack={() => navigate(-1)}
         onViewMembers={() => navigate('/team')}
         onChangeBackground={() => setBackgroundPickerOpen(true)}
+        onLoadMockData={loadMockData}
       />
  
       {/* Messages Area with selected background */}

@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
- import { Check, CheckCheck, Reply, Trash2, Pencil, MoreVertical, Copy, Smile, X, Eye } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { Check, CheckCheck, Reply, Trash2, Pencil, MoreVertical, Copy, Eye, X } from 'lucide-react';
  import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
  import { Button } from '@/components/ui/button';
- import { Input } from '@/components/ui/input';
+import { Input } from '@/components/ui/input';
  import {
    DropdownMenu,
    DropdownMenuContent,
@@ -42,7 +42,26 @@ import { useState, useRef, useEffect } from 'react';
    onEditCancel?: () => void;
  }
  
- const QUICK_REACTIONS = ['❤️', '👍', '😂', '😮', '😢', '🙏'];
+// Unique colors for different team members to easily identify who sent what
+const MEMBER_COLORS = [
+  'bg-emerald-600',
+  'bg-sky-600', 
+  'bg-amber-600',
+  'bg-rose-600',
+  'bg-violet-600',
+  'bg-teal-600',
+  'bg-orange-600',
+  'bg-pink-600',
+];
+
+// Generate consistent color based on sender name
+const getSenderColor = (senderName: string): string => {
+  let hash = 0;
+  for (let i = 0; i < senderName.length; i++) {
+    hash = senderName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return MEMBER_COLORS[Math.abs(hash) % MEMBER_COLORS.length];
+};
  
  const MessageBubble = ({
    id: _id,
@@ -69,25 +88,8 @@ import { useState, useRef, useEffect } from 'react';
    onEditSave,
    onEditCancel,
  }: MessageBubbleProps) => {
-   const [showReactions, setShowReactions] = useState(false);
-  const [showActions, setShowActions] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
 
-  // Close actions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (actionsRef.current && !actionsRef.current.contains(event.target as Node)) {
-        setShowActions(false);
-        setShowReactions(false);
-      }
-    };
-    
-    if (showActions || showReactions) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showActions, showReactions]);
- 
    // All members seen (excluding sender) = total - 1 (sender)
    const allSeen = totalMembers > 1 && seenCount >= totalMembers - 1;
  
@@ -98,6 +100,9 @@ import { useState, useRef, useEffect } from 'react';
    };
  
    const groupedReactions = Object.entries(reactions).filter(([_, users]) => users.length > 0);
+
+  // Get unique color for this sender
+  const senderColor = getSenderColor(senderName);
  
    return (
      <div
@@ -108,9 +113,9 @@ import { useState, useRef, useEffect } from 'react';
      >
        {/* Avatar - only for others */}
        {!isOwn && (
-         <Avatar className="h-8 w-8 flex-shrink-0 mt-0.5 border-2 border-primary/30">
+         <Avatar className={cn("h-8 w-8 flex-shrink-0 mt-0.5 border-2", `border-${senderColor.replace('bg-', '')}`)}>
            <AvatarImage src={senderAvatar || ''} />
-           <AvatarFallback className="bg-primary/20 text-primary text-xs font-bold">
+           <AvatarFallback className={cn(senderColor, "text-white text-xs font-bold")}>
              {senderName.charAt(0).toUpperCase()}
            </AvatarFallback>
          </Avatar>
@@ -119,7 +124,7 @@ import { useState, useRef, useEffect } from 'react';
        <div className={cn("max-w-[75%] min-w-[80px]", isOwn ? "items-end" : "items-start")}>
          {/* Sender name for others */}
          {!isOwn && (
-           <span className="text-xs font-bold text-primary ml-2 mb-0.5 block">
+           <span className={cn("text-xs font-bold ml-2 mb-0.5 block", senderColor.replace('bg-', 'text-'))}>
              {senderName}
            </span>
          )}
@@ -173,12 +178,12 @@ import { useState, useRef, useEffect } from 'react';
                className={cn(
                  "relative px-3 py-2 rounded-2xl",
                  isOwn
-                  ? "bg-gaming-purple text-primary-foreground rounded-br-sm shadow-md"
+                  ? "bg-gaming-purple rounded-br-sm shadow-md"
                    : "bg-card/90 border border-border text-foreground rounded-bl-sm shadow-sm"
                )}
              >
                {/* Message Content */}
-               <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+              <p className={cn("text-sm leading-relaxed break-words whitespace-pre-wrap", isOwn ? "text-white" : "text-foreground")}>
                  {content}
                </p>
  
@@ -228,25 +233,6 @@ import { useState, useRef, useEffect } from 'react';
            )}
  
            {/* Quick Reactions Bar */}
-           {showReactions && (
-             <div className={cn(
-              "absolute -top-12 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-card border border-border rounded-full px-3 py-2 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150"
-             )}>
-               {QUICK_REACTIONS.map((emoji) => (
-                 <button
-                   key={emoji}
-                  className="text-xl hover:scale-125 active:scale-95 transition-transform p-0.5"
-                   onClick={() => {
-                     onReact?.(emoji);
-                     setShowReactions(false);
-                    setShowActions(false);
-                   }}
-                 >
-                   {emoji}
-                 </button>
-               ))}
-             </div>
-           )}
          </div>
  
         {/* Action Buttons - Always visible */}
@@ -262,17 +248,6 @@ import { useState, useRef, useEffect } from 'react';
                onClick={onReply}
              >
                <Reply className="h-4 w-4" />
-             </Button>
-             <Button
-               size="icon"
-               variant="ghost"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => {
-                setShowReactions(!showReactions);
-                setShowActions(true);
-              }}
-             >
-               <Smile className="h-4 w-4" />
              </Button>
              <DropdownMenu>
                <DropdownMenuTrigger asChild>
