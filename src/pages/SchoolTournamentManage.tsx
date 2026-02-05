@@ -1348,6 +1348,42 @@ const SchoolTournamentManage = () => {
               winnersPerRoom={tournament.winners_per_room || 1}
             />
 
+            {/* Winners Per Room Setting */}
+            {tournament.status !== 'completed' && (
+              <Card className="border-warning/30">
+                <CardHeader className="pb-2 p-3">
+                  <CardTitle className="text-xs flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-yellow-500" />
+                    Winners Per Room
+                  </CardTitle>
+                  <CardDescription className="text-[10px]">
+                    Number of teams that advance from each room
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <Select
+                    value={(tournament.winners_per_room || 1).toString()}
+                    onValueChange={(val) => handleUpdateWinnersPerRoom(parseInt(val))}
+                    disabled={processing}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select winners" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 Winner (Single)</SelectItem>
+                      <SelectItem value="2">2 Winners (Double)</SelectItem>
+                      <SelectItem value="3">3 Winners (Triple)</SelectItem>
+                      <SelectItem value="4">4 Winners</SelectItem>
+                      <SelectItem value="5">5 Winners</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Current: Top {tournament.winners_per_room || 1} team(s) advance per room
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Round Control */}
             <Card>
               <CardHeader className="pb-2 p-3">
