@@ -331,10 +331,10 @@ const ProfilePage = () => {
   ];
 
   const moreItems = [
-    { icon: Megaphone, label: 'Broadcast Channel', onClick: () => navigate('/broadcast') },
-    { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
-    { icon: Settings, label: 'Terms & Conditions', onClick: () => navigate('/terms') },
-    { icon: Info, label: 'About Us', onClick: () => navigate('/about') },
+    { icon: Megaphone, label: 'Broadcast Channel', onClick: () => navigate('/broadcast'), badge: broadcasts },
+    { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support'), badge: 0 },
+    { icon: Settings, label: 'Terms & Conditions', onClick: () => navigate('/terms'), badge: 0 },
+    { icon: Info, label: 'About Us', onClick: () => navigate('/about'), badge: 0 },
   ];
 
   if (authLoading || loading) {
