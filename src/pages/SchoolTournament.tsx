@@ -272,7 +272,7 @@ const SchoolTournament = () => {
         max_players: formData.maxPlayers,
         entry_type: 'paid',
         entry_fee: formData.entryFee,
-        prize_pool: formData.prizePool,
+        prize_pool: Math.floor(formData.maxPlayers * formData.entryFee * 0.8),
         tournament_date: formData.tournamentDate,
         registration_deadline: formData.registrationDeadline,
         verification_type: formData.verificationType,
