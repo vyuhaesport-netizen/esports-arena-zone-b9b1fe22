@@ -2904,6 +2904,10 @@ export type Database = {
         Args: { p_tournament_id: string }
         Returns: Json
       }
+      record_collab_referral: {
+        Args: { p_link_code: string; p_user_id: string }
+        Returns: boolean
+      }
       register_school_tournament_team: {
         Args: {
           p_leader_id: string
@@ -2928,6 +2932,10 @@ export type Database = {
           p_user_id: string
         }
         Returns: Json
+      }
+      track_collab_link_click: {
+        Args: { p_link_code: string }
+        Returns: undefined
       }
       update_local_tournament_prize_distribution: {
         Args: {
