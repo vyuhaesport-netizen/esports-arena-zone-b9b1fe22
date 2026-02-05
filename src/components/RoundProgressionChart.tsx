@@ -9,6 +9,7 @@ interface RoundData {
   teams: number;
   isComplete: boolean;
   isCurrent: boolean;
+  winnersAdvance: number;
 }
 
 interface RoundProgressionChartProps {
@@ -17,6 +18,7 @@ interface RoundProgressionChartProps {
   currentRound: number;
   status: string;
   roomsByRound?: Record<number, { total: number; completed: number }>;
+  winnersPerRoom?: number;
 }
 
 const RoundProgressionChart = ({ 
@@ -24,7 +26,8 @@ const RoundProgressionChart = ({
   totalTeams, 
   currentRound, 
   status,
-  roomsByRound = {}
+  roomsByRound = {},
+  winnersPerRoom = 1
 }: RoundProgressionChartProps) => {
   const teamsPerRoom = game === 'BGMI' ? 25 : 12;
   const finaleMaxTeams = teamsPerRoom;
@@ -39,29 +42,33 @@ const RoundProgressionChart = ({
       const roundData = roomsByRound[roundNum];
       const isComplete = roundData ? roundData.completed === roundData.total && roundData.total > 0 : false;
       
+      // Calculate winners from this round (winnersPerRoom * rooms)
+      const winnersFromRound = roomsNeeded * winnersPerRoom;
+      
       rounds.push({ 
         round: roundNum, 
         rooms: roomsNeeded, 
         teams: currentTeams,
         isComplete,
-        isCurrent: currentRound === roundNum
+        isCurrent: currentRound === roundNum,
+        winnersAdvance: winnersPerRoom
       });
-      currentTeams = roomsNeeded; // Top 1 from each room advances
+      currentTeams = winnersFromRound; // Winners from each room advances
       roundNum++;
     }
     
     // Add finale round
-    const finaleData = roomsByRound[roundNum];
     rounds.push({ 
       round: roundNum, 
       rooms: 1, 
       teams: currentTeams,
       isComplete: status === 'completed',
-      isCurrent: status === 'finale' || currentRound === roundNum
+      isCurrent: status === 'finale' || currentRound === roundNum,
+      winnersAdvance: Math.min(3, currentTeams) // Final winners (top 3 or less)
     });
     
     return rounds;
-  }, [totalTeams, teamsPerRoom, finaleMaxTeams, currentRound, status, roomsByRound]);
+  }, [totalTeams, teamsPerRoom, finaleMaxTeams, currentRound, status, roomsByRound, winnersPerRoom]);
 
   const totalRounds = roundBreakdown.length;
 
