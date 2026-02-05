@@ -329,7 +329,6 @@ const ProfilePage = () => {
 
   const moreItems = [
     { icon: Megaphone, label: 'Broadcast Channel', onClick: () => navigate('/broadcast') },
-    { icon: FileText, label: 'Documentation', onClick: () => navigate('/docs') },
     { icon: HelpCircle, label: 'Help & Support', onClick: () => navigate('/help-support') },
     { icon: Settings, label: 'Terms & Conditions', onClick: () => navigate('/terms') },
     { icon: Info, label: 'About Us', onClick: () => navigate('/about') },

@@ -1860,6 +1860,60 @@ export type Database = {
         }
         Relationships: []
       }
+      school_tournament_prize_distributions: {
+        Row: {
+          amount: number
+          award_name: string | null
+          award_type: string
+          created_at: string | null
+          distributed_at: string | null
+          distributed_by: string | null
+          id: string
+          rank: number | null
+          team_id: string
+          tournament_id: string
+        }
+        Insert: {
+          amount?: number
+          award_name?: string | null
+          award_type: string
+          created_at?: string | null
+          distributed_at?: string | null
+          distributed_by?: string | null
+          id?: string
+          rank?: number | null
+          team_id: string
+          tournament_id: string
+        }
+        Update: {
+          amount?: number
+          award_name?: string | null
+          award_type?: string
+          created_at?: string | null
+          distributed_at?: string | null
+          distributed_by?: string | null
+          id?: string
+          rank?: number | null
+          team_id?: string
+          tournament_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_tournament_prize_distributions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournament_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_tournament_prize_distributions_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "school_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_tournament_room_assignments: {
         Row: {
           created_at: string
@@ -2066,12 +2120,17 @@ export type Database = {
           id: string
           instagram_link: string | null
           max_players: number
+          organizer_earnings: number | null
           organizer_id: string
           pincode: string | null
+          platform_earnings: number | null
           players_per_room: number
           private_code: string
           prize_distribution_mode: string | null
           prize_pool: number | null
+          prizes_distributed: boolean | null
+          prizes_distributed_at: string | null
+          prizes_distributed_by: string | null
           qr_code_url: string | null
           registration_deadline: string
           school_city: string
@@ -2111,12 +2170,17 @@ export type Database = {
           id?: string
           instagram_link?: string | null
           max_players: number
+          organizer_earnings?: number | null
           organizer_id: string
           pincode?: string | null
+          platform_earnings?: number | null
           players_per_room?: number
           private_code: string
           prize_distribution_mode?: string | null
           prize_pool?: number | null
+          prizes_distributed?: boolean | null
+          prizes_distributed_at?: string | null
+          prizes_distributed_by?: string | null
           qr_code_url?: string | null
           registration_deadline: string
           school_city: string
@@ -2156,12 +2220,17 @@ export type Database = {
           id?: string
           instagram_link?: string | null
           max_players?: number
+          organizer_earnings?: number | null
           organizer_id?: string
           pincode?: string | null
+          platform_earnings?: number | null
           players_per_room?: number
           private_code?: string
           prize_distribution_mode?: string | null
           prize_pool?: number | null
+          prizes_distributed?: boolean | null
+          prizes_distributed_at?: string | null
+          prizes_distributed_by?: string | null
           qr_code_url?: string | null
           registration_deadline?: string
           school_city?: string

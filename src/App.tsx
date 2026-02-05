@@ -70,6 +70,7 @@ import Documentation from "./pages/Documentation";
 import TournamentDetails from "./pages/TournamentDetails";
 import SchoolTournament from "./pages/SchoolTournament";
 import SchoolTournamentManage from "./pages/SchoolTournamentManage";
+import SchoolTournamentPrizeDistribution from "./pages/SchoolTournamentPrizeDistribution";
 import JoinSchoolTournament from "./pages/JoinSchoolTournament";
 import AdminSchoolTournaments from "./pages/admin/AdminSchoolTournaments";
 import AvatarSelection from "./pages/AvatarSelection";
@@ -302,6 +303,7 @@ const AppRoutes = () => {
       <Route path="/school-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
       <Route path="/local-tournament" element={<ProtectedRoute><SchoolTournament /></ProtectedRoute>} />
       <Route path="/school-tournament/:id" element={<ProtectedRoute><SchoolTournamentManage /></ProtectedRoute>} />
+      <Route path="/school-tournament/:id/distribute-prizes" element={<ProtectedRoute><SchoolTournamentPrizeDistribution /></ProtectedRoute>} />
       <Route path="/join-school-tournament/:code" element={<JoinSchoolTournament />} />
       <Route path="/admin/school-tournaments" element={<ProtectedRoute><AdminSchoolTournaments /></ProtectedRoute>} />
       

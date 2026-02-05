@@ -27,7 +27,9 @@ import {
   Clock,
   Link,
   Copy,
-  RefreshCw
+  RefreshCw,
+  Wallet,
+  ArrowUpRight
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -62,6 +64,13 @@ interface MaintenanceSettings {
   maintenance_bypass_token: string;
 }
 
+interface WithdrawalSettings {
+  min_deposit_amount: string;
+  max_withdrawal_per_day: string;
+  withdrawal_fee_threshold: string;
+  withdrawal_fee_percent: string;
+}
+
 const AdminSettings = () => {
   const [settings, setSettings] = useState<CommissionSettings>({
     organizer_commission_percent: '10',
@@ -89,12 +98,19 @@ const AdminSettings = () => {
     maintenance_end_time: '',
     maintenance_bypass_token: '',
   });
+  const [withdrawalSettings, setWithdrawalSettings] = useState<WithdrawalSettings>({
+    min_deposit_amount: '10',
+    max_withdrawal_per_day: '10000',
+    withdrawal_fee_threshold: '1000',
+    withdrawal_fee_percent: '2',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [savingOwnerContact, setSavingOwnerContact] = useState(false);
   const [savingSocial, setSavingSocial] = useState(false);
   const [savingMaintenance, setSavingMaintenance] = useState(false);
+  const [savingWithdrawal, setSavingWithdrawal] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
   const [generatingBypassToken, setGeneratingBypassToken] = useState(false);
 
@@ -159,6 +175,13 @@ const AdminSettings = () => {
         maintenance_bypass_token: '',
       };
 
+      const withdrawalMap: WithdrawalSettings = {
+        min_deposit_amount: '10',
+        max_withdrawal_per_day: '10000',
+        withdrawal_fee_threshold: '1000',
+        withdrawal_fee_percent: '2',
+      };
+
       data?.forEach((s) => {
         if (s.setting_key in commissionMap) {
           commissionMap[s.setting_key as keyof CommissionSettings] = s.setting_value;
@@ -175,6 +198,9 @@ const AdminSettings = () => {
         if (s.setting_key in maintenanceMap) {
           maintenanceMap[s.setting_key as keyof MaintenanceSettings] = s.setting_value;
         }
+        if (s.setting_key in withdrawalMap) {
+          withdrawalMap[s.setting_key as keyof WithdrawalSettings] = s.setting_value;
+        }
       });
 
       setSettings(commissionMap);
@@ -182,6 +208,7 @@ const AdminSettings = () => {
       setOwnerContactSettings(ownerContactMap);
       setSocialSettings(socialMap);
       setMaintenanceSettings(maintenanceMap);
+      setWithdrawalSettings(withdrawalMap);
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -447,6 +474,36 @@ const AdminSettings = () => {
       toast({ title: 'Copied!', description: 'Bypass link copied to clipboard.' });
     } catch (error) {
       toast({ title: 'Copy Failed', description: 'Please copy the link manually.', variant: 'destructive' });
+    }
+  };
+
+  const handleSaveWithdrawal = async () => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Access Denied', description: 'Only Super Admin can change settings.', variant: 'destructive' });
+      return;
+    }
+
+    setSavingWithdrawal(true);
+
+    try {
+      for (const [key, value] of Object.entries(withdrawalSettings)) {
+        const { error } = await supabase
+          .from('platform_settings')
+          .upsert({ 
+            setting_key: key,
+            setting_value: value,
+            updated_by: user?.id,
+          }, { onConflict: 'setting_key' });
+
+        if (error) throw error;
+      }
+
+      toast({ title: 'Withdrawal Settings Saved', description: 'Deposit and withdrawal limits have been updated.' });
+    } catch (error) {
+      console.error('Error saving withdrawal settings:', error);
+      toast({ title: 'Error', description: 'Failed to save withdrawal settings.', variant: 'destructive' });
+    } finally {
+      setSavingWithdrawal(false);
     }
   };
 
@@ -1029,6 +1086,120 @@ const AdminSettings = () => {
               >
                 {savingSocial ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                 Save Social Links
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Withdrawal & Deposit Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Wallet className="h-5 w-5 text-primary" />
+              Withdrawal & Deposit Limits
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Configure minimum deposit, maximum withdrawal per day, and withdrawal fees.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ArrowUpRight className="h-4 w-4 text-green-500" />
+                  Minimum Deposit Amount (₹)
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="10"
+                  value={withdrawalSettings.min_deposit_amount}
+                  onChange={(e) => setWithdrawalSettings(prev => ({ ...prev, min_deposit_amount: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+                <p className="text-xs text-muted-foreground">Users cannot deposit below this amount</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <ArrowUpRight className="h-4 w-4 text-red-500" />
+                  Maximum Withdrawal Per Day (₹)
+                </Label>
+                <Input
+                  type="number"
+                  placeholder="10000"
+                  value={withdrawalSettings.max_withdrawal_per_day}
+                  onChange={(e) => setWithdrawalSettings(prev => ({ ...prev, max_withdrawal_per_day: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+                <p className="text-xs text-muted-foreground">Maximum amount a user can withdraw in 24 hours</p>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium mb-3">Withdrawal Fee Settings</p>
+                
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label>Fee Threshold (₹)</Label>
+                    <Input
+                      type="number"
+                      placeholder="1000"
+                      value={withdrawalSettings.withdrawal_fee_threshold}
+                      onChange={(e) => setWithdrawalSettings(prev => ({ ...prev, withdrawal_fee_threshold: e.target.value }))}
+                      disabled={!isSuperAdmin}
+                    />
+                    <p className="text-xs text-muted-foreground">Fee applies only for withdrawals above this amount</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Withdrawal Fee (%)</Label>
+                    <Input
+                      type="number"
+                      placeholder="2"
+                      min="0"
+                      max="100"
+                      value={withdrawalSettings.withdrawal_fee_percent}
+                      onChange={(e) => setWithdrawalSettings(prev => ({ ...prev, withdrawal_fee_percent: e.target.value }))}
+                      disabled={!isSuperAdmin}
+                    />
+                    <p className="text-xs text-muted-foreground">Fee percentage for withdrawals above threshold</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Example Calculation */}
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-sm font-medium mb-2">Example: Withdrawal of ₹2000</p>
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Withdrawal Amount:</span>
+                  <span className="font-medium">₹2000</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Fee ({withdrawalSettings.withdrawal_fee_percent}% above ₹{withdrawalSettings.withdrawal_fee_threshold}):</span>
+                  <span className="font-medium text-destructive">
+                    -₹{Math.round((2000 - parseInt(withdrawalSettings.withdrawal_fee_threshold || '1000')) * (parseInt(withdrawalSettings.withdrawal_fee_percent || '2') / 100))}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t pt-1">
+                  <span className="text-muted-foreground">User Receives:</span>
+                  <span className="font-medium text-success">
+                    ₹{2000 - Math.round((2000 - parseInt(withdrawalSettings.withdrawal_fee_threshold || '1000')) * (parseInt(withdrawalSettings.withdrawal_fee_percent || '2') / 100))}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {isSuperAdmin && (
+              <Button 
+                variant="gaming" 
+                className="w-full" 
+                onClick={handleSaveWithdrawal}
+                disabled={savingWithdrawal}
+              >
+                {savingWithdrawal ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Withdrawal Settings
               </Button>
             )}
           </CardContent>
