@@ -371,9 +371,9 @@
                      </div>
                      <p className="text-sm text-muted-foreground">{integration.message}</p>
                      {integration.details && (
-                       <p className="text-xs text-muted-foreground mt-2 font-mono bg-muted p-2 rounded break-all">
-                         {integration.details}
-                       </p>
+                      <pre className="text-xs text-muted-foreground mt-2 font-mono bg-muted p-2 rounded break-all whitespace-pre-wrap">
+                        {integration.details}
+                      </pre>
                      )}
                    </div>
                    <div className="flex-shrink-0">{getStatusIcon(integration.status)}</div>
