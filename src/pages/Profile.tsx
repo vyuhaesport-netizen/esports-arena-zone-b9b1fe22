@@ -561,8 +561,9 @@ const ProfilePage = () => {
               onClick={item.onClick} 
               className="w-full flex items-center gap-2.5 p-3 hover:bg-muted/50 transition-all"
             >
-              <div className="w-8 h-8 rounded-lg bg-muted/70 flex items-center justify-center">
+              <div className="relative w-8 h-8 rounded-lg bg-muted/70 flex items-center justify-center">
                 <item.icon className="h-4 w-4 text-muted-foreground" />
+                <UnreadBadge count={item.badge} size="sm" />
               </div>
               <span className="flex-1 text-left text-xs font-medium text-foreground">{item.label}</span>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
