@@ -249,16 +249,16 @@ import { useState, useRef, useEffect } from 'react';
            )}
          </div>
  
-         {/* Hover Actions */}
+        {/* Action Buttons - Always visible */}
          {!isEditing && (
            <div className={cn(
-             "flex items-center gap-0.5 mt-1 opacity-0 group-hover:opacity-100 transition-opacity",
+            "flex items-center gap-0.5 mt-1",
              isOwn ? "justify-end" : "justify-start"
            )}>
              <Button
                size="icon"
                variant="ghost"
-               className="h-7 w-7"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
                onClick={onReply}
              >
                <Reply className="h-4 w-4" />
@@ -266,8 +266,11 @@ import { useState, useRef, useEffect } from 'react';
              <Button
                size="icon"
                variant="ghost"
-               className="h-7 w-7"
-               onClick={() => setShowReactions(true)}
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setShowReactions(!showReactions);
+                setShowActions(true);
+              }}
              >
                <Smile className="h-4 w-4" />
              </Button>
