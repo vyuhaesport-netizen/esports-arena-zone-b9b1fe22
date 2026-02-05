@@ -980,6 +980,32 @@ const OrganizerDashboard = () => {
                             <Edit2 className="h-3.5 w-3.5" />
                           </Button>
                         )}
+                         {t.status === 'upcoming' && (
+                           <Button variant="outline" size="sm" onClick={() => {
+                             setSelectedTournament(t);
+                             setFormData({
+                               title: t.title,
+                               game: t.game,
+                               description: t.description || '',
+                               entry_fee: t.entry_fee?.toString() || '',
+                               max_participants: t.max_participants?.toString() || '100',
+                               start_date: format(new Date(t.start_date), "yyyy-MM-dd'T'HH:mm"),
+                               status: t.status || 'upcoming',
+                               tournament_mode: t.tournament_mode || 'solo',
+                               prize_distribution: t.prize_distribution ? JSON.stringify(t.prize_distribution) : '',
+                               prize_pool: t.prize_pool?.replace(/[₹,]/g, '') || '',
+                               youtube_link: (t as any).youtube_link || '',
+                               instagram_link: (t as any).instagram_link || '',
+                               whatsapp_link: (t as any).whatsapp_link || '',
+                               discord_link: (t as any).discord_link || '',
+                               is_giveaway: (t as any).is_giveaway || false,
+                               giveaway_prize_pool: (t as any).giveaway_prize_pool?.toString() || '',
+                             });
+                             setDialogOpen(true);
+                           }}>
+                             <Edit2 className="h-3.5 w-3.5" />
+                           </Button>
+                         )}
                         {/* Cancel Tournament - for upcoming or ongoing */}
                         {(t.status === 'upcoming' || t.status === 'ongoing') && (
                           <Button 
