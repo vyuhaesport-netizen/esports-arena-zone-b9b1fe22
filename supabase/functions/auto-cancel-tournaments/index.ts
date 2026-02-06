@@ -174,13 +174,13 @@ Deno.serve(async (req) => {
           console.log(`Local tournament ${tournament.id} cancelled successfully`);
           
           await supabase.rpc('create_notification', {
-            p_user_id: tournament.created_by,
+            p_user_id: tournament.organizer_id,
             p_title: 'Local Tournament Auto-Cancelled',
-            p_message: `Your local tournament "${tournament.title}" was automatically cancelled because winner was not declared within 1 hour. All participants have been refunded.`,
+            p_message: `Your local tournament "${tournament.tournament_name}" was automatically cancelled because winner was not declared within 1 hour. All participants have been refunded.`,
             p_type: 'warning'
           });
 
-          results.push({ id: tournament.id, title: tournament.title, type: 'local', status: 'cancelled', refunds: registrations?.length || 0 });
+          results.push({ id: tournament.id, title: tournament.tournament_name, type: 'local', status: 'cancelled', refunds: registrations?.length || 0 });
         }
       } catch (err) {
         console.error(`Error processing local tournament ${tournament.id}:`, err);
