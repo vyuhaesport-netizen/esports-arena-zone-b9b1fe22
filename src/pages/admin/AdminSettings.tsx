@@ -115,6 +115,9 @@ const AdminSettings = () => {
   const [authSettings, setAuthSettings] = useState<AuthSettings>({
     google_auth_enabled: 'false',
   });
+  const [tournamentLimitSettings, setTournamentLimitSettings] = useState<TournamentLimitSettings>({
+    tournament_creation_limit: '5',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
@@ -123,6 +126,7 @@ const AdminSettings = () => {
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [savingWithdrawal, setSavingWithdrawal] = useState(false);
   const [savingAuth, setSavingAuth] = useState(false);
+  const [savingTournamentLimit, setSavingTournamentLimit] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
   const [generatingBypassToken, setGeneratingBypassToken] = useState(false);
 
