@@ -277,13 +277,13 @@ serve(async (req: Request) => {
         })
         .eq("user_id", link.user_id);
 
-      // Create wallet transaction for the owner
+      // Create wallet transaction for the owner (using 'commission' type)
       await supabaseAdmin
         .from("wallet_transactions")
         .insert({
           user_id: link.user_id,
           amount: commission,
-          type: "collab_commission",
+          type: "commission",
           status: "completed",
           description: `Collab Commission: User qualified (${qualificationType || "deposit"})`,
         });
