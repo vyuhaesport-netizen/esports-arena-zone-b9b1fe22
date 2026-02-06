@@ -1099,6 +1099,7 @@ const TeamPage = () => {
     if (!user || !myTeam || myTeam.leader_id !== user.id) return;
 
     setSaving(true);
+    console.log('[TeamAvatar] Saving avatar URL to DB:', avatarSrc);
 
     try {
       const { error: updateError } = await supabase
@@ -1108,9 +1109,14 @@ const TeamPage = () => {
 
       if (updateError) throw updateError;
 
+      // Immediately update local state for instant feedback
+      setMyTeam(prev => prev ? { ...prev, logo_url: avatarSrc } : prev);
+      
       toast({ title: 'Avatar Updated!', description: 'Your team avatar has been updated.' });
       setAvatarDialogOpen(false);
-      fetchMyTeam();
+      
+      // Also refresh open teams so other views show updated avatar
+      fetchOpenTeams();
     } catch (error) {
       console.error('Error updating avatar:', error);
       toast({ title: 'Error', description: 'Failed to update avatar.', variant: 'destructive' });
