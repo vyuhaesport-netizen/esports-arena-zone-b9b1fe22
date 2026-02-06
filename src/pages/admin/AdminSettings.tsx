@@ -899,6 +899,51 @@ const AdminSettings = () => {
           </CardContent>
         </Card>
 
+        {/* Tournament Creation Limit */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Trophy className="h-5 w-5 text-primary" />
+              Tournament Creation Limit
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Set the maximum number of active (upcoming/ongoing) tournaments that an Organizer or Creator can have at a time.
+            </p>
+
+            <div className="bg-muted/30 border border-border rounded-lg p-4 space-y-4">
+              <div className="space-y-2">
+                <Label>Max Active Tournaments per User</Label>
+                <Input
+                  type="number"
+                  placeholder="5"
+                  min="1"
+                  max="50"
+                  value={tournamentLimitSettings.tournament_creation_limit}
+                  onChange={(e) => setTournamentLimitSettings(prev => ({ ...prev, tournament_creation_limit: e.target.value }))}
+                  disabled={!isSuperAdmin}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Organizers/Creators cannot create new tournaments if they have this many active (upcoming or ongoing) tournaments.
+                </p>
+              </div>
+            </div>
+
+            {isSuperAdmin && (
+              <Button 
+                variant="gaming" 
+                className="w-full" 
+                onClick={handleSaveTournamentLimit}
+                disabled={savingTournamentLimit}
+              >
+                {savingTournamentLimit ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                Save Tournament Limit
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Payment Configuration */}
         <Card>
           <CardHeader>
