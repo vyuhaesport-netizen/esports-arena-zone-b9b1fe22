@@ -22,7 +22,8 @@ import {
   MapPin,
   TrendingUp,
   Calendar,
-  GraduationCap
+  GraduationCap,
+  Medal
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { generateTournamentDetailPDF, TournamentReportData } from '@/utils/pdfGenerator';
@@ -32,6 +33,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import TournamentRankingsDialog from '@/components/admin/TournamentRankingsDialog';
 
 interface UnifiedTournament {
   id: string;
