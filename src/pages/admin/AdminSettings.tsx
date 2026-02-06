@@ -186,7 +186,6 @@ const AdminSettings = () => {
       const maintenanceMap: MaintenanceSettings = {
         maintenance_mode: 'false',
         maintenance_message: 'We are currently performing scheduled maintenance. Please check back soon!',
-        maintenance_end_time: '',
         maintenance_bypass_token: '',
       };
 
