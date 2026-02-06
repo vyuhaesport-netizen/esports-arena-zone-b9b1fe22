@@ -39,6 +39,11 @@ import {
   Filter
 } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  buildWithdrawableBreakdown,
+  computeWithdrawableFromTransactions,
+  getWithdrawableEarningTransactions,
+} from '@/features/wallet/walletEarnings';
 
 interface Transaction {
   id: string;
@@ -114,49 +119,21 @@ const Wallet = () => {
 
       setTransactions(txns || []);
 
-      // Total Earned (withdrawable) = ONLY tournament prize winnings
-      // Calculate from transactions - only prize/winning types count
-      const isWinningType = (type: string) =>
-        ['winning', 'prize', 'prize_won'].includes(type);
+      // Total Earned (withdrawable): prize winnings + all commissions (creator/organizer/local/referral)
+      // Source of truth: profile.withdrawable_balance (matches backend withdrawal validation)
+      // Fallback: compute from transaction log (case-insensitive)
+      const earningTxns = getWithdrawableEarningTransactions(txns || []);
+      const computedWithdrawable = computeWithdrawableFromTransactions(txns || []);
 
-      const winningTxns = (txns || []).filter(
-        (t) => isWinningType(t.type) && t.status === 'completed'
-      );
+      const withdrawableFromProfile =
+        typeof profile?.withdrawable_balance === 'number'
+          ? Number(profile.withdrawable_balance)
+          : undefined;
 
-      const totalWinnings = winningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      const totalWithdrawn = (txns || [])
-        .filter((t) => t.type === 'withdrawal' && t.status === 'completed')
-        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      const withdrawableAmount = Math.max(0, totalWinnings - totalWithdrawn);
+      setTotalEarned(withdrawableFromProfile ?? computedWithdrawable ?? 0);
 
-      setTotalEarned(withdrawableAmount);
-
-      // Create earnings breakdown (only tournament winnings)
-      const breakdown: EarningBreakdown[] = winningTxns.map((t) => {
-        let tournamentName = 'Tournament Prize';
-        let position = '';
-
-        if (t.description) {
-          const match = t.description.match(
-            /(?:Prize|Won|Winning).*?(?:for|from|in)\s+(.+?)(?:\s*-\s*Rank\s*(\d+))?$/i
-          );
-          if (match) {
-            tournamentName = match[1] || t.description;
-            position = match[2] ? `Rank ${match[2]}` : '';
-          } else {
-            tournamentName = t.description;
-          }
-        }
-
-        return {
-          tournamentName,
-          amount: Math.abs(t.amount),
-          date: t.created_at,
-          type: t.type,
-          position,
-        };
-      });
-      setEarningsBreakdown(breakdown);
+      // Breakdown for what contributes to Total Earned
+      setEarningsBreakdown(buildWithdrawableBreakdown(earningTxns));
     } catch (error) {
       console.error('Error fetching wallet data:', error);
     } finally {
@@ -340,7 +317,7 @@ const Wallet = () => {
         {/* Info Banner */}
         <div className="glass-card bg-muted/20 rounded-xl p-2.5 mb-3 border-2 border-white/30">
           <p className="text-xs text-muted-foreground">
-            <strong className="text-foreground">Note:</strong> Deposits → Balance (tournaments). Winnings → Earned (withdraw).
+            <strong className="text-foreground">Note:</strong> Deposits/Refunds → Balance (tournaments). Winnings/Commissions → Earned (withdraw).
           </p>
         </div>
 
