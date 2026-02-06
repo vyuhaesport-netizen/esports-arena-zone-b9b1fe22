@@ -117,14 +117,9 @@ const TournamentCard = ({
   const entryFee = tournament.entry_fee ? `₹${tournament.entry_fee}` : 'Free';
   const playerCount = tournament.joined_users?.length || 0;
   const maxPlayers = tournament.max_participants || 100;
-
-  useEffect(() => {
-    if (!tournament.registration_deadline) {
-      setCountdown('');
-      return;
-    }
-
-    const updateCountdown = () => {
+  
+  const ytHandle = extractYouTubeHandle(tournament.youtube_link);
+  const instaHandle = extractInstagramHandle(tournament.instagram_link);
       const deadline = new Date(tournament.registration_deadline!).getTime();
       const now = Date.now();
       const remaining = deadline - now;
