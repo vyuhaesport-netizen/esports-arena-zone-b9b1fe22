@@ -1,25 +1,23 @@
-import { ArrowLeft, MoreVertical, Users, Search, Palette, FlaskConical } from 'lucide-react';
- import { Button } from '@/components/ui/button';
- import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
- import {
-   DropdownMenu,
-   DropdownMenuContent,
-   DropdownMenuItem,
-   DropdownMenuTrigger,
-   DropdownMenuSeparator,
- } from '@/components/ui/dropdown-menu';
- 
- interface ChatHeaderProps {
-   teamName: string;
-   memberCount: number;
-   teamAvatars: string[];
-   onBack: () => void;
-   onViewMembers?: () => void;
-   onSearch?: () => void;
-   isOnline?: boolean;
-   onChangeBackground?: () => void;
-  onLoadMockData?: () => void;
- }
+import { ArrowLeft, MoreVertical, Users, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+
+interface ChatHeaderProps {
+  teamName: string;
+  memberCount: number;
+  teamAvatars: string[];
+  onBack: () => void;
+  onViewMembers?: () => void;
+  isOnline?: boolean;
+  onChangeBackground?: () => void;
+}
  
  const ChatHeader = ({
    teamName,
