@@ -162,11 +162,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (cancelled) return;
+
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
           setTimeout(() => {
             checkRoles(session.user.id);
@@ -180,25 +184,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsCreator(false);
           setPermissions([]);
         }
-        
+
         setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        checkRoles(session.user.id);
-        checkSuperAdmin(session.user.id);
-        void maybeTrackStoredCollabReferral(session);
-      }
-      
-      setLoading(false);
-    });
+    const init = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
 
-    return () => subscription.unsubscribe();
+        // If local auth storage has a stale/invalid refresh token, clear it.
+        // Otherwise the app can get stuck in auth "loading" screens.
+        if (error) {
+          const msg = (error as any)?.message ?? '';
+          const code = (error as any)?.code ?? '';
+          if (code === 'refresh_token_not_found' || msg.toLowerCase().includes('refresh token not found')) {
+            try {
+              await supabase.auth.signOut({ scope: 'local' });
+            } catch {
+              // ignore
+            }
+          }
+        }
+
+        if (cancelled) return;
+
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
+
+        if (data.session?.user) {
+          checkRoles(data.session.user.id);
+          checkSuperAdmin(data.session.user.id);
+          void maybeTrackStoredCollabReferral(data.session);
+        }
+      } catch {
+        if (!cancelled) {
+          setSession(null);
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void init();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
