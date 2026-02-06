@@ -47,19 +47,28 @@ export const getWithdrawableEarningTransactions = <T extends WalletTransactionLi
  * Calculate withdrawable amount from transactions only.
  * Formula: (all earnings) - (all completed withdrawals)
  */
-export const computeWithdrawableFromTransactions = (txns: WalletTransactionLike[]) => {
-  const earningTotal = getWithdrawableEarningTransactions(txns).reduce(
-    (sum, t) => sum + Math.abs(t.amount || 0),
+export const computeWithdrawableFromTransactions = <T extends WalletTransactionLike>(txns: T[]) => {
+  // Filter earning transactions inline to avoid type issues
+  const earningTxns = txns.filter((t) => {
+    const statusNorm = normalizeStatus(t.status);
+    const typeNorm = normalizeType(t.type);
+    const isComp = statusNorm === 'completed';
+    const isEarn = typeNorm === 'winning' || typeNorm === 'prize' || typeNorm === 'prize_won' || typeNorm.includes('commission');
+    return isComp && isEarn;
+  });
+
+  const earningTotal = earningTxns.reduce(
+    (sum, t) => sum + Math.abs(Number(t.amount) || 0),
     0
   );
 
   const withdrawnTotal = txns
-    .filter(
-      (t) =>
-        isCompleted(t) &&
-        normalizeType(t.type) === 'withdrawal'
-    )
-    .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+    .filter((t) => {
+      const statusNorm = normalizeStatus(t.status);
+      const typeNorm = normalizeType(t.type);
+      return statusNorm === 'completed' && typeNorm === 'withdrawal';
+    })
+    .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
 
   return Math.max(0, earningTotal - withdrawnTotal);
 };
