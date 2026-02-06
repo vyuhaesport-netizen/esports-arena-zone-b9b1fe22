@@ -128,6 +128,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return permissions.includes(permission);
   };
 
+  // Collab referral tracking (best-effort): if a referral code exists in localStorage,
+  // record the signup as soon as the user becomes authenticated (covers email-verify flows).
+  const collabTrackInFlight = useRef(false);
+
+  const maybeTrackStoredCollabReferral = async (session: Session | null) => {
+    try {
+      const authedUserId = session?.user?.id;
+      if (!authedUserId) return;
+
+      const code = localStorage.getItem('collab_ref_code');
+      if (!code) return;
+
+      const markerKey = `collab_ref_tracked_for:${authedUserId}`;
+      if (localStorage.getItem(markerKey) === code) return;
+
+      if (collabTrackInFlight.current) return;
+      collabTrackInFlight.current = true;
+
+      const { error } = await supabase.functions.invoke('collab-track', {
+        body: { action: 'signup', code },
+      });
+
+      if (!error) {
+        localStorage.setItem(markerKey, code);
+        localStorage.removeItem('collab_ref_code');
+      }
+    } catch {
+      // ignore (we'll retry on next auth event)
+    } finally {
+      collabTrackInFlight.current = false;
+    }
+  };
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
