@@ -1111,12 +1111,8 @@ const AdminDocumentation = () => {
                         <span>Organizer clicks <strong>End Tournament</strong></span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-red-500" />
-                        <span><strong>30-minute cooldown</strong> before winner declaration unlocks</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
                         <ArrowRight className="h-4 w-4 text-red-500" />
-                        <span>Declare winners - <strong>Up to 10 positions</strong></span>
+                        <span>Declare winners immediately - <strong>Up to 10 positions</strong></span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <ArrowRight className="h-4 w-4 text-red-500" />
