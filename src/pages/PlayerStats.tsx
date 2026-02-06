@@ -188,7 +188,12 @@ const PlayerStatsPage = () => {
 
   const calculatePoints = () => {
     if (!userStats) return 0;
-    return (userStats.first_place_count * 10) + (userStats.second_place_count * 9) + (userStats.third_place_count * 8);
+    return (
+      userStats.stats_points ??
+      (userStats.first_place_count * 10) +
+        (userStats.second_place_count * 9) +
+        (userStats.third_place_count * 8)
+    );
   };
 
   const getPlayerRank = (points: number): { name: string; color: string } => {

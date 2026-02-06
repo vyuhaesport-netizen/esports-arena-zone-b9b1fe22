@@ -296,40 +296,16 @@ const Landing = () => {
     }
   };
 
-  const trackReferralSignup = async (userId: string, code: string) => {
+  const trackReferralSignup = async (code: string) => {
+    // Best-effort: this requires an authenticated session (so it may fail right after signup
+    // if email confirmation is required). In that case we keep the code in localStorage and
+    // retry on next login.
     try {
-      // Find the collab link by code
-      const { data: link } = await supabase
-        .from('collab_links')
-        .select('id')
-        .eq('link_code', code)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (link) {
-        // Create referral record
-        await supabase.from('collab_referrals').insert({
-          link_id: link.id,
-          referred_user_id: userId,
-          status: 'registered',
-        });
-
-        // Update signup count
-        const { data: currentLink } = await supabase
-          .from('collab_links')
-          .select('total_signups')
-          .eq('id', link.id)
-          .single();
-        
-        if (currentLink) {
-          await supabase
-            .from('collab_links')
-            .update({ 
-              total_signups: currentLink.total_signups + 1,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', link.id);
-        }
+      const { error } = await supabase.functions.invoke('collab-track', {
+        body: { action: 'signup', code },
+      });
+      if (!error) {
+        localStorage.removeItem('collab_ref_code');
       }
     } catch (error) {
       console.error('Error tracking referral:', error);

@@ -210,22 +210,31 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
      }
    };
  
-   // Mark messages as seen
-   const markMessagesAsSeen = useCallback(async () => {
-     if (!user || !myTeam || messages.length === 0) return;
- 
-     const unseenMessages = messages.filter(
-       msg => msg.sender_id !== user.id && !msg.seen_by?.includes(user.id)
-     );
- 
-     for (const msg of unseenMessages) {
-       const newSeenBy = [...(msg.seen_by || []), user.id];
-       await supabase
-         .from('team_messages')
-         .update({ seen_by: newSeenBy } as Record<string, unknown>)
-         .eq('id', msg.id);
-     }
-   }, [messages, myTeam, user]);
+  // Mark messages as seen
+  const markMessagesAsSeen = useCallback(async () => {
+    if (!user || !myTeam || messages.length === 0) return;
+
+    const unseenIds = messages
+      .filter((msg) => msg.sender_id !== user.id && !msg.seen_by?.includes(user.id))
+      .map((m) => m.id);
+
+    if (unseenIds.length === 0) return;
+
+    const { error } = await supabase.functions.invoke('mark-team-messages-seen', {
+      body: { team_id: myTeam.id, message_ids: unseenIds },
+    });
+
+    if (!error) {
+      // Optimistically update local state so badge clears instantly
+      setMessages((prev) =>
+        prev.map((m) =>
+          unseenIds.includes(m.id)
+            ? { ...m, seen_by: Array.from(new Set([...(m.seen_by || []), user.id])) }
+            : m
+        )
+      );
+    }
+  }, [messages, myTeam, user]);
  
    // Add reaction to message
    const handleReaction = async (msgId: string, emoji: string) => {
