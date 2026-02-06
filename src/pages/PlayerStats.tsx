@@ -29,6 +29,7 @@ interface UserStats {
   tournament_wins: number;
   tournament_participations: number;
   total_earnings: number;
+  stats_points?: number | null;
 }
 
 interface MatchHistory {
