@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
           if (refundAmount > 0) {
             const { error: walletError } = await supabase.rpc('admin_adjust_wallet', {
               p_target_user_id: reg.user_id,
-              p_action: 'credit',
+              p_action: 'add',
               p_amount: refundAmount,
               p_reason: `Refund for cancelled local tournament: ${tournament.tournament_name} (Winner not declared in time)`
             });
