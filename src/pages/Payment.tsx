@@ -49,6 +49,12 @@ const Payment = () => {
       navigate('/wallet');
       return;
     }
+
+    // Reset any previous ZapUPI session state when amount changes
+    setZapupiPaymentUrl(null);
+    setZapupiOrderId(null);
+    setZapupiTxnId(null);
+
     fetchPaymentSettings();
     fetchActiveGateway();
   }, [amount, navigate]);
