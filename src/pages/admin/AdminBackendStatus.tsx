@@ -193,39 +193,46 @@
     }
   };
  
-   const checkDeepSeek = async () => {
-     try {
-       const { data, error } = await supabase.functions.invoke('ai-chat', {
-         method: 'POST',
-         body: { message: 'ping', userId: user?.id, healthCheck: true }
-       });
- 
-       if (error) {
-         if (error.message?.includes('API_KEY') || error.message?.includes('not configured')) {
-           updateIntegration('DeepSeek AI', {
-             status: 'warning',
-             message: 'API Key not configured',
-             details: 'Set DEEPSEEK_API_KEY in Supabase Secrets'
-           });
-         } else {
-           throw error;
-         }
-         return;
-       }
- 
-       updateIntegration('DeepSeek AI', {
-         status: 'success',
-         message: 'Connected',
-         details: 'AI chat is responding'
-       });
-     } catch (error: any) {
-       updateIntegration('DeepSeek AI', {
-         status: 'error',
-         message: 'Check failed',
-         details: error.message
-       });
-     }
-   };
+  const checkDeepSeek = async () => {
+    try {
+      const { data, error } = await withRetry(
+        () =>
+          withTimeout(
+            supabase.functions.invoke('ai-chat', {
+              method: 'POST',
+              body: { message: 'ping', userId: user?.id, healthCheck: true }
+            }),
+            15000
+          ),
+        { label: 'AI chat', retries: 2 }
+      );
+
+      if (error) {
+        if (error.message?.includes('API_KEY') || error.message?.includes('not configured')) {
+          updateIntegration('DeepSeek AI', {
+            status: 'warning',
+            message: 'API Key not configured',
+            details: 'Set DEEPSEEK_API_KEY in Supabase Secrets'
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      updateIntegration('DeepSeek AI', {
+        status: 'success',
+        message: 'Connected',
+        details: 'AI chat is responding'
+      });
+    } catch (error: any) {
+      updateIntegration('DeepSeek AI', {
+        status: 'error',
+        message: 'Check failed',
+        details: error.message
+      });
+    }
+  };
  
    const checkPushNotifications = async () => {
      try {
