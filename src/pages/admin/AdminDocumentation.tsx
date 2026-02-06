@@ -1011,6 +1011,196 @@ const AdminDocumentation = () => {
             </Card>
           )}
 
+          {/* Local Tournament Flow Diagram */}
+          {(activeTab === 'tournament' || activeTab === 'overview') && (
+            <Card className="print:break-after-page">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-amber-500" />
+                  Local Tournament Flow (Multi-Room System)
+                </CardTitle>
+                <CardDescription>Complete flow from registration to winner declaration</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Visual Flow Diagram */}
+                <div className="space-y-4">
+                  {/* Phase 1: Registration */}
+                  <div className="p-4 bg-primary/10 rounded-lg border border-primary/30">
+                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                      <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">1</span>
+                      🎮 Registration Phase
+                    </h4>
+                    <div className="grid gap-2 ml-10">
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-primary" />
+                        <span>Player enters <strong>Private Code</strong> to find tournament</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-primary" />
+                        <span>Pays entry fee from wallet</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-primary" />
+                        <span><strong>Auto-Assignment:</strong> System assigns player to room based on game</span>
+                      </div>
+                      <div className="ml-6 p-2 bg-muted/50 rounded text-xs space-y-1">
+                        <div>• <strong>BGMI:</strong> Max 100 players per room</div>
+                        <div>• <strong>Free Fire:</strong> Max 48 players per room</div>
+                        <div>• New room created automatically when previous fills up</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phase 2: Organizer Setup */}
+                  <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30">
+                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                      <span className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center text-sm">2</span>
+                      👤 Organizer Actions
+                    </h4>
+                    <div className="grid gap-2 ml-10">
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-amber-500" />
+                        <span>View all rooms in <strong>local_tournament_rooms</strong> table</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-amber-500" />
+                        <span>Set <strong>Room ID & Password</strong> for EACH room separately</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-amber-500" />
+                        <span>Click <strong>Start Tournament</strong> when ready</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phase 3: Match */}
+                  <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                      <span className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm">3</span>
+                      ⚔️ Match Phase
+                    </h4>
+                    <div className="grid gap-2 ml-10">
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-green-500" />
+                        <span>Players go to <strong>My Match → Local</strong> tab</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm bg-green-500/20 p-2 rounded">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <span><strong>CRITICAL:</strong> Each player sees ONLY their assigned room's credentials</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-green-500" />
+                        <span>Players join their specific room in-game</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-green-500" />
+                        <span>Match is played</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phase 4: Results */}
+                  <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/30">
+                    <h4 className="font-bold text-lg flex items-center gap-2 mb-3">
+                      <span className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center text-sm">4</span>
+                      🏆 Results Phase
+                    </h4>
+                    <div className="grid gap-2 ml-10">
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-red-500" />
+                        <span>Organizer clicks <strong>End Tournament</strong></span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-red-500" />
+                        <span><strong>30-minute cooldown</strong> before winner declaration unlocks</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-red-500" />
+                        <span>Declare winners - <strong>Up to 10 positions</strong></span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-red-500" />
+                        <span>Prize distribution to winner wallets</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <ArrowRight className="h-4 w-4 text-red-500" />
+                        <span>Tournament archived after <strong>3 days</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Database Tables Used */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Database className="h-4 w-4 text-blue-500" />
+                    Database Tables Used
+                  </h4>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <div className="p-3 bg-muted/50 rounded text-sm">
+                      <strong>local_tournaments</strong>
+                      <p className="text-muted-foreground text-xs">Main tournament info, status, prize pool</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded text-sm">
+                      <strong>local_tournament_rooms</strong>
+                      <p className="text-muted-foreground text-xs">Multiple rooms per tournament with room_id/password</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded text-sm">
+                      <strong>local_tournament_room_assignments</strong>
+                      <p className="text-muted-foreground text-xs">Player → Room mapping with slot number</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded text-sm">
+                      <strong>local_tournament_registrations</strong>
+                      <p className="text-muted-foreground text-xs">Payment tracking for each player</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Auto-Assignment Function */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Code className="h-4 w-4 text-green-500" />
+                    Key RPC Function
+                  </h4>
+                  <div className="p-3 bg-green-500/10 rounded border border-green-500/20">
+                    <code className="text-sm font-mono">auto_assign_local_tournament_room(tournament_id, user_id)</code>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Automatically finds or creates a room with available slots and assigns the player
+                    </p>
+                  </div>
+                </div>
+
+                {/* Example Flow */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Info className="h-4 w-4 text-primary" />
+                    Example: 400 Players in Free Fire Tournament
+                  </h4>
+                  <div className="p-3 bg-muted/30 rounded text-sm space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">1</Badge>
+                      <span>400 players ÷ 48 per room = <strong>9 rooms created</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">2</Badge>
+                      <span>Player A in Room 3 sees: <strong>Room ID: ABCD123, Pass: xyz789</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">3</Badge>
+                      <span>Player B in Room 7 sees: <strong>Room ID: EFGH456, Pass: abc123</strong></span>
+                    </div>
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Neither player sees the other's room credentials!</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Auth Functions */}
           {(activeTab === 'auth' || activeTab === 'overview') && (
             <Card className="print:break-after-page">
