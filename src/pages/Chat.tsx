@@ -77,8 +77,9 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
   const [seenByDialogOpen, setSeenByDialogOpen] = useState(false);
   const [selectedMessageForSeenBy, setSelectedMessageForSeenBy] = useState<TeamMessage | null>(null);
   const [backgroundPickerOpen, setBackgroundPickerOpen] = useState(false);
-  const [chatBackground, setChatBackground] = useState('default');
-  const [mockMode, setMockMode] = useState(false);
+  const [chatBackground, setChatBackground] = useState(() => {
+    return localStorage.getItem('chat_wallpaper') || 'default';
+  });
    const scrollRef = useRef<HTMLDivElement>(null);
    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
    const lastTypingBroadcast = useRef<number>(0);
