@@ -29,7 +29,8 @@ import {
   Copy,
   RefreshCw,
   Wallet,
-  ArrowUpRight
+  ArrowUpRight,
+  Trophy
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
