@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+ import React, { useEffect, useState } from 'react';
  import { useNavigate } from 'react-router-dom';
  import { supabase } from '@/integrations/supabase/client';
  import { useAuth } from '@/contexts/AuthContext';
@@ -15,8 +15,73 @@
    message: string;
    details?: string;
  }
- 
- const AdminBackendStatus = () => {
+
+let lastAutoCheckAt = 0;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const withTimeout = async <T,>(promise: PromiseLike<T>, ms: number): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const wrapped = Promise.resolve(promise);
+
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms);
+  });
+
+  try {
+    return await Promise.race([wrapped, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
+const isTransientError = (err: any) => {
+  const msg = String(err?.message ?? '').toLowerCase();
+  const status = err?.context?.status ?? err?.status ?? err?.statusCode;
+
+  if (typeof status === 'number' && [408, 425, 429, 500, 502, 503, 504].includes(status)) {
+    return true;
+  }
+
+  if (
+    msg.includes('failed to fetch') ||
+    msg.includes('network') ||
+    msg.includes('timeout') ||
+    msg.includes('fetch')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const withRetry = async <T,>(
+  fn: () => Promise<T>,
+  opts?: { retries?: number; baseDelayMs?: number; label?: string }
+): Promise<T> => {
+  const retries = opts?.retries ?? 1;
+  const baseDelayMs = opts?.baseDelayMs ?? 600;
+
+  let lastErr: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+
+      const transient = isTransientError(err);
+      if (!transient || attempt >= retries) break;
+
+      await sleep(baseDelayMs * Math.pow(2, attempt));
+    }
+  }
+
+  throw lastErr;
+};
+
+const AdminBackendStatus = () => {
    const navigate = useNavigate();
    const { user } = useAuth();
    const [isAdmin, setIsAdmin] = useState(false);
@@ -34,11 +99,16 @@
      checkAdmin();
    }, [user]);
  
-   useEffect(() => {
-     if (isAdmin) {
-       runAllChecks();
-     }
-   }, [isAdmin]);
+    useEffect(() => {
+      if (!isAdmin) return;
+
+      // Avoid duplicate auto-runs (e.g. dev strict-mode remounts / fast re-navigations)
+      const now = Date.now();
+      if (now - lastAutoCheckAt < 2000) return;
+      lastAutoCheckAt = now;
+
+      runAllChecks();
+    }, [isAdmin]);
  
    const checkAdmin = async () => {
      if (!user) {
@@ -66,77 +136,97 @@
      setIntegrations(prev => prev.map(i => i.name === name ? { ...i, ...update } : i));
    };
  
-   const checkDatabase = async () => {
-     try {
-       const { error } = await supabase.from('profiles').select('id').limit(1);
-       if (error) throw error;
-       updateIntegration('Database Connection', {
-         status: 'success',
-         message: 'Connected successfully',
-         details: 'Database is responding normally'
-       });
-     } catch (error: any) {
-       updateIntegration('Database Connection', {
-         status: 'error',
-         message: 'Connection failed',
-         details: error.message
-       });
-     }
-   };
+  const checkDatabase = async () => {
+    try {
+      const { error } = await withRetry(
+        () => withTimeout(supabase.from('profiles').select('id').limit(1), 12000),
+        { label: 'Database', retries: 2 }
+      );
+
+      if (error) throw error;
+
+      updateIntegration('Database Connection', {
+        status: 'success',
+        message: 'Connected successfully',
+        details: 'Database is responding normally'
+      });
+    } catch (error: any) {
+      updateIntegration('Database Connection', {
+        status: 'error',
+        message: 'Connection failed',
+        details: error.message
+      });
+    }
+  };
  
-   const checkZapUPI = async () => {
-     try {
-       const { data: config, error: configError } = await supabase
-         .from('payment_gateway_config')
-         .select('api_key_id, api_key_secret, is_enabled')
-         .eq('gateway_name', 'zapupi')
-         .maybeSingle();
- 
-       if (configError) throw configError;
- 
-       if (!config) {
-         updateIntegration('ZapUPI Payment Gateway', {
-           status: 'warning',
-           message: 'Not configured',
-           details: 'ZapUPI not found in payment_gateway_config'
-         });
-         return;
-       }
- 
-       if (!config.api_key_id || !config.api_key_secret) {
-         updateIntegration('ZapUPI Payment Gateway', {
-           status: 'warning',
-           message: 'Credentials missing',
-           details: 'API Token or Secret Key not set'
-         });
-         return;
-       }
- 
-       if (!config.is_enabled) {
-         updateIntegration('ZapUPI Payment Gateway', {
-           status: 'warning',
-           message: 'Disabled',
-           details: 'Gateway configured but disabled'
-         });
-         return;
-       }
- 
-       const { data, error } = await supabase.functions.invoke('zapupi-diagnostics', {
-         method: 'POST',
-         body: {}
-       });
- 
-       if (error) throw error;
- 
+  const checkZapUPI = async () => {
+    try {
+      const { data: config, error: configError } = await withRetry(
+        () =>
+          withTimeout(
+            supabase
+              .from('payment_gateway_config')
+              .select('api_key_id, api_key_secret, is_enabled')
+              .eq('gateway_name', 'zapupi')
+              .maybeSingle(),
+            12000
+          ),
+        { label: 'ZapUPI config', retries: 2 }
+      );
+
+      if (configError) throw configError;
+
+      if (!config) {
+        updateIntegration('ZapUPI Payment Gateway', {
+          status: 'warning',
+          message: 'Not configured',
+          details: 'ZapUPI not found in payment_gateway_config'
+        });
+        return;
+      }
+
+      if (!config.api_key_id || !config.api_key_secret) {
+        updateIntegration('ZapUPI Payment Gateway', {
+          status: 'warning',
+          message: 'Credentials missing',
+          details: 'API Token or Secret Key not set'
+        });
+        return;
+      }
+
+      if (!config.is_enabled) {
+        updateIntegration('ZapUPI Payment Gateway', {
+          status: 'warning',
+          message: 'Disabled',
+          details: 'Gateway configured but disabled'
+        });
+        return;
+      }
+
+      const { data, error } = await withRetry(
+        () =>
+          withTimeout(
+            supabase.functions.invoke('zapupi-diagnostics', {
+              method: 'POST',
+              body: {}
+            }),
+            15000
+          ),
+        { label: 'ZapUPI diagnostics', retries: 2 }
+      );
+
+      if (error) throw error;
+
       // ZapUPI API responded - check if it's authentication issue or just test order validation
       if (data?.zapupi_http_ok) {
         // API responded, check the actual error
         const zapupiMsg = data?.zapupi_message || '';
-        const isAuthError = zapupiMsg.toLowerCase().includes('invalid token') || 
-                           zapupiMsg.toLowerCase().includes('invalid key') ||
-                           zapupiMsg.toLowerCase().includes('unauthorized') ||
-                           zapupiMsg.toLowerCase().includes('authentication');
-        
+        const isAuthError =
+          zapupiMsg.toLowerCase().includes('invalid token') ||
+          zapupiMsg.toLowerCase().includes('invalid key') ||
+          zapupiMsg.toLowerCase().includes('unauthorized') ||
+          zapupiMsg.toLowerCase().includes('authentication');
+
         if (isAuthError) {
           updateIntegration('ZapUPI Payment Gateway', {
             status: 'error',
@@ -144,11 +234,11 @@
             details: `Error: ${zapupiMsg}\nOutbound IP: ${data.outbound_ip || 'Unknown'}\n⚠️ Check API Token/Secret or IP Whitelist in ZapUPI Dashboard`
           });
         } else if (data?.zapupi_status === 'success') {
-         updateIntegration('ZapUPI Payment Gateway', {
-           status: 'success',
-           message: 'Working',
-           details: `Outbound IP: ${data.outbound_ip || 'Unknown'}`
-         });
+          updateIntegration('ZapUPI Payment Gateway', {
+            status: 'success',
+            message: 'Working',
+            details: `Outbound IP: ${data.outbound_ip || 'Unknown'}`
+          });
         } else {
           // Other errors like "Invalid OrderId" are actually OK - means API is responding
           updateIntegration('ZapUPI Payment Gateway', {
@@ -157,123 +247,157 @@
             details: `API responding correctly.\nTest response: "${zapupiMsg}"\nOutbound IP: ${data.outbound_ip || 'Unknown'}\n✅ Credentials verified, API accessible`
           });
         }
-       } else {
-         updateIntegration('ZapUPI Payment Gateway', {
-           status: 'error',
+      } else {
+        updateIntegration('ZapUPI Payment Gateway', {
+          status: 'error',
           message: 'API Connection Failed',
           details: `HTTP Error from ZapUPI\nResponse: ${JSON.stringify(data?.zapupi_response || {})}\nOutbound IP: ${data?.outbound_ip || 'Unknown'}\n⚠️ ZapUPI servers may be down or IP not whitelisted`
-         });
-       }
-     } catch (error: any) {
-       updateIntegration('ZapUPI Payment Gateway', {
-         status: 'error',
-         message: 'Check failed',
-        details: `Error: ${error.message}\n⚠️ Edge function may not be deployed or network issue`
-       });
-     }
-   };
+        });
+      }
+    } catch (error: any) {
+      updateIntegration('ZapUPI Payment Gateway', {
+        status: 'error',
+        message: 'Check failed',
+        details: `Error: ${error.message}\n⚠️ Temporary network/cold-start issue ho sakta hai — thodi der baad Run All Checks try karo.`
+      });
+    }
+  };
  
-   const checkDeepSeek = async () => {
-     try {
-       const { data, error } = await supabase.functions.invoke('ai-chat', {
-         method: 'POST',
-         body: { message: 'ping', userId: user?.id, healthCheck: true }
-       });
+  const checkDeepSeek = async () => {
+    try {
+      const { data, error } = await withRetry(
+        () =>
+          withTimeout(
+            supabase.functions.invoke('ai-chat', {
+              method: 'POST',
+              body: { message: 'ping', userId: user?.id, healthCheck: true }
+            }),
+            15000
+          ),
+        { label: 'AI chat', retries: 2 }
+      );
+
+      if (error) {
+        if (error.message?.includes('API_KEY') || error.message?.includes('not configured')) {
+          updateIntegration('DeepSeek AI', {
+            status: 'warning',
+            message: 'API Key not configured',
+            details: 'Set DEEPSEEK_API_KEY in Supabase Secrets'
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      updateIntegration('DeepSeek AI', {
+        status: 'success',
+        message: 'Connected',
+        details: 'AI chat is responding'
+      });
+    } catch (error: any) {
+      updateIntegration('DeepSeek AI', {
+        status: 'error',
+        message: 'Check failed',
+        details: error.message
+      });
+    }
+  };
  
-       if (error) {
-         if (error.message?.includes('API_KEY') || error.message?.includes('not configured')) {
-           updateIntegration('DeepSeek AI', {
-             status: 'warning',
-             message: 'API Key not configured',
-             details: 'Set DEEPSEEK_API_KEY in Supabase Secrets'
-           });
-         } else {
-           throw error;
-         }
-         return;
-       }
+  const checkPushNotifications = async () => {
+    try {
+      const { error: fnError } = await withRetry(
+        () =>
+          withTimeout(
+            supabase.functions.invoke('send-push-notification', {
+              method: 'POST',
+              body: { healthCheck: true }
+            }),
+            15000
+          ),
+        { label: 'Push notifications', retries: 2 }
+      );
+
+      if (fnError) {
+        if (fnError.message?.includes('not configured') || fnError.message?.includes('ONESIGNAL')) {
+          updateIntegration('Push Notifications (OneSignal)', {
+            status: 'warning',
+            message: 'Not configured',
+            details: 'Set ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY'
+          });
+        } else {
+          throw fnError;
+        }
+        return;
+      }
+
+      updateIntegration('Push Notifications (OneSignal)', {
+        status: 'success',
+        message: 'Configured',
+        details: 'Push service is ready'
+      });
+    } catch (error: any) {
+      updateIntegration('Push Notifications (OneSignal)', {
+        status: 'error',
+        message: 'Check failed',
+        details: error.message
+      });
+    }
+  };
  
-       updateIntegration('DeepSeek AI', {
-         status: 'success',
-         message: 'Connected',
-         details: 'AI chat is responding'
-       });
-     } catch (error: any) {
-       updateIntegration('DeepSeek AI', {
-         status: 'error',
-         message: 'Check failed',
-         details: error.message
-       });
-     }
-   };
+  const checkEdgeFunctions = async () => {
+    try {
+      const { error } = await withRetry(
+        () => withTimeout(supabase.functions.invoke('zapupi-diagnostics', { method: 'GET' }), 15000),
+        { label: 'Edge functions', retries: 2 }
+      );
+
+      if (error) throw error;
+
+      updateIntegration('Edge Functions', {
+        status: 'success',
+        message: 'Deployed',
+        details: 'Edge functions responding'
+      });
+    } catch (error: any) {
+      if (error.message?.includes('404')) {
+        updateIntegration('Edge Functions', {
+          status: 'error',
+          message: 'Not deployed',
+          details: 'Run: npx supabase functions deploy'
+        });
+      } else {
+        updateIntegration('Edge Functions', {
+          status: 'error',
+          message: 'Error',
+          details: error.message
+        });
+      }
+    }
+  };
  
-   const checkPushNotifications = async () => {
-     try {
-       const { error: fnError } = await supabase.functions.invoke('send-push-notification', {
-         method: 'POST',
-         body: { healthCheck: true }
-       });
- 
-       if (fnError) {
-         if (fnError.message?.includes('not configured') || fnError.message?.includes('ONESIGNAL')) {
-           updateIntegration('Push Notifications (OneSignal)', {
-             status: 'warning',
-             message: 'Not configured',
-             details: 'Set ONESIGNAL_APP_ID and ONESIGNAL_REST_API_KEY'
-           });
-         } else {
-           throw fnError;
-         }
-         return;
-       }
- 
-       updateIntegration('Push Notifications (OneSignal)', {
-         status: 'success',
-         message: 'Configured',
-         details: 'Push service is ready'
-       });
-     } catch (error: any) {
-       updateIntegration('Push Notifications (OneSignal)', {
-         status: 'error',
-         message: 'Check failed',
-         details: error.message
-       });
-     }
-   };
- 
-   const checkEdgeFunctions = async () => {
-     try {
-       const { error } = await supabase.functions.invoke('zapupi-diagnostics', { method: 'GET' });
-       if (error) throw error;
-       updateIntegration('Edge Functions', {
-         status: 'success',
-         message: 'Deployed',
-         details: 'Edge functions responding'
-       });
-     } catch (error: any) {
-       if (error.message?.includes('404')) {
-         updateIntegration('Edge Functions', {
-           status: 'error',
-           message: 'Not deployed',
-           details: 'Run: npx supabase functions deploy'
-         });
-       } else {
-         updateIntegration('Edge Functions', {
-           status: 'error',
-           message: 'Error',
-           details: error.message
-         });
-       }
-     }
-   };
- 
-   const runAllChecks = async () => {
-     setChecking(true);
-     setIntegrations(prev => prev.map(i => ({ ...i, status: 'checking' as const, message: 'Checking...' })));
-     await Promise.all([checkDatabase(), checkZapUPI(), checkDeepSeek(), checkPushNotifications(), checkEdgeFunctions()]);
-     setChecking(false);
-     toast.success('All checks completed');
-   };
+  const runAllChecks = async () => {
+    setChecking(true);
+    setIntegrations(prev =>
+      prev.map(i => ({
+        ...i,
+        status: 'checking' as const,
+        message: 'Checking...',
+        details: undefined,
+      }))
+    );
+
+    await Promise.all([
+      checkDatabase(),
+      checkZapUPI(),
+      checkDeepSeek(),
+      checkPushNotifications(),
+      checkEdgeFunctions()
+    ]);
+
+    setChecking(false);
+    toast.success('All checks completed');
+  };
  
    const getStatusIcon = (status: IntegrationStatus['status']) => {
      switch (status) {
