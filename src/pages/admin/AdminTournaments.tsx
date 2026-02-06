@@ -86,6 +86,8 @@ const AdminTournaments = () => {
   const [typeFilter, setTypeFilter] = useState<'all' | 'organizer' | 'creator' | 'local' | 'school'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [rankingsDialogOpen, setRankingsDialogOpen] = useState(false);
+  const [selectedTournamentForRankings, setSelectedTournamentForRankings] = useState<UnifiedTournament | null>(null);
   const [commissionSettings, setCommissionSettings] = useState<CommissionSettings>({
     organizer_percent: 10,
     platform_percent: 10,
