@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import {
   FileText,
   Download,
@@ -25,7 +26,11 @@ import {
   Play,
   Square,
   Award,
-  UserCheck
+  UserCheck,
+  Rocket,
+  TrendingUp,
+  Target,
+  Briefcase
 } from 'lucide-react';
 
 interface FunctionDoc {
@@ -711,7 +716,11 @@ const AdminDocumentation = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="print:hidden">
-          <TabsList className="grid grid-cols-6 w-full">
+          <TabsList className="grid grid-cols-7 w-full">
+            <TabsTrigger value="pitchdeck" className="flex items-center gap-1">
+              <Rocket className="h-3 w-3" />
+              Pitch Deck
+            </TabsTrigger>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="updates" className="flex items-center gap-1">
               <Clock className="h-3 w-3" />
@@ -726,6 +735,152 @@ const AdminDocumentation = () => {
 
         {/* Print All Content */}
         <div className="space-y-6">
+          {/* Pitch Deck Section */}
+          {activeTab === 'pitchdeck' && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Rocket className="h-5 w-5 text-primary" />
+                  Vyuha Esport Pitch Deck
+                </CardTitle>
+                <CardDescription>Complete investor presentation document</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Download Button */}
+                <div className="flex flex-col sm:flex-row gap-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">📄 Download Full Pitch Deck</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Complete investor presentation with market analysis, features, and financial projections
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = '/VYUHA_PITCH_DECK.md';
+                      link.download = 'Vyuha_Esport_Pitch_Deck.md';
+                      link.click();
+                    }}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download Pitch Deck
+                  </Button>
+                </div>
+
+                <Separator />
+
+                {/* Quick Summary */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Target className="h-5 w-5 text-primary" />
+                    Quick Summary
+                  </h3>
+                  
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-medium text-sm text-muted-foreground">Mission</h4>
+                      <p className="font-semibold mt-1">Democratize esports for every gamer in India</p>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-medium text-sm text-muted-foreground">Vision</h4>
+                      <p className="font-semibold mt-1">India's #1 grassroots esports platform by 2027</p>
+                    </div>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <h4 className="font-medium text-sm text-muted-foreground">Platform</h4>
+                      <p className="font-semibold mt-1">Mobile-first PWA for BGMI & Free Fire</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Revenue Model */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-green-500" />
+                    Revenue Model (80/10/10 Split)
+                  </h3>
+                  
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                      <h4 className="font-bold text-2xl text-green-600">80%</h4>
+                      <p className="font-medium">Prize Pool</p>
+                      <p className="text-sm text-muted-foreground">Distributed to winners</p>
+                    </div>
+                    <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+                      <h4 className="font-bold text-2xl text-primary">10%</h4>
+                      <p className="font-medium">Platform Fee</p>
+                      <p className="text-sm text-muted-foreground">Vyuha revenue</p>
+                    </div>
+                    <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/20">
+                      <h4 className="font-bold text-2xl text-amber-600">10%</h4>
+                      <p className="font-medium">Organizer/Creator</p>
+                      <p className="text-sm text-muted-foreground">Commission earnings</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Market Size */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-blue-500" />
+                    Market Opportunity
+                  </h3>
+                  
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="p-4 bg-blue-500/10 rounded-lg text-center">
+                      <h4 className="font-bold text-2xl">500M+</h4>
+                      <p className="text-sm text-muted-foreground">Mobile Gamers in India</p>
+                    </div>
+                    <div className="p-4 bg-blue-500/10 rounded-lg text-center">
+                      <h4 className="font-bold text-2xl">150M+</h4>
+                      <p className="text-sm text-muted-foreground">Esports Enthusiasts</p>
+                    </div>
+                    <div className="p-4 bg-blue-500/10 rounded-lg text-center">
+                      <h4 className="font-bold text-2xl">₹3,000 Cr</h4>
+                      <p className="text-sm text-muted-foreground">Market Size by 2027</p>
+                    </div>
+                    <div className="p-4 bg-blue-500/10 rounded-lg text-center">
+                      <h4 className="font-bold text-2xl">50K+</h4>
+                      <p className="text-sm text-muted-foreground">Schools/Colleges Target</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Pitch Deck Contents */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">📋 Pitch Deck Contents</h3>
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {[
+                      '📌 Executive Summary',
+                      '🔥 Problem Statement', 
+                      '✅ Our Solution',
+                      '🚀 Platform Features',
+                      '📈 Market Opportunity',
+                      '💰 Revenue Model',
+                      '🏗️ Technology & Scalability',
+                      '🛡️ Security & Trust',
+                      '🗓️ Roadmap',
+                      '👥 Team',
+                      '💼 Funding Ask',
+                      '📞 Contact Info'
+                    ].map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-muted/30 rounded">
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        <span className="text-sm">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Overview */}
           {(activeTab === 'overview' || typeof window !== 'undefined' && window.matchMedia('print').matches) && (
             <Card className="print:break-after-page">
