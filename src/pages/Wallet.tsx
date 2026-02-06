@@ -114,25 +114,38 @@ const Wallet = () => {
 
       setTransactions(txns || []);
 
-      // Calculate total earned (prize winnings + commissions)
-      const prizeTypes = ['winning', 'prize', 'prize_won', 'commission'];
-      const earningTxns = (txns || []).filter(t => prizeTypes.includes(t.type) && t.status === 'completed');
-      const earned = earningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      
-      // Subtract completed withdrawals from total earned
-      const withdrawnFromEarnings = (txns || [])
-        .filter(t => t.type === 'withdrawal' && t.status === 'completed')
+      // Total Earned (withdrawable)
+      // Source of truth is profiles.withdrawable_balance.
+      // Fallback to transaction aggregation if it's missing for any reason.
+      const isEarnedType = (type: string) =>
+        ['winning', 'prize', 'prize_won', 'bonus'].includes(type) || type.includes('commission');
+
+      const earningTxns = (txns || []).filter(
+        (t) => isEarnedType(t.type) && t.status === 'completed'
+      );
+
+      const computedEarned = earningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const computedWithdrawn = (txns || [])
+        .filter((t) => t.type === 'withdrawal' && t.status === 'completed')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      
-      setTotalEarned(Math.max(0, earned - withdrawnFromEarnings));
+      const computedWithdrawable = Math.max(0, computedEarned - computedWithdrawn);
+
+      const withdrawableBalance =
+        typeof profile?.withdrawable_balance === 'number'
+          ? profile.withdrawable_balance
+          : computedWithdrawable;
+
+      setTotalEarned(withdrawableBalance || 0);
 
       // Create earnings breakdown
-      const breakdown: EarningBreakdown[] = earningTxns.map(t => {
-        let tournamentName = 'Tournament Prize';
+      const breakdown: EarningBreakdown[] = earningTxns.map((t) => {
+        let tournamentName = 'Earning';
         let position = '';
-        
+
         if (t.description) {
-          const match = t.description.match(/(?:Prize|Won|Winning).*?(?:for|from|in)\s+(.+?)(?:\s*-\s*Rank\s*(\d+))?$/i);
+          const match = t.description.match(
+            /(?:Prize|Won|Winning).*?(?:for|from|in)\s+(.+?)(?:\s*-\s*Rank\s*(\d+))?$/i
+          );
           if (match) {
             tournamentName = match[1] || t.description;
             position = match[2] ? `Rank ${match[2]}` : '';
@@ -146,7 +159,7 @@ const Wallet = () => {
           amount: Math.abs(t.amount),
           date: t.created_at,
           type: t.type,
-          position
+          position,
         };
       });
       setEarningsBreakdown(breakdown);
