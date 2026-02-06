@@ -164,21 +164,37 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Refund each participant
+        // Refund each participant using direct updates (service role bypasses RLS)
         for (const reg of registrations || []) {
           const refundAmount = reg.amount_paid || tournament.entry_fee || 0;
           
           if (refundAmount > 0) {
-            const { error: walletError } = await supabase.rpc('admin_adjust_wallet', {
-              p_target_user_id: reg.user_id,
-              p_action: 'add',
-              p_amount: refundAmount,
-              p_reason: `Refund for cancelled local tournament: ${tournament.tournament_name} (Winner not declared in time)`
-            });
+            // Get current balance and update
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('wallet_balance')
+              .eq('user_id', reg.user_id)
+              .single();
 
-            if (walletError) {
-              console.error(`Error refunding user ${reg.user_id}:`, walletError);
+            const currentBalance = profile?.wallet_balance || 0;
+            const newBalance = currentBalance + refundAmount;
+
+            const { error: updateWalletError } = await supabase
+              .from('profiles')
+              .update({ wallet_balance: newBalance })
+              .eq('user_id', reg.user_id);
+
+            if (updateWalletError) {
+              console.error(`Error refunding user ${reg.user_id}:`, updateWalletError);
             } else {
+              // Log the transaction
+              await supabase.from('wallet_transactions').insert({
+                user_id: reg.user_id,
+                type: 'refund',
+                amount: refundAmount,
+                status: 'completed',
+                description: `Refund for auto-cancelled local tournament: ${tournament.tournament_name} (Winner not declared in time)`
+              });
               console.log(`Refunded ₹${refundAmount} to user ${reg.user_id}`);
             }
           }
