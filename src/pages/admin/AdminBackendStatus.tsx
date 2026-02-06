@@ -306,13 +306,28 @@
     }
   };
  
-   const runAllChecks = async () => {
-     setChecking(true);
-     setIntegrations(prev => prev.map(i => ({ ...i, status: 'checking' as const, message: 'Checking...' })));
-     await Promise.all([checkDatabase(), checkZapUPI(), checkDeepSeek(), checkPushNotifications(), checkEdgeFunctions()]);
-     setChecking(false);
-     toast.success('All checks completed');
-   };
+  const runAllChecks = async () => {
+    setChecking(true);
+    setIntegrations(prev =>
+      prev.map(i => ({
+        ...i,
+        status: 'checking' as const,
+        message: 'Checking...',
+        details: undefined,
+      }))
+    );
+
+    await Promise.all([
+      checkDatabase(),
+      checkZapUPI(),
+      checkDeepSeek(),
+      checkPushNotifications(),
+      checkEdgeFunctions()
+    ]);
+
+    setChecking(false);
+    toast.success('All checks completed');
+  };
  
    const getStatusIcon = (status: IntegrationStatus['status']) => {
      switch (status) {
