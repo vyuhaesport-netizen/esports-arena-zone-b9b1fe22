@@ -17,16 +17,21 @@ Deno.serve(async (req) => {
 
     console.log('Starting auto-cancel check for tournaments...');
 
-    // Find completed tournaments without winner declaration after 1 hour
+    // Find completed tournaments without winner declaration after 1 hour of being marked completed
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-    // Get regular tournaments that are completed, no winner declared, and completed more than 1 hour ago
+    console.log('Checking for tournaments completed before:', oneHourAgo);
+
+    // Get regular tournaments that are completed, no winner declared, and marked completed more than 1 hour ago
+    // Using updated_at since that's when status changed to 'completed'
     const { data: tournaments, error: tournamentsError } = await supabase
       .from('tournaments')
-      .select('id, title, entry_fee, created_by')
+      .select('id, title, entry_fee, created_by, updated_at')
       .eq('status', 'completed')
       .is('winner_declared_at', null)
-      .lt('end_date', oneHourAgo);
+      .lt('updated_at', oneHourAgo);
+    
+    console.log('Found regular tournaments to cancel:', tournaments?.length || 0, tournaments);
 
     if (tournamentsError) {
       console.error('Error fetching tournaments:', tournamentsError);
@@ -36,10 +41,12 @@ Deno.serve(async (req) => {
     // Get local tournaments that are completed, no winner declared, and completed more than 1 hour ago
     const { data: localTournaments, error: localError } = await supabase
       .from('local_tournaments')
-      .select('id, title, entry_fee, created_by')
+      .select('id, tournament_name, entry_fee, organizer_id, updated_at')
       .eq('status', 'completed')
       .is('winner_declared_at', null)
-      .lt('end_date', oneHourAgo);
+      .lt('updated_at', oneHourAgo);
+    
+    console.log('Found local tournaments to cancel:', localTournaments?.length || 0, localTournaments);
 
     if (localError) {
       console.error('Error fetching local tournaments:', localError);
@@ -53,34 +60,59 @@ Deno.serve(async (req) => {
       console.log(`Processing tournament: ${tournament.title} (${tournament.id})`);
 
       try {
-        // Get all registrations for this tournament
+        // Get all registrations for this tournament (regular tournaments don't have payment_status or amount_paid)
         const { data: registrations, error: regError } = await supabase
           .from('tournament_registrations')
-          .select('user_id, amount_paid')
-          .eq('tournament_id', tournament.id)
-          .eq('payment_status', 'completed');
+          .select('user_id')
+          .eq('tournament_id', tournament.id);
 
         if (regError) {
           console.error(`Error fetching registrations for ${tournament.id}:`, regError);
           continue;
         }
 
-        // Refund each participant
-        for (const reg of registrations || []) {
-          const refundAmount = reg.amount_paid || parseFloat(tournament.entry_fee?.replace(/[₹,]/g, '') || '0');
-          
-          if (refundAmount > 0) {
-            // Add to user's wallet
-            const { error: walletError } = await supabase.rpc('admin_adjust_wallet', {
-              p_user_id: reg.user_id,
-              p_amount: refundAmount,
-              p_type: 'credit',
-              p_description: `Refund for cancelled tournament: ${tournament.title} (Winner not declared in time)`
-            });
+        console.log(`Found ${registrations?.length || 0} registrations to refund for tournament ${tournament.id}`);
 
-            if (walletError) {
-              console.error(`Error refunding user ${reg.user_id}:`, walletError);
+        // Entry fee is already a number in the tournaments table
+        const refundAmount = tournament.entry_fee || 0;
+
+        // Refund each participant using direct updates (service role bypasses RLS)
+        for (const reg of registrations || []) {
+          if (refundAmount > 0) {
+            // Update wallet balance directly
+            const { error: walletError } = await supabase
+              .from('profiles')
+              .update({ 
+                wallet_balance: supabase.rpc('increment_balance', { user_id: reg.user_id, amount: refundAmount })
+              })
+              .eq('user_id', reg.user_id);
+
+            // Actually, let's use a simpler approach - get current balance and update
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('wallet_balance')
+              .eq('user_id', reg.user_id)
+              .single();
+
+            const currentBalance = profile?.wallet_balance || 0;
+            const newBalance = currentBalance + refundAmount;
+
+            const { error: updateWalletError } = await supabase
+              .from('profiles')
+              .update({ wallet_balance: newBalance })
+              .eq('user_id', reg.user_id);
+
+            if (updateWalletError) {
+              console.error(`Error refunding user ${reg.user_id}:`, updateWalletError);
             } else {
+              // Log the transaction
+              await supabase.from('wallet_transactions').insert({
+                user_id: reg.user_id,
+                type: 'refund',
+                amount: refundAmount,
+                status: 'completed',
+                description: `Refund for auto-cancelled tournament: ${tournament.title} (Winner not declared in time)`
+              });
               console.log(`Refunded ₹${refundAmount} to user ${reg.user_id}`);
             }
           }
@@ -117,7 +149,7 @@ Deno.serve(async (req) => {
 
     // Process local tournaments
     for (const tournament of localTournaments || []) {
-      console.log(`Processing local tournament: ${tournament.title} (${tournament.id})`);
+      console.log(`Processing local tournament: ${tournament.tournament_name} (${tournament.id})`);
 
       try {
         // Get all registrations for this local tournament
@@ -132,21 +164,37 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Refund each participant
+        // Refund each participant using direct updates (service role bypasses RLS)
         for (const reg of registrations || []) {
-          const refundAmount = reg.amount_paid || parseFloat(tournament.entry_fee?.replace(/[₹,]/g, '') || '0');
+          const refundAmount = reg.amount_paid || tournament.entry_fee || 0;
           
           if (refundAmount > 0) {
-            const { error: walletError } = await supabase.rpc('admin_adjust_wallet', {
-              p_user_id: reg.user_id,
-              p_amount: refundAmount,
-              p_type: 'credit',
-              p_description: `Refund for cancelled local tournament: ${tournament.title} (Winner not declared in time)`
-            });
+            // Get current balance and update
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('wallet_balance')
+              .eq('user_id', reg.user_id)
+              .single();
 
-            if (walletError) {
-              console.error(`Error refunding user ${reg.user_id}:`, walletError);
+            const currentBalance = profile?.wallet_balance || 0;
+            const newBalance = currentBalance + refundAmount;
+
+            const { error: updateWalletError } = await supabase
+              .from('profiles')
+              .update({ wallet_balance: newBalance })
+              .eq('user_id', reg.user_id);
+
+            if (updateWalletError) {
+              console.error(`Error refunding user ${reg.user_id}:`, updateWalletError);
             } else {
+              // Log the transaction
+              await supabase.from('wallet_transactions').insert({
+                user_id: reg.user_id,
+                type: 'refund',
+                amount: refundAmount,
+                status: 'completed',
+                description: `Refund for auto-cancelled local tournament: ${tournament.tournament_name} (Winner not declared in time)`
+              });
               console.log(`Refunded ₹${refundAmount} to user ${reg.user_id}`);
             }
           }
@@ -167,13 +215,13 @@ Deno.serve(async (req) => {
           console.log(`Local tournament ${tournament.id} cancelled successfully`);
           
           await supabase.rpc('create_notification', {
-            p_user_id: tournament.created_by,
+            p_user_id: tournament.organizer_id,
             p_title: 'Local Tournament Auto-Cancelled',
-            p_message: `Your local tournament "${tournament.title}" was automatically cancelled because winner was not declared within 1 hour. All participants have been refunded.`,
+            p_message: `Your local tournament "${tournament.tournament_name}" was automatically cancelled because winner was not declared within 1 hour. All participants have been refunded.`,
             p_type: 'warning'
           });
 
-          results.push({ id: tournament.id, title: tournament.title, type: 'local', status: 'cancelled', refunds: registrations?.length || 0 });
+          results.push({ id: tournament.id, title: tournament.tournament_name, type: 'local', status: 'cancelled', refunds: registrations?.length || 0 });
         }
       } catch (err) {
         console.error(`Error processing local tournament ${tournament.id}:`, err);
