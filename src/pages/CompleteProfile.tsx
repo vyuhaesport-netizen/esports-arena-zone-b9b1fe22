@@ -232,7 +232,7 @@ const CompleteProfile = () => {
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   {checkingUsername && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
                   {!checkingUsername && usernameAvailable === true && formData.username.length >= 3 && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                   )}
                   {!checkingUsername && usernameAvailable === false && (
                     <XCircle className="h-4 w-4 text-destructive" />
@@ -241,7 +241,7 @@ const CompleteProfile = () => {
               </div>
               {errors.username && <p className="text-destructive text-xs">{errors.username}</p>}
               {!errors.username && usernameAvailable === true && formData.username.length >= 3 && (
-                <p className="text-green-500 text-xs">Username is available!</p>
+                <p className="text-success text-xs">Username is available!</p>
               )}
               <p className="text-xs text-muted-foreground">3-20 characters, lowercase letters and numbers only</p>
             </div>
