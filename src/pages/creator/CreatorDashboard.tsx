@@ -204,6 +204,7 @@ const CreatorDashboard = () => {
           if (s.setting_key === 'organizer_commission_percent') settings.organizer_percent = parseFloat(s.setting_value);
           if (s.setting_key === 'platform_commission_percent') settings.platform_percent = parseFloat(s.setting_value);
           if (s.setting_key === 'prize_pool_percent') settings.prize_pool_percent = parseFloat(s.setting_value);
+          if (s.setting_key === 'tournament_creation_limit') setTournamentLimit(parseInt(s.setting_value) || 5);
         });
         if (Object.keys(settings).length > 0) {
           setCommissionSettings(prev => ({ ...prev, ...settings }));
