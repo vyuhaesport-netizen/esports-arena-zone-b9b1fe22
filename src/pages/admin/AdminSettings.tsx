@@ -108,6 +108,9 @@ const AdminSettings = () => {
     withdrawal_fee_threshold: '1000',
     withdrawal_fee_percent: '2',
   });
+  const [authSettings, setAuthSettings] = useState<AuthSettings>({
+    google_auth_enabled: 'false',
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
@@ -115,6 +118,7 @@ const AdminSettings = () => {
   const [savingSocial, setSavingSocial] = useState(false);
   const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [savingWithdrawal, setSavingWithdrawal] = useState(false);
+  const [savingAuth, setSavingAuth] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
   const [generatingBypassToken, setGeneratingBypassToken] = useState(false);
 
