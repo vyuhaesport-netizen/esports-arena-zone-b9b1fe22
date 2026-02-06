@@ -35,6 +35,12 @@ const Payment = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [activeGateway, setActiveGateway] = useState<ActiveGateway | null>(null);
   const [loadingGateway, setLoadingGateway] = useState(true);
+
+  // ZapUPI: since the editor preview runs inside an iframe, ZapUPI pages may refuse to load.
+  // We open the payment page in a new tab and show a fallback button.
+  const [zapupiPaymentUrl, setZapupiPaymentUrl] = useState<string | null>(null);
+  const [zapupiOrderId, setZapupiOrderId] = useState<string | null>(null);
+  const [zapupiTxnId, setZapupiTxnId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +49,12 @@ const Payment = () => {
       navigate('/wallet');
       return;
     }
+
+    // Reset any previous ZapUPI session state when amount changes
+    setZapupiPaymentUrl(null);
+    setZapupiOrderId(null);
+    setZapupiTxnId(null);
+
     fetchPaymentSettings();
     fetchActiveGateway();
   }, [amount, navigate]);
@@ -441,6 +453,20 @@ const Payment = () => {
 
   // ZapUPI Payment UI
   if (activeGateway?.gateway_name === 'zapupi') {
+    const openZapupiInNewTab = (url: string) => {
+      // In the Lovable editor, the preview runs inside an iframe.
+      // ZapUPI blocks iframe embedding and shows "refused to connect".
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+
+      if (!opened) {
+        toast({
+          title: 'Popup blocked',
+          description: 'Browser ne new tab block kar diya. Neeche "Open Payment Page" dabao.',
+          variant: 'destructive',
+        });
+      }
+    };
+
     const handleZapupiPayment = async () => {
       if (!user) return;
 
@@ -458,8 +484,8 @@ const Payment = () => {
             amount: amount.toString(),
             userId: user.id,
             mobile: profileData?.phone || '',
-            redirectUrl: `${window.location.origin}/wallet`
-          }
+            redirectUrl: `${window.location.origin}/wallet`,
+          },
         });
 
         if (response.error) {
@@ -467,11 +493,18 @@ const Payment = () => {
         }
 
         if (response.data?.success && response.data?.payment_url) {
-          // Redirect to ZapUPI payment page
-          window.location.href = response.data.payment_url;
-        } else {
-          throw new Error(response.data?.error || 'Failed to get payment URL');
+          const url = String(response.data.payment_url);
+          setZapupiPaymentUrl(url);
+          setZapupiOrderId(response.data.order_id ? String(response.data.order_id) : null);
+          setZapupiTxnId(response.data.transaction_id ? String(response.data.transaction_id) : null);
+
+          // Open in new tab to avoid iframe "refused to connect"
+          openZapupiInNewTab(url);
+          setSubmitting(false);
+          return;
         }
+
+        throw new Error(response.data?.error || 'Failed to get payment URL');
       } catch (error) {
         console.error('Error initiating ZapUPI payment:', error);
         toast({
@@ -488,7 +521,7 @@ const Payment = () => {
         <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b-2 border-border px-4 py-3">
           <div className="flex items-center justify-between max-w-lg mx-auto">
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={() => navigate('/wallet')}
                 className="p-2 -ml-2 hover:bg-muted rounded-lg transition-colors border border-border"
               >
@@ -514,7 +547,7 @@ const Payment = () => {
                 <p className="text-sm text-muted-foreground">Powered by ZapUPI</p>
               </div>
             </div>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-border">
                 <span className="text-muted-foreground">Amount</span>
@@ -545,7 +578,7 @@ const Payment = () => {
             <div>
               <p className="text-sm font-medium">Secure Payment</p>
               <p className="text-xs text-muted-foreground">
-                You'll be redirected to a secure payment page. Complete the payment using any UPI app.
+                ZapUPI page preview iframe me load nahi hota ("refused to connect"). Isliye payment new tab me open hoga.
               </p>
             </div>
           </div>
@@ -569,6 +602,41 @@ const Payment = () => {
               </>
             )}
           </Button>
+
+          {zapupiPaymentUrl && (
+            <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+              <div className="text-sm">
+                <p className="font-medium">Payment page ready</p>
+                <p className="text-xs text-muted-foreground break-all">
+                  {zapupiOrderId ? `Order: ${zapupiOrderId}` : null}
+                  {zapupiOrderId ? ' • ' : null}
+                  {zapupiTxnId ? `Txn: ${zapupiTxnId}` : null}
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={() => openZapupiInNewTab(zapupiPaymentUrl)}
+                >
+                  Open Payment Page
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="flex-1"
+                  onClick={() => navigate('/wallet')}
+                >
+                  Go to Wallet
+                </Button>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Agar new tab open nahi ho raha, browser popup permissions allow karo.
+              </p>
+            </div>
+          )}
 
           <p className="text-xs text-muted-foreground text-center">
             Your payment is secured by ZapUPI. Amount will be instantly credited to your wallet after successful payment.
