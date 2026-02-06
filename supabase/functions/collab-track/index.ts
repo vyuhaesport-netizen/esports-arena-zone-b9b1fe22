@@ -7,9 +7,11 @@ const corsHeaders: Record<string, string> = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
 type CollabTrackRequest =
   | { action: "click"; code: string }
-  | { action: "signup"; code: string };
+  | { action: "signup"; code: string }
+  | { action: "qualify"; user_id: string; qualification_type: string };
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -30,9 +32,8 @@ serve(async (req: Request) => {
 
     const body = (await req.json()) as Partial<CollabTrackRequest>;
     const action = body.action;
-    const code = (body as any)?.code;
 
-    if (!action || typeof action !== "string" || !code || typeof code !== "string") {
+    if (!action || typeof action !== "string") {
       return new Response(
         JSON.stringify({ success: false, error: "Invalid request" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -41,34 +42,40 @@ serve(async (req: Request) => {
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const loadActiveLink = async () => {
-      const { data, error } = await supabaseAdmin
+    // ============ CLICK TRACKING ============
+    if (action === "click") {
+      const code = (body as any)?.code;
+      if (!code || typeof code !== "string") {
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing code" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      const { data: link, error: linkErr } = await supabaseAdmin
         .from("collab_links")
-        .select("id, total_clicks, total_signups, expires_at")
+        .select("id, total_clicks, expires_at")
         .eq("link_code", code)
         .eq("is_active", true)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) return null;
-
-      if (data.expires_at) {
-        const exp = new Date(data.expires_at);
-        if (!Number.isNaN(exp.getTime()) && exp.getTime() < Date.now()) {
-          return null;
-        }
-      }
-
-      return data;
-    };
-
-    if (action === "click") {
-      const link = await loadActiveLink();
+      if (linkErr) throw linkErr;
       if (!link) {
         return new Response(
           JSON.stringify({ success: true, ignored: true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
+      }
+
+      // Check expiry
+      if (link.expires_at) {
+        const exp = new Date(link.expires_at);
+        if (!Number.isNaN(exp.getTime()) && exp.getTime() < Date.now()) {
+          return new Response(
+            JSON.stringify({ success: true, ignored: true }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
       }
 
       await supabaseAdmin
@@ -79,13 +86,24 @@ serve(async (req: Request) => {
         })
         .eq("id", link.id);
 
+      console.log(`Click tracked for code: ${code}`);
       return new Response(
         JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
+    // ============ SIGNUP TRACKING ============
     if (action === "signup") {
+      const code = (body as any)?.code;
+      if (!code || typeof code !== "string") {
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing code" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Get user from auth header
       const authHeader = req.headers.get("authorization") ?? "";
       if (!authHeader) {
         return new Response(
@@ -106,16 +124,46 @@ serve(async (req: Request) => {
         );
       }
 
-      const link = await loadActiveLink();
+      const referredUserId = userData.user.id;
+
+      // Find the link
+      const { data: link, error: linkErr } = await supabaseAdmin
+        .from("collab_links")
+        .select("id, total_signups, user_id, expires_at")
+        .eq("link_code", code)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (linkErr) throw linkErr;
       if (!link) {
+        console.log(`Link not found or inactive: ${code}`);
         return new Response(
           JSON.stringify({ success: true, ignored: true }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
-      const referredUserId = userData.user.id;
+      // Check expiry
+      if (link.expires_at) {
+        const exp = new Date(link.expires_at);
+        if (!Number.isNaN(exp.getTime()) && exp.getTime() < Date.now()) {
+          return new Response(
+            JSON.stringify({ success: true, ignored: true }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      }
 
+      // Prevent self-referral
+      if (link.user_id === referredUserId) {
+        console.log(`Self-referral blocked: ${referredUserId}`);
+        return new Response(
+          JSON.stringify({ success: true, ignored: true, reason: "self_referral" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Check if already referred
       const { data: existing } = await supabaseAdmin
         .from("collab_referrals")
         .select("id")
@@ -141,10 +189,109 @@ serve(async (req: Request) => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", link.id);
+
+        console.log(`Signup tracked for user: ${referredUserId}, link: ${code}`);
+      } else {
+        console.log(`User already referred: ${referredUserId}`);
       }
 
       return new Response(
         JSON.stringify({ success: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // ============ QUALIFICATION TRACKING ============
+    if (action === "qualify") {
+      const userId = (body as any)?.user_id;
+      const qualificationType = (body as any)?.qualification_type;
+
+      if (!userId || typeof userId !== "string") {
+        return new Response(
+          JSON.stringify({ success: false, error: "Missing user_id" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Find pending referral for this user
+      const { data: referral, error: refErr } = await supabaseAdmin
+        .from("collab_referrals")
+        .select("id, link_id, status")
+        .eq("referred_user_id", userId)
+        .eq("status", "registered")
+        .maybeSingle();
+
+      if (refErr) throw refErr;
+      if (!referral) {
+        console.log(`No pending referral for user: ${userId}`);
+        return new Response(
+          JSON.stringify({ success: true, ignored: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Get link info for commission
+      const { data: link, error: linkErr } = await supabaseAdmin
+        .from("collab_links")
+        .select("id, user_id, commission_per_registration, total_qualified, total_earned")
+        .eq("id", referral.link_id)
+        .single();
+
+      if (linkErr) throw linkErr;
+
+      const commission = link.commission_per_registration || 5;
+
+      // Update referral to qualified
+      await supabaseAdmin
+        .from("collab_referrals")
+        .update({
+          status: "qualified",
+          qualified_at: new Date().toISOString(),
+          qualification_type: qualificationType || "deposit",
+          commission_amount: commission,
+          commission_credited: true,
+        })
+        .eq("id", referral.id);
+
+      // Update link totals
+      await supabaseAdmin
+        .from("collab_links")
+        .update({
+          total_qualified: (link.total_qualified ?? 0) + 1,
+          total_earned: (link.total_earned ?? 0) + commission,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", link.id);
+
+      // Credit commission to link owner's withdrawable balance
+      const { data: ownerProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("withdrawable_balance")
+        .eq("user_id", link.user_id)
+        .maybeSingle();
+
+      await supabaseAdmin
+        .from("profiles")
+        .update({
+          withdrawable_balance: (ownerProfile?.withdrawable_balance || 0) + commission,
+        })
+        .eq("user_id", link.user_id);
+
+      // Create wallet transaction for the owner (using 'commission' type)
+      await supabaseAdmin
+        .from("wallet_transactions")
+        .insert({
+          user_id: link.user_id,
+          amount: commission,
+          type: "commission",
+          status: "completed",
+          description: `Collab Commission: User qualified (${qualificationType || "deposit"})`,
+        });
+
+      console.log(`Qualification tracked: user ${userId}, commission ₹${commission} to ${link.user_id}`);
+
+      return new Response(
+        JSON.stringify({ success: true, commission_credited: commission }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
