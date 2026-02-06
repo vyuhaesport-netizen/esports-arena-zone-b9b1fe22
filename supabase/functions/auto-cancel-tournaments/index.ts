@@ -60,22 +60,24 @@ Deno.serve(async (req) => {
       console.log(`Processing tournament: ${tournament.title} (${tournament.id})`);
 
       try {
-        // Get all registrations for this tournament
+        // Get all registrations for this tournament (regular tournaments don't have payment_status or amount_paid)
         const { data: registrations, error: regError } = await supabase
           .from('tournament_registrations')
-          .select('user_id, amount_paid')
-          .eq('tournament_id', tournament.id)
-          .eq('payment_status', 'completed');
+          .select('user_id')
+          .eq('tournament_id', tournament.id);
 
         if (regError) {
           console.error(`Error fetching registrations for ${tournament.id}:`, regError);
           continue;
         }
 
+        console.log(`Found ${registrations?.length || 0} registrations to refund for tournament ${tournament.id}`);
+
+        // Entry fee is already a number in the tournaments table
+        const refundAmount = tournament.entry_fee || 0;
+
         // Refund each participant
         for (const reg of registrations || []) {
-          const refundAmount = reg.amount_paid || parseFloat(tournament.entry_fee?.replace(/[₹,]/g, '') || '0');
-          
           if (refundAmount > 0) {
             // Add to user's wallet
             const { error: walletError } = await supabase.rpc('admin_adjust_wallet', {
