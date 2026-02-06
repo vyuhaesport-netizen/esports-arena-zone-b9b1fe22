@@ -25,6 +25,14 @@ import { Separator } from '@/components/ui/separator';
   Play,
   Square,
   Award,
+  UserCheck,
+  Rocket,
+  TrendingUp,
+  Target,
+  Briefcase
+  Play,
+  Square,
+  Award,
   UserCheck
 } from 'lucide-react';
 
