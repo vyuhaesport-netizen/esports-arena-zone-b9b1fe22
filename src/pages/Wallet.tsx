@@ -121,8 +121,9 @@ const Wallet = () => {
 
       // Total Earned (withdrawable): ONLY prize winnings + commissions
       // admin_credit, deposit, refund, bonus -> go to Total Balance only, NOT here
+      // NOTE: We don't subtract withdrawals because withdrawals could have been from deposits
+      // The backend tracks actual withdrawable_balance, but we show lifetime earnings here
       
-      // Calculate directly inline to avoid import issues
       const earningTxns = (txns || []).filter((t) => {
         const typeNorm = (t.type || '').toLowerCase().trim();
         const statusNorm = (t.status || '').toLowerCase().trim();
@@ -133,21 +134,8 @@ const Wallet = () => {
 
       const earningTotal = earningTxns.reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
 
-      const withdrawnTotal = (txns || [])
-        .filter((t) => {
-          const typeNorm = (t.type || '').toLowerCase().trim();
-          const statusNorm = (t.status || '').toLowerCase().trim();
-          return statusNorm === 'completed' && typeNorm === 'withdrawal';
-        })
-        .reduce((sum, t) => sum + Math.abs(Number(t.amount) || 0), 0);
-
-      const computedWithdrawable = Math.max(0, earningTotal - withdrawnTotal);
-
-      console.log('[Wallet Debug v2] Earning txns:', earningTxns.length, 'Total:', earningTotal);
-      console.log('[Wallet Debug v2] Withdrawn:', withdrawnTotal);
-      console.log('[Wallet Debug v2] Final withdrawable:', computedWithdrawable);
-
-      setTotalEarned(computedWithdrawable);
+      // Show total earnings (withdrawable balance is tracked by backend)
+      setTotalEarned(earningTotal);
 
       // Breakdown for what contributes to Total Earned
       setEarningsBreakdown(buildWithdrawableBreakdown(earningTxns));
