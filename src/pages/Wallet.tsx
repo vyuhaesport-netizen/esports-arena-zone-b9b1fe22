@@ -357,7 +357,7 @@ const Wallet = () => {
               <Trophy className="h-4 w-4 text-foreground" />
               <h3 className="font-semibold text-sm text-foreground">Earnings Breakdown</h3>
               <Badge variant="secondary" className="ml-auto text-xs">
-                {earningsBreakdown.length} wins
+                {earningsBreakdown.length} entries
               </Badge>
             </div>
 
