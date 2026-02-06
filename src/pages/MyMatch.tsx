@@ -227,17 +227,13 @@ const MyMatch = () => {
     const [players, setPlayers] = useState<PlayerInfo[]>([]);
     const [loadingPlayers, setLoadingPlayers] = useState(false);
     const [organizerInfo, setOrganizerInfo] = useState<{ full_name: string; phone: string } | null>(null);
+    const [userRoom, setUserRoom] = useState<UserRoomAssignment | null>(null);
+    const [loadingRoom, setLoadingRoom] = useState(false);
 
     useEffect(() => {
-      // Fetch organizer info
-      const fetchOrganizer = async () => {
-        const { data } = await supabase
-          .from('local_tournament_applications')
-          .select('primary_phone')
-          .eq('id', tournament.id.replace(/-/g, '').slice(0, 36))
-          .maybeSingle();
-        
-        // Also get organizer profile
+      // Fetch organizer info and user's assigned room
+      const fetchData = async () => {
+        // Fetch organizer profile
         if (tournament.id) {
           const { data: ltData } = await supabase
             .from('local_tournaments')
@@ -255,14 +251,54 @@ const MyMatch = () => {
             if (profile) {
               setOrganizerInfo({
                 full_name: profile.full_name || 'Organizer',
-                phone: profile.phone || data?.primary_phone || ''
+                phone: profile.phone || ''
               });
             }
           }
         }
+
+        // Fetch user's assigned room
+        if (user && tournament.id) {
+          setLoadingRoom(true);
+          try {
+            // First get all rooms for this tournament
+            const { data: rooms } = await supabase
+              .from('local_tournament_rooms')
+              .select('id, room_number, room_name, room_id, room_password, status')
+              .eq('tournament_id', tournament.id);
+            
+            if (rooms && rooms.length > 0) {
+              // Find user's room assignment
+              const roomIds = rooms.map(r => r.id);
+              const { data: assignment } = await supabase
+                .from('local_tournament_room_assignments')
+                .select('room_id')
+                .eq('user_id', user.id)
+                .in('room_id', roomIds)
+                .maybeSingle();
+              
+              if (assignment) {
+                const myRoom = rooms.find(r => r.id === assignment.room_id);
+                if (myRoom) {
+                  setUserRoom({
+                    room_id: myRoom.room_id || '',
+                    room_number: myRoom.room_number,
+                    room_name: myRoom.room_name,
+                    room_password: myRoom.room_password,
+                    status: myRoom.status
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching user room:', error);
+          } finally {
+            setLoadingRoom(false);
+          }
+        }
       };
-      fetchOrganizer();
-    }, [tournament.id]);
+      fetchData();
+    }, [tournament.id, user]);
 
     const fetchPlayers = async () => {
       if (!tournament.joined_users?.length) return;
