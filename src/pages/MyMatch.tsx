@@ -72,6 +72,14 @@ interface LocalTournament {
   ended_at: string | null;
 }
 
+interface UserRoomAssignment {
+  room_id: string;
+  room_number: number;
+  room_name: string;
+  room_password: string | null;
+  status: string;
+}
+
 interface SchoolTournament {
   id: string;
   tournament_name: string;
