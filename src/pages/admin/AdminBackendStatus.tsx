@@ -15,8 +15,71 @@
    message: string;
    details?: string;
  }
- 
- const AdminBackendStatus = () => {
+
+let lastAutoCheckAt = 0;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const withTimeout = async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+};
+
+const isTransientError = (err: any) => {
+  const msg = String(err?.message ?? '').toLowerCase();
+  const status = err?.context?.status ?? err?.status ?? err?.statusCode;
+
+  if (typeof status === 'number' && [408, 425, 429, 500, 502, 503, 504].includes(status)) {
+    return true;
+  }
+
+  if (
+    msg.includes('failed to fetch') ||
+    msg.includes('network') ||
+    msg.includes('timeout') ||
+    msg.includes('fetch')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const withRetry = async <T,>(
+  fn: () => Promise<T>,
+  opts?: { retries?: number; baseDelayMs?: number; label?: string }
+): Promise<T> => {
+  const retries = opts?.retries ?? 1;
+  const baseDelayMs = opts?.baseDelayMs ?? 600;
+
+  let lastErr: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+
+      const transient = isTransientError(err);
+      if (!transient || attempt >= retries) break;
+
+      await sleep(baseDelayMs * Math.pow(2, attempt));
+    }
+  }
+
+  throw lastErr;
+};
+
+const AdminBackendStatus = () => {
    const navigate = useNavigate();
    const { user } = useAuth();
    const [isAdmin, setIsAdmin] = useState(false);
