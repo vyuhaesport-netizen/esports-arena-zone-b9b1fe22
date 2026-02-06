@@ -572,6 +572,37 @@ const AdminSettings = () => {
     }
   };
 
+  const handleSaveTournamentLimit = async () => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Access Denied', description: 'Only Super Admin can change settings.', variant: 'destructive' });
+      return;
+    }
+
+    setSavingTournamentLimit(true);
+
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({ 
+          setting_key: 'tournament_creation_limit',
+          setting_value: tournamentLimitSettings.tournament_creation_limit,
+          updated_by: user?.id,
+        }, { onConflict: 'setting_key' });
+
+      if (error) throw error;
+
+      toast({ 
+        title: 'Tournament Limit Saved', 
+        description: `Organizers/Creators can now create max ${tournamentLimitSettings.tournament_creation_limit} active tournaments.`,
+      });
+    } catch (error) {
+      console.error('Error saving tournament limit:', error);
+      toast({ title: 'Error', description: 'Failed to save tournament limit.', variant: 'destructive' });
+    } finally {
+      setSavingTournamentLimit(false);
+    }
+  };
+
   const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
