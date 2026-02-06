@@ -35,6 +35,12 @@ const Payment = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [activeGateway, setActiveGateway] = useState<ActiveGateway | null>(null);
   const [loadingGateway, setLoadingGateway] = useState(true);
+
+  // ZapUPI: since the editor preview runs inside an iframe, ZapUPI pages may refuse to load.
+  // We open the payment page in a new tab and show a fallback button.
+  const [zapupiPaymentUrl, setZapupiPaymentUrl] = useState<string | null>(null);
+  const [zapupiOrderId, setZapupiOrderId] = useState<string | null>(null);
+  const [zapupiTxnId, setZapupiTxnId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
