@@ -550,23 +550,10 @@ import BackgroundPicker, { BACKGROUNDS } from '@/components/chat/BackgroundPicke
     return bg ? bg.style : 'bg-background';
   };
 
-  // Load mock data for testing
-  const loadMockData = async () => {
-    try {
-      const response = await supabase.functions.invoke('mock-chat-data', {
-        body: { teamId: myTeam?.id || 'mock-team', messageCount: 50 },
-      });
-      
-      if (response.data) {
-        setMessages(response.data.messages);
-        setTeamMembers(response.data.members);
-        setMockMode(true);
-        toast({ title: 'Mock Data Loaded', description: '50 messages with 6 members loaded for preview' });
-      }
-    } catch (error) {
-      console.error('Error loading mock data:', error);
-      toast({ title: 'Error', description: 'Failed to load mock data', variant: 'destructive' });
-    }
+  // Save wallpaper to localStorage when it changes
+  const handleSelectBackground = (bgId: string) => {
+    setChatBackground(bgId);
+    localStorage.setItem('chat_wallpaper', bgId);
   };
 
    const canModifyMessage = (msg: TeamMessage) => {
