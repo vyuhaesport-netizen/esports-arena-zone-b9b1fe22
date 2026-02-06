@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
 
     // Process local tournaments
     for (const tournament of localTournaments || []) {
-      console.log(`Processing local tournament: ${tournament.title} (${tournament.id})`);
+      console.log(`Processing local tournament: ${tournament.tournament_name} (${tournament.id})`);
 
       try {
         // Get all registrations for this local tournament
