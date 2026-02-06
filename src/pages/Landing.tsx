@@ -30,6 +30,8 @@ const Landing = () => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleAuthEnabled, setGoogleAuthEnabled] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; fullName?: string; terms?: string }>({});
   
