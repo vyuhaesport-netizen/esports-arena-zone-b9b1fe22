@@ -114,32 +114,26 @@ const Wallet = () => {
 
       setTransactions(txns || []);
 
-      // Total Earned (withdrawable)
-      // Source of truth is profiles.withdrawable_balance.
-      // Fallback to transaction aggregation if it's missing for any reason.
-      const isEarnedType = (type: string) =>
-        ['winning', 'prize', 'prize_won', 'bonus'].includes(type) || type.includes('commission');
+      // Total Earned (withdrawable) = ONLY tournament prize winnings
+      // Calculate from transactions - only prize/winning types count
+      const isWinningType = (type: string) =>
+        ['winning', 'prize', 'prize_won'].includes(type);
 
-      const earningTxns = (txns || []).filter(
-        (t) => isEarnedType(t.type) && t.status === 'completed'
+      const winningTxns = (txns || []).filter(
+        (t) => isWinningType(t.type) && t.status === 'completed'
       );
 
-      const computedEarned = earningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      const computedWithdrawn = (txns || [])
+      const totalWinnings = winningTxns.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const totalWithdrawn = (txns || [])
         .filter((t) => t.type === 'withdrawal' && t.status === 'completed')
         .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-      const computedWithdrawable = Math.max(0, computedEarned - computedWithdrawn);
+      const withdrawableAmount = Math.max(0, totalWinnings - totalWithdrawn);
 
-      const withdrawableBalance =
-        typeof profile?.withdrawable_balance === 'number'
-          ? profile.withdrawable_balance
-          : computedWithdrawable;
+      setTotalEarned(withdrawableAmount);
 
-      setTotalEarned(withdrawableBalance || 0);
-
-      // Create earnings breakdown
-      const breakdown: EarningBreakdown[] = earningTxns.map((t) => {
-        let tournamentName = 'Earning';
+      // Create earnings breakdown (only tournament winnings)
+      const breakdown: EarningBreakdown[] = winningTxns.map((t) => {
+        let tournamentName = 'Tournament Prize';
         let position = '';
 
         if (t.description) {
