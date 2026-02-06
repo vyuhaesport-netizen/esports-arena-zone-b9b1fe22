@@ -190,6 +190,10 @@ const AdminSettings = () => {
         withdrawal_fee_percent: '2',
       };
 
+      const authMap: AuthSettings = {
+        google_auth_enabled: 'false',
+      };
+
       data?.forEach((s) => {
         if (s.setting_key in commissionMap) {
           commissionMap[s.setting_key as keyof CommissionSettings] = s.setting_value;
@@ -209,6 +213,9 @@ const AdminSettings = () => {
         if (s.setting_key in withdrawalMap) {
           withdrawalMap[s.setting_key as keyof WithdrawalSettings] = s.setting_value;
         }
+        if (s.setting_key in authMap) {
+          authMap[s.setting_key as keyof AuthSettings] = s.setting_value;
+        }
       });
 
       setSettings(commissionMap);
@@ -217,6 +224,7 @@ const AdminSettings = () => {
       setSocialSettings(socialMap);
       setMaintenanceSettings(maintenanceMap);
       setWithdrawalSettings(withdrawalMap);
+      setAuthSettings(authMap);
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
