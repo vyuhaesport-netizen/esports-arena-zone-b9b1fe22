@@ -754,6 +754,91 @@ export type Database = {
         }
         Relationships: []
       }
+      local_tournament_room_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          is_winner: boolean | null
+          match_rank: number | null
+          room_id: string
+          slot_number: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          match_rank?: number | null
+          room_id: string
+          slot_number: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_winner?: boolean | null
+          match_rank?: number | null
+          room_id?: string
+          slot_number?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_tournament_room_assignments_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "local_tournament_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      local_tournament_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          room_id: string | null
+          room_name: string
+          room_number: number
+          room_password: string | null
+          scheduled_time: string | null
+          status: string
+          tournament_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          room_id?: string | null
+          room_name: string
+          room_number: number
+          room_password?: string | null
+          scheduled_time?: string | null
+          status?: string
+          tournament_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          room_id?: string | null
+          room_name?: string
+          room_number?: number
+          room_password?: string | null
+          scheduled_time?: string | null
+          status?: string
+          tournament_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "local_tournament_rooms_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "local_tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       local_tournaments: {
         Row: {
           application_id: string

@@ -72,6 +72,14 @@ interface LocalTournament {
   ended_at: string | null;
 }
 
+interface UserRoomAssignment {
+  room_id: string;
+  room_number: number;
+  room_name: string;
+  room_password: string | null;
+  status: string;
+}
+
 interface SchoolTournament {
   id: string;
   tournament_name: string;
@@ -219,17 +227,13 @@ const MyMatch = () => {
     const [players, setPlayers] = useState<PlayerInfo[]>([]);
     const [loadingPlayers, setLoadingPlayers] = useState(false);
     const [organizerInfo, setOrganizerInfo] = useState<{ full_name: string; phone: string } | null>(null);
+    const [userRoom, setUserRoom] = useState<UserRoomAssignment | null>(null);
+    const [loadingRoom, setLoadingRoom] = useState(false);
 
     useEffect(() => {
-      // Fetch organizer info
-      const fetchOrganizer = async () => {
-        const { data } = await supabase
-          .from('local_tournament_applications')
-          .select('primary_phone')
-          .eq('id', tournament.id.replace(/-/g, '').slice(0, 36))
-          .maybeSingle();
-        
-        // Also get organizer profile
+      // Fetch organizer info and user's assigned room
+      const fetchData = async () => {
+        // Fetch organizer profile
         if (tournament.id) {
           const { data: ltData } = await supabase
             .from('local_tournaments')
@@ -247,14 +251,54 @@ const MyMatch = () => {
             if (profile) {
               setOrganizerInfo({
                 full_name: profile.full_name || 'Organizer',
-                phone: profile.phone || data?.primary_phone || ''
+                phone: profile.phone || ''
               });
             }
           }
         }
+
+        // Fetch user's assigned room
+        if (user && tournament.id) {
+          setLoadingRoom(true);
+          try {
+            // First get all rooms for this tournament
+            const { data: rooms } = await supabase
+              .from('local_tournament_rooms')
+              .select('id, room_number, room_name, room_id, room_password, status')
+              .eq('tournament_id', tournament.id);
+            
+            if (rooms && rooms.length > 0) {
+              // Find user's room assignment
+              const roomIds = rooms.map(r => r.id);
+              const { data: assignment } = await supabase
+                .from('local_tournament_room_assignments')
+                .select('room_id')
+                .eq('user_id', user.id)
+                .in('room_id', roomIds)
+                .maybeSingle();
+              
+              if (assignment) {
+                const myRoom = rooms.find(r => r.id === assignment.room_id);
+                if (myRoom) {
+                  setUserRoom({
+                    room_id: myRoom.room_id || '',
+                    room_number: myRoom.room_number,
+                    room_name: myRoom.room_name,
+                    room_password: myRoom.room_password,
+                    status: myRoom.status
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching user room:', error);
+          } finally {
+            setLoadingRoom(false);
+          }
+        }
       };
-      fetchOrganizer();
-    }, [tournament.id]);
+      fetchData();
+    }, [tournament.id, user]);
 
     const fetchPlayers = async () => {
       if (!tournament.joined_users?.length) return;
@@ -295,7 +339,10 @@ const MyMatch = () => {
       }
     };
 
-    const hasRoomDetails = tournament.room_id || tournament.room_password;
+    // Check if user has assigned room OR tournament has room details
+    const hasUserRoom = userRoom && (userRoom.room_id || userRoom.room_password);
+    const hasTournamentRoom = tournament.room_id || tournament.room_password;
+    const hasRoomDetails = hasUserRoom || hasTournamentRoom;
     const isOngoingOrCompleted = tournament.status === 'ongoing' || tournament.status === 'completed';
     const canExit = tournament.status === 'upcoming' && new Date(tournament.tournament_date) > new Date() && tournament.tournament_mode !== 'duo' && tournament.tournament_mode !== 'squad';
 
@@ -368,41 +415,100 @@ const MyMatch = () => {
           </div>
         )}
 
-        {/* Room Details Collapsible */}
-        {hasRoomDetails && isOngoingOrCompleted && (
-          <Collapsible open={roomOpen} onOpenChange={setRoomOpen} className="mt-3">
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" size="sm" className="w-full text-sm h-9 border-2">
-                <Eye className="h-4 w-4 mr-2" />
-                {roomOpen ? 'Hide' : 'View'} Room Credentials
-                <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-1.5 space-y-1.5 p-2 bg-success/10 border border-success/20 rounded text-[10px]">
-              {tournament.room_id && (
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-muted-foreground">Room ID</p>
-                    <p className="font-mono font-bold text-foreground">{tournament.room_id}</p>
+        {/* Room Details - Priority: User's assigned room > Tournament fallback */}
+        {isOngoingOrCompleted && (
+          <div className="mt-3">
+            {loadingRoom ? (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground ml-2">Loading room...</span>
+              </div>
+            ) : hasUserRoom ? (
+              // User has assigned room - show their specific room
+              <Collapsible open={roomOpen} onOpenChange={setRoomOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full text-sm h-9 border-2 border-primary/50 bg-primary/5">
+                    <Eye className="h-4 w-4 mr-2" />
+                    🎮 Your Room: {userRoom.room_name}
+                    <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-1.5 space-y-1.5 p-3 bg-primary/10 border border-primary/30 rounded-lg text-xs">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-[10px]">Room #{userRoom.room_number}</Badge>
+                    <Badge variant={userRoom.status === 'live' ? 'default' : 'secondary'} className="text-[10px]">
+                      {userRoom.status === 'live' ? '🔴 LIVE' : userRoom.status}
+                    </Badge>
                   </div>
-                  <button onClick={() => copyToClipboard(tournament.room_id!, 'Room ID')} className="p-1 hover:bg-muted rounded">
-                    {copiedField === 'Room ID' ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
-                  </button>
-                </div>
-              )}
-              {tournament.room_password && (
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-muted-foreground">Password</p>
-                    <p className="font-mono font-bold text-foreground">{tournament.room_password}</p>
-                  </div>
-                  <button onClick={() => copyToClipboard(tournament.room_password!, 'Password')} className="p-1 hover:bg-muted rounded">
-                    {copiedField === 'Password' ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
-                  </button>
-                </div>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
+                  {userRoom.room_id && (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-[10px]">Room ID</p>
+                        <p className="font-mono font-bold text-foreground text-sm">{userRoom.room_id}</p>
+                      </div>
+                      <button onClick={() => copyToClipboard(userRoom.room_id!, 'Room ID')} className="p-1.5 hover:bg-muted rounded-lg">
+                        {copiedField === 'Room ID' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  )}
+                  {userRoom.room_password && (
+                    <div className="flex items-center justify-between gap-2 mt-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground text-[10px]">Password</p>
+                        <p className="font-mono font-bold text-foreground text-sm">{userRoom.room_password}</p>
+                      </div>
+                      <button onClick={() => copyToClipboard(userRoom.room_password!, 'Password')} className="p-1.5 hover:bg-muted rounded-lg">
+                        {copiedField === 'Password' ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  )}
+                  {!userRoom.room_id && !userRoom.room_password && (
+                    <p className="text-muted-foreground text-center py-2">⏳ Room credentials will be shared soon</p>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            ) : hasTournamentRoom ? (
+              // Fallback: Single room system (old tournaments)
+              <Collapsible open={roomOpen} onOpenChange={setRoomOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full text-sm h-9 border-2">
+                    <Eye className="h-4 w-4 mr-2" />
+                    {roomOpen ? 'Hide' : 'View'} Room Credentials
+                    <ChevronDown className={`h-4 w-4 ml-auto transition-transform ${roomOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-1.5 space-y-1.5 p-2 bg-success/10 border border-success/20 rounded text-[10px]">
+                  {tournament.room_id && (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground">Room ID</p>
+                        <p className="font-mono font-bold text-foreground">{tournament.room_id}</p>
+                      </div>
+                      <button onClick={() => copyToClipboard(tournament.room_id!, 'Room ID')} className="p-1 hover:bg-muted rounded">
+                        {copiedField === 'Room ID' ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                      </button>
+                    </div>
+                  )}
+                  {tournament.room_password && (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-muted-foreground">Password</p>
+                        <p className="font-mono font-bold text-foreground">{tournament.room_password}</p>
+                      </div>
+                      <button onClick={() => copyToClipboard(tournament.room_password!, 'Password')} className="p-1 hover:bg-muted rounded">
+                        {copiedField === 'Password' ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                      </button>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            ) : (
+              // No room assigned yet
+              <div className="text-center py-2 px-3 bg-muted/30 rounded-lg">
+                <p className="text-xs text-muted-foreground">⏳ Room not assigned yet. Please wait for organizer.</p>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Players List Collapsible */}
