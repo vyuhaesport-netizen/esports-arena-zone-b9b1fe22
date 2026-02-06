@@ -523,6 +523,38 @@ const AdminSettings = () => {
     }
   };
 
+  const handleToggleGoogleAuth = async (enabled: boolean) => {
+    if (!isSuperAdmin) {
+      toast({ title: 'Access Denied', description: 'Only Super Admin can change settings.', variant: 'destructive' });
+      return;
+    }
+
+    setSavingAuth(true);
+
+    try {
+      const { error } = await supabase
+        .from('platform_settings')
+        .upsert({ 
+          setting_key: 'google_auth_enabled',
+          setting_value: enabled ? 'true' : 'false',
+          updated_by: user?.id,
+        }, { onConflict: 'setting_key' });
+
+      if (error) throw error;
+
+      setAuthSettings(prev => ({ ...prev, google_auth_enabled: enabled ? 'true' : 'false' }));
+      
+      toast({ 
+        title: enabled ? 'Google Auth Enabled' : 'Google Auth Disabled', 
+        description: enabled ? 'Continue with Google button will now show on login.' : 'Google sign in is now hidden.',
+      });
+    } catch (error) {
+      console.error('Error toggling Google auth:', error);
+      toast({ title: 'Error', description: 'Failed to toggle Google auth.', variant: 'destructive' });
+    } finally {
+      setSavingAuth(false);
+    }
+
   const handleQrUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
